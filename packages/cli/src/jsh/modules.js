@@ -4,6 +4,7 @@ import "@npc-cli/ui__world/jsh-cli.d.ts";
 export * as util from "./util.js";
 
 export * as act from "./world/act.ts";
+export * as audio from "./world/audio.ts";
 export * as core from "./world/core.ts";
 export * as debug from "./world/debug.ts";
 export * as decor from "./world/decor.ts";

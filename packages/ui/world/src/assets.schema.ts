@@ -218,8 +218,10 @@ export const WorldThemeSchema = z.object({
         .default(0.25 satisfies typeof import("./const.env.ts").defaultNpcBrightness),
       /** How strongly what an npc draws in light shows — `Psi`'s rings, a weapon's beam: their alpha, scaled */
       fxStrength: z.number().min(0).max(8).default(1),
+      /** The exposure added to those in the player's room — see `NpcAnimation.tickRoomLit` */
+      sameRoom: z.number().min(0).max(1).default(0.2),
     })
-    .default({ ambient: 0, brightness: 0.25, fxStrength: 1 }),
+    .default({ ambient: 0, brightness: 0.25, fxStrength: 1, sameRoom: 0.2 }),
   doors: z
     .object({
       brightness: z.number(),

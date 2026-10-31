@@ -83,6 +83,8 @@ export const cameraFov = 30;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
+/** The most pixels the canvas draws. Past it the pixel ratio is lowered, as full screen at 2x drops frames */
+export const maxCanvasPixels = 5.5e6;
 
 export const defaultBrightness = 1;
 
@@ -156,10 +158,10 @@ export const embodiedFlattenFrom = 0.4;
  */
 export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
 /**
- * What the rgb shift is scaled to at the outer zoom stop: zoomed out the whole ship is in frame and
- * the parted channels read as a blur over everything rather than an edge on what is near
+ * How far the rgb shift parts the channels, in css px, from the inner zoom stop to the outer.
+ * Out far, it stays under a line's width, else each thin line keeps only its green.
  */
-export const rgbShiftZoomedOutScale = 1;
+export const rgbShiftPx = { near: 3, far: 0.5 };
 /** `embodied` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const embodiedSnapArm = (10 * Math.PI) / 180;
 /**
@@ -194,6 +196,8 @@ export const frontierConfig = {
   margin: 1.3,
   /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
   panFrac: 0.5,
+  /** How far past the outer stop a follow may zoom out to show a raised phaser's dot, as a factor */
+  aimOuterScale: 3,
 };
 
 /** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */
@@ -227,7 +231,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     brightness: 1,
     skirtBrightness: 1,
   },
-  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1 },
+  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1, sameRoom: 0.2 },
   doors: {
     brightness: 1,
     opacity: 0.8,

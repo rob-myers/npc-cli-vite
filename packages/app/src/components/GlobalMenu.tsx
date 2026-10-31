@@ -85,6 +85,13 @@ export function GlobalMenu() {
     },
     onTriggerClick() {
       if (state.canOpen === true) {
+        state.canOpen = false;
+        state.set({ menuOpen: true, resetArmed: false });
+      }
+    },
+    onTriggerKeyDown(e: React.KeyboardEvent) {
+      if ((e.key === "Enter" || e.key === " ") && state.menuOpen === false) {
+        e.preventDefault();
         state.set({ menuOpen: true, resetArmed: false });
       }
     },
@@ -117,6 +124,7 @@ export function GlobalMenu() {
             render={<span />}
             nativeButton={false}
             onClick={state.onTriggerClick}
+            onKeyDown={state.onTriggerKeyDown}
           >
             <GearIcon className={gearCls} weight="bold" />
           </Menu.Trigger>

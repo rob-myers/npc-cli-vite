@@ -156,12 +156,16 @@ export const npcMaterialConfig = {
   labelHalfHeight: 0.10625,
   /** Eased to `overheadAmount` as the view elevation goes `overheadFrom` → `overheadTo` */
   rim: { power: 5, amount: 0.2, color: [0.55, 0.72, 0.7], overheadAmount: 0.05, overheadFrom: 0.45, overheadTo: 0.85 },
-  /** Exposure is ADDED: `ambient` out of the light, the light taking what that leaves, `litAmbient` on top */
+  /** Exposure is ADDED: `ambient` out of the light, the light taking what that leaves, `litAmbient` on top, and `theme.npcs.sameRoom` */
   ambient: 0.3,
   ambientInSight: 0.12,
   litAmbient: 0.4,
-  /** A light of the npcs' own, from straight above: how far an underside darkens, a side half as far */
+  /** Seconds the player's room's extra light eases over — see `theme.npcs.sameRoom` */
+  sameRoomSecs: 0.4,
+  /** A light of the npcs' own, from `faceShadeDir`: how far a face turned away darkens, one edge-on half as far */
   faceShade: 0.85,
+  /** Where `faceShade`'s light comes from, in world space. Straight above is `[0, 1, 0]` */
+  faceShadeDir: [0.25, 1, 0.25],
 } as const;
 
 export const fromAnimationClipKey = {
@@ -254,6 +258,8 @@ export const sitTurn = {
   /** Past this to their left, the torso turns with the gun: the arm aiming, their right, would cross their chest */
   aimTorsoFrom: Math.PI / 4,
   body: 0.25,
+  /** The most the neck turns towards a hand at their head, e.g. psi: past it the arm would cross the head, so the torso turns */
+  heldNeckRad: Math.PI / 6,
   rate: 6,
 } as const;
 
@@ -262,6 +268,12 @@ export const sitTurn = {
  * They near that by `there` of the way, and leave for the clip's from `onFrom`. It takes `slow` times as long
  */
 export const sitArmVia = { back: 1, there: 0.5, onFrom: 0.4, slow: 1.6 } as const;
+
+/**
+ * The left hand steadying a phaser as it charges: `grip` in the right forearm's frame, as `gunBoxes`, below the
+ * barrel ahead of the handle. Model units. It reaches there over `secs`
+ */
+export const supportConfig = { grip: [0, -0.44, 0], secs: 0.25 } as const;
 
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
@@ -334,26 +346,17 @@ export const hitConfig = {
   } as Partial<Record<ClipKey, ClipKey>>,
 };
 
-/** Refract: they turn to psi and look to the shot, and a psi beam from their brow stops it, heating space — see `NpcRefract` */
-export const refractConfig = {
-  psiColor: "#c58cff",
-  /** Their psi meets it at random, from `standoffM` metres before where it would land to `reachShare` of the way back */
-  standoffM: 0.6,
-  reachShare: 0.8,
-  /** Over `1`, nearer the shooter more often */
-  towardShooter: 2.5,
-  /** Fired again before it fades, it meets the shot where it did whilst within this many metres of its line */
-  keepM: 0.1,
-  /** Seconds the psi beam takes to reach the shot, is held unstruck, and fades over from the strike, as the shot does */
-  reachSecs: 0.06,
-  holdSecs: 0.6,
-  outSecs: 0.3,
-  flareSecs: 0.3,
-  /** Metres across the psi beam, and the glow where it meets the shot */
-  width: 0.025,
-  flareM: 0.12,
-  /** The band floating round their head, which the beam leaves from, in the head bone's frame: its radius, height and thickness */
-  band: { radius: 0.33, y: 0.25, thick: 0.012, bob: 0.012, bobHz: 1.2, inSecs: 0.08 },
+/** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
+export const ghostConfig = {
+  /** How much of a dot screen their body becomes, over `inSecs` as the shot locks on, which waits till then */
+  amount: 1,
+  inSecs: 0.2,
+  /** The dots: radians the grid turns, per pixel so higher is smaller, as `dotScreen` in `extra-fx`, and how bright they read the body */
+  dots: { angle: Math.PI / 2, scale: 4.9, gain: 1.6 },
+  /** Seconds they stay so once it lands, else after it locked on, then come back over `outSecs` */
+  holdSecs: 0.4,
+  missSecs: 1.5,
+  outSecs: 0.5,
 };
 
 /** Armour: struck, the shot glances off the face it met, in a spray of sparks — see `NpcArmour` */

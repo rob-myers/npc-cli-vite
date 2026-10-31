@@ -33,7 +33,12 @@ export default function LightSweep() {
       // eased more gently whilst they are off the mesh or mid fade-spawn — see `frontierConfig.calmRate`
       const calm = player.agentId === null || player.isFading() === true;
       // the way their head faces, which is not always their body's
-      w.view.playerFrontier.update(player.lookY, delta, calm ? frontierConfig.calmRate : frontierConfig.smoothRate);
+      w.view.playerFrontier.update(
+        player.lookY,
+        delta,
+        calm ? frontierConfig.calmRate : frontierConfig.smoothRate,
+        w.npcFocus?.reachOf(player.key) ?? null,
+      );
     }
   }, -2);
 

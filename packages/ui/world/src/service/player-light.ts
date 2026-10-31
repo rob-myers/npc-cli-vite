@@ -302,8 +302,10 @@ export function createPlayerLight(): PlayerLight {
     return litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount).mul(plain.oneMinus())));
   }
 
-  function applyLight(color: THREE.Node<"vec3">, outwardXZ: null | THREE.Node<"vec2"> = null) {
-    const away = positionWorld.xz.sub(origin);
+  function applyLight(color: THREE.Node<"vec3">, outwardXZ: null | THREE.Node<"vec2"> = null, lift = 0) {
+    // asked about a point lifted off the face, branched in js so most materials emit nothing of it
+    const at = outwardXZ === null || lift === 0 ? positionWorld.xz : positionWorld.xz.add(outwardXZ.mul(lift));
+    const away = at.sub(origin);
     const fromPlayer = away.length();
     const lit = shadeAt(away, fromPlayer);
     // and none at all on a face turned away — branched in js, so a caller with no normal to give
@@ -355,8 +357,8 @@ export function createPlayerLight(): PlayerLight {
     litAt,
     applyLight,
 
-    applyLightRgba(color, outwardXZ) {
-      return vec4(applyLight(color.rgb, outwardXZ), color.a);
+    applyLightRgba(color, outwardXZ, lift) {
+      return vec4(applyLight(color.rgb, outwardXZ, lift), color.a);
     },
 
     litBody(normalWorld) {
@@ -526,8 +528,9 @@ export type PlayerLight = {
    * whilst the light is off, so a material can wrap its colour unconditionally.
    * @param outwardXZ unit outward normal in world XZ: a face turned away takes none of the light.
    * Omit it for anything horizontal, or whose normal means nothing — a billboard
+   * @param lift metres along `outwardXZ` the light is asked about, so a face just proud of its own occluder never shadows itself
    */
-  applyLight(color: THREE.Node<"vec3">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec3">;
+  applyLight(color: THREE.Node<"vec3">, outwardXZ?: null | THREE.Node<"vec2">, lift?: number): THREE.Node<"vec3">;
   /**
    * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
    * and wants to ask. Ignores whether the light is on, so a caller decides what an unlit light
@@ -537,7 +540,7 @@ export type PlayerLight = {
    */
   litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
   /** The same, for a material whose colour carries alpha — which is left alone */
-  applyLightRgba(color: THREE.Node<"vec4">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec4">;
+  applyLightRgba(color: THREE.Node<"vec4">, outwardXZ?: null | THREE.Node<"vec2">, lift?: number): THREE.Node<"vec4">;
   /**
    * How much light a FIGURE takes, `0` to `1` — for a material adding up its own exposure rather
    * than taking a tint `unlitTint` caps (see `NPCs`). `1` with the light off

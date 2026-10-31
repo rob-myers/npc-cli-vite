@@ -60,6 +60,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Floor | `docs/floor.md` | The look comes from one mutable object, `deckConfig` in `service/texture.ts`. Mutate it and call `w.floor.drawAll()`. |
 | Doors | `docs/doors.md` | A door is `open`, `locked`, `sealed`, `auto`, `held`... (`w.door`, `w.d`). `w.e.toggleDoor` decides who may open or shut one: anyone may shut a door, only those with keys open a locked one. A held door stays open or shut as it is: only a press, or an npc asked to hold or let go, changes it. Its switches go blue (purple locked). Locks, holds, `auto` and `proximity` are saved per map. A switch's menu (`PickMenu`) sets them. |
 | Walls | `docs/walls.md` | `Walls` draws walls and the lintels over doors (two per door, `lintelSegs`, apart from `wallSegs`). Heights are `wallHeight`, `doorHeight`, `lintelHeight` in `const.env`. A wall's own `meta.y` / `meta.h` is drawn, but sight, the player light and spots still take it as full height. Each wall is darker at its foot and top, in its own colour, so walls blend in any order. |
+| Lighting | `docs/lighting.md` | The player's light: a compute pass sweeps occluders into a polar table each frame, which materials read (`applyLight`, `litBody`). Room lights: lit npcs' rooms and rooms lit by hand are shown besides what the player sees. An npc's exposure adds ambient, the player's light, `litAmbient` whilst lit, and `theme.npcs.sameRoom` in the player's room, eased. |
 | Crisp fills | `docs/crisp-fills.md` | A canvas read back as ids (the room-hit canvas, room slots) is filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids into a third. |
 | Obstacle spritesheets | `docs/starship-sheets.md` | `gen-starship-sheets` packs one rect per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in `sheets.json`. `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any MapEdit obstacle change. |
 | Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. Also how to make a skin: classic arms, opaque overlays, the face layout. |
@@ -75,8 +76,9 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | WebRTC Worlds | `docs/web-rtc-worlds.md` | One World joins another as a client (`w.net`, `use-world-net.ts`), mirroring its npcs, doors, decor and speech over two data channels. Two Worlds on one page may use `MessageChannel`s instead (`PortChannel`): the debug menu's **net** select, else a fallback where WebRTC cannot connect, e.g. in the MCP browser. Across tabs it is always WebRTC. |
 | Decorator panel | `docs/decorator.md` | `packages/ui/decorator` places runtime decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache). The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live doors. Npcs are shown only when chosen. Decor is labelled in the World by **decorations** in the debug **overlay** select. A right-click opens a menu on it (`PickMenu`). |
 | Inventory | `docs/inventory.md` | `WorldHud` is the player's bar: psi, phaser, keys, then carried items (`q` psi, `e` phaser). It reads `w.e.carried`, the defs of decor taken, by npcKey, per World. An item is a runtime decor with `meta.item`. jsh `give` / `drop`, and `inventory` for what a press does. |
-| Engagements | `docs/engagements.md` | One npc shooting another. A shot's outcome (`hit`, `refract`, `armour`) is decided as it locks on: the bar's debug badge sets it, else it hits. Refract: a psi beam from their brow stops it. Armour: it glances off in sparks, and they flinch. Also what a hit does, and targeting: a raised phaser targets whom the muzzle's line crosses, in the rooms its cast passes through (a red dot, pulsing on them), and Space fires, along the line to the first wall, door, obstacle, decor quad (bar switches) or shield if no one is crossed (a red dot marks it, the player's or one given a laser). Who targets whom shows as a dot over them. |
+| Engagements | `docs/engagements.md` | One npc shooting another. A shot's outcome (`hit`, `ghost`, `armour`) is decided as it locks on: the bar's debug badge sets it, else it hits. Ghost: they become a dot screen and it passes through them. Armour: it glances off in sparks, and they flinch. Also what a hit does, and targeting: a raised phaser targets whom the muzzle's line crosses, in the rooms its cast passes through (a red dot, pulsing on them), and Space fires, along the line to the first wall, door, obstacle, decor quad (bar switches) or shield if no one is crossed (a red dot marks it, the player's or one given a laser). Who targets whom shows as a dot over them. |
 | Psi | `docs/psi.md` | Psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`). Raised, their left hand is at their temple, and a press on another npc focuses on them, offering placeholder actions (`psiActions`). A thought (`w.speech.readThought`, jsh `demo_thoughts`) shows over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha. |
+| Audio | `docs/audio.md` | One engine per page (`@npc-cli/ui__audio/engine`, `getAudio()`): the player's footsteps, one per footfall read off their foot bones each tick, and synthesised weapon sounds, both from jsh `sounds` (in the default profile). The Audio pane is its mixing desk. The World never imports it. |
 | Camera | `docs/camera.md` | A custom `MapControls` (`service/camera-controls.ts`). A left drag pans and a right drag turns, swapped by Shift, ctrl or alt. Zoom eases between two stops. `embodied` mode sets what may be steered by zoom, and `w` heads up the screen, snapped near an axis. Following, the view frames the player and their frontier, read off the light sweep. |
 | Shields | `docs/shields.md` | A decor rect with `meta.shield` stands as a see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav worker. One with a frequency (`meta.freq`, jsh `shield`) lets through a phaser granted it (jsh `phaser`), and deactivates any other carried through it. `freq: null` stops all fire and deactivates none. |
 | MapEdit saving | `docs/map-edit.md` | Playground files (key ending `--playground` / `-playground`) save to a localStorage draft, and are the only thing editable in production. Everything else saves to the filesystem in DEV via `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand, and its node NAMES are its tags. |
@@ -85,7 +87,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Deploys and stale tabs | `docs/deploys.md` | A tab can outlive its deploy. Production keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json` also logs each deploy's ui chunk paths and sizes), and `NewVersionToast` offers a reload. Ui chunk names stay put unless their code changed. Keep them so: nothing a ui imports may value-import `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`). `stableEntryPlugin` keeps chunks from importing the entry. |
 | Spots | `docs/spots.md` | Places an npc might stand, per geomorph key (`public/spot/{gmKey}.json`, committed): along walls, at corners, by doors, doables and low cover. Each has its depth at 16 angles, the spots it sees, and what is near. `gen-spots` makes them in Node from a navcat navmesh, run by the dev server whenever `assets.json` changes. The Decorator's **spots** layer shows them, and a press on one shows what it sees. |
 | Scenarios | `docs/scenarios.md` | The Scenario panel, `packages/ui/scenario`, lists three sections. **Scenarios**: npcs interacting, directed by queries over spots and live npc state (hide and seek, guard and intruder, meeting in secret, breach and clear), as yet stubs. **Characters**: name, npc, skin, rooms and door keys, one JSON each in `packages/media/src/scenario/character/{slug}.json`; DEV saves through `/api/scenario` (`vite-plugin-scenario`), a build bundles them as `virtual:scenario`. Their schema and the store shared with the Decorator are in `ui/world` (`scenario.schema.ts`, `scenario-shared.ts`). jsh `act {count,face,hide,avoid,park,pad,nudge} <npc> …` plays their pieces by hand, and `sees rob abe` / `sees --all …` ask who sees whom. **Conversations**: trees (`ui/world/src/service/talk.ts`), played in `WorldSpeech`'s history by thread. |
-| Perception | `docs/perception.md` | Spot and sight queries (`spotQuery`) are answered on the nav worker, beside the plan ops. `worker.main.ts` sets it up per map with what blocks sight, and tells it of doors as they change. `worker/handle-perception.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spots --show`). `sees --debug a b` says and draws why. |
+| Perception | `docs/perception.md` | Spot and sight queries (`spotQuery`) are answered on the nav worker, beside the plan ops. `worker.main.ts` sets it up per map with what blocks sight, and tells it of doors as they change. `worker/handle-perception.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spots show`). `sees --debug a b` says and draws why. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
 | Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
@@ -93,40 +95,10 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 
 Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Use TSL imports (`three/tsl`) for shader nodes, not GLSL strings.
 
-## Player light (visibility sweep)
-
-`service/player-light.ts` answers "can the player see this?" once per frame instead of per fragment.
-
-- **A compute pass** (`Fn(...)().compute(lightAngles)`) sweeps `lightAngles` directions from the player. It writes the distance to the nearest occluder into a polar table, an `attributeArray` storage buffer.
-- `<PlayerLight>` in `WorldView` dispatches it from a `useFrame(..., -2)`, so it lands before the render.
-- **Materials read one entry** of that table:
-  ```
-  v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
-  ```
-- Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances instead would put a shadow edge where neither surface is.
-
-**Occluders**
-- Every wall segment: `gmsData.byKey[gmKey].wallSegs`, transformed to world on map change by `syncWalls`.
-- The **closed** part of each door. It is derived in-shader from the door's `src`/`dst`, `gapAtHighLambda` and live `openRatio`, mirroring `Doors`' own `inGap` test.
-- Windows are excluded on purpose: light passes through glass.
-- Except HULL windows (`meta.hull`). Their centre line `seg` joins the walls, so nothing beyond the hull is lit. A CURVED one (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
-
-**The table is created once** and never rebuilt, so materials reading it survive a map change. Only the occluder buffers are refilled, and nothing but the sweep reads those.
-
-**Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)`, or `applyLightRgba` where the colour carries alpha.
-- Unlit fragments are tinted towards black.
-- A `strength` of `0` is exactly identity, so wrapping is unconditional. It is `0` with no player, or on a WebGL fallback backend, which has no real compute.
-
-**A surface turned away takes less.**
-- `applyLight` accepts a unit outward XZ normal, cut at edge-on. Obstacle skirts pass one per instance.
-- A FIGURE asks `litBody(normalWorld)` for the AMOUNT instead, `0`–`1`. It wraps round them half-Lambert, off a lamp hung in front of the player. Whoever stands on the light has no bearing from it, and the player always does.
-- The lamp hangs off the player's own height (`originY`), so it stays above one lain on a top bunk.
-- Npcs add up their own exposure: `ambient` + that + `litAmbient` whilst lit, all in `const.npc`. A tint would be capped at a 0.4 swing by `unlitTint`.
-
 ## Player input
 
 - **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see `embodied` mode in `docs/camera.md`.
-- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
+- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Gait.** `x` held runs, once the key repeats, and a tap ends the run (`w.player.setGait`, `getGait`). A toast names each.
   - The gait button on `WorldHud`, beside follow, toggles walk and run (`toggleRun`). A ↔ badge shows whilst strafing.
@@ -134,12 +106,15 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
-- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space fires, and with the phaser lowered raises it. See `docs/engagements.md`.
+- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held charges it (the gun brightens and shakes), and let go fires, the beam fuller by the charge. `e` whilst charging cancels into a cooldown, the phaser left raised. The "aim" notice's fire button does the same on touch. Space with the phaser lowered raises it. See `docs/engagements.md`.
 - **Closing the page.** Ctrl or cmd with `w` closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**
   - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
   - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross.
   - On a desktop, a right click that picks something does the same (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
+  - A double tap of `r` starts look mode (`w.player.look`, `toggleLook`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "look" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
+    - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `lookYieldSecs` after. Its notice greys meanwhile.
+  - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
 
 ## Navigation and crowd
 
@@ -175,7 +150,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 ## jsh commands
 
 **Modules**
-- Exports of `packages/cli/src/jsh/world/{act,core,demo,debug,decor,pred,sidestep,spot}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- Exports of `packages/cli/src/jsh/world/{act,audio,core,demo,debug,decor,pred,sidestep,spot}.ts` become shell commands, and hot-reload. `modules.js` lists them.
 - The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
 - Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
 - An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).

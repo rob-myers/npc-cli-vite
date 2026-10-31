@@ -41,8 +41,10 @@ export function createPhaserResources() {
   /** The right forearm's origin, and its world scale by the gun's eased presence — then its world quaternion */
   const gunData = new Float32Array(MAX_PHASERS * 4);
   const quatData = new Float32Array(MAX_PHASERS * 4);
-  const attrs = [srcData, dstData, roomData, gunData, quatData].map((data) =>
-    new THREE.InstancedBufferAttribute(data, 4).setUsage(THREE.DynamicDrawUsage),
+  /** The gun's glow as it charges or cools, then the charge its shot was fired with */
+  const chargeData = new Float32Array(MAX_PHASERS * 2);
+  const attrs = [srcData, dstData, roomData, gunData, quatData, chargeData].map((data) =>
+    new THREE.InstancedBufferAttribute(data, data === chargeData ? 2 : 4).setUsage(THREE.DynamicDrawUsage),
   );
 
   /** `glow` marks the gun's emitter, lit whilst armed */
@@ -72,7 +74,7 @@ export function createPhaserResources() {
   for (const key of ["position", "normal", "uv", "phaserGlow"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
   for (const { start, count, materialIndex } of base.groups) geo.addGroup(start, count, materialIndex);
-  ["phaserSrc", "phaserDst", "phaserRooms", "phaserGun", "phaserQuat"].forEach((key, i) =>
+  ["phaserSrc", "phaserDst", "phaserRooms", "phaserGun", "phaserQuat", "phaserCharge"].forEach((key, i) =>
     geo.setAttribute(key, attrs[i]),
   );
   geo.instanceCount = 0;
@@ -98,6 +100,7 @@ export function createPhaserResources() {
     roomData,
     gunData,
     quatData,
+    chargeData,
     phase: uniform(0),
     color: uniform(new THREE.Color(shaderConfig.color)),
     gunColor: uniform(new THREE.Color(shaderConfig.gunColor)),
@@ -127,7 +130,7 @@ const seenBy =
 
 /** The gun, held along the forearm */
 function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: PhaserView) {
-  const { edgePx, edgeDarken } = shaderConfig;
+  const { edgePx, edgeDarken, chargeBody, chargeEmitter } = shaderConfig;
   const gun = attribute<"vec4">("phaserGun", "vec4");
   const quat = attribute<"vec4">("phaserQuat", "vec4");
   /** `v` turned by the forearm's quaternion */
@@ -149,6 +152,11 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
   /** Lit from above, so its faces tell apart */
   const lit = turned(normalLocal as THREE.Node<"vec3">).dot(normalize(vec3(0.3, 1, 0.2)));
   const vShade = varying(lit.mul(0.3).add(0.7), "vGunShade");
+  /** How much of the beam's colour it gains as it charges: its emitter most. Per vertex, as each box is one or other */
+  const vCharged = varying<"float">(
+    attribute<"vec2">("phaserCharge", "vec2").x.mul(mix(float(chargeBody), float(chargeEmitter), glow)),
+    "vGunCharged",
+  );
   const colorNode = Fn(() => {
     const a = view.objectPick.notEqual(0).select(0, vSeen.mul(view.foldNode));
     Discard(a.lessThan(1 / 512));
@@ -156,8 +164,9 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
     const face = uv();
     const fromEdge = face.min(face.oneMinus()).div(fwidth(face).max(1e-6));
     const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
-    const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), color.mul(gain.min(1)), vArmed);
-    const body = mix(gunColor.mul(vShade), emitter, vGlow);
+    const beamColor = color.mul(gain.min(1));
+    const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), beamColor, vArmed);
+    const body = mix(gunColor.mul(vShade), emitter, vGlow).add(beamColor.mul(vCharged));
     return vec4(body.mul(edge.mul(edgeDarken).oneMinus()), a);
   })();
 
@@ -166,17 +175,21 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
 
 /** The beam's nodes, else with `tip` its end's ball */
 function beamNodes({ phase, color, gain, faint }: PhaserResources, view: PhaserView, tip: boolean) {
-  const { radius, tipRadius, solid, nearMetres, bands } = shaderConfig;
+  const { radius, tipRadius, solid, nearMetres, bands, chargeWiden, chargeBright } = shaderConfig;
   const src = attribute<"vec4">("phaserSrc", "vec4");
   const dst = attribute<"vec4">("phaserDst", "vec4");
   const [shown, locked] = [src.w, dst.w];
+  /** The charge it was fired with */
+  const fired = attribute<"vec2">("phaserCharge", "vec2").y;
   const t = tip ? float(1) : positionLocal.y.add(0.5);
 
   const d = dst.xyz.sub(src.xyz);
   const side = normalize(vec3(d.z.negate(), 0, d.x).add(vec3(1e-4, 0, 0)));
   const normal = normalize(cross(side, d));
   const across = side.mul(positionLocal.x).add(normal.mul(positionLocal.z));
-  const offset = tip ? across.add(normalize(d).mul(positionLocal.y)).mul(locked.mul(tipRadius)) : across.mul(radius);
+  const offset = (
+    tip ? across.add(normalize(d).mul(positionLocal.y)).mul(locked.mul(tipRadius)) : across.mul(radius)
+  ).mul(fired.mul(chargeWiden).add(1));
   const p = mix(src.xyz, dst.xyz, t).add(offset.mul(shown));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
@@ -189,6 +202,8 @@ function beamNodes({ phase, color, gain, faint }: PhaserResources, view: PhaserV
   );
   const vShown = varying(shown, tip ? "vBallShown" : "vBeamShown");
   const vLocked = varying(locked, tip ? "vBallLocked" : "vBeamLocked");
+  /** Its alpha's gain by the charge it was fired with */
+  const vFired = varying(fired.mul(chargeBright).add(1), tip ? "vBallFired" : "vBeamFired");
   const along = varying(t, tip ? "vBallT" : "vBeamT");
   /** Metres short of the end, where the beam meets the body part */
   const toEnd = varying(t.oneMinus().mul(d.length()), tip ? "vBallToEnd" : "vBeamToEnd");
@@ -199,7 +214,8 @@ function beamNodes({ phase, color, gain, faint }: PhaserResources, view: PhaserV
     /** Faint and pulsing on the way, solid as it nears the part */
     const lockedOn = mix(flow.mul(faint), float(solid), smoothstep(0, nearMetres, toEnd).oneMinus());
     const body = tip ? float(solid) : lockedOn.mul(vLocked);
-    const a = view.objectPick.notEqual(0).select(0, vShown.mul(vSeen).mul(body.mul(gain).min(1)).mul(view.foldNode));
+    const bright = body.mul(gain).mul(vFired).min(1);
+    const a = view.objectPick.notEqual(0).select(0, vShown.mul(vSeen).mul(bright).mul(view.foldNode));
     Discard(a.lessThan(1 / 512));
     return vec4(color, a);
   })();
@@ -233,10 +249,16 @@ export const shaderConfig = {
   gunColor: "#5f6875",
   /** Its emitter, deactivated */
   deadColor: "#3d7fd9",
-  paleGunColor: "#474d57",
+  paleGunColor: "#7d8591",
   /** Metres of radius of the beam, and of the ball at its end */
   radius: 0.01,
   tipRadius: 0.035,
+  /** A full charge widens the beam and ball by `1 + chargeWiden`, and its alpha by `1 + chargeBright` */
+  chargeWiden: 1.5,
+  chargeBright: 0.6,
+  /** Charging, how much of the beam's colour the gun gains: its body, and its emitter */
+  chargeBody: 0.25,
+  chargeEmitter: 1.2,
   /** The beam's alpha on the way, and within `nearMetres` of the body part */
   faint: 0.45,
   solid: 0.9,

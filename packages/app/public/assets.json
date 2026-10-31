@@ -4280,7 +4280,12 @@
           "coordinates": [
             [[5.8375, 8.9125], [5.8375, 9.0875], [4.65, 9.0875], [4.65, 8.9125]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "slide": [-1, 0],
+            "auto": true,
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
@@ -33220,7 +33225,12 @@
           "coordinates": [
             [[5.8375, 8.9125], [5.8375, 9.0875], [4.65, 9.0875], [4.65, 8.9125]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "slide": [-1, 0],
+            "auto": true,
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
@@ -65502,7 +65512,12 @@
                 [4.65, 8.9125]
               ]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+            "meta": {
+              "door": true,
+              "slide": [-1, 0],
+              "auto": true,
+              "label": "common"
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -95687,7 +95702,12 @@
       "floor": {"hullFill": "#0b0d10", "deck": "dark"},
       "lights": {"unlit": 1, "unlitTint": "#000", "cone": 0.7},
       "obstacles": {"brightness": 1, "skirtBrightness": 1},
-      "npcs": {"ambient": 0, "brightness": 0.4, "fxStrength": 2},
+      "npcs": {
+        "ambient": 0,
+        "brightness": 0.4,
+        "fxStrength": 2,
+        "sameRoom": 0.2
+      },
       "doors": {
         "brightness": 2,
         "opacity": 0.8,
@@ -95711,7 +95731,12 @@
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
       "lights": {"unlit": 1, "unlitTint": "#111", "cone": 0.5},
       "obstacles": {"brightness": 1.6, "skirtBrightness": 1},
-      "npcs": {"ambient": 0.2, "brightness": 0.5, "fxStrength": 5},
+      "npcs": {
+        "ambient": 0.2,
+        "brightness": 0.5,
+        "fxStrength": 5,
+        "sameRoom": 0.35
+      },
       "doors": {
         "brightness": 10,
         "opacity": 0.75,

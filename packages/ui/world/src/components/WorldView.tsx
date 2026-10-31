@@ -27,7 +27,8 @@ import {
   embodiedSnapCancel,
   embodiedZoomInRate,
   frontierConfig,
-  rgbShiftZoomedOutScale,
+  maxCanvasPixels,
+  rgbShiftPx,
   roomLabel,
   unfoldDelayMs,
 } from "../const.env";
@@ -66,7 +67,7 @@ import { decodeNpcPickId, decodePick, type NpcBodyPart } from "../service/pick";
 import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
-import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-shift";
+import { createRgbShift, type RgbShiftFx } from "../service/rgb-shift";
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import {
@@ -97,6 +98,7 @@ export function WorldView(props: React.PropsWithChildren) {
   const state = useStateRef(
     (): State => ({
       bounds: { x: 0, y: 0, width: 0, height: 0 },
+      pixelRatio: { native: 1, used: 1 },
       canvas: null as any,
       pausedEl: null,
       warmingPick: false,
@@ -226,7 +228,7 @@ export function WorldView(props: React.PropsWithChildren) {
         // before `init`, so attachments are created at the drawing buffer size,
         // rather than at 1x whilst the canvas is already scaled. Matches the `dpr`
         // given to `<Canvas>`, so r3f's own `setPixelRatio` is a no-op.
-        renderer.setPixelRatio(getPixelRatio());
+        renderer.setPixelRatio(state.pixelRatio.used);
 
         await renderer.init();
         return renderer;
@@ -629,8 +631,8 @@ export function WorldView(props: React.PropsWithChildren) {
         // view is no less zoomed out, or in, for standing at a wall
         const min = controls.minDistance;
         const max = controls.maxDistance;
-        /** `0` at the inner zoom stop, `1` at the outer one */
-        const t = clamp01((spherical.radius - min) / (max - min));
+        /** `0` at the inner zoom stop, `1` at the outer one. A raised phaser's follow can make the stops meet */
+        const t = max > min ? clamp01((spherical.radius - min) / (max - min)) : 1;
 
         // a room label thins out as the view comes in: close in the room speaks for itself and its
         // name is mostly in the way. Its SIZE is left alone — being fixed in metres it grows with
@@ -652,7 +654,8 @@ export function WorldView(props: React.PropsWithChildren) {
           (roomLabel.drawnInAlpha + (1 - roomLabel.drawnInAlpha) * drawnOut);
 
         // the channels part less the further out the view is, on the same easing: every mode
-        state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
+        const shiftPx = rgbShiftPx.near + (rgbShiftPx.far - rgbShiftPx.near) * eased;
+        state.rgbShiftFx.setAmount(shiftPx / Math.max(1, w.r3f.size.width));
 
         if (state.cameraMode !== "embodied") return;
 
@@ -836,10 +839,12 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
+          /** The furthest the inner stop goes. A raised phaser's dot may lie past the outer stop */
+          const cap = w.npcFocus?.reachOf(player.key) == null ? outer : outer * frontierConfig.aimOuterScale;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
-          wantedMin = Math.min(outer, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
-          // zoomed out, further by the persisted stops' own ratio
-          wanted = wantedMin * (outer / min);
+          wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
+          // zoomed out, further by the persisted stops' own ratio, but no further than without the dot
+          wanted = Math.max(wantedMin, Math.min(wantedMin, outer) * (outer / min));
         }
         tmpStops[0] = wanted;
         tmpStops[1] = wantedMin;
@@ -965,7 +970,7 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setCameraView(getPresetCameraView(stepCameraPreset(state.cameraView, presetStep)));
             w.menu?.update();
           }
-        } else if (key === "f") {
+        } else if (key === "v") {
           if (e.repeat === false) state.setFollow(!state.follow);
         }
       },
@@ -1666,11 +1671,16 @@ export function WorldView(props: React.PropsWithChildren) {
 
   const [ref, bounds] = useMeasure({ offsetSize: true }); // integers, as for the canvas below
   state.bounds = bounds;
+  state.pixelRatio = getPixelRatio(bounds);
+
+  useEffect(() => void w.menu.update?.(), [state.pixelRatio.used]); // `{}` until WorldMenu mounts
 
   return (
     <div className="size-full" ref={ref}>
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
+        // inherited by the canvas, whose own cursor is set only whilst dragged
+        className={cn(w.player?.look === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
@@ -1680,7 +1690,7 @@ export function WorldView(props: React.PropsWithChildren) {
         onPointerLeave={state.onPointerLeave}
         onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
-        dpr={getPixelRatio()}
+        dpr={state.pixelRatio.used}
         // `offsetSize`: measures with integers avoids rebuilding render target (`RenderTarget.setSize`),
         // which makes the doors flicker, their see-through being a fraction of the MSAA samples
         resize={{ debounce: 0, offsetSize: true }}
@@ -1821,6 +1831,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
 export type State = {
   bounds: Geom.RectJson;
+  /** The device's pixel ratio up to `2`, and the one drawn at: lower past `maxCanvasPixels` */
+  pixelRatio: { native: number; used: number };
   cameraMode: CameraModeType;
   /** Whether the view follows the player — an option of EITHER mode */
   follow: boolean;
@@ -2154,9 +2166,11 @@ function readCameraView() {
   return getSiteStore().read().camera ?? getDefaultCameraView();
 }
 
-/** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
-function getPixelRatio() {
-  return Math.min(Math.max(1, window.devicePixelRatio), 2);
+/** r3f's default `dpr={[1, 2]}`, lowered in quarters to fit `bounds` within `maxCanvasPixels` */
+function getPixelRatio(bounds: Geom.RectJson) {
+  const native = Math.min(Math.max(1, window.devicePixelRatio), 2);
+  const fits = Math.floor(4 * Math.sqrt(maxCanvasPixels / Math.max(1, bounds.width * bounds.height))) / 4;
+  return { native, used: Math.max(1, Math.min(native, fits)) };
 }
 
 /** How quickly the follow camera closes on the player, and how near counts as arrived */

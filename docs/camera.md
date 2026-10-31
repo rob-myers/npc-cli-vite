@@ -74,10 +74,11 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 **Zoomed out, the view frames the player and their frontier.**
 - `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
+- With the phaser raised it reaches at least as far as the red dot, where a shot at no one would land (`w.npcFocus.reachOf`). The inner stop may then go `frontierConfig.aimOuterScale` past the outer stop, to fit the dot in view.
 - `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
 **Follow**
-- `follow` is on or off (`setFollow`). The button, or `f`, toggles it.
+- `follow` is on or off (`setFollow`). The button, or `v`, toggles it.
 - `holdFrontier` (MCP's way to show the player) is a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.

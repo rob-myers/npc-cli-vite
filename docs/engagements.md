@@ -8,44 +8,50 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
-| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`), refract's look (`headAt`) |
-| `ui/world/src/components/NpcRefract.tsx`, `service/refract.ts` | refract: the psi beam, `w.npcRefract` |
+| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`) |
+| `ui/world/src/components/NpcGhost.tsx` | ghost: a dot screen, `w.npcGhost` |
 | `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `refractConfig`, `armourConfig`, `flinchConfig` |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig` |
 
 ## How a shot ends
 
 A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), and takes effect as the beam arrives
 (`strike`), a frame or two later (`fadeSecs / lockRate`). It emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
+Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one. jsh `sounds` plays both: see `docs/audio.md`.
 
 | outcome | the beam | effect |
 | --- | --- | --- |
 | `hit` | lands on the part | see [What a hit does](#what-a-hit-does) |
-| `refract` | stops where their psi beam meets it, before them | see [Refract](#refract) |
+| `ghost` | passes through them, once they are a dot screen | see [Ghost](#ghost) |
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
 
 - **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
 - **The badge** shows on the phaser slot whilst the World menu's debug **hud debug** is on (persisted per World). A
-  click cycles it through `hit`, `refract` and `armour`. Turning hud debug off resets it to `hit`.
+  click cycles it through `hit`, `ghost` and `armour`. Turning hud debug off resets it to `hit`.
 - **A shot whose line meets no part of them**, from the muzzle through the dot, has no outcome and sends no `npc-shot`.
   It passes there, e.g. they moved since it was aimed.
 - **A shot passing them** runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond`
   within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
-- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `refract` or `armour`.
+- **Whom it meets beyond** (`passOn`): those within reach of its target, in turn along its line, short of that wall,
+  by the box test targeting makes (`npcOnRay`). Each takes the badge's outcome, else `hit`. A ghost, or one already,
+  passes it on, kept a ghost. The first that is not stops it, and is landed on (`shot.beyond`). It waits, unseen,
+  until these are found, and every ghost among them is one (`shotWaits`).
+- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `ghost` or `armour`.
 
-### Refract
+### Ghost
 
-Optical refraction by psi, heating the space before them (`w.npcRefract`, `refractConfig` in `const.npc`).
+They become a ghost, and the shot passes through them (`w.npcGhost`, `ghostConfig` in `const.npc`).
 
-- As the shot locks on (`shoot`), they turn to psi: the `psi` clip over the left arm. Their head looks to a point on
-  the shot's line (`anim.headAt`), at random from `standoffM` before where it would land to `reachShare` of the way
-  back, nearer the shooter more often (`towardShooter`).
-- A psi beam leaves their brow and reaches it in `reachSecs`: a tube, brightest down its middle as seen.
-- The phaser's beam ends there, as it reaches out and where it fades (`stopAt`, in `draw`). A glow sits where they
-  meet, flaring as it lands (`struck`).
-- The psi beam fades with the shot, over `outSecs` from the strike. Their head and left hand are then let go.
+- As the shot locks on (`shoot`, `ghost`), their body becomes a dot screen over `inSecs`, its dots fixed on the
+  screen (`dots`, as `dotScreen` in `extra-fx`). It is the npc's `dotScreen` uniform, which leaves their label and
+  outline be.
+- The shot waits, unseen, until they are a ghost (`isGhosting`), then passes through them, as one aimed beside them
+  would (`shot.through`, `shot.past`): on to whom it meets beyond (`passOn`), else the wall. No clip plays, but
+  `npc-shot` is emitted.
+- Meanwhile no phaser targets them (`syncTarget`): its dot passes through them to the wall, or whoever is behind.
+- They stay so `holdSecs` after it strikes, else `missSecs` after it locked on, then come back over `outSecs`.
 
 ### Armour
 
@@ -61,6 +67,7 @@ The shot glances off them (`w.npcArmour`, `armourConfig`).
 Fired with no one targeted (`w.phasers.fireAlong`), a shot runs straight along the aim. Npcs are ignored.
 
 - It is a `FreeShot` beam target, a point rather than an npc. The fades are an npc shot's.
+- Its end keeps its length along the live aim (`freeEndOf`), as the dot does. So a strafe sweeps it along the wall.
 - Once the arm is up, one cast looks along the aim (`castAlong`, over `endsAlong`), from the muzzle's height:
   stood or crouched `headY - gunBelowHead`, sat or lain the tip's. So a crouched shot meets lower obstacles.
 - Tilted (`tilt`), it slopes: `y + d·tan(pitch)` at `d` metres along the ground.
@@ -128,16 +135,24 @@ does one with a laser.
   a shot makes (`partOnRay`), each frame. It culls first: missing a cylinder `cullRadius` about them in plan,
   nothing is tested, else only bones within reach of the ray's heights across them.
 - With no one met, a small red dot marks where a shot at no one would land (`placeEnd`), drawn along the
-  live aim. The player's alone.
+  live aim. The player's alone. None is drawn where nothing stops it (`what: "nothing"`), e.g. out of a hull window.
 - Space fires (`fire`): locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
   is. That point is held in the part's bone frame (the target's `local`, read by `targetPoint`), so it moves with
   them.
 - As it locks on (`shoot`, `meetPart`), the line from the muzzle tip through the dot is tested against each hit
   region's bone, by the box round what it moves most (`partOnRay` in `phaser-beam.ts`). The nearest met is the part
-  hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to the
-  wall beyond. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
+  hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to
+  whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered raises it.
+- **Charging.** Raised, Space held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
+  it (`w.player.releaseCharge`). The shot takes the charge (`takeCharge`, in `arm` and `fireAlong`): `fireCharge`
+  widens and brightens its beam, and `phaser-fired` carries it as `charge`. A tap fires at once, near `0`.
+  - Charging, the gun brightens with the beam's colour and shakes (`glowOf`, the `phaserCharge` attribute).
+  - `e` whilst charging cancels it (`cancelCharge`): it sputters out over `coolSecs`, the phaser left raised, and
+    none charges meanwhile. Focus leaving the World cancels too, as Space's release never comes.
+  - On touch, the "aim" notice has a fire button: held it charges, let go it fires.
+  - It has no effect on the outcome yet.
 - Anyone may target, through jsh: `phaser rob --target`, `tilt:1`, `--fire`, `--cancel`. An npc's ends when
   fired or cancelled, and shows a dot over whom it targets.
 - **Decor** stops a shot, as an obstacle does: a quad, bar a switch or a keycard, e.g. a screen or a box on a

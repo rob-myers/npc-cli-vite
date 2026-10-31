@@ -3,19 +3,70 @@
 - ✅ phaser rethink
   - show red dot when phaser raised
   - intersect npc
+- ✅ phaser red dot supports decor quads too e.g. screen
+- ✅ LightSweep central lighter cone falls off linearly from midline
 
-- faster strafe
-- clean spots in Debug
-- phaser red dot supports decor quads too e.g. screen
-- held open door has blue lock and is persisted
-- bug when move to chair while crouch_half phaser raised
-- LightSweep central lighter cone falls off linearly from midline
-- improve shielded npc animation: larger surface area
+- ✅ faster strafe
+- ✅ clean spots in Debug.tsx
+- ❌ on turn off strafe maintain direction initially?
+- ✅ held open door has blue/purple lock and is persisted
+
+- ✅ simplify npc/decor contextmenu: use psi dialog style
+  - static decor has contextmenu too
+  - switches has contextmenu too
+    - can change door's auto/proximity/held etc.
+
+- ✅ light-theme
+  - laser red dot more visible
+  - cursor dark
+  - selected blue spots more visible
+- ❌ bug when move to chair while crouch_half phaser raised
+- ✅ improve shielded npc animation
+  - refract: psi-power plus intercepting beam from forehead
+  - armour: flinch + ricochet
+
+- ✅ drop dodge animations
+- ✅ light-theme wall skirts/trims look worse now
+
+- ✅ wasd look towards wall should be suppressed while strafe
+
+- ✅ refract -> ghost i.e. green dot-screen effect which ignores phaser
+
+- ✅ ui/audio
+  - player footsteps track feet
+  - nearby npc footsteps
+  - phaser shoot/hit/ghost/armour/wall
+
+- ✅ faced npc too dark when not very far away
+- ✅ look further with phaser raised i.e. at red dot if possible
+
+- ❌ arm bug when put down phaser
+
+- ✅ try look-mode via double-tap r
+  - ✅ fix raised phaser aim
+  - ✅ pad look overrides e.g. put down box
+
+- ✅ refine look-mode
+  - ✅ suppress on npc-pre-do not on leave sit/lie
+  - ✅ suppress on pick-up/put-down
+  - ✅ `pose kate head:rob`
+  - ✅ `pose` cleanup
+  - ✅ `pose kate head:rob --track`
+
+- fix psi arm while seated look to left
+- can hold space for more powerful phaser shot
+- while fully crouched c should totally un-crouch
+- `spots --show` -> `spots shown` and review other code
+- improve keychain icon e.g. lock
 - no park-teleport on collapse i.e. support collapse slow-move (nudged)
-- light-theme wall skirts/trims look worse now
+  - change ceiling hull/nonHull style
 - tab select GlobalMenu should be able to open on enter
 - shade npcs by camera normal
 - consider improve turning animation
+- cleaner inventory toasts
+- armour recharge indicator
+- sound fx: open/close/lock/hold door, sit/stand/lie, phaser raise/lower
+
 
 - 🚧 return to scenarios and start acting them out
   - ✅ support `act {npcKey}` format
@@ -28,6 +79,7 @@
     - can `act count kate from:3 to:0`
   - 🚧 guard-and-intruder sketch
 
+- narrator
 
 ## World
 

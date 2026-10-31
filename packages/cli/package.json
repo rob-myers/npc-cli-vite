@@ -20,6 +20,7 @@
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/theme": "workspace:^",
+    "@npc-cli/ui__audio": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@xterm/addon-fit": "^0.11.0",

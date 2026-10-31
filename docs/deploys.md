@@ -70,6 +70,8 @@ cannot lose them.
 
 - A superseded asset is dropped once 30 deploys have passed since a build last produced it. Only
   a build drops anything, so without deploys nothing leaves.
+- `ASSET_HISTORY_RETAIN=<n>` sets that for one build, e.g. `10`, or `0` to carry nothing. What it
+  drops is gone for good, since later builds only carry what the history still lists.
 - Production only (`CONTEXT=production`). `ASSET_HISTORY_FROM=<url>` points it at any site, e.g. a
   `vite preview` of an earlier build.
 - It never fails a deploy: if the history cannot be fetched it warns and carries nothing.

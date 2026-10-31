@@ -1,4 +1,3 @@
-import { type AmbienceConfig, ambienceUnits } from "./ambience";
 import {
   graphBox,
   graphColours,
@@ -9,9 +8,10 @@ import {
   graphNodes,
   graphSize,
 } from "./graph-data";
+import { type AudioConfig, audioUnits } from "./steps";
 
 /** How the engine's nodes are connected, sound flowing left to right. Dashes move whilst it plays */
-export function Graph({ config, playing }: { config: AmbienceConfig; playing: boolean }) {
+export function Graph({ config, playing }: { config: AudioConfig; playing: boolean }) {
   return (
     <svg
       width={graphSize.width}
@@ -19,7 +19,7 @@ export function Graph({ config, playing }: { config: AmbienceConfig; playing: bo
       viewBox={`0 0 ${graphSize.width} ${graphSize.height}`}
       className="m-auto shrink-0"
       role="img"
-      aria-label="how the ambience's audio nodes are connected"
+      aria-label="how the audio nodes are connected"
     >
       <defs>
         {Object.entries(graphColours).map(([group, colour]) => (
@@ -58,7 +58,7 @@ export function Graph({ config, playing }: { config: AmbienceConfig; playing: bo
 
       {graphNodes.map((node) => {
         const { x, y } = graphCorner(node);
-        const detail = node.keys?.map((key) => `${config[key]}${ambienceUnits[key] ?? ""}`).join("  ") ?? node.note;
+        const detail = node.keys?.map((key) => `${config[key]}${audioUnits[key] ?? ""}`).join("  ") ?? node.note;
         return (
           <g key={node.id}>
             {node.keys && <title>{node.keys.join(", ")}</title>}

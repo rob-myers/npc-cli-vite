@@ -30,7 +30,7 @@ nor phasers are mirrored.
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
 - **gait**, not on a client: walk or run (`w.player.toggleRun()`). A ↔ badge shows whilst strafing, toggled by a double tap of Shift. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim", its "x" lowering the phaser, and "strafe" with no "x": a double tap of Shift does nothing then. "aim blocked", in grey, is whilst something in the way draws the phaser in.
-- **follow**: a press turns it on or off, as `f` does.
+- **follow**: a press turns it on or off, as `v` does.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 
 Rules:
@@ -166,7 +166,7 @@ Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and
 (`docs/npc-strafe.md`).
 
 - The player's `c`: a double tap, a full crouch, as a double tap of Shift toggles strafing. A tap crouches half from
-  standing, stands from half, and comes up to half from full.
+  standing, and stands from either crouch.
 - jsh: `pose rob as:crouch_half`, `pose rob as:crouch_cover`, `pose rob as:breathe`.
 
 - Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and

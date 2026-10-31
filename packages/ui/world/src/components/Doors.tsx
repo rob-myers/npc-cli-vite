@@ -10,6 +10,7 @@ import {
   float,
   lights,
   mix,
+  normalWorld,
   positionLocal,
   screenCoordinate,
   smoothstep,
@@ -651,12 +652,14 @@ export default function Doors() {
       // full whilst picking, else a door could be picked through the samples coverage drops
       mat.opacityNode = w.view.objectPick.equal(0).select(opacity.mul(coverFade), float(1));
     }
+    // its faces lie just proud of the door's own occluder: asked about further off, else they flicker as the light moves
+    const outward = normalWorld.xz.normalize();
     front.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-      w.view.playerLight.applyLightRgba(frontTexel.mul(vec3(state.brightnessNode))),
+      w.view.playerLight.applyLightRgba(frontTexel.mul(vec3(state.brightnessNode)), outward, doorLightLift),
       fade,
     );
     back.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-      w.view.playerLight.applyLightRgba(backTexel.mul(vec3(state.brightnessNode))),
+      w.view.playerLight.applyLightRgba(backTexel.mul(vec3(state.brightnessNode)), outward, doorLightLift),
       fade,
     );
     edge.colorNode = w.view.fadeRoomsFx.fadeRgb(w.view.playerLight.applyLight(color(doorEdgeColor).rgb), fade);
@@ -820,6 +823,8 @@ const tmpV1 = new Vect();
 const tmpV2 = new Vect();
 /** Metres a door is short of its doorway, along it */
 const doorEndGap = 0.01;
+/** Metres off its face a door asks the player light about: past its own occluder by more than the light's softening */
+const doorLightLift = 0.12;
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4();
 

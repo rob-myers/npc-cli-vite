@@ -64,6 +64,13 @@ declare namespace JshCli {
       }
     | { key: "phasers"; armed: boolean; npcKeys: string[] }
     | {
+        /** A shot left `by`'s phaser: at someone as its beam locks on, else along its aim */
+        key: "phaser-fired";
+        by: string;
+        /** How charged it was, `0` to `1`: Space held */
+        charge: number;
+      }
+    | {
         /** `by`'s psi acted on them, a placeholder */
         key: "psi-action";
         by: string;
@@ -120,7 +127,7 @@ declare namespace JshCli {
         key: "update-faded-rooms";
       }
     | {
-        /** The spots overlay was turned on or off — see jsh `spots --show` */
+        /** The spots overlay was turned on or off — see jsh `spots show` */
         key: "spots-overlay";
         shown: boolean;
       }
@@ -143,7 +150,7 @@ declare namespace JshCli {
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };
   /** How a shot at someone ends: one whose line meets no part of them passes, and has none */
-  type ShotOutcome = "hit" | "refract" | "armour";
+  type ShotOutcome = "hit" | "ghost" | "armour";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

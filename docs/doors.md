@@ -36,7 +36,7 @@ Likewise we could have `auto` doors which are not `proximity` i.e. automatically
 
 - `w.e.toggleLock`, jsh `lock` and `unlock`.
 - The player's keys slot locks or unlocks the nearest door they hold keys to.
-- A long press on the door itself locks or unlocks it, keyless.
+- A long press on the door itself, or on a switch or door spot whilst it is shut, locks or unlocks it, keyless.
 - An unlocked door that is open starts its usual close.
 
 ## Holding
@@ -49,7 +49,7 @@ Otherwise only a press, jsh without `as:`, or an npc asked to hold or let go cha
 
 - `w.door.setHeld(door, held)` holds it as it is, or lets it go. Let go whilst open, it starts its usual close (`try-close-door`).
 - `w.e.toggleDoor(gdKey, { open, close, held, npcKey })` opens or shuts it, then holds it or lets it go.
-- A long press on a switch or a door spot holds the door, or lets it go.
+- A long press on a switch or a door spot whilst the door is open holds it, or lets it go.
 - An npc asked to open or shut a held door is refused, unless walking into it, or also asked to hold it or let it go.
 
 ## Switches

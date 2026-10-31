@@ -21,7 +21,7 @@ import {
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
-import { alwaysShownSlot, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
@@ -51,28 +51,37 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
       },
-      after(secs, fn) {
-        const timer = { at: w.gameTime.now() + secs, fn };
-        state.timers.add(timer);
-        return () => void state.timers.delete(timer);
-      },
-      forgetNpcAtDoors(npcKey) {
-        const doors = state.npcToDoors[npcKey];
-        if (doors === undefined) return;
-        delete state.npcToDoors[npcKey];
-        const gdKeys = new Set(doors.nearby);
-        if (doors.inside !== null) gdKeys.add(doors.inside);
-        for (const gdKey of gdKeys) {
-          state.doorToNpcs[gdKey]?.nearby.delete(npcKey);
-          state.doorToNpcs[gdKey]?.inside.delete(npcKey);
-          if (w.door.byKey[gdKey]?.open === true) state.tryCloseDoor(gdKey);
-        }
-      },
       addKeyedListener(key, listener) {
         state.keyedListener.set(key, listener);
       },
       addKeyedTick(key, tick) {
         state.keyedTick.set(key, tick);
+      },
+      after(secs, fn) {
+        const timer = { at: w.gameTime.now() + secs, fn };
+        state.timers.add(timer);
+        return () => void state.timers.delete(timer);
+      },
+      besideDoable(at, toward, grKey) {
+        const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
+        let best = { p: null as null | Geom.VectJson, cost: Infinity };
+        for (let k = 0; k < besideRays; k++) {
+          const turn = (2 * Math.PI * Math.min(k, besideRays - k)) / besideRays;
+          const angle = ahead + (2 * Math.PI * k) / besideRays;
+          // along this way, the first point in their room: none past the best so far
+          for (
+            let s = besideStep;
+            s <= w.npc.config.dist.doableLook && s + besideTurnCost * turn < best.cost;
+            s += besideStep
+          ) {
+            const p = state.navNear({ x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
+            if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) {
+              best = { p, cost: s + besideTurnCost * turn };
+              break;
+            }
+          }
+        }
+        return best.p;
       },
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
@@ -112,6 +121,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      dispatchToKeyedListeners(e) {
+        for (const listener of state.keyedListener.values()) {
+          listener(e, w);
+        }
       },
       dropItem(npcKey, name) {
         const had = state.carried[npcKey];
@@ -156,195 +170,22 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         });
         return true;
       },
-      dispatchToKeyedListeners(e) {
-        for (const listener of state.keyedListener.values()) {
-          listener(e, w);
-        }
-      },
       findPathAsync(srcGrKey, dstGrKey, opts) {
         return w.gmRoomGraph.findPathAsync(srcGrKey, dstGrKey, {
           setNodeWeights: opts?.setNodeWeights,
         });
       },
-      getPoint(npcKey) {
-        const npc = w.npc.get(npcKey);
-        return {
-          x: npc.position.x,
-          y: npc.position.z,
-          meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
-        };
-      },
-      async move(opts) {
-        const { npcKey, to, near, shove, far } = opts;
-        const npc = w.npc.get(npcKey);
-
-        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
-          throw Error("hurt");
+      forgetNpcAtDoors(npcKey) {
+        const doors = state.npcToDoors[npcKey];
+        if (doors === undefined) return;
+        delete state.npcToDoors[npcKey];
+        const gdKeys = new Set(doors.nearby);
+        if (doors.inside !== null) gdKeys.add(doors.inside);
+        for (const gdKey of gdKeys) {
+          state.doorToNpcs[gdKey]?.nearby.delete(npcKey);
+          state.doorToNpcs[gdKey]?.inside.delete(npcKey);
+          if (w.door.byKey[gdKey]?.open === true) state.tryCloseDoor(gdKey);
         }
-        const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
-        if (doResult.type === "occupied") {
-          throw Error("occupied");
-        }
-
-        // so can resume doable or nav
-        const dst = (npc.last.dst = helper.parseGroundPoint(to));
-        npc.rejectAll(new Error("move again"));
-        /** Near enough to fade onto or off a doable, else they walk the rest */
-        const fades = far === true || npc.distanceTo(groundPoint) <= w.npc.config.dist.doableLook;
-
-        // doable overrides navigable
-        if (doResult.type !== "none") {
-          return state.moveOntoDoable(npc, dst, doResult, fades, opts);
-        }
-        if (result.success === false) {
-          throw Error("not navigable");
-        }
-
-        if (npc.agentId === null) {
-          // fade off the doable: onto the target if near, else beside it, walking on
-          if (fades) {
-            return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
-          }
-          await state.stepOff(npc, groundPoint);
-          if (npc.last.dst !== dst) {
-            return; // another move took them over
-          }
-        }
-
-        await state.walkTo(npc, groundPoint, result, opts);
-      },
-      besideDoable(at, toward, grKey) {
-        const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
-        let best = { p: null as null | Geom.VectJson, cost: Infinity };
-        for (let k = 0; k < besideRays; k++) {
-          const turn = (2 * Math.PI * Math.min(k, besideRays - k)) / besideRays;
-          const angle = ahead + (2 * Math.PI * k) / besideRays;
-          // along this way, the first point in their room: none past the best so far
-          for (
-            let s = besideStep;
-            s <= w.npc.config.dist.doableLook && s + besideTurnCost * turn < best.cost;
-            s += besideStep
-          ) {
-            const p = state.navNear({ x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
-            if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) {
-              best = { p, cost: s + besideTurnCost * turn };
-              break;
-            }
-          }
-        }
-        return best.p;
-      },
-      async moveOntoDoable(npc, dst, doResult, fades, { fast, strafe }) {
-        /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
-        npc.anim.moving = false;
-        if (doResult.type === "use-current") return void (await w.npc.spawn({ npcKey: npc.key, at: dst })); // respawn
-
-        const { dist, time } = w.npc.config;
-        const beside = fades ? null : state.besideDoable(dst, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
-        if (beside !== null) {
-          if (npc.agentId === null) await state.stepOff(npc, beside); // off their own first, so they walk
-          if (npc.last.dst !== dst) return;
-          const walk = state.move({ npcKey: npc.key, to: beside, fast, strafe }); // up to it first, on their side
-          npc.last.dst = dst; // set by the walk: a pause resumes this move
-          await walk;
-          if (npc.last.dst !== dst) return;
-        }
-        w.events.next({ key: "npc-pre-do", npcKey: npc.key });
-
-        if (w.npc.npcToDoable[npc.key] === null && npc.distanceTo(dst) < dist.doableLook) {
-          // look when standing nearby
-          // else an npc interrupted mid-move keeps its momentum and slides through the look
-          w.npc.clearMomentum(npc);
-          await npc.look({ at: dst, minMs: time.look * 1000 });
-        }
-        await npc.fadeSpawn({ at: dst });
-      },
-      moveTarget(npcKey, to, near) {
-        let groundPoint = helper.parseGroundPoint(to);
-        let result = w.npc.getClosestPoly(groundPoint, 0.5);
-        const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey, groundPoint);
-        if (doResult.type === "none") {
-          // `near`: as near as they can get, e.g. beside the table picked
-          if (near === true && result.success === false) result = w.npc.getClosestPoly(groundPoint, 4);
-          // a target off the mesh could never be arrived at: the mesh nearest it instead
-          if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
-        }
-        return { groundPoint, result, doResult };
-      },
-      navNear(p, within = 4) {
-        const near = w.npc.getClosestPoly(p, within);
-        return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
-      },
-      async stepOff(npc, toward) {
-        const beside = state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey);
-        if (beside === null) throw Error("not navigable");
-        await npc.fadeSpawn({ at: beside, facing: toward });
-      },
-      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }) {
-        const { config } = w.npc;
-        w.npc.setNpcDo(npc.key, null); // in case do=stand
-
-        await npc.ensureLegalPosition();
-
-        try {
-          // navigation unreachable relative to locked doors?
-          const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
-          npc.last.unreachableResult = unreachableResult;
-
-          if (unreachableResult !== null) {
-            // destination unreachable
-            if (npc.distanceTo(unreachableResult.nearbyPoint) < config.dist.blockedLook) {
-              // too close: look instead of walk
-              await npc.look({ at: unreachableResult.nearbyPoint, minMs: config.time.look * 1000 });
-              return;
-            }
-            // change destination to point near eventual locked door
-            const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
-            groundPoint = helper.parseGroundPoint(nearDoor.position);
-          }
-
-          // an aim held until rest, e.g. a sidestep's, gives way to a new move
-          if (strafe !== true && npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
-          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
-          npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
-          npc.anim.backwards =
-            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
-          if (fast !== undefined) npc.anim.hurry = fast;
-          npc.anim.aimAt({ groundPoint, result });
-          await w.npc.turnBeforeMoving(npc);
-          npc.anim.startMoving(arrive);
-
-          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
-
-          await new Promise<string>((resolve, reject) => {
-            npc.resolve.move = resolve;
-            npc.reject.move = reject;
-          });
-        } catch (e) {
-          if (e instanceof Error && e.message === "move again") {
-            return; // interrupting move owns npc now
-          }
-          if (!(e instanceof Error && e.message === "look again")) {
-            npc.anim.startIdle({ force: true }); // delegated to look
-          }
-          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
-          throw e;
-        }
-      },
-      npcCanAccess(npcKey, gdKey, planning = true) {
-        const door = w.d[gdKey];
-        if (!door || door.locked === false) {
-          return true; // absent onchange map
-        }
-        // An npc without access can slip through a locked door whilst it stands OPEN, but only
-        // from right beside it. Asked whether they could get somewhere — rather than whether they
-        // could step through from where they are standing — the proximity is beside the point:
-        // they would walk up to it first, and satisfy it on arrival
-        if (door.open === true && (planning === true || state.doorToNpcs[door.gdKey]?.nearby.has(npcKey))) {
-          return true;
-        }
-        // only if npc has been granted access
-        return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       getDropSpot(npcKey, def) {
         const [npc, room] = [w.n?.[npcKey], w.npc.npcToRoom.get(npcKey)];
@@ -399,6 +240,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         return best;
       },
+      getHeldDoors(npcKey) {
+        const held = Object.entries(state.npcToAccess[npcKey] ?? {}).flatMap(([gdKey, has]) =>
+          has === true ? gdKey : [],
+        );
+        return held.length === 0 ? undefined : (held as Geomorph.GmDoorKey[]);
+      },
       getItemDefAt(def, at) {
         const kind = String(def.meta?.item);
         let key = def.key;
@@ -411,52 +258,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const [a, b, c, d] = at.linear ?? def.transform ?? [1, 0, 0, 1];
         const transform: Geom.SixTuple = [a, b, c, d, at.x - (a * halfW + c * halfH), at.y - (b * halfW + d * halfH)];
         return { ...def, key, transform, y3d: at.y3d + (def.meta?.h ?? decorCuboidHeight) }; // its top: stood on it
-      },
-      getHeldDoors(npcKey) {
-        const held = Object.entries(state.npcToAccess[npcKey] ?? {}).flatMap(([gdKey, has]) =>
-          has === true ? gdKey : [],
-        );
-        return held.length === 0 ? undefined : (held as Geomorph.GmDoorKey[]);
-      },
-      giveItem(npcKey, name, extra) {
-        const had = (state.carried[npcKey] ??= { items: [] });
-        if (name === "psi") {
-          had.psi = true;
-        } else {
-          if (state.hasRoomFor(npcKey, name) === false) return false;
-          let key = `${name}-0`;
-          for (let i = 1; had.items.some((def) => def.key === key); i++) key = `${name}-${i}`;
-          had.items.push(persisted.createItemDef(name, key, extra));
-        }
-        state.onCarriedChange(npcKey);
-        return true;
-      },
-      handle(npcKey, run) {
-        if (state.handling.has(npcKey)) return; // one thing at a time
-        state.handling.add(npcKey);
-        void run().finally(() => state.handling.delete(npcKey));
-      },
-      setPsi(active, ...npcKeys) {
-        for (const npcKey of npcKeys) {
-          const anim = w.n?.[npcKey]?.anim;
-          if (anim === undefined || active === state.isPsiRaised(npcKey)) continue;
-          if (active === false) w.npcFocus?.unfocus(npcKey);
-          anim.setBreathing(active);
-          anim.setUpper(active ? "psi" : null, { side: "left", past: true, onHead: true });
-        }
-        w.r3f?.invalidate();
-        w.hud?.update();
-      },
-      isPsiRaised(npcKey = w.player.key) {
-        const arm = w.n?.[npcKey]?.anim.upperLeft;
-        return arm?.key === "psi" && arm.target === 1;
-      },
-      roomsInView(grKey) {
-        // a new map has a new graph
-        if (state.inView.graph !== w.gmRoomGraph) state.inView = { graph: w.gmRoomGraph, byRoom: new Map() };
-        let rooms = state.inView.byRoom.get(grKey);
-        if (rooms === undefined) state.inView.byRoom.set(grKey, (rooms = roomsInViewFrom(w, grKey)));
-        return rooms;
       },
       getNpcsInReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
@@ -476,6 +277,32 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           .flatMap((node) => (node.type === "room" ? [...(w.npc.roomToNpcs[node.gmId]?.[node.roomId] ?? [])] : []))
           .flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
       },
+      getPoint(npcKey) {
+        const npc = w.npc.get(npcKey);
+        return {
+          x: npc.position.x,
+          y: npc.position.z,
+          meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
+        };
+      },
+      giveItem(npcKey, name, extra) {
+        const had = (state.carried[npcKey] ??= { items: [] });
+        if (name === "psi") {
+          had.psi = true;
+        } else {
+          if (state.hasRoomFor(npcKey, name) === false) return false;
+          let key = `${name}-0`;
+          for (let i = 1; had.items.some((def) => def.key === key); i++) key = `${name}-${i}`;
+          had.items.push(persisted.createItemDef(name, key, extra));
+        }
+        state.onCarriedChange(npcKey);
+        return true;
+      },
+      handle(npcKey, run) {
+        if (state.handling.has(npcKey)) return; // one thing at a time
+        state.handling.add(npcKey);
+        void run().finally(() => state.handling.delete(npcKey));
+      },
       hasItem(npcKey, name) {
         const had = state.carried[npcKey];
         return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
@@ -485,32 +312,104 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (kind === "phaser") return items.every((def) => def.meta?.item !== "phaser");
         return items.filter((def) => def.meta?.item !== "phaser").length < inventoryConfig.maxCarried;
       },
-      onCarriedChange(npcKey) {
-        const had = state.carried[npcKey];
-        if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
-        state.persistCarried();
-        w.hud?.update();
-        w.events.next({ key: "carried", npcKey });
+      isPsiRaised(npcKey = w.player.key) {
+        const arm = w.n?.[npcKey]?.anim.upperLeft;
+        return arm?.key === "psi" && arm.target === 1;
       },
-      revokeItem(npcKey, name) {
-        if (name === "psi") return state.dropItem(npcKey, name);
-        const items = state.carried[npcKey]?.items ?? [];
-        const index = items.findIndex((def) => def.meta?.item === name);
-        if (index === -1) return false;
-        items.splice(index, 1);
-        if (name === "phaser") w.phasers?.disarm(npcKey);
-        state.onCarriedChange(npcKey);
-        return true;
-      },
-      async openDoorwaysWithNpcs() {
-        await w.physics?.settle();
-        for (const npcKey in w.n) {
-          const gdKey = state.npcToDoors[npcKey]?.inside;
-          if (gdKey === null || gdKey === undefined) continue;
-          const door = w.d[gdKey];
-          if (door === undefined || w.door.snapOpen(door) === false) continue;
-          state.tryCloseDoor(gdKey);
+      async move(opts) {
+        const { npcKey, to, near, shove, far } = opts;
+        const npc = w.npc.get(npcKey);
+
+        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
+          throw Error("hurt");
         }
+        const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
+        if (doResult.type === "occupied") {
+          throw Error("occupied");
+        }
+
+        // so can resume doable or nav
+        const dst = (npc.last.dst = helper.parseGroundPoint(to));
+        npc.rejectAll(new Error("move again"));
+        /** Near enough to fade onto or off a doable, else they walk the rest */
+        const fades = far === true || npc.distanceTo(groundPoint) <= w.npc.config.dist.doableLook;
+
+        // doable overrides navigable
+        if (doResult.type !== "none") {
+          return state.moveOntoDoable(npc, dst, doResult, fades, opts);
+        }
+        if (result.success === false) {
+          throw Error("not navigable");
+        }
+
+        if (npc.agentId === null) {
+          // fade off the doable: onto the target if near, else beside it, walking on
+          if (fades) {
+            return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
+          }
+          await state.stepOff(npc, groundPoint);
+          if (npc.last.dst !== dst) {
+            return; // another move took them over
+          }
+        }
+
+        await state.walkTo(npc, groundPoint, result, opts);
+      },
+      async moveOntoDoable(npc, dst, doResult, fades, { fast, strafe }) {
+        /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
+        npc.anim.moving = false;
+        if (doResult.type === "use-current") return void (await w.npc.spawn({ npcKey: npc.key, at: dst })); // respawn
+
+        const { dist, time } = w.npc.config;
+        const beside = fades ? null : state.besideDoable(dst, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
+        if (beside !== null) {
+          if (npc.agentId === null) await state.stepOff(npc, beside); // off their own first, so they walk
+          if (npc.last.dst !== dst) return;
+          const walk = state.move({ npcKey: npc.key, to: beside, fast, strafe }); // up to it first, on their side
+          npc.last.dst = dst; // set by the walk: a pause resumes this move
+          await walk;
+          if (npc.last.dst !== dst) return;
+        }
+        w.events.next({ key: "npc-pre-do", npcKey: npc.key });
+
+        if (w.npc.npcToDoable[npc.key] === null && npc.distanceTo(dst) < dist.doableLook) {
+          // look when standing nearby
+          // else an npc interrupted mid-move keeps its momentum and slides through the look
+          w.npc.clearMomentum(npc);
+          await npc.look({ at: dst, minMs: time.look * 1000 });
+        }
+        await npc.fadeSpawn({ at: dst });
+      },
+      moveTarget(npcKey, to, near) {
+        let groundPoint = helper.parseGroundPoint(to);
+        let result = w.npc.getClosestPoly(groundPoint, 0.5);
+        const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey, groundPoint);
+        if (doResult.type === "none") {
+          // `near`: as near as they can get, e.g. beside the table picked
+          if (near === true && result.success === false) result = w.npc.getClosestPoly(groundPoint, 4);
+          // a target off the mesh could never be arrived at: the mesh nearest it instead
+          if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
+        }
+        return { groundPoint, result, doResult };
+      },
+      navNear(p, within = 4) {
+        const near = w.npc.getClosestPoly(p, within);
+        return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
+      },
+      npcCanAccess(npcKey, gdKey, planning = true) {
+        const door = w.d[gdKey];
+        if (!door || door.locked === false) {
+          return true; // absent onchange map
+        }
+        // An npc without access can slip through a locked door whilst it stands OPEN, but only
+        // from right beside it. Asked whether they could get somewhere — rather than whether they
+        // could step through from where they are standing — the proximity is beside the point:
+        // they would walk up to it first, and satisfy it on arrival
+        if (door.open === true && (planning === true || state.doorToNpcs[door.gdKey]?.nearby.has(npcKey))) {
+          return true;
+        }
+        // only if npc has been granted access
+        return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       async onBootstrapMap() {
         const { player } = w;
@@ -585,6 +484,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.showCentreHint();
         }
       },
+      onCarriedChange(npcKey) {
+        const had = state.carried[npcKey];
+        if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
+        state.persistCarried();
+        w.hud?.update();
+        w.events.next({ key: "carried", npcKey });
+      },
       onChangeMap() {
         w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
         state.changingMap = true;
@@ -615,95 +521,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // arm "map-settled" ahead of the world query
         w.setNextPending({ assets: true });
       },
-      onEditMap() {
-        state.recomputeNpcRoomRelationships();
-        state.syncLitRooms();
-        // WorldView's own `gmsHash` effect syncs the fade, snapped
-        state.rejectPendingUnreachable(new Error("map edited"));
-      },
-      reseatAllNpcs() {
-        if (w.client === true) return; // mirrors have no agents
-
-        for (const npc of Object.values(w.n)) {
-          if (npc.agentId === null) continue;
-
-          const at = npc.point;
-          const onNav = w.npc.getClosestPoly(at, 0.5);
-          // `at` overrides unless their floor went, when the nearest that remains takes them
-          const result = onNav.success === true ? onNav : w.npc.getClosestPoly(at, 4);
-          w.npc.placeNpcAt(npc, result, onNav.success === true || result.success === false ? at : undefined);
-
-          if (result.success === false) {
-            state.strandNpc(npc); // left agentless where they stood
-          } else if (npc.isMoving() === true) {
-            // re-aim under the promise `move` awaits, so the walk carries on
-            const groundPoint = helper.parseGroundPoint(npc.last.dst);
-            const dstResult = w.npc.getClosestPoly(groundPoint, 0.5);
-            if (dstResult.success === true) {
-              npc.anim.aimAt({ groundPoint, result: dstResult });
-              npc.anim.startMoving(npc.anim.arrive);
-            } else {
-              npc.rejectAll(Error("map edited")); // `move` idles them and rethrows
-            }
-          }
-        }
-      },
-      standUpStrandedDoers() {
-        // navmesh and decor rebuild on separate queries, so whichever lands last does this
-        if (w.client === true || w.npc === undefined || w.decor?.ready !== true || w.nav.navMesh === undefined) {
-          return;
-        }
-        for (const npc of Object.values(w.n)) {
-          const decorKey = w.npc.npcToDoable[npc.key];
-          if (typeof decorKey !== "string" || w.decor.byKey[decorKey] !== undefined) {
-            continue; // idle, or what they are doing is still there
-          }
-          const near = w.npc.getClosestPoly(npc.point, 4); // an edit took their decor
-          if (near.success === false) state.strandNpc(npc);
-          // faded, as any teleport; nothing waits on it, and a doer has no agent to go stale
-          else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
-        }
-      },
-      strandNpc(npc) {
-        // nowhere to stand, and no "map-settled" follows an edit to put the player back
-        if (npc.key !== w.player.key) return void state.removeNpcs(npc.key);
-        void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
-      },
-      restoreAccess(saved) {
-        for (const gdKey of saved.access ?? []) {
-          if (gdKey in w.door.byKey) state.setAccess(saved.key, gdKey as Geomorph.GmDoorKey, true);
-        }
-      },
-      setAccess(npcKey, gdKey, held) {
-        (state.npcToAccess[npcKey] ??= {})[gdKey] = held;
-        if (npcKey === w.player.key) w.hud?.update();
-      },
-      syncDoorsState() {
-        for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
-          if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
-        }
-        for (const gdKey of Object.keys(state.doorToNpcs) as Geomorph.GmDoorKey[]) {
-          if (w.d[gdKey] === undefined) delete state.doorToNpcs[gdKey];
-        }
-        for (const [npcKey, access] of Object.entries(state.npcToAccess)) {
-          for (const gdKey of Object.keys(access) as Geomorph.GmDoorKey[]) {
-            if (w.d[gdKey] === undefined) delete state.npcToAccess[npcKey][gdKey];
-          }
-        }
-        for (const doors of Object.values(state.npcToDoors)) {
-          if (doors.inside !== null && w.d[doors.inside] === undefined) doors.inside = null;
-          for (const gdKey of doors.nearby) {
-            if (w.d[gdKey] === undefined) doors.nearby.delete(gdKey);
-          }
-        }
-      },
       onChangeTheme() {
         const { obstacles, doors, npcs, lights, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness, obstacles.skirtBrightness);
         w.door.setBrightness(doors.brightness);
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
-        w.npc?.setAmbient(npcs.ambient);
+        w.npc?.setAmbient(npcs.ambient, npcs.sameRoom);
         w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.phasers?.syncTheme();
@@ -718,26 +542,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.playerLight.coneAmount.value = lights.cone;
         // w.view.forceUpdate();
       },
-      openPickMenu(e) {
-        const { meta } = e;
-        const point = { x: e.x, y: e.y, z: e.z };
-        if (meta.type === "npc") w.pickMenu.open({ npcKey: meta.npcKey }, { point, part: meta.bodyPart });
-        else if (meta.type === "door") w.pickMenu.open({ gdKey: meta.gdKey }, { point });
-        else if (meta.type === "decor" && typeof meta.decorKey === "string") {
-          const gdKey = w.helper.isGmDoorKey(meta.gdKey) ? meta.gdKey : undefined; // a switch
-          w.pickMenu.open({ decorKey: meta.decorKey, gdKey }, { point });
-        }
-      },
-      onPickDoor(e) {
-        const { meta } = e;
-        if (meta.type !== "door" && meta.type !== "decor" && meta.type !== "spot") return;
-        if (w.helper.isGmDoorKey(meta.gdKey) === false || e.clickId !== undefined) return; // e.g. `pick 1`
-        if (meta.type === "spot" && e.rightDown === true) return; // a spot's right click chooses it
-        const door = w.door.byKey[meta.gdKey];
-        // a long press on a switch or spot holds it as it is, or lets it go. On the door, it locks it keyless
-        if (e.longDown !== true) state.toggleDoor(meta.gdKey);
-        else if (meta.type === "door") state.toggleLock(meta.gdKey, {});
-        else if (door !== undefined) w.door.setHeld(door, !door.held);
+      onEditMap() {
+        state.recomputeNpcRoomRelationships();
+        state.syncLitRooms();
+        // WorldView's own `gmsHash` effect syncs the fade, snapped
+        state.rejectPendingUnreachable(new Error("map edited"));
       },
       onEnterCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
@@ -912,6 +721,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "phasers":
+          case "phaser-fired":
           case "phaser-struck":
             break;
           case "update-faded-rooms":
@@ -1049,9 +859,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "npc-pre-do":
             if (w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
+            if (w.player.is(e.npcKey)) w.player.setDoing(true);
             break;
           case "npc-do":
             if (e.decorKey !== null && w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
+            if (w.player.is(e.npcKey)) w.player.setDoing(false);
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both
@@ -1071,6 +883,37 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           default:
             throw new ExhaustiveError(e);
+        }
+      },
+      onPickDoor(e) {
+        const { meta } = e;
+        if (meta.type !== "door" && meta.type !== "decor" && meta.type !== "spot") return;
+        if (w.helper.isGmDoorKey(meta.gdKey) === false || e.clickId !== undefined) return; // e.g. `pick 1`
+        if (meta.type === "spot" && e.rightDown === true) return; // a spot's right click chooses it
+        const door = w.door.byKey[meta.gdKey];
+        // a long press on a switch or spot holds an open door, or lets it go, and locks a shut one keyless
+        if (e.longDown !== true) state.toggleDoor(meta.gdKey);
+        else if (meta.type === "door" || door?.open === false) state.toggleLock(meta.gdKey, {});
+        else if (door !== undefined) w.door.setHeld(door, !door.held);
+      },
+      async openDoorwaysWithNpcs() {
+        await w.physics?.settle();
+        for (const npcKey in w.n) {
+          const gdKey = state.npcToDoors[npcKey]?.inside;
+          if (gdKey === null || gdKey === undefined) continue;
+          const door = w.d[gdKey];
+          if (door === undefined || w.door.snapOpen(door) === false) continue;
+          state.tryCloseDoor(gdKey);
+        }
+      },
+      openPickMenu(e) {
+        const { meta } = e;
+        const point = { x: e.x, y: e.y, z: e.z };
+        if (meta.type === "npc") w.pickMenu.open({ npcKey: meta.npcKey }, { point, part: meta.bodyPart });
+        else if (meta.type === "door") w.pickMenu.open({ gdKey: meta.gdKey }, { point });
+        else if (meta.type === "decor" && typeof meta.decorKey === "string") {
+          const gdKey = w.helper.isGmDoorKey(meta.gdKey) ? meta.gdKey : undefined; // a switch
+          w.pickMenu.open({ decorKey: meta.decorKey, gdKey }, { point });
         }
       },
       persistCarried() {
@@ -1102,6 +945,62 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             })),
           },
         });
+      },
+      postNpcTick() {
+        if (state.timers.size > 0) {
+          const now = w.gameTime.now();
+          for (const timer of state.timers) {
+            if (timer.at > now) continue;
+            state.timers.delete(timer);
+            timer.fn();
+          }
+        }
+        state.syncDoorways();
+        // before the shadows, which read the slot it settles — and every tick, since an npc waiting
+        // on a room to arrive takes it the moment it lands rather than at the next door event
+        state.syncNpcRoomSlots();
+        w.shadows?.onTick();
+        w.rings?.onTick();
+        w.breaths?.onTick();
+        w.npcGhost?.onTick();
+        w.npcArmour?.onTick();
+        w.phasers?.onTick();
+        w.shields?.onTick();
+        w.player?.aimAtPointer();
+        w.player?.syncRun();
+        for (const tick of state.keyedTick.values()) tick(w);
+      },
+      async raycast(origSrc, origDst, { offMap = false } = {}) {
+        const src = helper.parseGroundPoint(origSrc);
+        const dst = helper.parseGroundPoint(origDst);
+
+        // Both points must reside in a room or doorway
+        const srcGrId = w.findRoomContaining(src, true);
+        if (srcGrId === null) {
+          throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
+        } else if (offMap === false && w.findRoomContaining(dst, true) === null) {
+          throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
+        }
+        if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
+
+        const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
+        const signal = new AbortController().signal;
+        return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+      },
+      async raycasts(segs, { offMap = false } = {}) {
+        const casts: WW.GetRaycasts["casts"] = [];
+        /** Each seg's index in `casts`: `-1` if not sent */
+        const sent = segs.map((seg) => {
+          const grKey = seg === null ? undefined : w.findRoomContaining(seg.src, true)?.grKey;
+          if (seg === null || grKey === undefined) return -1;
+          if (offMap === false && w.findRoomContaining(seg.dst, true) === null) return -1;
+          return casts.push({ src: seg.src, dst: seg.dst, grKey }) - 1;
+        });
+        if (casts.length === 0 || w.navWorker.workers === null) return segs.map(() => null);
+        const msg: WW.GetRaycasts = { type: "get-raycasts", uid: shortUuid.generate(), casts };
+        const signal = new AbortController().signal;
+        const output = (await w.navWorker.request(msg, signal, "fast")) as (null | JshCli.RaycastResult)[];
+        return sent.map((i) => (i === -1 ? null : output[i]));
       },
       async reachFor(npc, clip, at, act, side) {
         // turned to it, unless it is at their own feet
@@ -1161,42 +1060,56 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (before !== null && anim.upper.aim === aim) anim.upper.aim = null;
         if (w.n[key] === npc) rearm?.();
       },
-      async raycast(origSrc, origDst, { offMap = false } = {}) {
-        const src = helper.parseGroundPoint(origSrc);
-        const dst = helper.parseGroundPoint(origDst);
-
-        // Both points must reside in a room or doorway
-        const srcGrId = w.findRoomContaining(src, true);
-        if (srcGrId === null) {
-          throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
-        } else if (offMap === false && w.findRoomContaining(dst, true) === null) {
-          throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
+      recomputeNpcRoomRelationships() {
+        w.npc.roomToNpcs = w.gms.map(() => []);
+        state.externalNpcs = new Set();
+        // every npc: a map edit can drop a whole gmId, and one left out keeps a stale `grKey`
+        for (const npc of Object.values(w.n)) {
+          state.tryPutNpcIntoRoom(npc);
         }
-        if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
-
-        const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
-        const signal = new AbortController().signal;
-        return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
-      },
-      async raycasts(segs, { offMap = false } = {}) {
-        const casts: WW.GetRaycasts["casts"] = [];
-        /** Each seg's index in `casts`: `-1` if not sent */
-        const sent = segs.map((seg) => {
-          const grKey = seg === null ? undefined : w.findRoomContaining(seg.src, true)?.grKey;
-          if (seg === null || grKey === undefined) return -1;
-          if (offMap === false && w.findRoomContaining(seg.dst, true) === null) return -1;
-          return casts.push({ src: seg.src, dst: seg.dst, grKey }) - 1;
-        });
-        if (casts.length === 0 || w.navWorker.workers === null) return segs.map(() => null);
-        const msg: WW.GetRaycasts = { type: "get-raycasts", uid: shortUuid.generate(), casts };
-        const signal = new AbortController().signal;
-        const output = (await w.navWorker.request(msg, signal, "fast")) as (null | JshCli.RaycastResult)[];
-        return sent.map((i) => (i === -1 ? null : output[i]));
       },
       rejectPendingUnreachable(err) {
         for (const uid of Object.keys(state.pendingUnreachable)) {
           state.pendingUnreachable[uid].reject(err);
           delete state.pendingUnreachable[uid];
+        }
+      },
+      removeNpcs(...npcKeys) {
+        const npcs = npcKeys.flatMap((npcKey) => w.n[npcKey] ?? []);
+
+        w.npc.removeAgents(npcs);
+
+        for (const npc of npcs) {
+          npc.anim.mixer.stopAllAction();
+          npc.material.dispose();
+          npc.geometry.dispose();
+          delete w.npc.byPickId[npc.pickId];
+          delete w.n[npc.key];
+          w.npc.setNpcDo(npc.key, null);
+          state.litRooms.delete(npc.key);
+          state.insideDoorways.delete(npc.key); // their exit colliders come too late
+          state.forgetNpcAtDoors(npc.key); // ...else a door they were near stays open
+          npc.rejectAll(new Error("removed npc"));
+        }
+
+        w.shadows?.onTick();
+        w.rings?.onTick();
+        w.npc.update();
+        // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
+        // draws on demand — so nothing would draw the world without them, and it goes on showing
+        // the npc in its bind pose (the mixer having been stopped). Ask once the commit is in, and
+        // again after: one demand frame is not enough here, as spawning found too — see the two
+        // `requestAnimationFrame`s in `restoreNpcs`
+        requestAnimationFrame(() => {
+          w.view.forceUpdate();
+          requestAnimationFrame(() => w.view.forceUpdate());
+        });
+        w.events.next({ key: "removed-npcs", npcKeys });
+        if (npcKeys.includes(w.player.key) === true) {
+          // the first left takes over, if any are
+          const next = Object.keys(w.n)[0];
+          if (next === undefined) w.events.next({ key: "set-player", playerKey: null });
+          else w.player.setKey(next);
         }
       },
       async requestUnreachable(npc, srcIndex, dstIndex) {
@@ -1248,6 +1161,63 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
+      reseatAllNpcs() {
+        if (w.client === true) return; // mirrors have no agents
+
+        for (const npc of Object.values(w.n)) {
+          if (npc.agentId === null) continue;
+
+          const at = npc.point;
+          const onNav = w.npc.getClosestPoly(at, 0.5);
+          // `at` overrides unless their floor went, when the nearest that remains takes them
+          const result = onNav.success === true ? onNav : w.npc.getClosestPoly(at, 4);
+          w.npc.placeNpcAt(npc, result, onNav.success === true || result.success === false ? at : undefined);
+
+          if (result.success === false) {
+            state.strandNpc(npc); // left agentless where they stood
+          } else if (npc.isMoving() === true) {
+            // re-aim under the promise `move` awaits, so the walk carries on
+            const groundPoint = helper.parseGroundPoint(npc.last.dst);
+            const dstResult = w.npc.getClosestPoly(groundPoint, 0.5);
+            if (dstResult.success === true) {
+              npc.anim.aimAt({ groundPoint, result: dstResult });
+              npc.anim.startMoving(npc.anim.arrive);
+            } else {
+              npc.rejectAll(Error("map edited")); // `move` idles them and rethrows
+            }
+          }
+        }
+      },
+      async resetWorldState() {
+        w.door.resetLocks(); // back to the map's own `meta.locked`
+        w.view.setPostProcessingEnabled(true);
+
+        state.removeNpcs(...Object.keys(w.n));
+        w.decor.remove(...Object.keys(w.decor.runtime.byKey));
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, decor: null, seeded: null });
+        state.seedItems();
+        // nothing saved to restore now, so the player respawns near the camera
+        await w.player.ensure();
+        await state.openDoorwaysWithNpcs();
+        state.persistNpcs();
+        w.view.forceUpdate();
+        void w.player.panTo(); // as on load
+      },
+      restoreAccess(saved) {
+        for (const gdKey of saved.access ?? []) {
+          if (gdKey in w.door.byKey) state.setAccess(saved.key, gdKey as Geomorph.GmDoorKey, true);
+        }
+      },
+      restoreDecor(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().decor) {
+        for (const def of saved ?? []) {
+          try {
+            w.decor.create(def);
+          } catch (e) {
+            warn(`decor ${def.key}: could not restore`, e);
+          }
+        }
+        state.seedItems();
+      },
       async restoreFromWorld(fromWorldKey) {
         // cloned, else both worlds would share the arrays we just adopted
         const saved = structuredClone(persisted.getWorldMapStore(fromWorldKey, w.mapKey).read());
@@ -1266,93 +1236,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         await state.restoreNpcs(saved.npcs);
         await state.openDoorwaysWithNpcs();
         w.view.forceUpdate();
-      },
-      async resetWorldState() {
-        w.door.resetLocks(); // back to the map's own `meta.locked`
-        w.view.setPostProcessingEnabled(true);
-
-        state.removeNpcs(...Object.keys(w.n));
-        w.decor.remove(...Object.keys(w.decor.runtime.byKey));
-        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, decor: null, seeded: null });
-        state.seedItems();
-        // nothing saved to restore now, so the player respawns near the camera
-        await w.player.ensure();
-        await state.openDoorwaysWithNpcs();
-        state.persistNpcs();
-        w.view.forceUpdate();
-        void w.player.panTo(); // as on load
-      },
-      restoreDecor(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().decor) {
-        for (const def of saved ?? []) {
-          try {
-            w.decor.create(def);
-          } catch (e) {
-            warn(`decor ${def.key}: could not restore`, e);
-          }
-        }
-        state.seedItems();
-      },
-      seedItems() {
-        // else `w.decor.items` may be stale or empty
-        if (w.decor.ready !== true) return;
-        const store = persisted.getWorldMapStore(w.key, w.mapKey);
-        const prev = store.read().seeded ?? [];
-        const gone = prev.filter((key) => !(key in w.decor.items));
-        const added = Object.keys(w.decor.items).filter((key) => !prev.includes(key));
-        if (gone.length === 0 && added.length === 0) return;
-        w.decor.remove(...gone);
-        for (const key of added) w.decor.create(w.decor.items[key]);
-        // saved at once, even before `w.decor.restored`, else a reload finds them seeded but gone
-        store.patch({
-          seeded: Object.keys(w.decor.items),
-          decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
-        });
-      },
-      recomputeNpcRoomRelationships() {
-        w.npc.roomToNpcs = w.gms.map(() => []);
-        state.externalNpcs = new Set();
-        // every npc: a map edit can drop a whole gmId, and one left out keeps a stale `grKey`
-        for (const npc of Object.values(w.n)) {
-          state.tryPutNpcIntoRoom(npc);
-        }
-      },
-      removeNpcs(...npcKeys) {
-        const npcs = npcKeys.flatMap((npcKey) => w.n[npcKey] ?? []);
-
-        w.npc.removeAgents(npcs);
-
-        for (const npc of npcs) {
-          npc.anim.mixer.stopAllAction();
-          npc.material.dispose();
-          npc.geometry.dispose();
-          delete w.npc.byPickId[npc.pickId];
-          delete w.n[npc.key];
-          w.npc.setNpcDo(npc.key, null);
-          state.litRooms.delete(npc.key);
-          state.insideDoorways.delete(npc.key); // their exit colliders come too late
-          state.forgetNpcAtDoors(npc.key); // ...else a door they were near stays open
-          npc.rejectAll(new Error("removed npc"));
-        }
-
-        w.shadows?.onTick();
-        w.rings?.onTick();
-        w.npc.update();
-        // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
-        // draws on demand — so nothing would draw the world without them, and it goes on showing
-        // the npc in its bind pose (the mixer having been stopped). Ask once the commit is in, and
-        // again after: one demand frame is not enough here, as spawning found too — see the two
-        // `requestAnimationFrame`s in `restoreNpcs`
-        requestAnimationFrame(() => {
-          w.view.forceUpdate();
-          requestAnimationFrame(() => w.view.forceUpdate());
-        });
-        w.events.next({ key: "removed-npcs", npcKeys });
-        if (npcKeys.includes(w.player.key) === true) {
-          // the first left takes over, if any are
-          const next = Object.keys(w.n)[0];
-          if (next === undefined) w.events.next({ key: "set-player", playerKey: null });
-          else w.player.setKey(next);
-        }
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
         for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
@@ -1376,6 +1259,43 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         w.events.next({ key: "npcs-restored" });
       },
+      revokeItem(npcKey, name) {
+        if (name === "psi") return state.dropItem(npcKey, name);
+        const items = state.carried[npcKey]?.items ?? [];
+        const index = items.findIndex((def) => def.meta?.item === name);
+        if (index === -1) return false;
+        items.splice(index, 1);
+        if (name === "phaser") w.phasers?.disarm(npcKey);
+        state.onCarriedChange(npcKey);
+        return true;
+      },
+      roomsInView(grKey) {
+        // a new map has a new graph
+        if (state.inView.graph !== w.gmRoomGraph) state.inView = { graph: w.gmRoomGraph, byRoom: new Map() };
+        let rooms = state.inView.byRoom.get(grKey);
+        if (rooms === undefined) state.inView.byRoom.set(grKey, (rooms = roomsInViewFrom(w, grKey)));
+        return rooms;
+      },
+      seedItems() {
+        // else `w.decor.items` may be stale or empty
+        if (w.decor.ready !== true) return;
+        const store = persisted.getWorldMapStore(w.key, w.mapKey);
+        const prev = store.read().seeded ?? [];
+        const gone = prev.filter((key) => !(key in w.decor.items));
+        const added = Object.keys(w.decor.items).filter((key) => !prev.includes(key));
+        if (gone.length === 0 && added.length === 0) return;
+        w.decor.remove(...gone);
+        for (const key of added) w.decor.create(w.decor.items[key]);
+        // saved at once, even before `w.decor.restored`, else a reload finds them seeded but gone
+        store.patch({
+          seeded: Object.keys(w.decor.items),
+          decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
+        });
+      },
+      setAccess(npcKey, gdKey, held) {
+        (state.npcToAccess[npcKey] ??= {})[gdKey] = held;
+        if (npcKey === w.player.key) w.hud?.update();
+      },
       setNpcLit(npc, next = npc.lit === false) {
         if (npc.key === w.player.key) {
           return;
@@ -1385,6 +1305,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.syncFadeRooms();
         }
         w.events.next({ key: "npc-toggled", npcKey: npc.key });
+      },
+      setPsi(active, ...npcKeys) {
+        for (const npcKey of npcKeys) {
+          const anim = w.n?.[npcKey]?.anim;
+          if (anim === undefined || active === state.isPsiRaised(npcKey)) continue;
+          if (active === false) w.npcFocus?.unfocus(npcKey);
+          anim.setBreathing(active);
+          anim.setUpper(active ? "psi" : null, { side: "left", past: true, onHead: true });
+        }
+        w.r3f?.invalidate();
+        w.hud?.update();
       },
       setRoomLit(input, next) {
         const { grKey, gmId, roomId } = typeof input === "string" ? helper.getGmRoomId(input) : input;
@@ -1447,6 +1378,61 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many", npcKeys });
       },
+      standUpStrandedDoers() {
+        // navmesh and decor rebuild on separate queries, so whichever lands last does this
+        if (w.client === true || w.npc === undefined || w.decor?.ready !== true || w.nav.navMesh === undefined) {
+          return;
+        }
+        for (const npc of Object.values(w.n)) {
+          const decorKey = w.npc.npcToDoable[npc.key];
+          if (typeof decorKey !== "string" || w.decor.byKey[decorKey] !== undefined) {
+            continue; // idle, or what they are doing is still there
+          }
+          const near = w.npc.getClosestPoly(npc.point, 4); // an edit took their decor
+          if (near.success === false) state.strandNpc(npc);
+          // faded, as any teleport; nothing waits on it, and a doer has no agent to go stale
+          else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
+        }
+      },
+      async stepOff(npc, toward) {
+        const beside = state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey);
+        if (beside === null) throw Error("not navigable");
+        await npc.fadeSpawn({ at: beside, facing: toward });
+      },
+      strandNpc(npc) {
+        // nowhere to stand, and no "map-settled" follows an edit to put the player back
+        if (npc.key !== w.player.key) return void state.removeNpcs(npc.key);
+        void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
+      },
+      syncDoorsState() {
+        for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
+          if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
+        }
+        for (const gdKey of Object.keys(state.doorToNpcs) as Geomorph.GmDoorKey[]) {
+          if (w.d[gdKey] === undefined) delete state.doorToNpcs[gdKey];
+        }
+        for (const [npcKey, access] of Object.entries(state.npcToAccess)) {
+          for (const gdKey of Object.keys(access) as Geomorph.GmDoorKey[]) {
+            if (w.d[gdKey] === undefined) delete state.npcToAccess[npcKey][gdKey];
+          }
+        }
+        for (const doors of Object.values(state.npcToDoors)) {
+          if (doors.inside !== null && w.d[doors.inside] === undefined) doors.inside = null;
+          for (const gdKey of doors.nearby) {
+            if (w.d[gdKey] === undefined) doors.nearby.delete(gdKey);
+          }
+        }
+      },
+      syncDoorways() {
+        for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
+          const npc = w.n[npcKey];
+          if (npc === undefined) continue;
+          const gmRoomId = rooms[normal.x * npc.point.x + normal.y * npc.point.y > offset ? 0 : 1];
+          if (gmRoomId !== null && gmRoomId.grKey !== w.npc.npcToRoom.get(npcKey)?.grKey) {
+            w.events.next({ key: "enter-room", npcKey, gmRoomId, reEntered: false });
+          }
+        }
+      },
       syncFadeRooms() {
         w.view.fadeRoomsFx.sync(w);
         state.syncNpcRoomSlots();
@@ -1471,40 +1457,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (w.gms[gmId]?.rooms[roomId] === undefined) state.handLitRooms.delete(grKey);
         }
       },
-      postNpcTick() {
-        if (state.timers.size > 0) {
-          const now = w.gameTime.now();
-          for (const timer of state.timers) {
-            if (timer.at > now) continue;
-            state.timers.delete(timer);
-            timer.fn();
-          }
-        }
-        state.syncDoorways();
-        // before the shadows, which read the slot it settles — and every tick, since an npc waiting
-        // on a room to arrive takes it the moment it lands rather than at the next door event
-        state.syncNpcRoomSlots();
-        w.shadows?.onTick();
-        w.rings?.onTick();
-        w.breaths?.onTick();
-        w.npcRefract?.onTick();
-        w.npcArmour?.onTick();
-        w.phasers?.onTick();
-        w.shields?.onTick();
-        w.player?.aimAtPointer();
-        w.player?.syncRun();
-        for (const tick of state.keyedTick.values()) tick(w);
-      },
-      syncDoorways() {
-        for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
-          const npc = w.n[npcKey];
-          if (npc === undefined) continue;
-          const gmRoomId = rooms[normal.x * npc.point.x + normal.y * npc.point.y > offset ? 0 : 1];
-          if (gmRoomId !== null && gmRoomId.grKey !== w.npc.npcToRoom.get(npcKey)?.grKey) {
-            w.events.next({ key: "enter-room", npcKey, gmRoomId, reEntered: false });
-          }
-        }
-      },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;
         // Every npc, not just the player: an npc MOVES between rooms, so where they stand is a
@@ -1520,6 +1472,33 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (fx.isArriving(next) === true && fx.hasArrived(npc.roomSlot.value) === true) continue;
           npc.roomSlot.value = next;
         }
+        // those in the player's room are lit more
+        if (w.npc != null) w.npc.playerRoom = w.n[w.player.key]?.roomSlot.value ?? neverShownSlot;
+      },
+      takeItem(npcKey, decorKey) {
+        const def = w.decor.runtime.defByKey[decorKey];
+        const kind = def?.meta?.item as ItemKind;
+        const npc = w.n?.[npcKey];
+        if (def === undefined || npc === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
+        if (def.type !== "quad" && def.type !== "point") return false;
+        if (state.hasRoomFor(npcKey, kind) === false) {
+          if (npcKey === w.player.key) w.hud?.say(kind === "phaser" ? "already have one" : "inventory full");
+          return false;
+        }
+        const { bounds, meta } = w.decor.runtime.byKey[decorKey];
+        const room = w.npc.npcToRoom.get(npcKey);
+        if (room?.gmId !== meta.gmId || room?.roomId !== meta.roomId) return false; // not through a wall
+        const at = { ...bounds.center, y3d: Number(def.y3d) || 0 };
+        state.handle(npcKey, () =>
+          state.reachFor(npc, "pick_up", at, () => {
+            // still there, and still room for it
+            if (w.decor.runtime.defByKey[decorKey] !== def || state.hasRoomFor(npcKey, kind) === false) return;
+            (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
+            w.decor.remove(decorKey);
+            state.onCarriedChange(npcKey);
+          }),
+        );
+        return true;
       },
       async testTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
         const grId = w.npc.npcToRoom.get(npc.key) ?? null;
@@ -1586,48 +1565,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (toggled && opts.held !== undefined) w.door.setHeld(door, opts.held);
         return toggled;
       },
-      takeItem(npcKey, decorKey) {
-        const def = w.decor.runtime.defByKey[decorKey];
-        const kind = def?.meta?.item as ItemKind;
-        const npc = w.n?.[npcKey];
-        if (def === undefined || npc === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
-        if (def.type !== "quad" && def.type !== "point") return false;
-        if (state.hasRoomFor(npcKey, kind) === false) {
-          if (npcKey === w.player.key) w.hud?.say(kind === "phaser" ? "already have one" : "inventory full");
-          return false;
-        }
-        const { bounds, meta } = w.decor.runtime.byKey[decorKey];
-        const room = w.npc.npcToRoom.get(npcKey);
-        if (room?.gmId !== meta.gmId || room?.roomId !== meta.roomId) return false; // not through a wall
-        const at = { ...bounds.center, y3d: Number(def.y3d) || 0 };
-        state.handle(npcKey, () =>
-          state.reachFor(npc, "pick_up", at, () => {
-            // still there, and still room for it
-            if (w.decor.runtime.defByKey[decorKey] !== def || state.hasRoomFor(npcKey, kind) === false) return;
-            (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
-            w.decor.remove(decorKey);
-            state.onCarriedChange(npcKey);
-          }),
-        );
-        return true;
-      },
-      trackDoorway(npcKey, gdKey) {
-        const door = w.door.byKey[gdKey];
-        if (door === undefined) return; // onchange map
-        const { src, normal, gmId, connector } = door;
-        /** Its normal points into the first: a hull door's other side is the next geomorph's */
-        const rooms = connector.roomIds.map((roomId, i) =>
-          roomId === null
-            ? w.gmGraph.getOtherGmRoomId(door, connector.roomIds[1 - i] ?? -1)
-            : helper.getGmRoomId(gmId, roomId),
-        );
-        state.insideDoorways.set(npcKey, { gdKey, normal, offset: normal.x * src.x + normal.y * src.y, rooms });
-      },
-      unchainKey(npcKey, gdKey) {
-        if (state.npcToAccess[npcKey]?.[gdKey] !== true || state.hasRoomFor(npcKey, "keycard") === false) return false;
-        state.setAccess(npcKey, gdKey, false);
-        return state.giveItem(npcKey, "keycard", { door: gdKey, map: w.mapKey });
-      },
       toggleLock(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -1644,6 +1581,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         opts.access ??= state.npcCanAccess(opts.npcKey, gdKey);
 
         return w.door.toggleLock(door, opts);
+      },
+      trackDoorway(npcKey, gdKey) {
+        const door = w.door.byKey[gdKey];
+        if (door === undefined) return; // onchange map
+        const { src, normal, gmId, connector } = door;
+        /** Its normal points into the first: a hull door's other side is the next geomorph's */
+        const rooms = connector.roomIds.map((roomId, i) =>
+          roomId === null
+            ? w.gmGraph.getOtherGmRoomId(door, connector.roomIds[1 - i] ?? -1)
+            : helper.getGmRoomId(gmId, roomId),
+        );
+        state.insideDoorways.set(npcKey, { gdKey, normal, offset: normal.x * src.x + normal.y * src.y, rooms });
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
@@ -1668,8 +1617,64 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           warn(`${npc.key}: no longer inside any room`);
         }
       },
+      unchainKey(npcKey, gdKey) {
+        if (state.npcToAccess[npcKey]?.[gdKey] !== true || state.hasRoomFor(npcKey, "keycard") === false) return false;
+        state.setAccess(npcKey, gdKey, false);
+        return state.giveItem(npcKey, "keycard", { door: gdKey, map: w.mapKey });
+      },
       wait(secs) {
         return new Promise((resolve) => void state.after(secs, resolve));
+      },
+      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }) {
+        const { config } = w.npc;
+        w.npc.setNpcDo(npc.key, null); // in case do=stand
+
+        await npc.ensureLegalPosition();
+
+        try {
+          // navigation unreachable relative to locked doors?
+          const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
+          npc.last.unreachableResult = unreachableResult;
+
+          if (unreachableResult !== null) {
+            // destination unreachable
+            if (npc.distanceTo(unreachableResult.nearbyPoint) < config.dist.blockedLook) {
+              // too close: look instead of walk
+              await npc.look({ at: unreachableResult.nearbyPoint, minMs: config.time.look * 1000 });
+              return;
+            }
+            // change destination to point near eventual locked door
+            const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
+            groundPoint = helper.parseGroundPoint(nearDoor.position);
+          }
+
+          // an aim held until rest, e.g. a sidestep's, gives way to a new move
+          if (strafe !== true && npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
+          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
+          npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
+          npc.anim.backwards =
+            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
+          if (fast !== undefined) npc.anim.hurry = fast;
+          npc.anim.aimAt({ groundPoint, result });
+          await w.npc.turnBeforeMoving(npc);
+          npc.anim.startMoving(arrive);
+
+          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
+
+          await new Promise<string>((resolve, reject) => {
+            npc.resolve.move = resolve;
+            npc.reject.move = reject;
+          });
+        } catch (e) {
+          if (e instanceof Error && e.message === "move again") {
+            return; // interrupting move owns npc now
+          }
+          if (!(e instanceof Error && e.message === "look again")) {
+            npc.anim.startIdle({ force: true }); // delegated to look
+          }
+          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
+          throw e;
+        }
       },
     }),
   );
@@ -1913,7 +1918,7 @@ export type State = {
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   /** Opens a menu on the npc, decor or door picked, its Cancel under the press — see `PickMenu` */
   openPickMenu(e: Extract<JshCli.Event, { key: "picked" }>): void;
-  /** A press on a door, its switch or its spot: toggles it. A long press holds it, or on the door locks it */
+  /** A press on a door, its switch or its spot: toggles it. A long press holds an open door, and locks a shut one */
   onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;

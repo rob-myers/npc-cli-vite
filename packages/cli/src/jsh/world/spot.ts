@@ -5,20 +5,20 @@ import { getSpotsRev } from "./worker.main";
 
 /**
  * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.
- * Answered by the worker — see `docs/spots.md`. `--show` and `--hide` the World's overlay of them
+ * Answered by the worker — see `docs/spots.md`. `show` (or `shown`) and `hide` the World's overlay of them
  *
  * ```sh
  * spots room:g0r16 kind:cover,corner
  * spots near:rob within:3
  * spots of:rob
- * spots --show
- * spots --hide
+ * spots show
+ * spots hide
  * ```
  */
 export async function* spots(ct: JshCli.RunArg) {
-  const opts: { room?: string; kind?: string; near?: string; within?: number; of?: string; show?: true; hide?: true } =
-    ct.api.jsArg(ct.args, { "--show": "show", "--hide": "hide" });
-  if (opts.show === true || opts.hide === true) return showSpots(ct.w, opts.show === true);
+  const [first] = ct.args;
+  if (first === "show" || first === "shown" || first === "hide") return showSpots(ct.w, first !== "hide");
+  const opts: { room?: string; kind?: string; near?: string; within?: number; of?: string } = ct.api.jsArg(ct.args);
   const [found] = await spotQuery(ct, [
     opts.of !== undefined
       ? { q: "of", npc: opts.of, all: true }
@@ -248,7 +248,7 @@ const watchSecs = 0.25;
 const rayStyle = { width: 0.008, opacity: 0.5, discRadius: 0.03 };
 
 /**
- * `spots --show`: draws the map's spots in the World whilst its overlay is on (debug menu, overlay, spots), an icon
+ * `spots show`: draws the map's spots in the World whilst its overlay is on (debug menu, overlay, spots), an icon
  * per kind. Each is coloured by sight from the player, kept up as they move and doors change (idempotent)
  */
 function showSpots(w: JshCli.WorldState, show: boolean) {

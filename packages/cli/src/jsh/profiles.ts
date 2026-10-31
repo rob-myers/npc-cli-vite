@@ -7,7 +7,8 @@ awaitWorld
 predicates
 inventory
 sidestep
-spots --show
+sounds
+spots show
 
 `.trim();
 
