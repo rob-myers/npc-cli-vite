@@ -130,6 +130,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   touchLook: null | ((clientX: number, clientY: number) => void) = null;
   /** Where a one-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
   touchLookFrom = { x: 0, y: 0, dragged: false };
+  /** Whilst true, fingers move nothing: they are firing the player's phaser — see `onFireTouch` */
+  holdTouch = false;
   /** How far the fingers have moved since the turn began, in px — see `pickRotateAxis` */
   rotateTravel = new THREE.Vector2();
   /** `(clientX, clientY)` of first pointerdown */
@@ -813,6 +815,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     this.trackPointer(event);
+    if (this.holdTouch === true) return;
 
     switch (this.state) {
       case this.STATE.TOUCH_ROTATE:

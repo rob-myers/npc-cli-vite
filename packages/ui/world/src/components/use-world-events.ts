@@ -680,10 +680,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             const ours = e.srcWorld === w.key;
             /** A right click, or a long press on touch */
             const contextPress = e.rightDown === true || (w.touchDevice && e.longDown === true);
+            /** A press held whilst armed, on touch: a finger readying the phaser — see `onFireTouch` */
+            const firing = w.touchDevice && w.phasers?.isArmed(w.player.key) === true;
             // one of ours opens a menu on an npc, decor or door
             const menu =
               contextPress &&
               ours &&
+              firing === false &&
               w.debug?.contextMenu === true &&
               (e.meta.type === "npc" || e.meta.type === "decor" || e.meta.type === "door");
             if (menu === true) state.openPickMenu(e);
@@ -701,6 +704,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // forwarded, and the server's mirrored speech comes back instead
             if (
               e.longDown === true &&
+              firing === false &&
               e.meta.type === "npc" &&
               typeof e.meta.npcKey === "string" &&
               w.client === false

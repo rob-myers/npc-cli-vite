@@ -153,7 +153,9 @@ does one with a laser.
   - Charging, the gun brightens with the beam's colour and shakes (`glowOf`, the `phaserCharge` attribute).
   - `e` whilst charging cancels it (`cancelCharge`): it sputters out over `coolSecs`, the phaser left raised, and
     none charges meanwhile. Focus leaving the World cancels too, as Space's release never comes.
-  - On touch, the "aim" notice has a fire button: held it charges, let go it fires.
+  - On touch, raised, hold a finger anywhere, then put a second down at least `fireTouchDelayMs` later: it charges
+    where they face, without turning them, and letting it go fires. Letting go of the first cancels (`onFireTouch`). The camera ignores both
+    meanwhile, and a long press opens no menu whilst armed.
   - It has no effect on the outcome yet.
 - Anyone may target, through jsh: `phaser rob --target`, `tilt:1`, `--fire`, `--cancel`. An npc's ends when
   fired or cancelled, and shows a dot over whom it targets.
