@@ -369,7 +369,9 @@ export default function NPCs() {
             // to arrive they walk in — see `walkIn`; gliding through, they keep running
             const { maxSpeed, walkIn } = agentConfig;
             const t = npc.anim.arrive === true ? (targetDist - walkIn.to) / (walkIn.from - walkIn.to) : 1;
-            agent.maxSpeed = maxSpeed.walk + (maxSpeed.run - maxSpeed.walk) * Math.max(0, Math.min(1, t));
+            // strafing, as fast as this heading allows
+            const { walk, run } = npc.anim.strafing === true ? npc.anim.strafeTop : maxSpeed;
+            agent.maxSpeed = walk + (run - walk) * Math.max(0, Math.min(1, t));
           }
 
           // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
@@ -1026,7 +1028,17 @@ const tmpVector3 = new THREE.Vector3();
  * run together, so a crossfade between them near the target does not hold the arrival up
  */
 function moveClipFadedIn(npc: Npc) {
-  const gaits = ["walk", "run", "backwards", "strafe_left", "strafe_right"] as const;
+  const gaits = [
+    "walk",
+    "run",
+    "run_ahead",
+    "backwards",
+    "strafe_left",
+    "strafe_right",
+    "run_backwards",
+    "run_strafe_left",
+    "run_strafe_right",
+  ] as const;
   return (
     gaits.reduce((sum, key) => sum + (npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0), 0) >=
     0.99

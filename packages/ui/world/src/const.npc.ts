@@ -208,6 +208,10 @@ export const fromAnimationClipKey = {
   point_avoid: true,
   psi: true,
   run: true,
+  run_ahead: true,
+  run_backwards: true,
+  run_strafe_left: true,
+  run_strafe_right: true,
   shuffle: true,
   sit: true,
   sit_pacified: true,
@@ -422,6 +426,10 @@ export const fadeSecs: Record<
   point_avoid: {},
   psi: {},
   run: { shuffle: 0.15, walk: 0.25 },
+  run_ahead: { shuffle: 0.15, walk: 0.25 },
+  run_backwards: {},
+  run_strafe_left: {},
+  run_strafe_right: {},
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
@@ -434,7 +442,7 @@ export const fadeSecs: Record<
   strafe_right: {},
   phaser_aim: { shuffle: 0.15 },
   phaser_aim_avoid: {},
-  walk: { shuffle: 0.15, run: 0.25 },
+  walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25 },
 };
 
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
@@ -567,6 +575,11 @@ export const gaitStride = {
   crouch_half_strafe_right: 0.25,
   crouch_half_backwards: 0.4,
   crouch_half_strafe_left: 0.25,
+  run: 1.72,
+  run_ahead: 1.72,
+  run_strafe_right: 0.8,
+  run_backwards: 1,
+  run_strafe_left: 0.8,
 };
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
 export const strafeSpeed = {
@@ -582,6 +595,11 @@ export const strafeSpeed = {
   crouch_half_strafe_right: 0.4,
   crouch_half_backwards: 0.6,
   crouch_half_strafe_left: 0.4,
+  /** Running, as `maxSpeed.run` ahead. Each way paced near a straight run's cadence */
+  run_ahead: 3,
+  run_strafe_right: 1.7,
+  run_backwards: 1.7,
+  run_strafe_left: 1.7,
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

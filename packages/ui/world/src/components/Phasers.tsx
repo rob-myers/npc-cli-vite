@@ -5,7 +5,7 @@ import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import { wallHeight } from "../const.env";
-import { hitConfig, lieAim } from "../const.npc";
+import { hitConfig, lieAim, upperFadeSecs } from "../const.npc";
 import { aimToRay, alongAim } from "../service/aim-target";
 import { eased } from "../service/fade";
 import {
@@ -833,6 +833,14 @@ export default function Phasers() {
           Object.assign(arm.armAim, { at: beam.at, weight: eased(beam.shown.presence), maxRad: undefined });
         }
         arm.armAim.head = sat === true ? 0 : undefined; // sat, their turn has the head on them already
+        // stood, the muzzle held on the aim's line, as the red dot is
+        const stood = sat === false && lain === false;
+        const holding = armed === true && stood && anim.upper.key !== phaserConfig.avoid; // not drawn in
+        const hold = (arm.hold ??= { line: new THREE.Ray(), ramp: 0, weight: 0 });
+        hold.ramp = THREE.MathUtils.clamp(hold.ramp + (holding ? delta : -delta) / upperFadeSecs, 0, 1);
+        hold.weight = eased(hold.ramp);
+        if (hold.weight > 0 && stood) holdLineOf(npc, arm, hold.line);
+        arm.armAim.hold = hold.weight > 0 && stood ? hold : undefined;
         if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = aiming ? arm.armAim : null;
         // in hand whilst they carry it and stand, raised or lowered — or still armed, having just lost it
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
@@ -1076,6 +1084,8 @@ type ArmEntry = {
   pitchAt: null | number;
   /** The arm's aim we set, down the beam */
   armAim: null | UpperAim;
+  /** Stood, the line the muzzle is held on, eased in whilst armed — see `holdLineOf` */
+  hold?: { line: THREE.Ray; ramp: number; weight: number };
   /** Where the arm points sat or lain, ahead of any beam — see `armAimAt` */
   armAt: THREE.Vector3;
   armed: boolean;
@@ -1252,6 +1262,14 @@ function gunLine(npc: Npc, arm: ArmEntry): Seg {
   }
   const { x, z } = npc.anim.upper.bones[0]?.bone.getWorldPosition(tmpShoulder) ?? npc.position;
   return [x, z, x + fx * phaserConfig.reach, z + fz * phaserConfig.reach];
+}
+
+/** Stood, their aim's line from the muzzle at full aim, raised or still coming down: as `aimOf`, armed or not */
+function holdLineOf(npc: Npc, arm: ArmEntry, out: THREE.Ray) {
+  const [ax, az, x, z] = gunLine(npc, arm);
+  const bearing = geomService.getThreeRotationY(z - az, x - ax);
+  const y = npc.anim.headY - phaserConfig.gunBelowHead;
+  return aimToRay({ from: { x, y: z }, bearing, y, pitch: arm.pitch ?? 0 }, out);
 }
 
 /** Their muzzle at full aim, on the ground */

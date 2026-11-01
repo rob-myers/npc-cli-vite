@@ -63,7 +63,7 @@ export class NpcAnimation {
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {
-    return this.hurry === true && this.backwards === false && this.strafe === false && this.crouched === false;
+    return this.hurry === true && this.backwards === false && this.crouched === false;
   }
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
@@ -73,6 +73,8 @@ export class NpcAnimation {
   strafeFollowsAim = false;
   /** Is `walk` on show as the four directional gaits — see `setPose` */
   strafing = false;
+  /** Strafing, the top speed this heading allows walking and running — see `syncStrafe` */
+  strafeTop = { walk: strafeSpeed.walk, run: strafeSpeed.run_ahead };
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
@@ -196,9 +198,10 @@ export class NpcAnimation {
     return this.hurt?.key === "collapsed";
   }
 
-  /** The four directional gaits a strafe blends, by how low they crouch */
+  /** The four directional gaits a strafe blends: by how low they crouch, else running or walking as `pose` shows */
   get gaitKeys() {
-    return gaitSets[this.crouchLevel];
+    if (this.crouchLevel > 0) return gaitSets[this.crouchLevel];
+    return isRun(this.pose) && this.backwards === false ? runStrafeClipKeys : strafeClipKeys;
   }
 
   /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
@@ -395,6 +398,48 @@ export class NpcAnimation {
     return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
   }
 
+  /**
+   * Holds the right arm's muzzle (`aim.from`) on `hold` by `weight`, pointing along it turned towards `aim.at` by `aim.weight`.
+   * The muzzle may slide along the line, so the upper arm keeps its length: the body moves under the gun
+   */
+  holdGun(aim: UpperAim, hold: THREE.Ray, weight: number) {
+    const [entry, foreEntry] = this.upper.bones;
+    const [arm, fore] = [entry?.bone, foreEntry?.bone];
+    if (arm?.parent == null || fore === undefined) return;
+    // in the chest's frame: the hold is brought in once, then the bones' own turns suffice
+    arm.parent.updateWorldMatrix(true, false);
+    const toChest = tmpToChest.copy(arm.parent.matrixWorld).invert();
+    const origin = tmpOrigin.copy(hold.origin).applyMatrix4(toChest);
+    const dir = tmpDir.copy(hold.direction).transformDirection(toChest);
+    if (aim.weight > 0) {
+      // turned towards `aim.at`, as `aimArm` would
+      const toAt = tmpToAt.copy(aim.at).applyMatrix4(toChest).sub(origin).normalize();
+      const off = dir.angleTo(toAt);
+      const turn = Math.min(off, aim.maxRad ?? upperAimMaxRad) * aim.weight;
+      if (off > 1e-4) dir.applyAxisAngle(tmpAxis.crossVectors(dir, toAt).normalize(), turn);
+    }
+    const upper = tmpUpper.copy(fore.position).applyQuaternion(arm.quaternion);
+    const foreQuat = tmpForeQuat.multiplyQuaternions(arm.quaternion, fore.quaternion);
+    const along = tmpAlong.set(0, -1, 0).applyQuaternion(foreQuat);
+    /** Elbow to muzzle, once the forearm points along `dir` */
+    const muzzle = tmpMuzzle
+      .copy(aim.from)
+      .applyQuaternion(foreQuat)
+      .applyQuaternion(tmpAlign.setFromUnitVectors(along, dir));
+    // the elbow `s` along the line from `hold`'s, as far from the shoulder as the upper arm is long
+    const c = tmpWant.copy(origin).sub(muzzle).sub(arm.position);
+    const b = c.dot(dir);
+    const root = Math.sqrt(Math.max(0, b * b - c.lengthSq() + upper.lengthSq()));
+    const want = c.addScaledVector(dir, -b + (b < 0 ? -root : root)).normalize(); // the nearer `s`
+    const swing = tmpAlign.setFromUnitVectors(upper.normalize(), want);
+    entry.written.copy(arm.quaternion.premultiply(tmpPart.identity().slerp(swing, weight)));
+    // the forearm along `dir`: that turn as the arm sees it
+    along.set(0, -1, 0).applyQuaternion(foreQuat.multiplyQuaternions(arm.quaternion, fore.quaternion));
+    const bend = tmpAlign.setFromUnitVectors(along, dir).premultiply(tmpInverse.copy(arm.quaternion).invert());
+    bend.multiply(arm.quaternion);
+    foreEntry.written.copy(fore.quaternion.premultiply(tmpPart.identity().slerp(bend, weight)));
+  }
+
   /** A roll in bed is still fading in */
   isRolling() {
     return this.w.gameTime.now() - this.rolledAt < lieRoll.secs;
@@ -484,7 +529,7 @@ export class NpcAnimation {
     const { maxSpeed } = agentConfig;
     if (this.dragged === true) return dragConfig.speed;
     if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
-    if (this.strafe === true) return strafeSpeed.walk;
+    if (this.strafe === true) return this.fast === true ? strafeSpeed.run_ahead : strafeSpeed.walk;
     return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
   }
 
@@ -597,7 +642,12 @@ export class NpcAnimation {
       return;
     }
 
-    const shown = this.strafe === true ? (gaitSets.find((keys) => keys[0] === next) ?? [next]) : [next];
+    const shown = this.strafe === true ? (strafeSets.find((keys) => keys[0] === next) ?? [next]) : [next];
+    /** Strafing from one set to another, e.g. walk to run: each gait takes its counterpart's weight */
+    const from =
+      this.strafing === true && shown.length > 1 ? strafeSets.find((keys) => keys[0] === this.pose) : undefined;
+    const weightOf = (i: number) =>
+      from === undefined ? (i === 0 ? 1 : 0) : (this.mixer.existingAction(this.npc.clips[from[i]])?.weight ?? 0);
     const { clips } = this.npc;
 
     for (const clip of Object.values(clips)) {
@@ -626,10 +676,10 @@ export class NpcAnimation {
     /** Already on show, e.g. walk as a strafe starts: restarting it would pop the feet and dip its weight */
     const kept = next === this.pose && action.isRunning();
     if (kept === false) (fade > 0 ? action.reset().fadeIn(fade) : action.reset()).play();
-    action.weight = 1; // `syncStrafe` weighs the four, fading or not
-    for (const key of shown.slice(1)) {
+    action.weight = weightOf(0); // `syncStrafe` weighs the four, fading or not
+    for (const [i, key] of shown.slice(1).entries()) {
       const other = this.mixer.clipAction(clips[key]).reset().play();
-      other.weight = 0;
+      other.weight = weightOf(i + 1);
       if (kept === false && fade > 0) other.fadeIn(fade); // else `syncStrafe` eases them in from nought
     }
     this.strafing = shown.length > 1;
@@ -698,8 +748,16 @@ export class NpcAnimation {
 
   /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
   showGait() {
-    // collapsed, the scoot. Else ahead, or a half turn round
-    const clipKey = this.dragged === true ? "collapsed_drag" : this.gaitKeys[this.backwards === true ? 2 : 0];
+    const [ahead, , back] = this.gaitKeys;
+    // collapsed, the scoot. Else ahead, or a half turn round. A run not strafing swings its arms
+    const clipKey =
+      this.dragged === true
+        ? "collapsed_drag"
+        : this.backwards === true
+          ? back
+          : ahead === "run_ahead" && this.strafe === false
+            ? "run"
+            : ahead;
     // a look or a spawn in between puts idle on, and it must be shown again or they slide
     const shown = this.backwards === true || this.crouched || this.dragged ? this.pose === clipKey : isGait(this.pose);
     if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
@@ -762,16 +820,18 @@ export class NpcAnimation {
     this.showGait();
   }
 
-  /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
+  /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk. Strafing, by heading */
   syncGait(delta: number) {
-    if (this.backwards === true || this.strafe === true) return; // one gait
+    if (this.backwards === true) return; // one gait
     const { runAbove, walkBelow, minSecs } = agentConfig.gait;
     this.gaitSecs += delta;
-    const running = this.moveClip.name === "run";
-    const next = this.fast === true && (running ? this.speed >= walkBelow : this.speed > runAbove);
+    const running = isRun(keyOf(this.moveClip));
+    // strafing, a walk this way tops out at `strafeTop.walk`, not `maxSpeed.walk`
+    const scale = this.strafe === true ? this.strafeTop.walk / agentConfig.maxSpeed.walk : 1;
+    const next = this.fast === true && (running ? this.speed >= walkBelow * scale : this.speed > runAbove * scale);
     if (next === running || this.gaitSecs < minSecs || isGait(this.pose) === false) return;
     this.gaitSecs = 0;
-    this.moveClip = this.npc.clips[next ? "run" : "walk"];
+    this.moveClip = this.npc.clips[next === false ? "walk" : this.strafe === true ? "run_ahead" : "run"];
     this.setPose(keyOf(this.moveClip));
   }
 
@@ -794,12 +854,18 @@ export class NpcAnimation {
         action.weight += (target - action.weight) * ease;
       });
     }
-    const blend = (byKey: Record<keyof typeof gaitStride, number>) =>
-      actions.reduce((sum, action, i) => sum + action.weight * byKey[keys[i]], 0);
-    if (agent !== null && this.strafe === true) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
+    const blend = (byKey: Record<GaitKey, number>, set: readonly GaitKey[] = keys) =>
+      actions.reduce((sum, action, i) => sum + action.weight * byKey[set[i]], 0);
+    const { strafeTop } = this;
+    strafeTop.walk = blend(strafeSpeed, strafeClipKeys);
+    strafeTop.run = blend(strafeSpeed, runStrafeClipKeys);
+    // as fast as that way allows, running whilst `fast`
+    if (agent !== null && this.strafe === true)
+      agent.maxSpeed = this.fast === true ? strafeTop.run : blend(strafeSpeed);
 
     const [walk] = actions;
-    const timeScale = walk.timeScale / (blend(gaitStride) || 1); // `tick`'s pace, per ground the blend covers
+    // `tick`'s pace, a cycle per ground the blend covers
+    const timeScale = (walk.timeScale * walk.getClip().duration) / (blend(gaitStride) || 1);
     const phase = walk.time / walk.getClip().duration;
     actions.forEach((action, i) => {
       action.timeScale = timeScale;
@@ -808,7 +874,11 @@ export class NpcAnimation {
       const offset = i === 2 ? 0.5 : 0;
       action.time = ((phase + offset) % 1) * action.getClip().duration;
     });
-    if (this.strafe === false && walk.weight > 0.99) this.setPose(keys[0], { force: true });
+    if (this.strafe === false && walk.weight > 0.99) {
+      const key = keys[0] === "run_ahead" ? "run" : keys[0]; // its arms swing again
+      this.moveClip = clips[key];
+      this.setPose(key, { force: true });
+    }
   }
 
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
@@ -882,7 +952,10 @@ export class NpcAnimation {
       } else if (key === "collapsed_drag") {
         action.timeScale = Math.max(this.speed, crouchPaceMin) / dragConfig.stride;
       } else {
-        action.timeScale = (key === "run" ? 0.5 : 1) * Math.max(0.25 / npcScale, this.speed, 0.5);
+        const pace = Math.max(0.25 / npcScale, this.speed, 0.5);
+        // a straight run a cycle a stride: a strafe divides by the blend's in `syncStrafe`
+        action.timeScale =
+          key === "run" && this.strafing === false ? (pace * this.moveClip.duration) / gaitStride.run : pace;
       }
       if (this.strafing === true) this.syncStrafe(delta);
     }
@@ -918,6 +991,9 @@ export class NpcAnimation {
   tickAimArm() {
     const r = this.upper;
     if (r.key === null || r.aim === null) return;
+    const { hold } = r.aim;
+    if (hold !== undefined && r.eased > 0) this.holdGun(r.aim, hold.line, hold.weight * r.eased);
+    if (hold?.weight === 1) return; // which aimed it too
     const weight = r.aim.weight * r.eased;
     if (weight > 0) this.aimArm(r.aim, weight);
   }
@@ -1247,7 +1323,12 @@ export class NpcAnimation {
 }
 
 function isGait(key: AnimationClipKey) {
-  return key === "walk" || key === "run";
+  return key === "walk" || isRun(key);
+}
+
+/** `run_ahead` is `run` with guard arms, run-strafing */
+function isRun(key: AnimationClipKey) {
+  return key === "run" || key === "run_ahead";
 }
 
 /** A pose that leaves the feet apart as it ends */
@@ -1322,8 +1403,18 @@ const crouchStrafeClipKeys = [
   "crouch_backwards",
   "crouch_strafe_left",
 ] satisfies AnimationClipKey[];
+/** As `strafeClipKeys`, running */
+const runStrafeClipKeys = [
+  "run_ahead",
+  "run_strafe_right",
+  "run_backwards",
+  "run_strafe_left",
+] satisfies AnimationClipKey[];
 /** Each blend, by crouch level */
 const gaitSets = [strafeClipKeys, halfCrouchStrafeClipKeys, crouchStrafeClipKeys] as const;
+/** Every blend, running too */
+const strafeSets = [...gaitSets, runStrafeClipKeys] as const;
+type GaitKey = (typeof strafeSets)[number][number];
 /** What they rest in, by crouch level */
 const crouchIdleKeys = [defaultIdleAnimationClipKey, "crouch_half", "crouch_cover"] as const;
 type CrouchLevel = 0 | 1 | 2;
@@ -1454,6 +1545,16 @@ const tmpFrom = new THREE.Vector3();
 const tmpAxis = new THREE.Vector3();
 const tmpTip = new THREE.Vector3();
 const tmpPole = new THREE.Vector3();
+const tmpMuzzle = new THREE.Vector3();
+const tmpToChest = new THREE.Matrix4();
+const tmpOrigin = new THREE.Vector3();
+const tmpUpper = new THREE.Vector3();
+const tmpForeQuat = new THREE.Quaternion();
+const tmpInverse = new THREE.Quaternion();
+const tmpPart = new THREE.Quaternion();
+const tmpDir = new THREE.Vector3();
+const tmpToAt = new THREE.Vector3();
+const tmpAlign = new THREE.Quaternion();
 const tmpHeld = { left: new THREE.Vector3(), right: new THREE.Vector3() };
 const tmpSupport = new THREE.Vector3();
 
@@ -1516,6 +1617,8 @@ export type UpperAim = {
   head?: number;
   /** The most it swings the arm off its pose, `upperAimMaxRad` unless given */
   maxRad?: number;
+  /** Stood, the line its muzzle is held on, by `weight` — see `holdGun` */
+  hold?: { line: THREE.Ray; weight: number };
 };
 
 function keyOf(clip: THREE.AnimationClip) {

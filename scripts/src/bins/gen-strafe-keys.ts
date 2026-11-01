@@ -8,6 +8,7 @@
  * gen-strafe-keys
  * gen-strafe-keys --stride 0.6 --harmonics 2 --blockbench | pbcopy
  * gen-strafe-keys --name run_strafe_left --length 0.752 --swing 0.7917 --duty 0.2917 --upper run --blockbench
+ * gen-strafe-keys --axis back --name run_backwards --length 0.752 --stride 1.25 --duty 0.45 --blockbench
  * ```
  */
 
@@ -41,12 +42,15 @@ const { values: opts } = parseArgs({
     swing: { type: "string", default: "0.05" },
     /** A clip whose torso and arms the keyed clip takes, as long as it, e.g. `run`. Else they are kept */
     upper: { type: "string" },
+    /** `side` strafes to their left. `back` backs up, each foot in line with its hip, and keys no mirror */
+    axis: { type: "string", default: "side" },
     blockbench: { type: "boolean", default: false },
   },
 });
 const [stride, duty, lift, soft, gap] = [opts.stride, opts.duty, opts.lift, opts.soft, opts.gap].map(Number);
 const [length, swing, tangent] = [opts.length, opts.swing, opts.tangent].map(Number);
 const harmonics = Number(opts.harmonics);
+const back = opts.axis === "back";
 const samples = 24;
 
 // the rig's legs, from the exported model
@@ -64,9 +68,12 @@ const legLength = rest.length();
 // moving to their left (-x): planted feet travel +x relative to the body. Swings as the forward gait's
 const swingStart = { right: swing, left: (swing + 0.5) % 1 };
 const spread = (gap + 0.5 * stride - (hip.right.x - hip.left.x)) / 2;
-const centre = { left: hip.left.x - spread, right: hip.right.x + spread };
+const centre = back ? { left: 0, right: 0 } : { left: hip.left.x - spread, right: hip.right.x + spread };
+/** The ankle from `side`'s hip, with the foot at `along` on the axis. Backing up, planted feet travel forwards (-z) */
+const ankleFrom = (side: Side, along: number) =>
+  back ? { x: rest.x, z: rest.z - along } : { x: along - hip[side].x, z: rest.z };
 
-/** Ankle `x` (body frame) and lift of `side` at phase `t` */
+/** The foot's place on the axis (body frame) and lift of `side` at phase `t` */
 function footAt(side: Side, t: number) {
   const sinceLand = (t - ((swingStart[side] + 1 - duty) % 1) + 1) % 1;
   const [from, to] = [centre[side] + 0.5 * duty * stride, centre[side] - 0.5 * duty * stride];
@@ -85,13 +92,16 @@ function footAt(side: Side, t: number) {
 // hips: a smooth curve fitted just under what the planted legs reach
 const grid = Array.from({ length: 480 }, (_, i) => i / 480);
 /** In flight, with neither foot planted, the hips may rise as high as a leg hanging straight */
-const flightReach = Math.sqrt((soft * legLength) ** 2 - rest.z ** 2);
+const flightReach = Math.sqrt((soft * legLength) ** 2 - rest.x ** 2 - rest.z ** 2);
 const reachAt = (t: number) =>
   Math.min(
     flightReach,
     ...sides.flatMap((side) => {
       const foot = footAt(side, t);
-      return foot.planted ? [Math.sqrt((soft * legLength) ** 2 - (foot.x - hip[side].x) ** 2 - rest.z ** 2)] : [];
+      const { x, z } = ankleFrom(side, foot.x);
+      const reach = Math.sqrt(Math.max(0, (soft * legLength) ** 2 - x ** 2 - z ** 2));
+      // backing up, a swinging foot far ahead or behind holds them down too
+      return foot.planted ? [reach] : back ? [foot.y + reach] : [];
     }),
   );
 const reaches = grid.map(reachAt);
@@ -154,7 +164,8 @@ for (let i = 0; i <= samples; i++) {
   const hipHeight = hipHeightAt(t);
   for (const side of sides) {
     const foot = footAt(side, t);
-    const target = new THREE.Vector3(foot.x - hip[side].x, foot.y - hipHeight, rest.z);
+    const { x, z: ankleZ } = ankleFrom(side, foot.x);
+    const target = new THREE.Vector3(x, foot.y - hipHeight, ankleZ);
     const [z, a, k] = (guess[side] = solveKnee(target, guess[side]));
     worstMiss = Math.max(worstMiss, ankleOf([z, a, k]).distanceTo(target));
     widest = Math.max(widest, Math.abs(deg(z)));
@@ -173,7 +184,7 @@ console.error(
 );
 console.log(opts.blockbench ? blockbenchSnippet(keys) : JSON.stringify(keys));
 
-/** Keys `--name` and regenerates its `right` mirror, half a cycle on — outside the undo stack */
+/** Keys `--name` and regenerates its `right` mirror, half a cycle on, unless `back` — outside the undo stack */
 function blockbenchSnippet(data: typeof keys) {
   const [leftName, rightName] = [opts.name, opts.name.replace("left", "right")];
   return `(() => {
@@ -202,6 +213,7 @@ function blockbenchSnippet(data: typeof keys) {
       animator.addKeyframe({ channel: k.channel, time: k.time, interpolation: k.interpolation, data_points: [point] });
     }
   }
+  if (${back}) return "keyed ${leftName}";
   const right = replace("${rightName}");
   const swap = (n) => (n.startsWith("left") ? "right" + n.slice(4) : n.startsWith("right") ? "left" + n.slice(5) : n);
   for (const a of Object.values(left.animators)) {
