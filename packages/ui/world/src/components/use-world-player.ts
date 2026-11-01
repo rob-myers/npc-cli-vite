@@ -21,6 +21,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       tap: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
+      lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
       look: false,
@@ -133,6 +134,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.tapMs[key] = double ? -Infinity : ms; // a third is a fresh first
         return double;
       },
+      dragLookTowards(clientX, clientY) {
+        state.lookTowards(clientX, clientY);
+        state.lookMarked = false;
+      },
       lookTowards(clientX, clientY) {
         const npc = state.get();
         // paused, the look would run out before they could turn
@@ -151,6 +156,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (npc === undefined || w.client === true || w.disabled === true) return;
         if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
         state.lookAt = { x, y: z };
+        state.lookMarked = true;
         // held as `r` would be, long enough to come round
         state.cancelLook();
         state.cancelLook = w.e.after(lookHoldMs / 1000, () => {
@@ -468,6 +474,8 @@ export type State = {
   syncRun(): void;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
+  /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
+  lookMarked: boolean;
   /** Ends the look hold early, a game-time timer */
   cancelLook(): void;
   /** A two-finger tap on the canvas has them look where it lands */
@@ -479,6 +487,8 @@ export type State = {
   is(npcKey: string): boolean;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
+  /** The same, unmarked: a finger dragged whilst following is already on the spot */
+  dragLookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */
   lookAtPoint(x: number, z: number): void;
 

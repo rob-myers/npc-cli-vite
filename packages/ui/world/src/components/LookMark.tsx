@@ -5,7 +5,7 @@ import { crosshairY } from "../const.env";
 import { groundCrosshairOf } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
-/** Where a tap has the player look: a cross on the floor there — see `w.player.lookTowards`. Whilst "view pick", where the last pick landed */
+/** Where a tap has the player look: a cross on the floor there, unless a finger drags it — see `w.player.lookTowards`. Whilst "view pick", where the last pick landed */
 export default function LookMark() {
   const w = useContext(WorldContext);
   const cross = useRef<THREE.Mesh>(null);
@@ -15,7 +15,12 @@ export default function LookMark() {
     if (cross.current === null) return;
     const npc = w.player.get();
     const { pickedAt } = w.view;
-    const at = w.view.objectPick.value === 1 ? pickedAt && { x: pickedAt.x, y: pickedAt.z } : w.player.lookAt;
+    const at =
+      w.view.objectPick.value === 1
+        ? pickedAt && { x: pickedAt.x, y: pickedAt.z }
+        : w.player.lookMarked === true
+          ? w.player.lookAt
+          : null;
     cross.current.visible = npc !== undefined && at !== null;
     // on the floor, not at their own height: sat or lain they are off it
     if (npc !== undefined && at !== null) cross.current.position.set(at.x, crosshairY, at.y);

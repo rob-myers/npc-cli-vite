@@ -72,9 +72,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     TOUCH_PAN: 4,
     TOUCH_DOLLY_PAN: 5,
     TOUCH_DOLLY_ROTATE: 6,
+    TOUCH_LOOK: 7,
   } as const;
 
-  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 = this.STATE.NONE;
+  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 = this.STATE.NONE;
 
   /** Update state */
   u = {
@@ -125,6 +126,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   lockRotateAxis = true;
   /** Whether a touch turn locks to one axis, as `lockRotateAxis` does a mouse's. `WorldView` sets it whilst aiming */
   lockTouchRotateAxis = false;
+  /** Whilst set, a one-finger drag calls it at the finger, in client px, rather than panning or turning. `WorldView` sets it whilst following */
+  touchLook: null | ((clientX: number, clientY: number) => void) = null;
+  /** Where a one-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
+  touchLookFrom = { x: 0, y: 0, dragged: false };
   /** How far the fingers have moved since the turn began, in px — see `pickRotateAxis` */
   rotateTravel = new THREE.Vector2();
   /** `(clientX, clientY)` of first pointerdown */
@@ -827,6 +832,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.update();
         break;
 
+      case this.STATE.TOUCH_LOOK: {
+        const from = this.touchLookFrom;
+        // a drag, not a tap's jitter, which picks
+        from.dragged ||= Math.hypot(event.pageX - from.x, event.pageY - from.y) > touchLookDragPx;
+        if (from.dragged === true) this.touchLook?.(event.clientX, event.clientY);
+        break;
+      }
+
       default:
         this.state = this.STATE.NONE;
     }
@@ -835,7 +848,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   onTouchStart = (event: PointerEvent) => {
     this.trackPointer(event);
 
-    if (this.pointers.length === 1) {
+    if (this.pointers.length === 1 && this.touchLook !== null) {
+      // the camera's own start is not sent: it is not being moved
+      Object.assign(this.touchLookFrom, { x: event.pageX, y: event.pageY, dragged: false });
+      this.state = this.STATE.TOUCH_LOOK;
+    } else if (this.pointers.length === 1) {
       switch (this.touches.ONE) {
         case TOUCH.ROTATE:
           if (this.enableRotate === false) return;
@@ -1141,6 +1158,8 @@ const pinchLogPerStop = 0.6;
 const pinchPurity = 0.35;
 /** How far a locked touch turn travels before it picks its axis, in px */
 const touchAxisLockPx = 8;
+/** How far a finger travels before a touch look begins, in px: less is a tap, which picks */
+const touchLookDragPx = 8;
 /** How far a zoom must travel to commit to its stop rather than falling back to the one it left */
 /** Progress a zoom-in must pass to be committed — under it, letting go settles back out */
 export const zoomCommitIn = 0.1;
