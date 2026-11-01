@@ -293,6 +293,8 @@ export function WorldMenu() {
         return w.debug?.contextMenu ?? false;
       case "hud debug":
         return w.debug?.hudDebug ?? false;
+      case "aim mode":
+        return w.debug?.aimMode ?? true;
       default:
         return false;
     }
@@ -392,6 +394,13 @@ export function WorldMenu() {
         w.debug?.set({ hudDebug: next, forceShot: "hit" }); // hidden, back to hitting
         store.patch({ hudDebug: next });
         w.hud?.update();
+        state.update();
+        break;
+      }
+      case "aim mode": {
+        const next = !(w.debug?.aimMode ?? true);
+        w.debug?.set({ aimMode: next });
+        store.patch({ aimMode: next });
         state.update();
         break;
       }
@@ -1546,6 +1555,7 @@ const spinnerMinMs = 300;
 
 const cameraModes: CameraModeType[] = ["free", "embodied"];
 const debugItems = [
+  "aim mode",
   "context menu",
   "door ui",
   "hud debug",

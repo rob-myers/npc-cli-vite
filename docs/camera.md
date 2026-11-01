@@ -69,6 +69,12 @@ Polar:
 
 There is no zooming past the outer stop: the radius is only ever a zoom stop.
 
+Aim mode (debug **aim mode**, on by default, `w.debug.aimMode`):
+- Whilst the player's phaser is raised (`isAiming`), the tilt has a detent at top-down. `shapeEmbodiedPolar` eases `embodiedPolar` to `aimPolar` (not quite `0`, which loses the azimuth) whenever no drag holds it.
+- Paused, it is held back, so a tilt stays where it is left. On unpause it eases back.
+- Each turn keeps to one axis, the one its first movement favours, on touch too (`lockTouchRotateAxis`, `pickRotateAxis`).
+- Lowering the phaser leaves the view where it is, and both axes free.
+
 ## Following the player
 
 **Zoomed out, the view frames the player and their frontier.**

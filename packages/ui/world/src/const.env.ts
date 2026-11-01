@@ -157,6 +157,10 @@ export const embodiedFlattenFrom = 0.4;
  * anywhere, so "zoomed in" reaches much further out than the mouse's inner stop
  */
 export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
+/** How fast a raised phaser eases the camera's tilt to top-down, per second */
+export const aimPolarRate = 6;
+/** The tilt a raised phaser eases to. Not `0`, where the camera loses its azimuth */
+export const aimPolar = 0.001;
 /**
  * How far the rgb shift parts the channels, in css px, from the inner zoom stop to the outer.
  * Out far, it stays under a line's width, else each thin line keeps only its green.
