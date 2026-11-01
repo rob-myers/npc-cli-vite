@@ -61,7 +61,6 @@ export function Debug() {
       pickDoors: getWorldStore(w.key).read().pickDoors,
       contextMenu: getWorldStore(w.key).read().contextMenu,
       hudDebug: getWorldStore(w.key).read().hudDebug,
-      aimMode: getWorldStore(w.key).read().aimMode,
       forceShot: "hit",
 
       physicsLines: new THREE.BufferGeometry(),
@@ -490,8 +489,6 @@ export type State = {
   contextMenu: boolean;
   /** Whether the player's bar shows debug controls — see `WorldHud` */
   hudDebug: boolean;
-  /** Whether a raised phaser tilts the camera top-down, and a turn keeps to one axis — see `WorldView` */
-  aimMode: boolean;
   /** How every phaser shot at someone ends: set by the hud's debug badge */
   forceShot: JshCli.ShotOutcome;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;

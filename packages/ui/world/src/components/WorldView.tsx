@@ -16,8 +16,6 @@ import { float, instanceIndex, output, pass, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
-  aimPolar,
-  aimPolarRate,
   cameraRefAspect,
   cameraSpeed,
   compilingShadersText,
@@ -165,7 +163,6 @@ export function WorldView(props: React.PropsWithChildren) {
         () => w.r3f?.invalidate(),
       ),
       frontierMs: 0,
-      aimPolarMs: 0,
       frontierOffset: { x: 0, z: 0 },
       frontierHold: false,
       keysDown: new Set(),
@@ -860,20 +857,7 @@ export function WorldView(props: React.PropsWithChildren) {
       shapeEmbodiedPolar(spherical) {
         if (state.controls.isRotating() === true) {
           state.embodiedPolar = spherical.phi; // theirs whilst they drag
-          state.aimPolarMs = 0;
           return;
-        }
-        // aiming is a detent at top-down, held back whilst paused
-        if (state.isAiming() === true && w.disabled !== true && state.embodiedPolar !== aimPolar) {
-          const now = performance.now();
-          const deltaSecs = state.aimPolarMs === 0 ? 0 : Math.min((now - state.aimPolarMs) / 1000, 0.1);
-          state.aimPolarMs = now;
-          const from = state.embodiedPolar - aimPolar;
-          state.embodiedPolar = aimPolar + from * Math.exp(-aimPolarRate * deltaSecs);
-          if (Math.abs(state.embodiedPolar - aimPolar) < phiSettledEpsilon) state.embodiedPolar = aimPolar;
-          w.r3f?.invalidate(); // the next frame eases on
-        } else {
-          state.aimPolarMs = 0;
         }
         if (Math.abs(spherical.phi - state.embodiedPolar) > phiSettledEpsilon) {
           spherical.phi = state.embodiedPolar;
@@ -1060,7 +1044,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       },
       isAiming() {
-        return w.debug?.aimMode !== false && w.phasers?.isArmed(w.player.key) === true;
+        return w.phasers?.isArmed(w.player.key) === true;
       },
       showsPaused() {
         return w.disabled === true;
@@ -1938,8 +1922,6 @@ export type State = {
   playerFrontier: PlayerFrontier;
   /** When `easeFrontier` last ran, so its ease is measured in time */
   frontierMs: number;
-  /** When the aimed tilt last eased, else `0` — see `shapeEmbodiedPolar` */
-  aimPolarMs: number;
   /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
@@ -2042,7 +2024,7 @@ export type State = {
   onCameraEnd(): void;
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
-  /** Whether the player's phaser is raised in aim mode — see `Debug`'s `aimMode` */
+  /** Whether the player's phaser is raised: a turn then keeps to one axis */
   isAiming(): boolean;
   /** Whether the paused indicator shows */
   showsPaused(): boolean;

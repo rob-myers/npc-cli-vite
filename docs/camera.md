@@ -61,7 +61,7 @@ Azimuth:
 - That heading is held whilst any of `w`, `a`, `s` and `d` is down (`wasdHeading`), so a turn mid-walk doesn't swerve them.
 - On desktop the HUD's compass names `compassPoint`, the point nearest `w`'s heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where `w` heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
 - The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
-- A drag turns and tilts at once, except in aim mode.
+- A drag turns and tilts at once, except whilst the phaser is raised.
 
 Polar:
 - Never clamped by the zoom. ONE tilt is tracked, `embodiedPolar`. A zoom neither flattens the view nor tips it back, so both angles survive it.
@@ -70,11 +70,9 @@ Polar:
 
 There is no zooming past the outer stop: the radius is only ever a zoom stop.
 
-Aim mode (debug **aim mode**, on by default, `w.debug.aimMode`):
-- Whilst the player's phaser is raised (`isAiming`), the tilt has a detent at top-down. `shapeEmbodiedPolar` eases `embodiedPolar` to `aimPolar` (not quite `0`, which loses the azimuth) whenever no drag holds it.
-- Paused, it is held back, so a tilt stays where it is left. On unpause it eases back.
+Whilst the player's phaser is raised (`isAiming`):
 - Each turn keeps to one axis, the one its first movement favours, on touch too (`lockTouchRotateAxis`, `pickRotateAxis`).
-- Lowering the phaser leaves the view where it is, and both axes free.
+- Lowering it frees both axes again.
 
 ## Following the player
 

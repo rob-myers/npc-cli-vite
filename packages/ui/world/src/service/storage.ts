@@ -61,8 +61,6 @@ export type WorldSettings = {
   spotsShown: boolean;
   /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
   hudDebug: boolean;
-  /** Whether a raised phaser tilts the camera top-down — see `Debug`'s `aimMode` */
-  aimMode: boolean;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
@@ -106,7 +104,6 @@ const defaultWorldSettings: WorldSettings = {
   contextMenu: true,
   spotsShown: false,
   hudDebug: false,
-  aimMode: true,
   timeScale: 1,
   timeSliderOpen: true,
   breathTune: {},
