@@ -106,6 +106,8 @@ Its pain clip plays once, then (`hitConfig.next`):
 - Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
 - Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is
   lowered, and `move`, `look` and arming are refused.
+- A shove (`w.e.move`'s `shove`, e.g. jsh `sidestep`) still moves one pacified, or one collapsed. Collapsed, they
+  scoot back-first in `collapsed_drag` (`anim.dragged`), at `dragConfig.speed`, turning as they go.
 - Pain on someone already pacified or collapsed leaves them as they were after, though a head shot pacifies one collapsed.
   A head shot on someone pacified has no effect, nor does the label, or no part.
 - One lock hits once. Hits are not mirrored over the network.

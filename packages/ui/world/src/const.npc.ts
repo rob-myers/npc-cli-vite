@@ -172,6 +172,7 @@ export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
   collapsed: true,
+  collapsed_drag: true,
   crouch: true,
   crouch_backwards: true,
   crouch_cover: true,
@@ -385,6 +386,7 @@ export const fadeSecs: Record<
   backwards: {},
   breathe: { shuffle: 0.15 },
   collapsed: {},
+  collapsed_drag: {},
   crouch: {},
   crouch_backwards: {},
   crouch_cover: {},
@@ -583,6 +585,9 @@ export const strafeSpeed = {
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;
+
+/** One collapsed scoots back-first (`collapsed_drag`): metres a cycle covers, and metres per second */
+export const dragConfig = { stride: 0.25, speed: 0.25 } as const;
 
 /** What psi may do to whom it focuses on: placeholders */
 export const psiActions = ["distract", "rush", "tired", "toilet"] as const;

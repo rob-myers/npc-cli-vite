@@ -68,7 +68,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Strafing | `docs/npc-strafe.md` | Whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing. `syncStrafe` blends four directional gaits by heading, paced to the ground each covers. |
 | Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
 | Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their menu (`PickMenu`). |
-| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
+| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
 | Workers | `docs/workers.md` | See [Navigation](#navigation-and-crowd). |
 | Time | `docs/time.md` | Two clocks. `w.gameTime` is scaled (`0`-`2`, the menu's slider, jsh `timescale`) and held by a pause: behaviours, animations, timers and detection run on it. `w.realTime` never is: the camera and UI marks. Wait in game time with `w.e.after`, `w.e.wait` or jsh `wSleep`, never `setTimeout`. |
 | Tasks | `docs/tasks.md` | A jsh command's wait on the World, which a kill must end, runs as a `Task` (`@npc-cli/util`), e.g. `task.until` on World state. So does World code with async steps of its own. |
@@ -120,8 +120,9 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 - The navmesh uses `navcat` (a recast/detour JS port). Agents live in a `crowd`. `navcat` is patched: see `docs/navcat-patch.md`.
 - **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
-- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
+- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `w.npc.getNodeRef(agent)` rather than `getClosestPoly(npc.position)`.
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
+- **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
 
 **Workers** (see `docs/workers.md`):
 - Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycasts on a `SegGrid`, `w.navWorker`). See `docs/workers.md`.

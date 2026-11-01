@@ -319,8 +319,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async move(opts) {
         const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
+        const { hurt } = npc.anim;
 
-        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
+        if (hurt !== null && (shove !== true || (hurt.key !== "pacified" && npc.anim.dragged === false))) {
           throw Error("hurt");
         }
         const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
@@ -1650,13 +1651,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
           // an aim held until rest, e.g. a sidestep's, gives way to a new move
           if (strafe !== true && npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
-          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
-          npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
+          // collapsed, they scoot back-first and turn as they go. Else aiming, they strafe unless told not to
+          const { dragged } = npc.anim;
+          npc.anim.strafe = dragged === false && (strafe ?? Boolean(npc.anim.face.aim));
+          npc.anim.strafeFollowsAim = dragged === false && strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
-            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
+            dragged ||
+            (npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config))));
           if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
-          await w.npc.turnBeforeMoving(npc);
+          if (dragged === false) await w.npc.turnBeforeMoving(npc); // a look throws "hurt"
           npc.anim.startMoving(arrive);
 
           w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });

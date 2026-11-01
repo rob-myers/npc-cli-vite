@@ -11,6 +11,7 @@ import {
   defaultBreathTune,
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
+  dragConfig,
   eyesConfig,
   fadeSecs,
   flinchConfig,
@@ -188,6 +189,11 @@ export class NpcAnimation {
   /** Crouched at all, half or full */
   get crouched() {
     return this.crouchLevel > 0;
+  }
+
+  /** Collapsed on the floor: a move scoots them back-first in `collapsed_drag` */
+  get dragged() {
+    return this.hurt?.key === "collapsed";
   }
 
   /** The four directional gaits a strafe blends, by how low they crouch */
@@ -476,6 +482,7 @@ export class NpcAnimation {
   /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
   maxSpeedFor() {
     const { maxSpeed } = agentConfig;
+    if (this.dragged === true) return dragConfig.speed;
     if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
     if (this.strafe === true) return strafeSpeed.walk;
     return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
@@ -691,9 +698,10 @@ export class NpcAnimation {
 
   /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
   showGait() {
-    const clipKey = this.gaitKeys[this.backwards === true ? 2 : 0]; // ahead, or a half turn round
+    // collapsed, the scoot. Else ahead, or a half turn round
+    const clipKey = this.dragged === true ? "collapsed_drag" : this.gaitKeys[this.backwards === true ? 2 : 0];
     // a look or a spawn in between puts idle on, and it must be shown again or they slide
-    const shown = this.backwards === true || this.crouched ? this.pose === clipKey : isGait(this.pose);
+    const shown = this.backwards === true || this.crouched || this.dragged ? this.pose === clipKey : isGait(this.pose);
     if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
     this.moving = true;
     this.moveClip = this.npc.clips[clipKey];
@@ -871,6 +879,8 @@ export class NpcAnimation {
         // a cycle a stride, at their speed: a strafe divides by the blend's in `syncStrafe`
         const pace = Math.max(this.speed, crouchPaceMin);
         action.timeScale = this.strafing === true ? pace : pace / gaitStride[key];
+      } else if (key === "collapsed_drag") {
+        action.timeScale = Math.max(this.speed, crouchPaceMin) / dragConfig.stride;
       } else {
         action.timeScale = (key === "run" ? 0.5 : 1) * Math.max(0.25 / npcScale, this.speed, 0.5);
       }
@@ -1521,7 +1531,7 @@ function bubbleHeightForClip(clipName: AnimationClipKey): number {
 }
 
 /** Stood, yet about as low as one sat: collapsed on the floor, or crouched */
-const isLowClip = (clipName: AnimationClipKey) => clipName === "collapsed" || clipName.startsWith("crouch");
+const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || clipName.startsWith("crouch");
 /** Crouched half: the head lower than stood, higher than sat */
 const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
 

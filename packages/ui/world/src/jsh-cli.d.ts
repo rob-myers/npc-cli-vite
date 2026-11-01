@@ -233,7 +233,7 @@ declare namespace JshCli {
     strafe?: boolean;
     /** A target neither doable nor navigable becomes the navigable point nearest it, rather than throwing */
     near?: boolean;
-    /** A push, e.g. a sidestep's: it moves them even whilst stood pacified */
+    /** A push, e.g. a sidestep's: it moves them even whilst stood pacified, or collapsed */
     shove?: boolean;
     /** Fade onto or off a doable however far. Else only within `doableLook`, walking the rest */
     far?: boolean;
