@@ -177,7 +177,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         uiStoreApi.setUiMeta(id, (draft) => void (draft.disabled = draft.autoPaused = hidden));
       }
     }
-  }, [meta.currentTabId]);
+  }, [meta.currentTabId, meta.items.join()]); // a tab moved in may now be hidden
 
   const hasMounted = useRef(false);
   useEffect(() => {

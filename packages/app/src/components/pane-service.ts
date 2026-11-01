@@ -101,6 +101,29 @@ export function ensureLeafUis(node: PaneNode) {
   }
 }
 
+/** Every tab into one Tabs, the focused one. Their uis only move, so none remounts. There is no undo */
+export function flattenPanes() {
+  const { persistedPanes, byId } = uiStore.getState();
+  const tabsIds = collectLeafUiIds(persistedPanes.root).filter((id) => byId[id] !== undefined);
+  if (tabsIds.length < 2) return;
+  const focused = persistedPanes.focusedTabsUiId;
+  const keepId = focused !== undefined && tabsIds.includes(focused) ? focused : tabsIds[0];
+  const items = tabsIds.flatMap((id) => byId[id].meta.items ?? []);
+  const leafId = nextId++;
+
+  // one update, so no tab is ever shown by two Tabs at once
+  uiStore.setState((draft) => {
+    for (const id of tabsIds) if (id !== keepId) delete draft.byId[id]; // not `removeItem`, which takes their tabs
+    draft.byId[keepId].meta.items = items;
+    for (const id of items) {
+      const ui = draft.byId[id];
+      if (ui) ui.meta.parentId = keepId;
+    }
+    draft.persistedPanes.root = { type: "leaf", id: leafId, uiId: keepId };
+  });
+  persistPanesToUi();
+}
+
 export function findLeafByUiId(node: PaneNode, uiId: string): Extract<PaneNode, { type: "leaf" }> | null {
   if (node.type === "leaf") return node.uiId === uiId ? node : null;
   for (const child of node.children) {
