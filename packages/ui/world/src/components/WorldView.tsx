@@ -24,7 +24,6 @@ import {
   crosshairY,
   defaultCameraMinDistance,
   defaultCameraMode,
-  embodiedAxisLockFrom,
   embodiedSnapArm,
   embodiedSnapCancel,
   embodiedZoomInRate,
@@ -672,12 +671,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
         // both angles are the user's own at every zoom, but a turn let go whilst `compassSnap` snaps
         controls.enableRotate = true;
-        // a drag locks to the axis it set off along only whilst ZOOMED OUT. Once a zoom-in is under
-        // way a turn begun a little up or down would lock vertical, and close in a diagonal drag
-        // may simply do both
-        const aiming = state.isAiming();
-        controls.lockRotateAxis = aiming || (t > embodiedAxisLockFrom && state.zoomPan === null);
-        controls.lockTouchRotateAxis = aiming; // whilst aiming, a turn tilts or turns, never both
+        // whilst aiming, a turn tilts or turns, never both
+        controls.lockRotateAxis = controls.lockTouchRotateAxis = state.isAiming();
 
         state.shapeEmbodiedPolar(spherical); // the tilt is theirs, whatever the zoom
         state.advanceZoomPan(spherical);

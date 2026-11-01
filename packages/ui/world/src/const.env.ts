@@ -147,16 +147,6 @@ export const spawnPlayerAttempts = 10;
 export const spawnRoomLabels = ["corridor", "common"];
 
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = "embodied";
-/**
- * `embodied` camera mode: how far out — as a fraction of the travel between the zoom's stops —
- * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`
- */
-export const embodiedFlattenFrom = 0.4;
-/**
- * ...and how far out a drag locks to one axis. On a phone the zoom is free and comes to rest
- * anywhere, so "zoomed in" reaches much further out than the mouse's inner stop
- */
-export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
 /** How fast a raised phaser eases the camera's tilt to top-down, per second */
 export const aimPolarRate = 6;
 /** The tilt a raised phaser eases to. Not `0`, where the camera loses its azimuth */

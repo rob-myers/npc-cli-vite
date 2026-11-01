@@ -120,8 +120,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /**
    * Whether a mouse rotate LOCKS to the axis its first pixels favoured, for the rest of the drag.
-   * `embodied` takes it away whilst its polar is pinned, when a turn begun a little up or down
-   * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
+   * `embodied` locks only whilst aiming — see `WorldView`'s `onCameraFrame`
    */
   lockRotateAxis = true;
   /** Whether a touch turn locks to one axis, as `lockRotateAxis` does a mouse's. `WorldView` sets it whilst aiming */
