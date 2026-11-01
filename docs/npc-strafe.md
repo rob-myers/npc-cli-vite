@@ -49,7 +49,8 @@ Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's t
 
 An npc's body never shows through a wall (see `CLAUDE.md`). Strafing along a wall they face, the run's forward lean takes their head and hands past the navmesh's margin from walls (`wallOutset`).
 - So with such a wall within `strafeWalkNear`, `wasd_delta --nav` has a strafing player walk (`anim.nearWall`, which `anim.fast` heeds). Upright, the navmesh's margin is room enough. Clear of it, they run again.
-- `npc.roomAhead` casts navmesh rays ahead: one straight, two angled out by `strafeWallSpan` to their hands, so a door's jamb is seen as they enter.
+- `npc.roomAhead` casts one navmesh ray ahead, `strafeWalkNear` deep, leant out towards the side they move by up to `strafeWallSpan`, to their hands. So a corner they run into is seen. Backing up, they lean back, so none is cast.
+- It is not cast in a doorway (`w.e.npcToDoors[key].inside`), whose sides would read as a wall ahead whilst they pass through sideways.
 - Npcs moving by path are not checked.
 
 ## The blend

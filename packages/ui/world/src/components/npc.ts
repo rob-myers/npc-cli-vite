@@ -571,18 +571,19 @@ export class Npc {
     reject.look(err);
   }
 
-  /** Room from `point` to a wall ahead of them, up to `depth`: straight, and angled out to the hands, e.g. past a door's jamb */
-  roomAhead(point: Geom.VectJson, nodeRef: NodeRef, depth: number): number {
-    const span = npcConfig.dist.strafeWallSpan;
+  /**
+   * Room from `point` to a wall ahead of them, up to `depth`, along one ray leant out to the hands on `heading`'s side, e.g. at a corner.
+   * Heading more back than sideways, they lean back: `depth`
+   */
+  roomAhead(point: Geom.VectJson, nodeRef: NodeRef, depth: number, heading: Geom.VectJson): number {
     const [sx, sz] = [-Math.sin(this.rotation.y), -Math.cos(this.rotation.y)];
-    const start: Vec3 = [point.x, 0, point.y];
-    return Math.min(
-      ...[0, span, -span].map((side) => {
-        const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
-        const hit = raycast(this.w.nav.navMesh, nodeRef, start, end, this.queryFilter);
-        return hit.t <= 1 ? hit.t * depth : depth;
-      }),
-    );
+    const length = Math.hypot(heading.x, heading.y) || 1;
+    const [ahead, right] = [(heading.x * sx + heading.y * sz) / length, (heading.y * sx - heading.x * sz) / length];
+    if (ahead < -Math.abs(right)) return depth;
+    const side = right * npcConfig.dist.strafeWallSpan;
+    const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
+    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
+    return hit.t <= 1 ? hit.t * depth : depth;
   }
 
   setBubbleHeight(y: number) {
