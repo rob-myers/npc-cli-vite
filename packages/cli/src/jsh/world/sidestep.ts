@@ -144,13 +144,13 @@ function acrossWay(npc: JshCli.Npc, walker: JshCli.Npc) {
 
 /** Which way the navmesh edge nearest `npc` runs, if within `hug`, else `null`. Found as the crowd finds walls */
 function wallNear(w: JshCli.WorldState, npc: JshCli.Npc) {
-  const { agent, position: p, queryFilter } = npc;
-  if (agent === null) return null;
+  const { nodeRef, position: p, queryFilter } = npc;
+  if (nodeRef === null) return null;
   const { navMesh } = w.nav;
   let along: null | Geom.VectJson = null;
   let nearest: number = sidestepConfig.hug;
   // none on failure
-  const { nodeRefs } = findLocalNeighbourhood(navMesh, w.npc.getNodeRef(agent), p.toArray(), nearest, queryFilter);
+  const { nodeRefs } = findLocalNeighbourhood(navMesh, nodeRef, p.toArray(), nearest, queryFilter);
   for (const nodeRef of nodeRefs) {
     const { segmentVerts: s } = getPolyWallSegments(navMesh, nodeRef, queryFilter, false);
     for (let i = 0; i < s.length; i += 6) {

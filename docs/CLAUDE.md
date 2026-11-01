@@ -120,7 +120,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 - The navmesh uses `navcat` (a recast/detour JS port). Agents live in a `crowd`. `navcat` is patched: see `docs/navcat-patch.md`.
 - **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
-- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `w.npc.getNodeRef(agent)` rather than `getClosestPoly(npc.position)`.
+- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
 - **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
 

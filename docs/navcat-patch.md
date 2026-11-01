@@ -20,7 +20,7 @@ It is `0` (`crowdConfig`): the navmesh is already cut back from walls by a body'
 no walls, else a narrow strip of navmesh slows a walker as if they touched one.
 
 So `agent.boundary.segments` is always empty. Code wanting the walls near an npc gathers them itself,
-as the crowd would: `findLocalNeighbourhood` from their poly (`w.npc.getNodeRef(agent)`), then
+as the crowd would: `findLocalNeighbourhood` from their poly (`npc.nodeRef`), then
 `getPolyWallSegments` on each poly found, kept within range. Two places do:
 
 - `queryBoundary` in `plan.worker.ts`, for `park`. `debug_boundary npc:rob` draws what it finds.
