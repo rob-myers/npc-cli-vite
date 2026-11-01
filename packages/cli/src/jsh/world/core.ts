@@ -1,6 +1,6 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
-import { agentConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, npcConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
 import { Task } from "@npc-cli/util";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
@@ -1757,6 +1757,11 @@ export async function* wasd_delta(
     const length = agentConfig.maxSpeed[npc.anim.hurry === true ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
+      /** Their poly whilst strafing */
+      const strafeRef = npc.isStrafing() === true ? npc.nodeRef : null;
+      // strafing near a wall they face, they walk
+      const near = npcConfig.dist.strafeWalkNear;
+      npc.anim.nearWall = strafeRef !== null && npc.roomAhead(npc.point, strafeRef, near) < near;
       // none held, or opposites, or the mesh's edge
       const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
       if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {

@@ -45,6 +45,13 @@ turning to it is the usual exponential ease.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
+## Walls
+
+An npc's body never shows through a wall (see `CLAUDE.md`). Strafing along a wall they face, the run's forward lean takes their head and hands past the navmesh's margin from walls (`wallOutset`).
+- So with such a wall within `strafeWalkNear`, `wasd_delta --nav` has a strafing player walk (`anim.nearWall`, which `anim.fast` heeds). Upright, the navmesh's margin is room enough. Clear of it, they run again.
+- `npc.roomAhead` casts navmesh rays ahead: one straight, two angled out by `strafeWallSpan` to their hands, so a door's jamb is seen as they enter.
+- Npcs moving by path are not checked.
+
 ## The blend
 
 Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =

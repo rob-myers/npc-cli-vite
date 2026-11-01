@@ -744,6 +744,12 @@ export default function Phasers() {
                 : phaserConfig.drawOutSecs;
           anim.setUpper(pose, { swapSecs, past: sat });
         }
+        // the left arm drawn in with the right, so a run's guard keeps off the wall: only ours, never psi's or a reach
+        const leftPose = pose === phaserConfig.avoid && tucked === false ? pose : null;
+        const shownLeft = anim.upperLeft.target === 1 ? anim.upperLeft.key : null;
+        if (leftPose !== shownLeft && (shownLeft === null || isPhaserPose(shownLeft))) {
+          anim.setUpper(leftPose, { side: "left", fadeSecs: phaserConfig.drawInSecs });
+        }
 
         // the stance — theirs to stand in, and only ours to put back. Sat, lain or crouched, the seat's, bed's or crouch's
         /** Past an obstacle, not before the arm is up: the stance's own arm would swing the gun through it */

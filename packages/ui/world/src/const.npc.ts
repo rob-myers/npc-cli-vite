@@ -102,6 +102,10 @@ export const npcConfig = {
     backStep: 0.75,
     /** Below this much movement per frame an npc counts as motionless */
     stuckEpsilon: 0.002,
+    /** How far to either side `roomAhead` looks: out to their hands */
+    strafeWallSpan: 0.25,
+    /** Strafing with a wall this near ahead, past the navmesh, they walk: a run's lean would reach it */
+    strafeWalkNear: 0.2,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
     circling: 0.6,
   },

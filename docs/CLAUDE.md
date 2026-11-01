@@ -47,6 +47,9 @@ Pnpm monorepo. Key packages:
   - The npc tuning is split off so editing it doesn't rebuild the World. `World.tsx` refetches on its own HMR, and so does every importer of `const.env`, its hooks included.
   - So only npc modules import `const.npc`, including those drawing npcs or what surrounds them, e.g. `NpcRings`, `NpcBreath`. Never `World`, `WorldView` or their hooks.
   - What the World builds around an npc, `npcDims`, is in `const.env`.
+- **An npc's body never shows through a wall.** Keep to this when adding a pose or gait.
+  - The navmesh stops `wallOutset` (0.25m) short of walls, room enough for an upright body.
+  - What reaches further gives way instead. A strafing run with a wall ahead walks (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
 
 **Decor**
 - Never scale a decor quad non-uniformly. To reshape one, e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`.

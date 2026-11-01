@@ -63,8 +63,10 @@ export class NpcAnimation {
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {
-    return this.hurry === true && this.backwards === false && this.crouched === false;
+    return this.hurry === true && this.backwards === false && this.crouched === false && this.nearWall === false;
   }
+  /** Strafing close to a wall ahead, which a run's lean would reach: they walk. Set by `wasd_delta` */
+  nearWall = false;
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */

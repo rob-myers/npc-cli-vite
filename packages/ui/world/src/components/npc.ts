@@ -11,6 +11,7 @@ import {
   type NavMesh,
   type NodeRef,
   type QueryFilter,
+  raycast,
   type Vec3,
 } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
@@ -19,6 +20,7 @@ import * as THREE from "three/webgpu";
 import {
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
+  npcConfig,
   npcLabelWeight,
   npcMaterialConfig,
   npcScale,
@@ -567,6 +569,20 @@ export class Npc {
     reject.move(err);
     reject.scale(err);
     reject.look(err);
+  }
+
+  /** Room from `point` to a wall ahead of them, up to `depth`: straight, and angled out to the hands, e.g. past a door's jamb */
+  roomAhead(point: Geom.VectJson, nodeRef: NodeRef, depth: number): number {
+    const span = npcConfig.dist.strafeWallSpan;
+    const [sx, sz] = [-Math.sin(this.rotation.y), -Math.cos(this.rotation.y)];
+    const start: Vec3 = [point.x, 0, point.y];
+    return Math.min(
+      ...[0, span, -span].map((side) => {
+        const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
+        const hit = raycast(this.w.nav.navMesh, nodeRef, start, end, this.queryFilter);
+        return hit.t <= 1 ? hit.t * depth : depth;
+      }),
+    );
   }
 
   setBubbleHeight(y: number) {
