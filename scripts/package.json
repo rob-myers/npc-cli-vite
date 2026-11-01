@@ -8,6 +8,7 @@
     "./vite-plugin-dev-mcp": "./src/vite-plugin-dev-mcp.ts",
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-scenario": "./src/vite-plugin-scenario.ts",
+    "./vite-plugin-build-sheet-hash": "./src/vite-plugin-build-sheet-hash.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
     "./vite-plugin-spots": "./src/vite-plugin-spots.ts",
     "./vite-plugin-stable-entry": "./src/vite-plugin-stable-entry.ts",

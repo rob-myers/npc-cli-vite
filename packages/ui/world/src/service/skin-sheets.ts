@@ -1,10 +1,10 @@
 import { loadImage } from "@npc-cli/util/legacy/dom";
-import type { AssetsSkinManifestType, SheetsType, SkinEyes } from "../assets.schema";
+import { type AssetsSkinManifestType, getSheetUrl, type SheetsType, type SkinEyes } from "../assets.schema";
 import { type EyeFrame, eyeFrames, skinSliceDims } from "../const.both";
 
 /** The skin sheets, each skin drawn from its svg, else its png — see `docs/skins.md` */
 export function loadSkinSheets(sheets: SheetsType, manifest: AssetsSkinManifestType, cacheBust: string) {
-  return loadSheets("skin", sheets.skinSheetDims, cacheBust, (cts) =>
+  return loadSheets("skin", sheets, sheets.skinSheetDims, cacheBust, (cts) =>
     Object.values(sheets.skin).map(async ({ key, sheetId, rect }) => {
       const { filename, svgPath } = manifest.byKey[key] ?? {};
       if (!filename) return;
@@ -24,7 +24,7 @@ export function loadSkinSliceSheets(
 ) {
   const { cell, slice } = skinSliceDims;
   const perRow = cell / slice;
-  return loadSheets("skin-slices", sheets.skinSlicesSheetDims, cacheBust, (cts) =>
+  return loadSheets("skin-slices", sheets, sheets.skinSlicesSheetDims, cacheBust, (cts) =>
     Object.values(sheets.skinSlices).map(async ({ key, sheetId, rect }) => {
       const eyes = manifest.byKey[key]?.meta.eyes as undefined | SkinEyes;
       const skin = sheets.skin[key];
@@ -147,12 +147,13 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
 /** The sheets of `name`: in DEV drawn by `draw` and sent to be saved, else the pngs that saved */
 async function loadSheets(
   name: "skin" | "skin-slices",
+  sheets: SheetsType,
   dims: SheetsType["skinSheetDims"],
   cacheBust: string,
   draw: (cts: CanvasRenderingContext2D[]) => Promise<void>[],
 ) {
   if (!import.meta.env.DEV) {
-    return Promise.all(dims.map((_, i) => loadImage(`/sheet/${name}.${i}.png${cacheBust}`)));
+    return Promise.all(dims.map((_, i) => loadImage(getSheetUrl(sheets, `${name}.${i}.png`, cacheBust))));
   }
   const canvases = dims.map((dim) => Object.assign(document.createElement("canvas"), dim));
   const cts = canvases.map((canvas) => canvas.getContext("2d") as CanvasRenderingContext2D);

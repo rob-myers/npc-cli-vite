@@ -28,7 +28,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { getObstacleSheetKey } from "../assets.schema";
+import { getObstacleSheetKey, getSheetUrl, type SheetsType } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { alongFace, panelSeams } from "../service/panel-seams";
@@ -425,10 +425,10 @@ export default function Obstacles(_props: Props) {
   state.images =
     useQuery({
       // pure image loads off the shared sheets — one query for every world; the count refetches
-      // when the sheets change shape
-      queryKey: ["obstacle-images", w.sheets?.symbolSheetDims.length ?? 0],
+      // when the sheets change shape, the hash when a build changes a png
+      queryKey: ["obstacle-images", w.sheets?.symbolSheetDims.length ?? 0, w.sheets?.hash],
       async queryFn() {
-        return await loadObstacleImages(w.sheets.symbolSheetDims.length, getDevCacheBustQueryParam());
+        return await loadObstacleImages(w.sheets, getDevCacheBustQueryParam());
       },
       enabled: !!w.sheets,
     }).data ?? state.images;
@@ -578,10 +578,8 @@ const skirtPanel = {
 };
 const defaultObstacleTint = "#666";
 
-function loadObstacleImages(numSheets: number, cacheBust: string): Promise<HTMLImageElement[]> {
+function loadObstacleImages(sheets: SheetsType, cacheBust: string): Promise<HTMLImageElement[]> {
   return Promise.all(
-    Array.from({ length: numSheets }, (_, i) => i).map((sheetId) =>
-      loadImage(`/sheet/symbols.${sheetId}.png${cacheBust}`),
-    ),
+    sheets.symbolSheetDims.map((_, sheetId) => loadImage(getSheetUrl(sheets, `symbols.${sheetId}.png`, cacheBust))),
   );
 }
