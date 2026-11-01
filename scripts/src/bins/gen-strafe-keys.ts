@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Solves `strafe_left`'s legs from a foot plan, so a planted foot never slides — see `docs/npc-strafe.md`.
+ * Solves a strafe's legs from a foot plan, so a planted foot never slides — see `docs/npc-strafe.md`.
  * Prints the keyframes as JSON, or with `--blockbench` a snippet for Blockbench's console that keys them
- * into the open project's `strafe_left` and regenerates `strafe_right` as its mirror
+ * into the open project's `--name` clip and regenerates its `right` mirror
  * ```sh
  * gen-strafe-keys
  * gen-strafe-keys --stride 0.6 --harmonics 2 --blockbench | pbcopy
+ * gen-strafe-keys --name run_strafe_left --length 0.752 --swing 0.7917 --duty 0.2917 --upper run --blockbench
  * ```
  */
 
@@ -24,16 +25,27 @@ const { values: opts } = parseArgs({
     duty: { type: "string", default: "0.6" },
     /** Model units the swinging foot lifts */
     lift: { type: "string", default: "0.13" },
+    /** Share of the planted feet's speed the swinging foot leaves and lands at. Under `1`, a long swing stays in reach */
+    tangent: { type: "string", default: "1" },
     /** Planted legs reach this share of their length, so knees stay slightly bent */
     soft: { type: "string", default: "0.99" },
     /** Fourier harmonics kept in the hips' bob: fewer is smoother */
     harmonics: { type: "string", default: "2" },
     /** Model units the ankles never come closer than, else the feet clip */
     gap: { type: "string", default: "0.234" },
+    /** The clip keyed, moving to their left. Its mirror swaps `left` for `right` in the name */
+    name: { type: "string", default: "strafe_left" },
+    /** Seconds a cycle lasts */
+    length: { type: "string", default: "1" },
+    /** Share of a cycle at which the right foot lifts. The left's is half a cycle on */
+    swing: { type: "string", default: "0.05" },
+    /** A clip whose torso and arms the keyed clip takes, as long as it, e.g. `run`. Else they are kept */
+    upper: { type: "string" },
     blockbench: { type: "boolean", default: false },
   },
 });
 const [stride, duty, lift, soft, gap] = [opts.stride, opts.duty, opts.lift, opts.soft, opts.gap].map(Number);
+const [length, swing, tangent] = [opts.length, opts.swing, opts.tangent].map(Number);
 const harmonics = Number(opts.harmonics);
 const samples = 24;
 
@@ -49,8 +61,8 @@ const footT = translation("leftfoot");
 const rest = kneeT.clone().add(footT); // ankle from hip at rest
 const legLength = rest.length();
 
-// moving to their left (-x): planted feet travel +x relative to the body. Swings as `walk`'s
-const swingStart = { right: 0.05, left: 0.55 };
+// moving to their left (-x): planted feet travel +x relative to the body. Swings as the forward gait's
+const swingStart = { right: swing, left: (swing + 0.5) % 1 };
 const spread = (gap + 0.5 * stride - (hip.right.x - hip.left.x)) / 2;
 const centre = { left: hip.left.x - spread, right: hip.right.x + spread };
 
@@ -61,7 +73,7 @@ function footAt(side: Side, t: number) {
   if (sinceLand < duty) return { x: to + stride * sinceLand, y: 0, planted: true };
   // Hermite, leaving and landing at the planted feet's speed; lifted by sin², so no jolt either
   const u = (sinceLand - duty) / (1 - duty);
-  const v = (1 - duty) * stride;
+  const v = tangent * (1 - duty) * stride;
   const x =
     (2 * u ** 3 - 3 * u ** 2 + 1) * from +
     (u ** 3 - 2 * u ** 2 + u) * v +
@@ -72,8 +84,11 @@ function footAt(side: Side, t: number) {
 
 // hips: a smooth curve fitted just under what the planted legs reach
 const grid = Array.from({ length: 480 }, (_, i) => i / 480);
+/** In flight, with neither foot planted, the hips may rise as high as a leg hanging straight */
+const flightReach = Math.sqrt((soft * legLength) ** 2 - rest.z ** 2);
 const reachAt = (t: number) =>
   Math.min(
+    flightReach,
     ...sides.flatMap((side) => {
       const foot = footAt(side, t);
       return foot.planted ? [Math.sqrt((soft * legLength) ** 2 - (foot.x - hip[side].x) ** 2 - rest.z ** 2)] : [];
@@ -118,6 +133,17 @@ function solveLeg(target: THREE.Vector3, guess: Leg): Leg {
   return leg;
 }
 
+const wrap = (r: number) => Math.atan2(Math.sin(r), Math.cos(r));
+/** As `solveLeg`, but the knee bent as a knee bends (negative), each angle within a half turn. Fresh guesses if need be */
+function solveKnee(target: THREE.Vector3, guess: Leg): Leg {
+  const tries: Leg[] = [guess, [guess[0], guess[1], -Math.abs(guess[2]) || -0.4], [0, 0.2, -0.4], [0, 0.8, -1.5]];
+  for (const from of tries) {
+    const leg = solveLeg(target, from).map(wrap) as Leg;
+    if (leg[2] <= 1e-6 && ankleOf(leg).distanceTo(target) < 1e-5) return leg;
+  }
+  return solveLeg(target, guess).map(wrap) as Leg; // its miss is reported
+}
+
 const deg = (r: number) => +THREE.MathUtils.radToDeg(r).toFixed(3);
 const keys: Record<string, [number, number, number][]> = { "skeleton-root": [] };
 const guess: Record<Side, Leg> = { left: [0, 0.2, -0.4], right: [0, 0.2, -0.4] };
@@ -129,7 +155,7 @@ for (let i = 0; i <= samples; i++) {
   for (const side of sides) {
     const foot = footAt(side, t);
     const target = new THREE.Vector3(foot.x - hip[side].x, foot.y - hipHeight, rest.z);
-    const [z, a, k] = (guess[side] = solveLeg(target, guess[side]));
+    const [z, a, k] = (guess[side] = solveKnee(target, guess[side]));
     worstMiss = Math.max(worstMiss, ankleOf([z, a, k]).distanceTo(target));
     widest = Math.max(widest, Math.abs(deg(z)));
     // the sole kept flat: undo the leg and knee
@@ -143,39 +169,52 @@ for (let i = 0; i <= samples; i++) {
 
 console.error(
   `worst miss ${worstMiss.toExponential(1)}, hips splay ${widest}°, hips drop ${drop.toFixed(4)} — ` +
-    `gaitStride ≈ ${(stride * 0.7).toFixed(2)} m, if npcScale is 0.7`,
+    `gaitStride ≈ ${(stride * 0.8).toFixed(2)} m, if npcScale is 0.8`,
 );
 console.log(opts.blockbench ? blockbenchSnippet(keys) : JSON.stringify(keys));
 
-/** Keys `strafe_left` and regenerates `strafe_right` as its mirror, half a cycle on — outside the undo stack */
+/** Keys `--name` and regenerates its `right` mirror, half a cycle on — outside the undo stack */
 function blockbenchSnippet(data: typeof keys) {
+  const [leftName, rightName] = [opts.name, opts.name.replace("left", "right")];
   return `(() => {
   const data = ${JSON.stringify(data)};
+  const [length, upperName] = [${length}, ${JSON.stringify(opts.upper ?? null)}];
   const group = (name) => Group.all.find((g) => g.name === name);
   const replace = (name) => {
     Animation.all.filter((a) => a.name === name).forEach((a) => a.remove(false, false));
-    return new Animation({ name, length: 1, loop: "loop", snapping: 24 }).add(false);
+    return new Animation({ name, length, loop: "loop", snapping: +(24 / length).toFixed(2) }).add(false);
   };
-  const left = Animation.all.find((a) => a.name === "strafe_left") ?? replace("strafe_left");
+  const left = Animation.all.find((a) => a.name === "${leftName}") ?? replace("${leftName}");
+  left.length = length;
   for (const [bone, rows] of Object.entries(data)) {
     const channel = bone === "skeleton-root" ? "position" : "rotation";
     const animator = left.getBoneAnimator(group(bone));
     animator.keyframes.filter((k) => k.channel === channel).forEach((k) => k.remove());
-    rows.forEach(([x, y, z], i) => animator.addKeyframe({ channel, time: i / 24, interpolation: "catmullrom", data_points: [{ x, y, z }] }));
+    rows.forEach(([x, y, z], i) => animator.addKeyframe({ channel, time: (i / 24) * length, interpolation: "catmullrom", data_points: [{ x, y, z }] }));
   }
-  const right = replace("strafe_right");
+  const upper = upperName === null ? null : Animation.all.find((a) => a.name === upperName);
+  for (const a of Object.values(upper?.animators ?? {})) {
+    if (!["hips", "stomach", "chest", "head", "leftarm", "leftforearm", "rightarm", "rightforearm"].includes(a.name)) continue;
+    const animator = left.getBoneAnimator(group(a.name));
+    animator.keyframes.slice().forEach((k) => k.remove());
+    for (const k of a.keyframes) {
+      const point = Object.fromEntries(["x", "y", "z"].map((c) => [c, +k.data_points[0][c]]));
+      animator.addKeyframe({ channel: k.channel, time: k.time, interpolation: k.interpolation, data_points: [point] });
+    }
+  }
+  const right = replace("${rightName}");
   const swap = (n) => (n.startsWith("left") ? "right" + n.slice(4) : n.startsWith("right") ? "left" + n.slice(5) : n);
   for (const a of Object.values(left.animators)) {
     const animator = right.getBoneAnimator(group(swap(a.name)));
     for (const k of a.keyframes) {
-      if (k.time >= 1 - 1e-6) continue;
+      if (k.time >= length - 1e-6) continue;
       const [x, y, z] = ["x", "y", "z"].map((c) => +k.data_points[0][c]);
       const point = k.channel === "rotation" ? { x, y: -y, z: -z } : { x: -x, y, z };
-      const time = +((k.time + 0.5) % 1).toFixed(6);
+      const time = +((k.time + length / 2) % length).toFixed(6);
       animator.addKeyframe({ channel: k.channel, time, interpolation: k.interpolation, data_points: [point] });
-      if (time === 0) animator.addKeyframe({ channel: k.channel, time: 1, interpolation: k.interpolation, data_points: [point] });
+      if (time === 0) animator.addKeyframe({ channel: k.channel, time: length, interpolation: k.interpolation, data_points: [point] });
     }
   }
-  return "keyed strafe_left, mirrored strafe_right";
+  return "keyed ${leftName}, mirrored ${rightName}";
 })()`;
 }
