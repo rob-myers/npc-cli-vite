@@ -32,6 +32,8 @@ const { values: opts } = parseArgs({
     soft: { type: "string", default: "0.99" },
     /** Fourier harmonics kept in the hips' bob: fewer is smoother */
     harmonics: { type: "string", default: "2" },
+    /** Share of the hips' bob kept, about its lowest point: under `1` is smoother, the knees bent more */
+    bob: { type: "string", default: "1" },
     /** Model units the ankles never come closer than, else the feet clip */
     gap: { type: "string", default: "0.234" },
     /** The clip keyed, moving to their left. Its mirror swaps `left` for `right` in the name */
@@ -49,7 +51,7 @@ const { values: opts } = parseArgs({
 });
 const [stride, duty, lift, soft, gap] = [opts.stride, opts.duty, opts.lift, opts.soft, opts.gap].map(Number);
 const [length, swing, tangent] = [opts.length, opts.swing, opts.tangent].map(Number);
-const harmonics = Number(opts.harmonics);
+const [harmonics, bob] = [opts.harmonics, opts.bob].map(Number);
 const back = opts.axis === "back";
 const samples = 24;
 
@@ -113,7 +115,10 @@ const coef = Array.from({ length: harmonics + 1 }, (_, k) =>
 const fit = (t: number) =>
   coef.reduce((sum, [a, b], k) => sum + a * Math.cos(2 * Math.PI * k * t) + b * Math.sin(2 * Math.PI * k * t), 0);
 const drop = Math.max(...grid.map((t, i) => fit(t) - reaches[i]));
-const hipHeightAt = (t: number) => fit(t) - drop;
+/** The hips' lowest: scaling the bob about it only lowers them, so the legs still reach */
+const lowest = Math.min(...grid.map(fit)) - drop;
+const hipHeightAt = (t: number) => lowest + bob * (fit(t) - drop - lowest);
+const bobRange = bob * (Math.max(...grid.map(fit)) - drop - lowest);
 
 // a leg is (hip z, hip x, knee x) in radians, as Blockbench keys them: Euler "ZYX"
 type Leg = [number, number, number];
@@ -179,7 +184,7 @@ for (let i = 0; i <= samples; i++) {
 }
 
 console.error(
-  `worst miss ${worstMiss.toExponential(1)}, hips splay ${widest}°, hips drop ${drop.toFixed(4)} — ` +
+  `worst miss ${worstMiss.toExponential(1)}, hips splay ${widest}°, hips drop ${drop.toFixed(4)}, bob ${bobRange.toFixed(4)} — ` +
     `gaitStride ≈ ${(stride * 0.8).toFixed(2)} m, if npcScale is 0.8`,
 );
 console.log(opts.blockbench ? blockbenchSnippet(keys) : JSON.stringify(keys));

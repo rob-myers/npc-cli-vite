@@ -136,10 +136,12 @@ not strafing is `run`, whose arms swing.
     head `23°` down to stay level. The solve keeps them.
 
 **Regenerating** — `scripts/src/bins/gen-strafe-keys.ts` does the solve, reading the leg bones from
-`current.gltf`. Its flags are the plan's parameters (`--stride --duty --lift --tangent --soft --harmonics --gap`),
+`current.gltf`. Its flags are the plan's parameters (`--stride --duty --lift --tangent --soft --harmonics --gap --bob`),
 and the clip's (`--name --length --swing --upper --axis`). It prints the keyframes as JSON, or with
 `--blockbench` a snippet to paste into Blockbench's console (or run via its MCP `risky_eval`).
 - The snippet keys `--name`'s legs and hips, and regenerates its `right` mirror (not with `--axis back`).
+- `--bob` scales the hips' rise and fall about their lowest point. The run strafes and backpedal keep `0.5` and `0.3`, so they bob
+  as little as `run_ahead`, about `0.037` model units. At `1` they bobbed two and three times as much, with longer flight.
 - It keeps the torso and arms, unless `--upper` names a clip to take them from. Then the guard arms must be keyed
   again: each arm bone's rotation, a fixed pose plus the hips' bob, by hand in Blockbench's console.
 
@@ -147,9 +149,9 @@ Then export `current.gltf`.
 ```sh
 node scripts/src/bins/gen-strafe-keys.ts --stride 0.6 --harmonics 2 --blockbench | pbcopy
 node scripts/src/bins/gen-strafe-keys.ts --name run_strafe_left --length 0.75188 --swing 0.7917 \
-  --duty 0.2917 --stride 1.0 --lift 0.2 --tangent 0.3 --upper run --blockbench | pbcopy
+  --duty 0.2917 --stride 1.0 --lift 0.2 --tangent 0.3 --bob 0.5 --blockbench | pbcopy
 node scripts/src/bins/gen-strafe-keys.ts --axis back --name run_backwards --length 0.75188 --swing 0.3458 \
-  --stride 1.25 --duty 0.45 --lift 0.12 --tangent 0.5 --blockbench | pbcopy
+  --stride 1.25 --duty 0.45 --lift 0.12 --tangent 0.5 --bob 0.3 --blockbench | pbcopy
 ```
 
 ## `backstep`
