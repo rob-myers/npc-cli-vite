@@ -972,6 +972,12 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         } else if (key === "v") {
           if (e.repeat === false) state.setFollow(!state.follow);
+        } else if (timeScaleStepByKey[e.key] !== undefined && w.client === false) {
+          // up and down step the time scale, held too. Not a client's, as the menu's slider
+          e.preventDefault(); // nor scroll
+          w.gameTime.setScale(Math.round((w.gameTime.scale + (timeScaleStepByKey[e.key] ?? 0)) * 100) / 100);
+          w.hud?.say(`time ${w.gameTime.scale}`);
+          w.menu?.update();
         }
       },
       onKeyUp(e) {
@@ -2362,6 +2368,8 @@ const zoomPanDoneAlpha = 0.97;
 const zoomOutStopEpsilon = 0.001;
 /** Near enough the polar it is easing to, so no further frame is asked for */
 const phiSettledEpsilon = 0.0001;
+/** Up and down step `w.gameTime`'s scale */
+const timeScaleStepByKey: Partial<Record<string, number>> = { ArrowUp: 0.2, ArrowDown: -0.2 };
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
