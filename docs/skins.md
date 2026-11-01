@@ -26,6 +26,8 @@ key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaul
 nearest-neighbour. Those canvases feed `w.texSkin`
 directly, and each is POSTed to `/api/skin-sheet/:sheetId`, where the dev server writes
 `public/sheet/skin.{sheetId}.png` and runs `pngquant` on it — written only if its pixels changed.
+The server writes only those sent from loopback. A page reached by a network address over unsecured https drew
+the D-class skins orange, their `mix-blend-mode` lost.
 
 **In production** no skin png or svg is fetched: `w.texSkin` (256px, one layer per npc) is drawn
 from `skin.{sheetId}.png` alone. So **load a World in DEV before committing**, else it is stale —
