@@ -715,7 +715,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "4cc6d6a7-7986-4bf5-a54b-ac238ea3cedb",
@@ -1077,17 +1077,17 @@
           "cssTransform": "matrix(1, 0, 0, 1, 1194, 902)"
         },
         {
-          "id": "75a529b0-cec6-435d-9cc4-66e7952e625e",
+          "id": "0c433872-449a-4b1e-8796-9c25b023f4df",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1194, "f": 844},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 950},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, 1194, 844)"
+          "cssTransform": "matrix(0, 1, -1, 0, 1196, 950)"
         },
         {
           "id": "9ed36c1b-d36b-4c68-8958-eaf69a2b77db",
@@ -1100,17 +1100,17 @@
           "cssTransform": "matrix(1, 0, 0, 1, 1194, 850)"
         },
         {
-          "id": "0c433872-449a-4b1e-8796-9c25b023f4df",
+          "id": "75a529b0-cec6-435d-9cc4-66e7952e625e",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1196, "f": 950},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 1194, "f": 844},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, 1196, 950)"
+          "cssTransform": "matrix(0, 1, -1, 0, 1194, 844)"
         },
         {
           "id": "a82b1814-f0dd-422e-8e61-95270226910c",
