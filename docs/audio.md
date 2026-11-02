@@ -1,7 +1,7 @@
 # Audio
 
-The page's sound: one engine, the player's footsteps (one each time a foot of theirs lands), the phaser's sounds, the
-Audio pane's desk, and the jsh commands that play them in the World. The ONLY doc for it.
+The page's sound: one engine, the player's footsteps (one each time a foot of theirs lands), the phaser's and the
+doors' sounds, the Audio pane's desk, and the jsh commands that play them in the World. The ONLY doc for it.
 
 | file | what |
 | --- | --- |
@@ -10,6 +10,7 @@ Audio pane's desk, and the jsh commands that play them in the World. The ONLY do
 | `ui/audio/src/samples.ts` | the sample banks (`sampleFiles`), loading them, `pickSample` |
 | `ui/audio/src/sfx.ts` | the sound effects' keys (`sfxKeys`), `playSfx`, and the held voices (`holds`) |
 | `ui/audio/src/phaser.ts` | the phaser's sounds, and its charge (`chargeVoice`) |
+| `ui/audio/src/doors.ts` | the doors' sounds, and a door moving (`doorVoice`) |
 | `ui/audio/src/synth.ts` | builders the effects share: envelopes, noise, crackle, a recorded layer |
 | `ui/audio/src/nodes.ts` | node builders, a noise buffer, a waveshaper and the room |
 | `ui/audio/src/Audio.tsx` | the desk: a strip per channel, the help tour, the node graph |
@@ -22,7 +23,8 @@ Audio pane's desk, and the jsh commands that play them in the World. The ONLY do
 - **One per page.** `getAudio()` makes it on first use: one `AudioContext` and a master bus.
   - The bus is a limiter (`limiter` in `nodes.ts`, catching peaks over -6 dBFS), then an analyser, then the speakers.
     Near the default faders an effect or a run's step peaks about -6 dBFS (`sfxLevel`, `stepLevel`).
-  - **The room.** The fx bus sends a little (`roomWet`) to a small hard room (`room` in `nodes.ts`, 0.45 s of noise
+  - **Buses.** The steps, `fx` (the phaser) and `world` (the doors) each have their own level (`sfxBus`, `holdBus`).
+  - **The room.** The fx and world buses send a little (`roomWet`) to a small hard room (`room` in `nodes.ts`, 0.45 s of noise
     dying away). The steps stay dry, as their recordings have their own.
   - **Sleeping.** After `idleSecs` (10 s) without a sound the context is suspended, sparing the audio thread, and the
     next sound resumes it. It sleeps only once all is silent, and wakes from silence, so neither pops.
@@ -43,14 +45,17 @@ Audio pane's desk, and the jsh commands that play them in the World. The ONLY do
   - `set(partial)` changes the config. Unknown keys are dropped, and values are kept within their range.
   - `footfall({ side, run, level })`, heard at once whilst playing. `step` plays one whatever the status, as the desk
     does.
-  - `sfx(key, { pan, gain, amount })`, `amount` from `0` to `1`, e.g. a shot's charge.
+  - `sfx(key, { pan, gain, amount, voice, speed })`, `amount` from `0` to `1` (e.g. a shot's charge), `voice` a
+    door's, and `speed` the World's time scale: slower plays slower and lower, as tape does (no slower than 1/8).
     - Each plays a little louder or softer, and higher or lower (`varyBy`), so no two alike.
     - **A budget.** At most `maxVoices` (24) sound at once (`voices`): more are dropped. So is a twin, the same key
       again within `twinSecs` at about the same pan.
-  - `hold(key, id, { level, pan, gain })` holds a voice, e.g. a phaser charging, by `id` (an npcKey).
+  - `hold(key, id, { level, pan, gain, voice })` holds a voice by `id`: a phaser charging (by npcKey), or a door
+    moving (by where it is, so both sides of a hull door hold one).
     - It is eased towards its params only when they change.
     - Unless held again within `leaseMs` (250 ms) it fades out, as when the World pauses. `release` fades it at once.
   - `subscribe(fn)`, called on every change of status or config, never per frame.
+  - `chosenVoices`, door voices chosen by hand (jsh `doorvoice`), kept until the page reloads.
 
 ## Footsteps
 
@@ -99,11 +104,43 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
 
+## Door sounds
+
+On the `world` bus (`doors.ts`).
+
+| key | when | sound |
+| --- | --- | --- |
+| `door` (held) | a heard door's open ratio changing | a rail's rumble, brighter and louder the faster. `air` adds a soft hiss |
+| `opened`, `closed` | `door-open`, `door-closed` | a recorded clunk (`clunk`, seven), louder the faster it came |
+| `lock` | `door-locked` | a recorded bolt (`lock`) |
+| `unlock` | `door-unlocked` | the same bolt, a little higher |
+| `hold`, `unhold` | `door-toggled` held, or let go | a latch click, and a low tone rising, else falling |
+| `denied` | `door-denied` | a low buzz, twice, at most every `deniedSecs` per door |
+
+- **A door moving** is read, not told: each tick jsh reads each heard door's open ratio, and holds its voice with
+  its speed as `level` (`syncDoors`). So it follows the door however it moves, reversing, snapping or slowed.
+- **Voices** (`doorVoices`): `glide` and `air`. A door's is chosen by hand (`doorvoice`), else its map's
+  `meta.voice`, else one of them by its key.
+
+## Posture sounds
+
+On the `world` bus (`posture.ts`): their clothes rustling (`cloth`).
+
+| key | when | sound |
+| --- | --- | --- |
+| `sit` | `npc-do` onto a doable with `meta.do: "sit"` | a rustle |
+| `lie` | `npc-do` onto one with `meta.do: "lie"` | three rustles a beat apart, quieter as they settle |
+| `stand` | `npc-do` with no doable, after one | a rustle |
+
+Only one settling onto it is heard: `npc-pre-do` comes first. One spawned onto it, as a map's npcs restored, is
+silent. Getting off is heard after either.
+
 ## The desk
 
 The Audio pane, `Audio.tsx`: strips for steps (a button to hear one, shift for running), fx (a button per sound), and
 master. The fx strip's **charge** fills a charge over 1.2 s, holds it, then fires: shift cancels it, and it cools.
-Shift on **fire** fires a tap, uncharged.
+Shift on **fire** fires a tap, uncharged. The world strip moves a door of each voice as the World does, then stops
+it open, shift for shut, and plays each other door sound.
 
 - **Changes.** A fader calls `set`. Every change, from jsh too, is saved into the pane's `meta.config`, and
   pushed back into the engine on mount. A saved config the schema cannot read is dropped.
@@ -122,6 +159,10 @@ sounds off
 sfx fire                 # any of sfxKeys
 sfx fire amount:0.2      # a shot charged a fifth
 sfx armour rob           # heard where rob is
+doorvoice                # the doors the player hears, and their voices
+doorvoice air            # every door's voice, until a reload
+doorvoice g1d19 glide    # one door's
+doorvoice off            # each door its own again
 ```
 
 - **What `sounds` does.** Each tick it reads the feet and the charge of those `heard`: the player, and the npcs near
@@ -129,8 +170,10 @@ sfx armour rob           # heard where rob is
   - It listens too: `phasers` plays `raise` or `lower`, `phaser-fired` plays `fire` by its charge at whoever fired,
     and `npc-shot` its outcome (`hit`, `ghost`, `armour`) at whoever was shot. `phaser-struck` plays `wall` where a
     shot at no one struck.
-  - **Who is heard.** A one-shot plays only if one of its npcs is in `reach`: the player, and npcs in reach of them
-    through open doors within `reachMetres` (20 m), found with `heard`. Without a player, all are heard.
+  - It listens to the doors too: see Door sounds.
+  - **Who is heard.** A one-shot plays only if one of its npcs is in reach: the player, and npcs in reach of them
+    through open doors within `reachMetres` (20 m). A door is heard if it is a door of the player's room, of a room
+    beyond its open doors, or of one beyond those (`doorsInReach`). Without a player, all are heard.
   - Its tick keeps the closure of the `sounds` that made it. So after an edit of jsh `audio.ts`, run `sounds` again.
   - `phaser-fired` is emitted by `w.phasers`: by `shoot` as a beam locks on someone, and by `fireAlong` for a shot at
     no one (see `docs/engagements.md`).

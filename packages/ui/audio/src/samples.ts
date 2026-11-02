@@ -33,7 +33,7 @@ export type Samples = Record<SampleBank, AudioBuffer[]> & {
 /** Where the samples are served from — see its README for their sources */
 const samplesUrl = "/audio/";
 /** Changes with the files, so a hot reload fetches them again. Bump its version when they change in place */
-export const samplesKey = JSON.stringify([samplesUrl, sampleFiles, 3]);
+export const samplesKey = JSON.stringify([samplesUrl, sampleFiles, 5]);
 
 export function loadSamples(ctx: BaseAudioContext): Samples {
   const samples = { ready: Promise.resolve(), last: {} } as Samples;

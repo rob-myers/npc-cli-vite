@@ -162,6 +162,8 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
   const hearing: Hearing = {
     npcKeys: new Set(),
     gdKeys: new Set(),
+    settling: new Set(),
+    seated: new Set(),
     deniedAt: new Map(),
     ratios: new Map(),
     moving: new Map(),
@@ -327,6 +329,10 @@ const hearConfig = {
 type Hearing = {
   npcKeys: Set<string>;
   gdKeys: Set<Geomorph.GmDoorKey>;
+  /** Npcs about to settle onto a doable (`npc-pre-do`), so one spawned onto it is not heard */
+  settling: Set<string>;
+  /** Npcs sat or lain on a doable, so getting off is heard */
+  seated: Set<string>;
   /** When each door last refused someone, in game seconds */
   deniedAt: Map<Geomorph.GmDoorKey, number>;
   /** Each heard door's open ratio when last read */
@@ -345,8 +351,22 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
     case "phasers":
       for (const npcKey of e.npcKeys) heard(npcKey) && playAt(w, e.armed ? "raise" : "lower", npcKey);
       break;
+    case "npc-pre-do":
+      hearing.settling.add(e.npcKey);
+      break;
+    case "npc-do": {
+      // only one settling onto it, not one spawned there
+      const settling = hearing.settling.delete(e.npcKey);
+      const how = e.decorKey === null ? null : w.decor.byKey[e.decorKey]?.meta.do;
+      const wasOn = hearing.seated.has(e.npcKey);
+      how === "sit" || how === "lie" ? hearing.seated.add(e.npcKey) : hearing.seated.delete(e.npcKey);
+      if (!heard(e.npcKey)) break;
+      if (settling && (how === "sit" || how === "lie")) playAt(w, how, e.npcKey);
+      else if (e.decorKey === null && wasOn) playAt(w, "stand", e.npcKey);
+      break;
+    }
     case "phaser-fired":
-      heard(e.by) && playAt(w, "fire", e.by, e.charge);
+      heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge });
       break;
     case "npc-shot":
       heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
@@ -382,9 +402,9 @@ function playAtDoor(w: JshCli.WorldState, key: SfxKey, gdKey: Geomorph.GmDoorKey
   if (door !== undefined) getAudio().sfx(key, { ...heardAt(w, centreOf(door)), voice: voiceOf(door), amount });
 }
 
-function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string, amount?: number) {
+function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string, opts: SfxOpts = {}) {
   const npc = w.n[npcKey];
-  if (npc !== undefined) getAudio().sfx(key, { ...heardAt(w, npc.position), amount });
+  if (npc !== undefined) getAudio().sfx(key, { ...heardAt(w, npc.position), ...opts });
 }
 
 /** Panned by where `at` is across the view, quieter the further it is from the view's centre, at the World's speed */

@@ -5,6 +5,7 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   CopyIcon,
+  FloppyDiskIcon,
   FlowArrowIcon,
   PauseIcon,
   PlayIcon,
@@ -135,6 +136,10 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       playStep(run) {
         state.stepSide = state.stepSide === "left" ? "right" : "left";
         getAudio().step({ side: state.stepSide, run, level: run ? 1 : 0.7 });
+      },
+      async saveDefaults() {
+        const response = await fetch(audioDefaultsApiPath, { method: "POST", body: JSON.stringify(getAudio().config) });
+        if (!response.ok) console.error("audio: defaults not saved", await response.text());
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void (draft.disabled = disabled));
@@ -413,6 +418,16 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                   >
                     <CopyIcon className="size-4" />
                   </button>
+                  {import.meta.env.DEV && (
+                    <button
+                      type="button"
+                      title="save these levels as the defaults"
+                      className={buttonClass}
+                      onClick={state.saveDefaults}
+                    >
+                      <FloppyDiskIcon className="size-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     title={state.live ? "stop the live meters" : "live meters and spectrum, redrawn each frame"}
@@ -640,6 +655,8 @@ type State = {
   onChange(): void;
   /** On a control, enter opens the tour there, or moves it on. Escape closes it */
   onKeyDown(e: React.KeyboardEvent): void;
+  /** In DEV, writes the levels into `audio-defaults.json` */
+  saveDefaults(): Promise<void>;
   /** Its tab's button does the same */
   setDisabled(disabled: boolean): void;
   setHelp(step: null | HelpStep): void;
@@ -653,6 +670,9 @@ type State = {
   /** Stops, else plays and enables a pane left paused */
   togglePlay(): void;
 };
+
+/** As `API_PATH` in `vite-plugin-audio-defaults` */
+const audioDefaultsApiPath = "/api/audio/defaults";
 
 const meterKeys: AudioMeterKey[] = ["steps", "fx", "world", "master"];
 
@@ -681,6 +701,9 @@ const sfxLabels: Record<SfxKey, string> = {
   hold: "hold",
   unhold: "let go",
   denied: "denied",
+  sit: "sit",
+  lie: "lie",
+  stand: "stand",
 };
 /** The phaser's sounds, on the fx strip */
 const fxKeys = sfxKeys.filter((key) => sfxBus(key) === "fx");

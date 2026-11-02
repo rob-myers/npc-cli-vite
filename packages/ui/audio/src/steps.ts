@@ -1,13 +1,9 @@
+import savedDefaults from "./audio-defaults.json";
 import { gain, panner } from "./nodes";
 import { pickSample, type SampleBank, type Samples } from "./samples";
 
-/** The desk's settings: the footsteps, the sound effects and the mix */
-export const audioDefaults = {
-  master: 0.7,
-  steps: 0.8,
-  fx: 0.8,
-  world: 0.8,
-};
+/** The desk's settings: the footsteps, the sound effects and the mix. In DEV the desk saves them */
+export const audioDefaults = savedDefaults;
 
 export type AudioConfig = typeof audioDefaults;
 export type AudioKey = keyof AudioConfig;

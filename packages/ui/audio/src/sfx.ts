@@ -1,6 +1,7 @@
 import { type DoorVoice, doorSfx, doorVoice } from "./doors";
 import { gain, panner } from "./nodes";
 import { chargeVoice, phaserSfx } from "./phaser";
+import { postureSfx } from "./posture";
 import type { SampleBank } from "./samples";
 import { sfxLevel } from "./synth";
 
@@ -8,6 +9,7 @@ import { sfxLevel } from "./synth";
 export const sfxKeys = [
   ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost", "wall"] as const),
   ...(["opened", "closed", "lock", "unlock", "hold", "unhold", "denied"] as const),
+  ...(["sit", "lie", "stand"] as const),
 ];
 export type SfxKey = (typeof sfxKeys)[number];
 
@@ -42,10 +44,10 @@ export function playSfx(key: SfxKey, c: SfxContext) {
   window.setTimeout(() => out.disconnect(), (c.at - c.ctx.currentTime + sfxSecs) * 1000);
 }
 
-const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx };
+const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx, ...postureSfx };
 
 /** The bus an effect plays through: the World's own sounds through `world`, the phaser's through `fx` */
-export const sfxBus = (key: SfxKey) => (key in doorSfx ? "world" : "fx");
+export const sfxBus = (key: SfxKey) => (key in phaserSfx ? "fx" : "world");
 
 /** A sound held whilst something lasts, as a phaser charging or a door moving: `level` from `0` to `1` */
 export type HoldParams = { level: number; pan: number; gain: number; voice?: DoorVoice };
