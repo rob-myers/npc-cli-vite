@@ -1124,10 +1124,10 @@ export class NpcAnimation {
     if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
   }
 
-  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom` */
+  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom`. Never the player */
   tickRoomLit(delta: number) {
     const { roomLit, roomSlot } = this.npc;
-    const goal = roomSlot.value === this.w.npc.playerRoom ? 1 : 0;
+    const goal = roomSlot.value === this.w.npc.playerRoom && this.w.player?.is(this.npc.key) !== true ? 1 : 0;
     if (roomLit === undefined || roomLit.value === goal) return; // undefined on an npc from before hmr
     const step = (goal === 1 ? delta : -delta) / npcMaterialConfig.sameRoomSecs;
     roomLit.value = THREE.MathUtils.clamp(roomLit.value + step, 0, 1);

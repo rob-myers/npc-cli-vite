@@ -95704,7 +95704,7 @@
       "obstacles": {"brightness": 1, "skirtBrightness": 1},
       "npcs": {
         "ambient": 0,
-        "brightness": 0.4,
+        "brightness": 0.3,
         "fxStrength": 2,
         "sameRoom": 0.2
       },
