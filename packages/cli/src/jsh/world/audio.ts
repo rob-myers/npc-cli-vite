@@ -176,7 +176,7 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
   /** Each heard npc's charge when last read, whilst charging */
   const charges = new Map<string, number>();
   /** What sings whilst the player's psi is raised, as the desk chose it, and so which voice holds */
-  let psi: null | { chosen: string; want: "choir" | "chant"; pick: number; held: null | "choir" | "chant" } = null;
+  let psi: null | { chosen: string; want: PsiKey; pick: number; held: null | PsiKey } = null;
   /** The chant last sung, not chosen at random next */
   let lastChant: undefined | number;
   /** The player, then the nearest `maxNear` npcs within `hearMetres`: their feet and charges are read each tick */
@@ -212,11 +212,12 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
       psi = null;
     }
     if (chosen !== null) {
-      const choir = chosen === "choir" || (chosen === "random" && Math.random() < hearConfig.choirShare);
       if (psi === null) {
+        const choir = chosen === "choir" || (chosen === "random" && Math.random() < hearConfig.choirShare);
+        const want = chosen === "monk" ? "monk" : choir ? "choir" : "chant";
         const pick = chantOf(chosen) ?? getAudio().pickIndex("psi", lastChant);
-        psi = { chosen, want: choir ? "choir" : "chant", pick, held: null };
-        if (!choir) lastChant = pick;
+        psi = { chosen, want, pick, held: null };
+        if (want === "chant") lastChant = pick;
       }
       // the choir sings whilst a chant loads
       const key = psi.want === "chant" && !getAudio().hasSample("psi", psi.pick) ? "choir" : psi.want;
@@ -356,6 +357,9 @@ const hearConfig = {
   npcLevel: 0.7,
 };
 
+/** What may sing whilst psi is raised */
+type PsiKey = "choir" | "monk" | "chant";
+
 /** Whose sounds are heard, and which doors, found every `everySecs` */
 type Hearing = {
   npcKeys: Set<string>;
@@ -396,6 +400,9 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       else if (e.decorKey === null && wasOn) playAt(w, "stand", e.npcKey);
       break;
     }
+    case "item-handled":
+      heard(e.npcKey) && playAt(w, e.taken ? "take" : "put", e.npcKey, { kind: e.kind, amount: e.floor ? 1 : 0 });
+      break;
     case "phaser-fired":
       heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge });
       break;

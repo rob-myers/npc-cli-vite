@@ -69,21 +69,6 @@ export function getPinkNoise(ctx: BaseAudioContext) {
   return buffer;
 }
 
-/** A waveshaper bending its input by `drive`, for grit */
-export function shaper(ctx: BaseAudioContext, drive: number) {
-  const node = ctx.createWaveShaper();
-  const curve = new Float32Array(shaperSize);
-  for (let i = 0; i < shaperSize; i++) {
-    const x = (i / (shaperSize - 1)) * 2 - 1;
-    curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
-  }
-  node.curve = curve;
-  node.oversample = "2x";
-  return node;
-}
-
-const shaperSize = 1024;
-
 /** A small hard room, as a ship's: a convolver over noise dying away */
 export function room(ctx: BaseAudioContext) {
   const node = ctx.createConvolver();
@@ -111,7 +96,7 @@ const roomSecs = 0.45;
 /** How fast the room dies, over its length */
 const roomDecay = 7;
 
-/** A large stone hall, as a choir sings in: a convolver over noise dying away slowly */
+/** A vast stone hall, as a monk chants in: a convolver over noise dying away slowly, and darker as it dies */
 export function hall(ctx: BaseAudioContext) {
   const node = ctx.createConvolver();
   node.buffer = getHallImpulse(ctx);
@@ -120,7 +105,7 @@ export function hall(ctx: BaseAudioContext) {
 
 const hallImpulses = new WeakMap<BaseAudioContext, AudioBuffer>();
 
-/** `hallSecs` of stereo noise dying away, made once per context */
+/** `hallSecs` of stereo noise dying away, losing its highs first as stone does, made once per context */
 function getHallImpulse(ctx: BaseAudioContext) {
   const cached = hallImpulses.get(ctx);
   if (cached !== undefined) return cached;
@@ -128,12 +113,21 @@ function getHallImpulse(ctx: BaseAudioContext) {
   const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
   for (let channel = 0; channel < 2; channel++) {
     const data = buffer.getChannelData(channel);
-    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp((-hallDecay * i) / length);
+    let dark = 0;
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      // a lowpass closing as it dies
+      dark += (Math.random() * 2 - 1 - dark) * (hallBright * (1 - t) + hallDull * t);
+      data[i] = dark * Math.exp(-hallDecay * t);
+    }
   }
   hallImpulses.set(ctx, buffer);
   return buffer;
 }
 
-const hallSecs = 4.5;
+const hallSecs = 9;
 /** How fast the hall dies, over its length */
-const hallDecay = 5;
+const hallDecay = 6;
+/** How bright the hall is as it starts, and as it ends: a lowpass step from `0` to `1` */
+const hallBright = 0.9;
+const hallDull = 0.04;

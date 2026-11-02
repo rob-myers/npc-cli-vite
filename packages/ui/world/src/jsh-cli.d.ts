@@ -1,6 +1,14 @@
 declare namespace JshCli {
   type Event =
     | { key: "carried"; npcKey: string }
+    | {
+        /** An item of `kind` changed hands, after their reach: taken up, else put down, maybe on the floor */
+        key: "item-handled";
+        npcKey: string;
+        kind: string;
+        taken: boolean;
+        floor: boolean;
+      }
     | { key: "decor-created"; decorKeys: string[] }
     | { key: "decor-removed"; decorKeys: string[] }
     | { key: "decor-ready" }

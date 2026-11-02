@@ -9,14 +9,17 @@ export const sampleFiles = {
   tile3: numbered("steps/tile3-", 8),
   tile4: numbered("steps/tile4-", 8),
   armour: numbered("sfx/armour-", 5),
-  slime: numbered("sfx/slime-", 1),
   grip: numbered("sfx/grip-", 4),
   cloth: numbered("sfx/cloth-", 4),
   click: numbered("sfx/click-", 2),
   thud: numbered("sfx/thud-", 1),
-  boom: numbered("sfx/boom-", 2),
   lock: numbered("sfx/lock-", 1),
   clunk: numbered("sfx/clunk-", 7),
+  book: numbered("sfx/book-", 3),
+  zap: numbered("sfx/zap-", 6),
+  shock: numbered("sfx/shock-", 3),
+  static: numbered("sfx/static-", 1),
+  spark: numbered("sfx/spark-", 2),
   psi: numbered("sfx/psi-", 4),
 };
 
@@ -39,7 +42,7 @@ export type Samples = Record<SampleBank, AudioBuffer[]> & {
 /** Where the samples are served from — see its README for their sources */
 const samplesUrl = "/audio/";
 /** Changes with the files, so a hot reload fetches them again. Bump its version when they change in place */
-export const samplesKey = JSON.stringify([samplesUrl, sampleFiles, lazyBanks, 8]);
+export const samplesKey = JSON.stringify([samplesUrl, sampleFiles, lazyBanks, 9]);
 
 export function loadSamples(ctx: BaseAudioContext): Samples {
   const samples = { ready: Promise.resolve(), last: {}, loading: {}, fetched: {} } as Samples;

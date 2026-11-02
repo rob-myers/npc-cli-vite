@@ -163,6 +163,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             items.splice(index, 1);
             w.decor.create(state.getItemDefAt(def, spot));
             state.onCarriedChange(npcKey);
+            const kind = String(def.meta?.item);
+            w.events.next({ key: "item-handled", npcKey, kind, taken: false, floor: spot.y3d === 0 });
           };
           /** Its top, as it is taken from: so the arm goes out the same either way */
           const top = { ...spot, y3d: spot.y3d + (Number(def.meta?.h) || 0) };
@@ -880,6 +882,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "carried":
           case "door-denied":
+          case "item-handled":
           case "npc-toggled":
           case "npc-posed":
           case "npc-hit":
@@ -1504,6 +1507,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
             w.decor.remove(decorKey);
             state.onCarriedChange(npcKey);
+            w.events.next({ key: "item-handled", npcKey, kind, taken: true, floor: at.y3d === 0 });
           }),
         );
         return true;

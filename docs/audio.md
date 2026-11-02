@@ -12,7 +12,8 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
 | `ui/audio/src/phaser.ts` | the phaser's sounds, and its charge (`chargeVoice`) |
 | `ui/audio/src/doors.ts` | the doors' sounds, and a door moving (`doorVoice`) |
 | `ui/audio/src/synth.ts` | builders the effects share: envelopes, noise, crackle, a recorded layer |
-| `ui/audio/src/nodes.ts` | node builders, a noise buffer, a waveshaper and the room |
+| `ui/audio/src/nodes.ts` | node builders, a noise buffer, the room and the hall |
+| `ui/audio/src/items.ts` | items put down and taken up |
 | `ui/audio/src/Audio.tsx` | the desk: a strip per channel, the help tour, the node graph |
 | `ui/audio/src/graph-data.ts` | the node graph's layout. Keep it in step with the engine |
 | `cli/src/jsh/world/audio.ts` | jsh `sounds` and `sfx`, and reading the player's footfalls |
@@ -96,12 +97,12 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | `lower` | `phasers` not armed | a click as it is made safe, a rustle, the leather taking it back |
 | `charge` (held) | `w.phasers.isCharging` | a low tone throbbing faster as it fills, 3 to 18 times a second, with a swell of air |
 | `charged` | the charge reaching full | a snap of current |
-| `fire` | `phaser-fired` | a snap, a low punch, a burst sweeping down, a whoosh of air and a recorded boom. Charged, longer, louder and lower |
+| `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`) |
 | `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
-| `hit` | `npc-shot` hit | a burn: a hiss and crackle flaring then sizzling away, a soft thump, a wet sear |
+| `hit` | `npc-shot` hit | a recorded electric shock (`shock`, three) |
 | `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
-| `ghost` | `npc-shot` ghost | at once, a phase shift: notches sweeping through a rush, two tones drifting apart. Then `wall` |
-| `wall` | `phaser-struck` | one short hit: a burst of noise over a small thump |
+| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then `wall` as it strikes beyond |
+| `wall` | `phaser-struck` | a recorded spark (`spark`, two) |
 
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
@@ -140,7 +141,7 @@ silent. Getting off is heard after either.
 ## Psi
 
 Whilst the player's psi is raised (`w.e.isPsiRaised`), something sings (`choir.ts`, on the `world` bus): what the
-desk's **psi** picker chooses (`psiVoices`, saved with the pane). That is the synthesised `choir`, one of the
+desk's **psi** picker chooses (`psiVoices`, saved with the pane). That is the synthesised `choir` or `monk`, one of the
 recorded chants (`low-d`, `low-chant`, `drone`, `eerie`), else `random`: the choir `choirShare` of the time, else
 a chant. A change of it whilst raised is heard at once. Either is a held voice,
 renewed each tick, so a pause or psi lowered lets it die away. It swells in over `fadeInSecs`, dies away over
@@ -153,16 +154,38 @@ renewed each tick, so a pause or psi lowered lets it die away. It swells in over
     up onto the note as a phrase starts (`scoopCents`).
   - **Groups**: three, each with its own mouth a little longer or shorter (`mouthScales`), pitched a few cents apart,
     entering and turning vowel `staggerSecs` after the last, each with a breath in first.
-  - **Phrases**: long, dark "aum"s (`aum`, `phraseSecs`, 14 s): opening on "aa", closing through "oo" to "mm"
-    (`vowels`, `lipsHz`), then easing for a breath.
-  - A narrow resonance drifts over it, picking out overtones (`overtoneHz`). A singing bowl is struck now and then
-    (`bowlSecs`), its partials beating as they ring out. All in its own 4.5 s stone hall (`hall` in `nodes.ts`).
+  - **Phrases**: long and dark (`phraseSecs`, 14 s), each one of `chants` ("aum", "om", a hum, an open "aah"), its
+    vowels shaped by `vowels` and `lipsHz`, then easing for a breath. A narrow resonance drifts over it, picking out
+    overtones (`overtoneHz`). A singing bowl is struck now and then (`strikeBowl`, `bowlSecs`).
+  - **Melody**: it wanders D Dorian (`modeCents`), a step or two a note, drawn home to D the further it strays
+    (`walk`). Each phrase holds a note, steps to another `stepShare` of the way in, then falls a step to close,
+    `closeSecs` before its breath. Singers and basses move as one.
+  - **Each singer their own**: a source brighter or darker (`throatTilts`), their own vibrato, loudness and drift,
+    and a few cents off their place (`detuneStray`).
+  - In the hall, beside its own voices (`choirHallWet`).
+- **The monk**: one low voice on D2 (`voiceHz`), as the choir's singers are, singing its phrases, overtones and bowl,
+  far off in the hall: it answers after `preDelaySecs`, far louder than the voice itself (`monkHallWet`, `monkDry`).
+- **The hall** (`hall` in `nodes.ts`): 9 s of stone, losing its highs as it dies (`hallBright`, `hallDull`).
 - **A chant**: one of the four `psi` recordings, never the same twice running. The four are fetched together
   the first time any is wanted (542 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
   bank's), as decoded each is about 2.2 MB. The choir sings until it has, then fades as the chant swells in. It is looped in code: each pass
   skips the mp3's padding and starts `chantCrossSecs` before the last ends, crossfaded at equal power.
 - The desk's world strip has the **psi** picker, and a **psi** button that sings what it chose for a few seconds.
 - The chants are the largest samples: 542 KB of mp3, about 8.8 MB decoded, so they are fetched only once one is wanted, and each decoded only once wanted.
+
+## Items
+
+On the `world` bus (`items.ts`), on `item-handled`: an item changing hands, after their reach, `taken` or put down,
+maybe on the `floor`. Heard as `put` or `take` with its `kind`.
+
+| kind | put down | taken up |
+| --- | --- | --- |
+| `book` | a recorded book set down (`book`) | a rustle, and the book lighter |
+| boxes | a padded thud (`thud`) | a rustle and a leather handle (`grip`) |
+| `keycard` | a small click | a rustle and a lighter click |
+| `phaser` | a clunk on plate | a rustle and a click |
+
+Put down on the floor, it is louder than on a surface.
 
 ## The desk
 

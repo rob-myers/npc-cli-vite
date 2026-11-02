@@ -141,7 +141,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         const audio = getAudio();
         const { psiVoice } = audio;
         const choir = psiVoice === "choir" || (psiVoice === "random" && Math.random() < 0.5);
-        const want = choir ? "choir" : "chant";
+        const want = psiVoice === "monk" ? "monk" : choir ? "choir" : "chant";
         const pick = chantOf(psiVoice) ?? audio.pickIndex("psi");
         const from = performance.now();
         let held: null | typeof want = null;
@@ -746,6 +746,8 @@ const sfxLabels: Record<SfxKey, string> = {
   sit: "sit",
   lie: "lie",
   stand: "stand",
+  put: "put",
+  take: "take",
 };
 /** The phaser's sounds, on the fx strip */
 const fxKeys = sfxKeys.filter((key) => sfxBus(key) === "fx");

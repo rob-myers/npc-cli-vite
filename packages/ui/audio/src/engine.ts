@@ -50,7 +50,15 @@ export type AudioMeterKey = keyof AudioEngine["meters"];
  * `pan` from `-1` (left) to `1` (right), `amount` from `0` to `1` (e.g. a shot's charge), and a door's `voice`.
  * `speed` is the World's time scale: slower plays slower and lower, as tape does
  */
-export type SfxOpts = { pan?: number; gain?: number; amount?: number; voice?: DoorVoice; speed?: number };
+export type SfxOpts = {
+  pan?: number;
+  gain?: number;
+  amount?: number;
+  voice?: DoorVoice;
+  speed?: number;
+  /** An item's kind */
+  kind?: string;
+};
 
 /** The page's one audio engine, made on first use — see `docs/audio.md` */
 export function getAudio(): AudioEngine {
@@ -236,10 +244,10 @@ function createEngine() {
       window.setTimeout(() => engine.voices--, sfxSecs * 1000);
       const level = (opts.gain ?? 1) * vary();
       const sample = (bank: SampleBank) => pickSample(samples, bank);
-      const { amount = 1, voice = "glide", speed = 1 } = opts;
+      const { amount = 1, voice = "glide", speed = 1, kind = "" } = opts;
       const out = sfxBus(key) === "world" ? world : fx;
       const pitch = vary() * Math.max(minSpeed, speed);
-      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice });
+      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice, kind });
     },
     /** One of the player's footfalls, heard at once whilst playing */
     footfall(footfall: Footfall) {
