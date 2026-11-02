@@ -1,3 +1,4 @@
+import { chantVoice, choirVoice } from "./choir";
 import { type DoorVoice, doorSfx, doorVoice } from "./doors";
 import { gain, panner } from "./nodes";
 import { chargeVoice, phaserSfx } from "./phaser";
@@ -50,17 +51,29 @@ const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx, ...postureSf
 export const sfxBus = (key: SfxKey) => (key in phaserSfx ? "fx" : "world");
 
 /** A sound held whilst something lasts, as a phaser charging or a door moving: `level` from `0` to `1` */
-export type HoldParams = { level: number; pan: number; gain: number; voice?: DoorVoice };
+/** `pick` is which of a bank's samples, else one at random */
+export type HoldParams = { level: number; pan: number; gain: number; voice?: DoorVoice; pick?: number };
 export type HeldVoice = { set(params: HoldParams, at: number): void; stop(at: number): void };
 
-export const holdKeys = ["charge", "door"] as const;
+export const holdKeys = ["charge", "door", "choir", "chant"] as const;
 export type HoldKey = (typeof holdKeys)[number];
 
 /** Each held voice's builder, given the params it is first held with */
-export const holds: Record<HoldKey, (ctx: AudioContext, out: AudioNode, params: HoldParams) => HeldVoice> = {
+/** Each held voice's builder, given the params it is first held with, and a sample of a bank */
+export const holds: Record<
+  HoldKey,
+  (
+    ctx: AudioContext,
+    out: AudioNode,
+    params: HoldParams,
+    sample: (bank: SampleBank, pick?: number) => null | AudioBuffer,
+  ) => HeldVoice
+> = {
   charge: chargeVoice,
   door: doorVoice,
+  choir: choirVoice,
+  chant: chantVoice,
 };
 
 /** The bus a held voice plays through */
-export const holdBus = (key: HoldKey) => (key === "door" ? "world" : "fx");
+export const holdBus = (key: HoldKey) => (key === "charge" ? "fx" : "world");

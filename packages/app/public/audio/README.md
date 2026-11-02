@@ -40,3 +40,11 @@ Door sounds, from Freesound (CC0), cut the same way to the hit, at most 0.3 s (t
 - `clunk-4`: "SFX Door Close Big.wav" by Paul368, https://freesound.org/s/264060/.
 - `clunk-5`: "pine door shut 2 - slam.wav" by Imitatia Dei, https://freesound.org/s/96472/.
 - `clunk-6`: "Glass Door Closing 1_1" by Joao_Janz, https://freesound.org/s/485111/.
+
+Psi chants, from Freesound (CC0): 11.5 s of each, from the second given, mono 96 kbps mp3. They are looped in code,
+each pass crossfaded into the next, so their ends need not meet.
+
+- `psi-0`: "Low_D_Arh.wav" by annannienann, https://freesound.org/s/8067/, from 9 s.
+- `psi-1`: "Low chant.wav" by adharca, https://freesound.org/s/319253/, from 1 s.
+- `psi-2`: "Atlante 4" by Kronek9, https://freesound.org/s/702653/, from 14 s.
+- `psi-3`: "Short eerie chorus" by ThomEvans, https://freesound.org/s/437475/, from 12 s.

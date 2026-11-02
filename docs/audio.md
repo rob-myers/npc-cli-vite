@@ -33,7 +33,7 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
 - **The World never imports it.** jsh plays sounds for it.
 - **Autoplay.** Browsers start a context only after a press or key. The engine resumes on the next `pointerdown` or
   `keydown`. `warmAudio()` waits for one of those before making the engine, so nothing is refused at page load.
-- **Samples.** All CC0, in named banks (`sampleFiles`), all fetched as the engine is made: 26 steps (216 KB) and the
+- **Samples.** All CC0, in named banks (`sampleFiles`), fetched as the engine is made, bar the lazy `psi`: 26 steps (216 KB) and the
   effects' layers (252 KB). `pickSample` never plays one twice running. A layer not yet loaded is left out.
 - **Hot reload.** The context, samples, listeners, config and status are kept on `import.meta.hot.data`.
   - An edit of any audio module re-runs `engine.ts`, which replaces the engine an older copy made.
@@ -134,6 +134,33 @@ On the `world` bus (`posture.ts`): their clothes rustling (`cloth`).
 
 Only one settling onto it is heard: `npc-pre-do` comes first. One spawned onto it, as a map's npcs restored, is
 silent. Getting off is heard after either.
+
+## Psi
+
+Whilst the player's psi is raised (`w.e.isPsiRaised`), something sings (`choir.ts`, on the `world` bus): what the
+desk's **psi** picker chooses (`psiVoices`, saved with the pane). That is the synthesised `choir`, one of the
+recorded chants (`low-d`, `low-chant`, `drone`, `eerie`), else `random`: the choir `choirShare` of the time, else
+a chant. A change of it whilst raised is heard at once. Either is a held voice,
+renewed each tick, so a pause or psi lowered lets it die away. It swells in over `fadeInSecs`, dies away over
+`fadeOutSecs`, and is never panned, as it is the player's own.
+
+- **The choir**: chanting as monks do, made to sound sung, not played.
+  - **Voices**: low voices on D2 A2 D3 over basses on D1, each a throat-like source (`getThroat`, a periodic wave
+    whose harmonics fall away as a voice's do), not a sawtooth.
+  - **Unsteady**: each singer's pitch wanders a few cents at random (`driftCents`), with a slow vibrato, and scoops
+    up onto the note as a phrase starts (`scoopCents`).
+  - **Groups**: three, each with its own mouth a little longer or shorter (`mouthScales`), pitched a few cents apart,
+    entering and turning vowel `staggerSecs` after the last, each with a breath in first.
+  - **Phrases**: long, dark "aum"s (`aum`, `phraseSecs`, 14 s): opening on "aa", closing through "oo" to "mm"
+    (`vowels`, `lipsHz`), then easing for a breath.
+  - A narrow resonance drifts over it, picking out overtones (`overtoneHz`). A singing bowl is struck now and then
+    (`bowlSecs`), its partials beating as they ring out. All in its own 4.5 s stone hall (`hall` in `nodes.ts`).
+- **A chant**: one of the four `psi` recordings, never the same twice running. The four are fetched together
+  the first time any is wanted (542 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
+  bank's), as decoded each is about 2.2 MB. The choir sings until it has, then fades as the chant swells in. It is looped in code: each pass
+  skips the mp3's padding and starts `chantCrossSecs` before the last ends, crossfaded at equal power.
+- The desk's world strip has the **psi** picker, and a **psi** button that sings what it chose for a few seconds.
+- The chants are the largest samples: 542 KB of mp3, about 8.8 MB decoded, so they are fetched only once one is wanted, and each decoded only once wanted.
 
 ## The desk
 

@@ -1,5 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { Picker } from "@npc-cli/util/picker";
 import {
   ArrowCounterClockwiseIcon,
   CaretLeftIcon,
@@ -24,10 +25,13 @@ import {
   audioDefaults,
   audioRanges,
   audioUnits,
+  chantOf,
   type DoorVoice,
   doorVoices,
   getAudio,
+  isPsiVoice,
   isStepSet,
+  psiVoices,
   type SfxKey,
   type Side,
   sfxBus,
@@ -87,9 +91,9 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       },
       onChange() {
         const config = audioChanges(getAudio().config);
-        const { stepSet } = getAudio();
+        const { stepSet, psiVoice } = getAudio();
         uiStoreApi.setUiMeta(meta.id, (draft) => {
-          Object.assign(draft as AudioUiMeta, { config, configVersion: audioConfigVersion, stepSet });
+          Object.assign(draft as AudioUiMeta, { config, configVersion: audioConfigVersion, stepSet, psiVoice });
         });
         state.update();
       },
@@ -132,6 +136,25 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
           audio.sfx(shut ? "closed" : "opened", { voice });
         };
         move();
+      },
+      playPsi() {
+        const audio = getAudio();
+        const { psiVoice } = audio;
+        const choir = psiVoice === "choir" || (psiVoice === "random" && Math.random() < 0.5);
+        const want = choir ? "choir" : "chant";
+        const pick = chantOf(psiVoice) ?? audio.pickIndex("psi");
+        const from = performance.now();
+        let held: null | typeof want = null;
+        const sing = () => {
+          // the choir sings whilst a chant loads
+          const key = want === "chant" && !audio.hasSample("psi", pick) ? "choir" : want;
+          if (held !== null && held !== key) audio.release(held, "desk");
+          held = key;
+          if (performance.now() - from > psiDemoMs) return audio.release(key, "desk");
+          audio.hold(key, "desk", { level: 1, pan: 0, gain: 1, pick });
+          requestAnimationFrame(sing);
+        };
+        sing();
       },
       playStep(run) {
         state.stepSide = state.stepSide === "left" ? "right" : "left";
@@ -191,6 +214,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
     const audio = getAudio();
     if (meta.config !== undefined && meta.configVersion === audioConfigVersion) audio.set(meta.config);
     if (isStepSet(meta.stepSet)) audio.setStepSet(meta.stepSet);
+    if (isPsiVoice(meta.psiVoice)) audio.setPsiVoice(meta.psiVoice);
     const unsubscribe = audio.subscribe(state.onChange);
     if (state.live) state.draw();
     return () => {
@@ -383,6 +407,22 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                   {sfxLabels[key]}
                 </button>
               ))}
+              <Picker
+                title="what sings whilst psi is raised"
+                value={audio.psiVoice}
+                options={psiVoices}
+                className="h-7 w-full justify-between text-[9px] tracking-wider uppercase"
+                popupClassName="text-[10px]"
+                onChange={(voice) => audio.setPsiVoice(voice)}
+              />
+              <button
+                type="button"
+                title="sing what psi raised sings"
+                className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
+                onClick={state.playPsi}
+              >
+                psi
+              </button>
             </div>
             {fader("world", worldColour)}
             <Readout value={config.world} colour={worldColour} />
@@ -647,6 +687,8 @@ type State = {
   playCharge(cancel: boolean): void;
   /** Moves a door of `voice` as the World does, then stops it open, else shut */
   playDoor(voice: DoorVoice, shut: boolean): void;
+  /** Sings what psi raised sings, a while */
+  playPsi(): void;
   /** Plays a step, a running one if `run` */
   playStep(run: boolean): void;
   /** Draws the meters and the spectrum each frame, whilst live and in sight */
@@ -709,6 +751,8 @@ const sfxLabels: Record<SfxKey, string> = {
 const fxKeys = sfxKeys.filter((key) => sfxBus(key) === "fx");
 /** The doors' sounds besides opening and shutting, on the world strip */
 const worldKeys = sfxKeys.filter((key) => sfxBus(key) === "world" && key !== "opened" && key !== "closed");
+/** How long the desk's psi sings */
+const psiDemoMs = 16000;
 /** How long the desk's door moves, as the World's at `doorSpeed` */
 const doorDemoMs = 250;
 /** The charge button's run, as `phaserConfig.chargeSecs` in the World */

@@ -1,4 +1,5 @@
 import {
+  chantOf,
   type DoorVoice,
   doorVoices,
   type Footfall,
@@ -174,6 +175,10 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
   const feet = new Map<string, Feet>();
   /** Each heard npc's charge when last read, whilst charging */
   const charges = new Map<string, number>();
+  /** What sings whilst the player's psi is raised, as the desk chose it, and so which voice holds */
+  let psi: null | { chosen: string; want: "choir" | "chant"; pick: number; held: null | "choir" | "chant" } = null;
+  /** The chant last sung, not chosen at random next */
+  let lastChant: undefined | number;
   /** The player, then the nearest `maxNear` npcs within `hearMetres`: their feet and charges are read each tick */
   let heard: JshCli.Npc[] = [];
   let foundAt = Number.NEGATIVE_INFINITY;
@@ -199,6 +204,25 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
         feet.delete(key);
         charges.delete(key) && getAudio().release("charge", key);
       }
+    }
+    // a choir, whilst the player's psi is raised
+    const chosen = w.e.isPsiRaised(player.key) === true ? getAudio().psiVoice : null;
+    if (psi !== null && psi.chosen !== chosen) {
+      psi.held !== null && getAudio().release(psi.held, "player");
+      psi = null;
+    }
+    if (chosen !== null) {
+      const choir = chosen === "choir" || (chosen === "random" && Math.random() < hearConfig.choirShare);
+      if (psi === null) {
+        const pick = chantOf(chosen) ?? getAudio().pickIndex("psi", lastChant);
+        psi = { chosen, want: choir ? "choir" : "chant", pick, held: null };
+        if (!choir) lastChant = pick;
+      }
+      // the choir sings whilst a chant loads
+      const key = psi.want === "chant" && !getAudio().hasSample("psi", psi.pick) ? "choir" : psi.want;
+      if (psi.held !== null && psi.held !== key) getAudio().release(psi.held, "player");
+      psi.held = key;
+      getAudio().hold(key, "player", { level: 1, pan: 0, gain: 1, pick: psi.pick });
     }
     for (const npc of heard) {
       syncCharge(w, npc, charges);
@@ -317,6 +341,8 @@ const hearConfig = {
   maxNear: 6,
   /** Beyond this, an npc's other sounds are not heard, as their phaser */
   reachMetres: 20,
+  /** Whilst the desk chooses `random`, the share of psi raised to the choir, else to a chant */
+  choirShare: 0.2,
   /** Game seconds before a door refusing someone is heard again */
   deniedSecs: 1.5,
   /** A door's open ratio per game second, as the World's `doorSpeed`: a moving door's full level */

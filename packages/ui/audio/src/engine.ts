@@ -1,6 +1,7 @@
+import { isPsiVoice, type PsiVoice } from "./choir";
 import type { DoorVoice } from "./doors";
 import { gain, limiter, room } from "./nodes";
-import { loadSamples, pickSample, type SampleBank, type Samples, samplesKey } from "./samples";
+import { bankSize, loadSamples, pickSample, type SampleBank, type Samples, samplesKey, wantSample } from "./samples";
 import {
   type HeldVoice,
   type HoldKey,
@@ -25,6 +26,7 @@ import {
   toAudioConfig,
 } from "./steps";
 
+export { chantOf, isPsiVoice, type PsiVoice, psiVoices } from "./choir";
 export { type DoorVoice, doorVoices, isDoorVoice } from "./doors";
 export { type HoldKey, type HoldParams, holdKeys, isSfxKey, type SfxKey, sfxBus, sfxKeys } from "./sfx";
 export {
@@ -94,6 +96,8 @@ function createEngine() {
 
   /** Which set of footsteps plays, chosen on the desk */
   let stepSet: StepSet = isStepSet(shared.stepSet) ? shared.stepSet : stepSetDefault;
+  /** What sings whilst psi is raised, chosen on the desk */
+  let psiVoice: PsiVoice = isPsiVoice(shared.psiVoice) ? shared.psiVoice : "random";
   const player = createSteps(ctx, steps, samples, () => stepSet);
 
   /** A tap per channel, for the desk's level meters */
@@ -163,13 +167,25 @@ function createEngine() {
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
     },
+    bankSize,
+    /** Whether `bank`'s `index`th sample has loaded: a large bank's loads only once first asked for */
+    hasSample(bank: SampleBank, index: number) {
+      return wantSample(ctx, samples, bank, index);
+    },
+    /** One of `bank`'s samples at random, never `not` */
+    pickIndex(bank: SampleBank, not?: number) {
+      const size = bankSize(bank);
+      const index = Math.floor(Math.random() * size);
+      return index === not && size > 1 ? (index + 1) % size : index;
+    },
     /** Holds `key`'s voice for `id`, e.g. an npcKey. Unless held again within `leaseMs`, it fades out */
     hold(key: HoldKey, id: string, params: HoldParams) {
       resume();
       const heldKey = `${key}:${id}`;
       let entry = held.get(heldKey);
       if (entry === undefined) {
-        const voice = holds[key](ctx, holdBus(key) === "world" ? world : fx, params);
+        const sample = (bank: SampleBank, pick?: number) => pickSample(samples, bank, pick);
+        const voice = holds[key](ctx, holdBus(key) === "world" ? world : fx, params, sample);
         held.set(heldKey, (entry = { voice, params: null, until: 0 }));
       }
       // eased towards only on a change, so a param's timeline is not filled every tick
@@ -232,6 +248,14 @@ function createEngine() {
       player.step(footfall);
     },
     /** Which set of footsteps plays */
+    get psiVoice() {
+      return psiVoice;
+    },
+    setPsiVoice(next: PsiVoice) {
+      if (!isPsiVoice(next) || next === psiVoice) return;
+      psiVoice = next;
+      emit();
+    },
     get stepSet() {
       return stepSet;
     },
@@ -275,6 +299,8 @@ type Shared = {
   config: null | Partial<AudioConfig>;
   configVersion: number;
   stepSet: null | StepSet;
+  /** Missing from the shared state of an older module */
+  psiVoice?: null | PsiVoice;
   status: AudioStatus;
   /** Missing from the shared state of an older module */
   chosenVoices?: Map<string, DoorVoice>;
@@ -326,7 +352,15 @@ if (shared.engine !== null) {
   const ours = "steps" in engine.config;
   const config = ours ? audioChanges(engine.config) : null;
   const stepSet = "stepSet" in engine ? engine.stepSet : null;
-  Object.assign(shared, { config, configVersion: audioConfigVersion, stepSet, status: engine.status, engine: null });
+  const psiVoice = "psiVoice" in engine ? engine.psiVoice : null;
+  Object.assign(shared, {
+    config,
+    configVersion: audioConfigVersion,
+    stepSet,
+    psiVoice,
+    status: engine.status,
+    engine: null,
+  });
   engine.dispose();
   getAudio(); // remade at once, so steps playing go on
 }

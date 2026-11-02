@@ -39,8 +39,14 @@ export function limiter(ctx: BaseAudioContext) {
 }
 
 export async function loadBuffer(ctx: BaseAudioContext, url: string) {
+  return ctx.decodeAudioData(await fetchBytes(url));
+}
+
+/** A file's bytes, undecoded */
+export async function fetchBytes(url: string) {
   const response = await fetch(url);
-  return ctx.decodeAudioData(await response.arrayBuffer());
+  if (!response.ok) throw Error(`${response.status} ${url}`);
+  return response.arrayBuffer();
 }
 
 const pinkNoise = new WeakMap<BaseAudioContext, AudioBuffer>();
@@ -104,3 +110,30 @@ function getRoomImpulse(ctx: BaseAudioContext) {
 const roomSecs = 0.45;
 /** How fast the room dies, over its length */
 const roomDecay = 7;
+
+/** A large stone hall, as a choir sings in: a convolver over noise dying away slowly */
+export function hall(ctx: BaseAudioContext) {
+  const node = ctx.createConvolver();
+  node.buffer = getHallImpulse(ctx);
+  return node;
+}
+
+const hallImpulses = new WeakMap<BaseAudioContext, AudioBuffer>();
+
+/** `hallSecs` of stereo noise dying away, made once per context */
+function getHallImpulse(ctx: BaseAudioContext) {
+  const cached = hallImpulses.get(ctx);
+  if (cached !== undefined) return cached;
+  const length = Math.round(ctx.sampleRate * hallSecs);
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let channel = 0; channel < 2; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp((-hallDecay * i) / length);
+  }
+  hallImpulses.set(ctx, buffer);
+  return buffer;
+}
+
+const hallSecs = 4.5;
+/** How fast the hall dies, over its length */
+const hallDecay = 5;
