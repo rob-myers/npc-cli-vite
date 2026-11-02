@@ -16,6 +16,12 @@ what works as TypeScript, run it, and see what happened.
   curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
   ```
   `open -na "Google Chrome" --args --user-data-dir=…` hands off to it and opens nothing.
+- That `curl` needs the instance running, else the connection is refused. Claude's first call to any npc-cli tool starts
+  it (`openPage` in `cdp.ts`). To start it yourself, run what `openPage` runs:
+  ```sh
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9382 \
+    --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --window-size=1400,900 http://localhost:5173/ &
+  ```
 
 ## The page side
 
