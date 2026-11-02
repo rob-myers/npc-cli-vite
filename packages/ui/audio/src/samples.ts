@@ -9,7 +9,6 @@ export const sampleFiles = {
   tile3: numbered("steps/tile3-", 8),
   tile4: numbered("steps/tile4-", 8),
   armour: numbered("sfx/armour-", 5),
-  crunch: numbered("sfx/crunch-", 5),
   slime: numbered("sfx/slime-", 1),
   grip: numbered("sfx/grip-", 4),
   cloth: numbered("sfx/cloth-", 4),

@@ -73,20 +73,3 @@ export function layer(
 ) {
   if (buffer !== null) playBuffer(ctx, buffer, at, out, level, rate);
 }
-
-const staticBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
-
-/** Half a second of white noise, chopped into bursts and gaps as a bad signal is */
-export function getStatic(ctx: BaseAudioContext) {
-  const cached = staticBuffers.get(ctx);
-  if (cached !== undefined) return cached;
-  const buffer = ctx.createBuffer(1, ctx.sampleRate / 2, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let on = 1;
-  for (let i = 0; i < data.length; i++) {
-    if (Math.random() < 0.004) on = Math.random() < 0.7 ? 1 : 0.15;
-    data[i] = (Math.random() * 2 - 1) * on;
-  }
-  staticBuffers.set(ctx, buffer);
-  return buffer;
-}

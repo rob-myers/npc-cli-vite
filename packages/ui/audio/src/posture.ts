@@ -7,10 +7,9 @@ export const postureSfx = {
   sit({ ctx, at, pitch, sample }, out) {
     layer(ctx, sample("cloth"), at, out, 0.5, pitch);
   },
-  /** Lying down: rustles a beat apart, as they shift and settle */
+  /** Lying down: a rustle, slowed so it lasts longer */
   lie({ ctx, at, pitch, sample }, out) {
-    for (const [t, level] of lieRustles)
-      layer(ctx, sample("cloth"), at + t, out, level, pitch * (0.9 + 0.2 * Math.random()));
+    layer(ctx, sample("cloth"), at, out, 0.5, lieRate * pitch);
   },
   /** Getting up: a rustle */
   stand({ ctx, at, pitch, sample }, out) {
@@ -18,9 +17,5 @@ export const postureSfx = {
   },
 } satisfies Record<string, SfxBuilder>;
 
-/** Lying down's rustles, as `[seconds after, level]`, each quieter as they settle */
-const lieRustles: [number, number][] = [
-  [0, 0.5],
-  [0.3, 0.4],
-  [0.65, 0.3],
-];
+/** Lying down's rustle's speed: slower is longer */
+const lieRate = 0.6;

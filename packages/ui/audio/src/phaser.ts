@@ -1,6 +1,6 @@
 import { filter, gain, getPinkNoise, osc, panner, shaper } from "./nodes";
 import type { HeldVoice, SfxBuilder } from "./sfx";
-import { crackle, envelope, getStatic, layer, noise, sfxLevel, sweep } from "./synth";
+import { crackle, envelope, layer, noise, sfxLevel, sweep } from "./synth";
 
 /** A phaser's sounds, from raising it to where its shot ends — see `docs/audio.md` */
 export const phaserSfx = {
@@ -23,14 +23,20 @@ export const phaserSfx = {
     noise(ctx, at, 0.03, out, 0.3, "bandpass", 3200);
     crackle(ctx, at, 0.06, out, 6, 0.35);
   },
-  /** A discharge: a recorded crack, a short distorted burst, and a sizzle. Charged, a low boom under it */
+  /** A discharge: a snap, a low punch, a burst sweeping down, a whoosh of air and a boom. Charged, longer and lower */
   fire({ ctx, at, pitch, amount: a, sample }, out) {
-    layer(ctx, sample("crunch"), at, out, 0.35, 1.5 * pitch);
     noise(ctx, at, 0.025, out, 0.5, "highpass", 2000);
-    const secs = 0.08 + 0.15 * a;
+    const punch = osc(ctx, "sine", 160 * pitch);
+    sweep(punch.frequency, 160 * pitch, 45 * pitch, at, 0.1);
+    punch.connect(envelope(ctx, at, 0.002, 0.12, 0.5 + 0.2 * a)).connect(out);
+    punch.start(at);
+    punch.stop(at + 0.2);
+    const secs = 0.15 + 0.15 * a;
     const grit = shaper(ctx, 6 + 6 * a);
+    const band = filter(ctx, "bandpass", 2400, 0.7);
+    sweep(band.frequency, 2400, 900, at, secs);
     grit
-      .connect(filter(ctx, "bandpass", 1800, 0.7))
+      .connect(band)
       .connect(envelope(ctx, at, 0.002, secs, 0.35))
       .connect(out);
     for (const [ratio, detune] of [
@@ -43,26 +49,29 @@ export const phaserSfx = {
       buzz.start(at);
       buzz.stop(at + secs + 0.1);
     }
-    crackle(ctx, at, secs + 0.1, out, Math.round(6 + 10 * a), 0.3);
-    noise(ctx, at + 0.02, 0.25 + 0.3 * a, out, 0.12, "highpass", 6000, 0.01);
-    if (a >= 0.3) layer(ctx, sample("boom"), at, out, 0.6 * a, 1.2 * pitch);
+    noise(ctx, at, 0.25 + 0.2 * a, out, 0.3, "lowpass", 1200, 0.005);
+    layer(ctx, sample("boom"), at, out, 0.3 + 0.4 * a, (1.6 - 0.4 * a) * pitch);
   },
-  /** A cancelled charge: its buzz darkening and dying, crackling, with a hiss of venting */
+  /** A cancelled charge: its pulse slowing, sinking and fading, the air falling away */
   cool({ ctx, at, pitch, amount }, out) {
     const a = Math.max(0.3, amount);
     const secs = 0.6;
-    const buzz = osc(ctx, "sawtooth", chargeHz * pitch);
-    const dark = filter(ctx, "lowpass", chargeCutoff(a));
-    sweep(dark.frequency, chargeCutoff(a), 150, at, secs);
-    buzz
-      .connect(shaper(ctx, 2))
-      .connect(dark)
-      .connect(envelope(ctx, at, 0.005, secs, 0.3 * a))
+    const hz = between(pulse.hz, a) * pitch;
+    const tone = osc(ctx, "sine", hz);
+    sweep(tone.frequency, hz, pulse.hz[0] * 0.7 * pitch, at, secs);
+    const throb = gain(ctx, 0.5);
+    const rate = osc(ctx, "sine", between(pulse.rate, a));
+    sweep(rate.frequency, between(pulse.rate, a), 2, at, secs);
+    rate.connect(gain(ctx, 0.5)).connect(throb.gain);
+    tone
+      .connect(throb)
+      .connect(envelope(ctx, at, 0.005, secs, 0.5 * a))
       .connect(out);
-    buzz.start(at);
-    buzz.stop(at + secs + 0.1);
-    crackle(ctx, at, secs * 0.8, out, Math.round(6 + 8 * a), 0.25);
-    noise(ctx, at + 0.02, 0.5, out, 0.2 * a, "bandpass", 2500, 0.04);
+    for (const node of [tone, rate]) {
+      node.start(at);
+      node.stop(at + secs + 0.1);
+    }
+    noise(ctx, at, secs * 0.8, out, 0.25 * a, "bandpass", between(pulse.air, a) * 0.7, 0.01);
   },
   /** A burn: a hiss and crackle that flares then sizzles away, over a soft thump and a wet sear */
   hit({ ctx, at, pitch, sample }, out) {
@@ -112,72 +121,58 @@ export const phaserSfx = {
     beyond.connect(out);
     phaserSfx.wall({ ...c, at: at + 0.02 }, beyond);
   },
-  /** A shot striking a wall: a recorded crunch, a thud, and a few sparks */
-  wall({ ctx, at, pitch, sample }, out) {
-    layer(ctx, sample("crunch"), at, out, 0.5, 1.1 * pitch);
-    noise(ctx, at, 0.03, out, 0.25, "highpass", 3000);
-    const thud = osc(ctx, "sine", 90);
-    sweep(thud.frequency, 140 * pitch, 60 * pitch, at, 0.08);
-    thud.connect(envelope(ctx, at, 0.002, 0.1, 0.35)).connect(out);
-    thud.start(at);
-    thud.stop(at + 0.2);
-    crackle(ctx, at + 0.02, 0.15, out, 5, 0.2);
+  /** A shot striking a wall: one short hit, a burst of noise over a small thump */
+  wall({ ctx, at, pitch }, out) {
+    noise(ctx, at, wallSecs, out, 0.35, "bandpass", 1500 * pitch);
+    const thump = osc(ctx, "sine", 120 * pitch);
+    thump.connect(envelope(ctx, at, 0.002, wallSecs, 0.25)).connect(out);
+    thump.start(at);
+    thump.stop(at + wallSecs + 0.05);
   },
 } satisfies Record<string, SfxBuilder>;
 
-/** A phaser charging: a steady buzz and a rush of current, brightening and crackling as it fills */
+/** A phaser charging: a low tone throbbing faster as it fills, with a swell of air */
 export function chargeVoice(ctx: AudioContext, dest: AudioNode): HeldVoice {
   const out = gain(ctx, 0);
   const place = panner(ctx, 0);
   out.connect(place).connect(dest);
-  const bright = filter(ctx, "lowpass", chargeCutoff(0), 1.2);
-  bright.connect(shaper(ctx, 2)).connect(out);
-  const buzzes = [0, 25].map((detune) => {
-    const buzz = osc(ctx, "sawtooth", chargeHz);
-    buzz.detune.value = detune;
-    buzz.connect(bright);
-    return buzz;
-  });
-  const rush = ctx.createBufferSource();
-  rush.buffer = getPinkNoise(ctx);
-  rush.loop = true;
-  const rushBand = filter(ctx, "bandpass", 800, 0.8);
-  const rushLevel = gain(ctx, 0);
-  rush.connect(rushBand).connect(rushLevel).connect(out);
-  const sparks = ctx.createBufferSource();
-  sparks.buffer = getStatic(ctx);
-  sparks.loop = true;
-  const sparksLevel = gain(ctx, 0);
-  sparks
-    .connect(filter(ctx, "highpass", 3000))
-    .connect(sparksLevel)
-    .connect(out);
-  const sources = [...buzzes, rush, sparks];
-  for (const node of sources) node.start();
+  const tone = osc(ctx, "sine", pulse.hz[0]);
+  const throb = gain(ctx, 0.5);
+  const rate = osc(ctx, "sine", pulse.rate[0]);
+  rate.connect(gain(ctx, 0.5)).connect(throb.gain);
+  tone.connect(throb).connect(out);
+  const air = ctx.createBufferSource();
+  air.buffer = getPinkNoise(ctx);
+  air.loop = true;
+  const band = filter(ctx, "bandpass", pulse.air[0], 0.7);
+  const airLevel = gain(ctx, 0.1);
+  air.connect(band).connect(airLevel).connect(out);
+  const sources = [tone, rate, air];
+  for (const source of sources) source.start();
   const ease = (param: AudioParam, value: number, at: number) => param.setTargetAtTime(value, at, 0.04);
 
   return {
     set({ level, pan, gain: heard }, at) {
-      ease(bright.frequency, chargeCutoff(level), at);
-      ease(rushBand.frequency, 800 + 1700 * level, at);
-      ease(rushLevel.gain, 0.2 + 0.8 * level, at);
-      ease(sparksLevel.gain, level >= 1 ? 0.12 : 0.08 * level, at);
+      ease(tone.frequency, between(pulse.hz, level), at);
+      ease(rate.frequency, between(pulse.rate, level), at);
+      ease(band.frequency, between(pulse.air, level), at);
+      ease(airLevel.gain, 0.1 + 0.5 * level, at);
       ease(place.pan, Math.max(-1, Math.min(1, pan)), at);
       ease(out.gain, heard * (0.04 + 0.16 * level) * sfxLevel, at);
     },
     stop(at) {
       out.gain.cancelScheduledValues(at);
       out.gain.setTargetAtTime(0, at, 0.03);
-      for (const node of sources) node.stop(at + 0.25);
+      for (const source of sources) source.stop(at + 0.25);
       window.setTimeout(() => out.disconnect(), (at - ctx.currentTime + 0.3) * 1000);
     },
   };
 }
 
-/** The charging buzz's pitch, steady as it fills */
-const chargeHz = 100;
-/** How bright the charging buzz is at `level`, `0` to `1` */
-const chargeCutoff = (level: number) => 250 + 2250 * level;
+/** The charge's pulse, each `[empty, full]`: the tone's Hz, its throbs a second, and the air's band */
+const pulse = { hz: [55, 90], rate: [3, 18], air: [400, 1800] } as const;
+/** From `empty` to `full` by `level`, evenly in pitch */
+const between = ([empty, full]: readonly [number, number], level: number) => empty * (full / empty) ** level;
 
 /** The weight of it meeting the hand: a soft low knock */
 function heft(ctx: AudioContext, at: number, out: AudioNode, level: number) {
@@ -207,3 +202,5 @@ function phaseShifter(ctx: AudioContext, at: number, secs: number) {
 
 const phaseStages = 8;
 const ghostSecs = 0.35;
+/** How long a shot striking a wall lasts */
+const wallSecs = 0.08;

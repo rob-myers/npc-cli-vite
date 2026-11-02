@@ -21,7 +21,7 @@ Used under the Creative Commons 0 license, https://creativecommons.org/publicdom
 Layers of the synthesised effects, each from a CC0 pack by Kenney (www.kenney.nl), via OpenGameArt:
 
 - "Sci-Fi Sounds", https://opengameart.org/content/sci-fi-sounds: `armour-0..4` (`impactMetal_000..004`),
-  `crunch-0..4` (`explosionCrunch_000..004`), `slime-0` (`slime_000`), `boom-0..1` (`lowFrequency_explosion_000..001`).
+  `slime-0` (`slime_000`), `boom-0..1` (`lowFrequency_explosion_000..001`).
 - "50 RPG sound effects", https://opengameart.org/content/50-rpg-sound-effects: `grip-0..3` (`handleSmallLeather`,
   `handleSmallLeather2`, `beltHandle1`, `beltHandle2`), `cloth-0..3` (`cloth1..4`), `click-0..1` (`metalClick`,
   `metalLatch`), `thud-0` (`dropLeather`).

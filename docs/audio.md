@@ -92,14 +92,14 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | --- | --- | --- |
 | `raise` | `phasers` armed | a sleeve's rustle, a leather grip, a click as it settles, a soft knock |
 | `lower` | `phasers` not armed | a click as it is made safe, a rustle, the leather taking it back |
-| `charge` (held) | `w.phasers.isCharging` | a steady buzz and a rush of current, brightening and crackling as it fills |
+| `charge` (held) | `w.phasers.isCharging` | a low tone throbbing faster as it fills, 3 to 18 times a second, with a swell of air |
 | `charged` | the charge reaching full | a snap of current |
-| `fire` | `phaser-fired` | a recorded crack, a short distorted burst, a sizzle. Charged, a low boom too |
-| `cool` | a charge cancelled (`isCooling`) | the buzz darkening and dying, crackling, with a hiss of venting |
+| `fire` | `phaser-fired` | a snap, a low punch, a burst sweeping down, a whoosh of air and a recorded boom. Charged, longer, louder and lower |
+| `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
 | `hit` | `npc-shot` hit | a burn: a hiss and crackle flaring then sizzling away, a soft thump, a wet sear |
 | `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
 | `ghost` | `npc-shot` ghost | at once, a phase shift: notches sweeping through a rush, two tones drifting apart. Then `wall` |
-| `wall` | `phaser-struck` | a recorded crunch, a thud, and a few sparks |
+| `wall` | `phaser-struck` | one short hit: a burst of noise over a small thump |
 
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
@@ -129,7 +129,7 @@ On the `world` bus (`posture.ts`): their clothes rustling (`cloth`).
 | key | when | sound |
 | --- | --- | --- |
 | `sit` | `npc-do` onto a doable with `meta.do: "sit"` | a rustle |
-| `lie` | `npc-do` onto one with `meta.do: "lie"` | three rustles a beat apart, quieter as they settle |
+| `lie` | `npc-do` onto one with `meta.do: "lie"` | a rustle, slowed so it lasts longer |
 | `stand` | `npc-do` with no doable, after one | a rustle |
 
 Only one settling onto it is heard: `npc-pre-do` comes first. One spawned onto it, as a map's npcs restored, is
