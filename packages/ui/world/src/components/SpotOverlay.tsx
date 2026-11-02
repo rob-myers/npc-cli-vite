@@ -114,11 +114,18 @@ export function SpotOverlay() {
   w.spots = state;
 
   /** How opaque the icons and arrows are, set by theme each frame: nothing re-renders on a change of theme */
-  const opacity = useMemo(() => ({ icon: uniform(spotInk.dark.icon), arrow: uniform(spotInk.dark.arrow) }), []);
+  const opacity = useMemo(
+    () => ({
+      icon: uniform(spotInk.dark.icon),
+      outline: uniform(spotInk.dark.outline),
+      arrow: uniform(spotInk.dark.arrow),
+    }),
+    [],
+  );
 
   useFrame(() => {
     const ink = spotInk[w.themeKey === "light-theme" ? "light" : "dark"];
-    [opacity.icon.value, opacity.arrow.value] = [ink.icon, ink.arrow];
+    [opacity.icon.value, opacity.outline.value, opacity.arrow.value] = [ink.icon, ink.outline, ink.arrow];
   });
 
   /** How much of a spot shows, given its rooms' fade `shown`: only in sight mode does it fade with them */
@@ -155,12 +162,14 @@ export function SpotOverlay() {
     // faded with the world's fold, so they come up as it unfolds on load
     // atop a wall, over nothing, it is solid but dim: the composite drops a faint pixel with nothing behind
     const atop = step(float(wallHeight), centre.y);
+    // its white glyph and black outline are both in the sheet (`gen-decor-sheets`): how white says which
+    const ink = mix(opacity.outline, opacity.icon, texNode.r);
     const alpha = selectAs<"float">(
       picking,
       float(1),
       texNode.a
         .mul(seen)
-        .mul(mix(opacity.icon, float(1), atop))
+        .mul(mix(ink, float(1), atop))
         .mul(shown)
         .mul(w.view.foldNode),
     );
@@ -221,8 +230,8 @@ const spotArrowLift = 0.02;
 const spotArrowLen = 0.18;
 /** How far along its arrow the middle of its head is — see `createOpenArrowGeo` */
 const arrowheadAt = 0.82;
-/** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spots show`'s */
-const spotInk = { dark: { icon: 0.2, arrow: 0.2 }, light: { icon: 1, arrow: 0.7 } };
+/** By theme: how opaque a spot's icon, its dark outline and its arrow are, its room not faded. Their colours are jsh `spots show`'s */
+const spotInk = { dark: { icon: 0.2, outline: 0.5, arrow: 0.2 }, light: { icon: 1, outline: 0.3, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
 const spotPickScale = 1.4;
 const tmpMat4 = new THREE.Matrix4();
