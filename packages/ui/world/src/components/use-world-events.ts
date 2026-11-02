@@ -402,6 +402,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door || door.locked === false) {
           return true; // absent onchange map
         }
+        // never opens, so its doorway is no way through, keys or not
+        if (door.sealed === true) return false;
         // An npc without access can slip through a locked door whilst it stands OPEN, but only
         // from right beside it. Asked whether they could get somewhere — rather than whether they
         // could step through from where they are standing — the proximity is beside the point:
