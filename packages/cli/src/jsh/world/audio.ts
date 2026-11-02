@@ -48,8 +48,9 @@ function footfalls(feet: Feet, groundY: number, moving: boolean, now: number) {
   const dt = Math.min(0.2, now - feet.readAt);
   feet.readAt = now;
   const jumped = Math.abs(groundY - feet.groundY) > feetConfig.jumpMetres || (moving && !feet.moving);
-  [feet.groundY, feet.moving] = [groundY, moving];
-  const landed: Side[] = [];
+  feet.groundY = groundY;
+  feet.moving = moving;
+  landed.length = 0;
   for (const foot of feet.feet) {
     // the height the last render left it at, no matrix worked out afresh: a frame late at worst
     const height = foot.bone.matrixWorld.elements[13] - groundY;
@@ -64,6 +65,9 @@ function footfalls(feet: Feet, groundY: number, moving: boolean, now: number) {
   }
   return landed;
 }
+
+/** What `footfalls` returns, reused every tick */
+const landed: Side[] = [];
 
 /** A footfall of `npc`'s: whether running, and how hard, louder the faster */
 function footfallOf(npc: JshCli.Npc, side: Side): Footfall {
@@ -89,22 +93,24 @@ const feetConfig = {
 };
 
 /**
- * Plays a sound effect, heard where an npc is if given
+ * Plays a sound effect, heard where an npc is if given. `amount:` from `0` to `1`, e.g. a shot's charge
  * ```sh
- * sfx phaser
+ * sfx fire
+ * sfx fire amount:0.2
  * sfx armour rob
- * sfx wall
  * ```
  */
-export function sfx({ args, w }: JshCli.RunArg) {
-  const [key, npcKey] = args;
+export function sfx({ api, args, w }: JshCli.RunArg) {
+  const opts: { amount?: unknown } = api.jsArg(args.filter((arg) => arg.includes(":")));
+  const [key, npcKey] = args.filter((arg) => !arg.includes(":"));
   if (!isSfxKey(key)) throw Error(`expected one of ${sfxKeys.join(", ")}`);
-  getAudio().sfx(key, npcKey === undefined ? {} : heardAt(w, w.npc.get(npcKey).position));
+  const amount = typeof opts.amount === "number" ? opts.amount : undefined;
+  getAudio().sfx(key, { amount, ...(npcKey === undefined ? {} : heardAt(w, w.npc.get(npcKey).position)) });
 }
 
 /**
  * Plays footsteps, one per footfall read off their feet each tick: the player's, and quieter those of npcs near them.
- * Also the weapon sounds: phaser fire, how each shot at someone ended, and a shot at no one striking (idempotent).
+ * Also the phaser's sounds: raised, lowered, charging, fired, and where each shot ends (idempotent).
  * `set:` chooses the player's footsteps, as the desk does: tile, tile3 or tile4. See `docs/audio.md`
  * ```sh
  * sounds
@@ -124,24 +130,37 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     return;
   }
   warmAudio();
-  w.e.addKeyedListener("sounds", onSoundsEvent);
+  /** Npcs whose sounds are heard, found every `everySecs`, the player's among them */
+  const reach = new Set<string>();
+  w.e.addKeyedListener("sounds", (e, w) => onSoundsEvent(e, w, reach));
   /** Each heard npc's feet, the player's among them */
   const feet = new Map<string, Feet>();
-  /** The npcs near the player, found every `everySecs` */
-  let near: JshCli.Npc[] = [];
-  let nearAt = Number.NEGATIVE_INFINITY;
+  /** Each heard npc's charge when last read, whilst charging */
+  const charges = new Map<string, number>();
+  /** The player, then the nearest `maxNear` npcs within `hearMetres`: their feet and charges are read each tick */
+  let heard: JshCli.Npc[] = [];
+  let foundAt = Number.NEGATIVE_INFINITY;
   w.e.addKeyedTick("sounds", (w) => {
     const player = w.n[w.player.key];
     if (player === undefined) return;
     const now = w.gameTime.now();
-    if (now - nearAt >= hearConfig.everySecs) {
-      nearAt = now;
-      near = nearPlayer(w, player);
-      const heard = new Set([player.key, ...near.map(({ key }) => key)]);
-      for (const key of feet.keys()) if (!heard.has(key)) feet.delete(key);
+    if (now - foundAt >= hearConfig.everySecs || heard[0] !== player) {
+      foundAt = now;
+      const inReach = npcsInReach(w, player);
+      reach.clear();
+      reach.add(player.key);
+      for (const { npc } of inReach) reach.add(npc.key);
+      const near = inReach.filter(({ dist }) => dist < hearConfig.hearMetres).slice(0, hearConfig.maxNear);
+      heard = [player, ...near.map(({ npc }) => npc)];
+      const keys = new Set(heard.map(({ key }) => key));
+      for (const key of [...feet.keys(), ...charges.keys()]) {
+        if (keys.has(key)) continue;
+        feet.delete(key);
+        charges.delete(key) && getAudio().release("charge", key);
+      }
     }
-    for (let i = -1; i < near.length; i++) {
-      const npc = i === -1 ? player : near[i];
+    for (const npc of heard) {
+      syncCharge(w, npc, charges);
       if (npc.group == null) continue;
       let theirs = feet.get(npc.key);
       if (theirs?.group !== npc.group) feet.set(npc.key, (theirs = feetOf(npc.group, npc.position.y)));
@@ -155,26 +174,39 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
   });
 }
 
-/** The nearest `maxNear` npcs in reach of the player, through open doors, and within `hearMetres` */
-function nearPlayer(w: JshCli.WorldState, player: JshCli.Npc) {
+/** The npcs in reach of the player, through open doors, within `reachMetres`, nearest first */
+function npcsInReach(w: JshCli.WorldState, player: JshCli.Npc) {
   const { x, z } = player.position;
   return w.e
     .getNpcsInReach(player.key)
+    .filter((npc) => npc !== player)
     .map((npc) => ({ npc, dist: Math.hypot(npc.position.x - x, npc.position.z - z) }))
-    .filter(({ dist }) => dist < hearConfig.hearMetres)
-    .sort((a, b) => a.dist - b.dist)
-    .slice(0, hearConfig.maxNear)
-    .map(({ npc }) => npc);
+    .filter(({ dist }) => dist < hearConfig.reachMetres)
+    .sort((a, b) => a.dist - b.dist);
+}
+
+/** Holds `npc`'s phaser charging, ticks once it is full, and cools it if cancelled */
+function syncCharge(w: JshCli.WorldState, npc: JshCli.Npc, charges: Map<string, number>) {
+  const was = charges.get(npc.key);
+  if (w.phasers?.isCharging(npc.key) === true) {
+    const level = w.phasers.chargeOf(npc.key);
+    const at = heardAt(w, npc.position);
+    getAudio().hold("charge", npc.key, { level, ...at });
+    if (level >= 1 && (was ?? 0) < 1) getAudio().sfx("charged", at);
+    charges.set(npc.key, level);
+  } else if (was !== undefined) {
+    charges.delete(npc.key);
+    getAudio().release("charge", npc.key);
+    // else fired, heard on `phaser-fired`
+    if (w.phasers?.isCooling(npc.key) === true) getAudio().sfx("cool", { ...heardAt(w, npc.position), amount: was });
+  }
 }
 
 /** `npc`'s footfall as the player hears it: quieter, fading out by `hearMetres`, panned across the view */
 function heardFrom(w: JshCli.WorldState, player: JshCli.Npc, npc: JshCli.Npc, footfall: Footfall): Footfall {
   const [dx, dz] = [npc.position.x - player.position.x, npc.position.z - player.position.z];
   const near = Math.max(0, 1 - Math.hypot(dx, dz) / hearConfig.hearMetres);
-  const e = w.r3f.camera.matrixWorld.elements;
-  const across = (dx * e[0] + dz * e[2]) / (Math.hypot(e[0], e[2]) || 1);
-  const pan = Math.max(-1, Math.min(1, across / heardConfig.panMetres)) * heardConfig.maxPan;
-  return { ...footfall, level: footfall.level * hearConfig.npcLevel * near * near, pan };
+  return { ...footfall, level: footfall.level * hearConfig.npcLevel * near * near, pan: panOf(w, dx, dz) };
 }
 
 /** An npc's own set of footsteps: random across npcs, the same each time for one */
@@ -191,34 +223,42 @@ const hearConfig = {
   hearMetres: 10,
   /** The most npcs whose steps are heard at once, the nearest */
   maxNear: 6,
+  /** Beyond this, an npc's other sounds are not heard, as their phaser */
+  reachMetres: 20,
   /** An npc's step beside the player, out of the player's own */
   npcLevel: 0.7,
 };
 
-function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState) {
-  if (e.key === "phaser-fired") playAt(w, "phaser", e.by);
-  else if (e.key === "npc-shot") playAt(w, e.outcome, e.npcKey);
-  else if (e.key === "phaser-struck" && e.what !== "nothing") getAudio().sfx("wall", heardAt(w, e.at));
+/** `reach` holds whose sounds are heard. Without a player, all are */
+function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, reach: Set<string>) {
+  const heard = (...npcKeys: string[]) => w.n[w.player.key] === undefined || npcKeys.some((key) => reach.has(key));
+  if (e.key === "phasers") {
+    for (const npcKey of e.npcKeys) heard(npcKey) && playAt(w, e.armed ? "raise" : "lower", npcKey);
+  } else if (e.key === "phaser-fired") heard(e.by) && playAt(w, "fire", e.by, e.charge);
+  else if (e.key === "npc-shot") heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
+  else if (e.key === "phaser-struck" && e.what !== "nothing" && heard(e.by)) getAudio().sfx("wall", heardAt(w, e.at));
 }
 
-function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string) {
+function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string, amount?: number) {
   const npc = w.n[npcKey];
-  if (npc !== undefined) getAudio().sfx(key, heardAt(w, npc.position));
+  if (npc !== undefined) getAudio().sfx(key, { ...heardAt(w, npc.position), amount });
 }
 
 /** Panned by where `at` is across the view, and quieter the further it is from the view's centre */
-function heardAt(w: JshCli.WorldState, at: { x: number; z: number }): SfxOpts {
+function heardAt(w: JshCli.WorldState, at: { x: number; z: number }): Required<Pick<SfxOpts, "pan" | "gain">> {
   const centre = w.view.controls?.target ?? w.r3f.camera.position;
   const [dx, dz] = [at.x - centre.x, at.z - centre.z];
-  // the camera's right, along the ground
-  const e = w.r3f.camera.matrixWorld.elements;
-  const right = Math.hypot(e[0], e[2]) || 1;
-  const across = (dx * e[0] + dz * e[2]) / right;
-  const dist = Math.hypot(dx, dz);
   return {
-    pan: Math.max(-1, Math.min(1, across / heardConfig.panMetres)) * heardConfig.maxPan,
-    gain: 1 / (1 + Math.max(0, dist - heardConfig.nearMetres) / heardConfig.falloffMetres),
+    pan: panOf(w, dx, dz),
+    gain: 1 / (1 + Math.max(0, Math.hypot(dx, dz) - heardConfig.nearMetres) / heardConfig.falloffMetres),
   };
+}
+
+/** A pan for an offset `dx, dz` on the ground, by how far it lies along the camera's right */
+function panOf(w: JshCli.WorldState, dx: number, dz: number) {
+  const e = w.r3f.camera.matrixWorld.elements;
+  const across = (dx * e[0] + dz * e[2]) / (Math.hypot(e[0], e[2]) || 1);
+  return Math.max(-1, Math.min(1, across / heardConfig.panMetres)) * heardConfig.maxPan;
 }
 
 const heardConfig = {

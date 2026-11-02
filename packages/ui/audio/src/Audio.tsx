@@ -89,6 +89,26 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         });
         state.update();
       },
+      playCharge(cancel) {
+        const audio = getAudio();
+        const from = performance.now();
+        let full = false;
+        const charge = () => {
+          const secs = (performance.now() - from) / 1000;
+          if (secs >= chargeDemo.chargeSecs + chargeDemo.fullSecs) {
+            audio.release("charge", chargeDemo.id);
+            return audio.sfx(cancel ? "cool" : "fire", { amount: 1 });
+          }
+          const level = Math.min(1, secs / chargeDemo.chargeSecs);
+          audio.hold("charge", chargeDemo.id, { level, pan: 0, gain: 1 });
+          if (level === 1 && !full) {
+            full = true;
+            audio.sfx("charged");
+          }
+          requestAnimationFrame(charge);
+        };
+        charge();
+      },
       onKeyDown(e) {
         if (e.key === "Escape") return state.setHelp(null);
         const key = (e.target as HTMLElement).closest<HTMLElement>("[data-help]")?.dataset.help as AudioKey;
@@ -293,14 +313,22 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
           </Strip>
 
           <Strip title="fx" colour={fxColour} className="@max-lg:grow">
-            <div className="grid grid-cols-[3.5rem] justify-center gap-1.5 px-2 pt-2">
+            <div className="grid grid-cols-[3.5rem_3.5rem] justify-center gap-1.5 px-2 pt-2">
+              <button
+                type="button"
+                title="charge to full, then fire: shift to cancel, and cool"
+                className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
+                onClick={(e) => state.playCharge(e.shiftKey)}
+              >
+                charge
+              </button>
               {sfxKeys.map((key) => (
                 <button
                   key={key}
                   type="button"
-                  title={`play ${key}`}
+                  title={key === "fire" ? "play fire, fully charged: shift for a tap" : `play ${key}`}
                   className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
-                  onClick={() => audio.sfx(key)}
+                  onClick={(e) => audio.sfx(key, { amount: e.shiftKey ? 0 : 1 })}
                 >
                   {sfxLabels[key]}
                 </button>
@@ -555,6 +583,8 @@ type State = {
   /** Each meter's shade, drawn down over its unlit part */
   meterEls: Record<AudioMeterKey, null | HTMLDivElement>;
   wave: Float32Array<ArrayBuffer>;
+  /** Holds a phaser's charge as it would fill, then fires, else cancels and cools */
+  playCharge(cancel: boolean): void;
   /** Plays a step, a running one if `run` */
   playStep(run: boolean): void;
   /** Draws the meters and the spectrum each frame, whilst live and in sight */
@@ -587,12 +617,18 @@ const masterColour = graphColours.master;
 const tour: HelpStep[] = ["intro", "steps", "fx", "master"];
 
 const sfxLabels: Record<SfxKey, string> = {
-  phaser: "fire",
+  raise: "raise",
+  lower: "lower",
+  charged: "full",
+  fire: "fire",
+  cool: "cool",
   hit: "hit",
   armour: "armour",
   ghost: "ghost",
   wall: "wall",
 };
+/** The charge button's run, as `phaserConfig.chargeSecs` in the World */
+const chargeDemo = { id: "desk", chargeSecs: 1.2, fullSecs: 0.5 };
 const whenLabels: Record<HelpWhen, string> = {
   now: "heard at once",
   note: "from the next step",

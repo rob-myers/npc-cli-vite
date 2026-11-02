@@ -62,3 +62,45 @@ export function getPinkNoise(ctx: BaseAudioContext) {
   pinkNoise.set(ctx, buffer);
   return buffer;
 }
+
+/** A waveshaper bending its input by `drive`, for grit */
+export function shaper(ctx: BaseAudioContext, drive: number) {
+  const node = ctx.createWaveShaper();
+  const curve = new Float32Array(shaperSize);
+  for (let i = 0; i < shaperSize; i++) {
+    const x = (i / (shaperSize - 1)) * 2 - 1;
+    curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
+  }
+  node.curve = curve;
+  node.oversample = "2x";
+  return node;
+}
+
+const shaperSize = 1024;
+
+/** A small hard room, as a ship's: a convolver over noise dying away */
+export function room(ctx: BaseAudioContext) {
+  const node = ctx.createConvolver();
+  node.buffer = getRoomImpulse(ctx);
+  return node;
+}
+
+const roomImpulses = new WeakMap<BaseAudioContext, AudioBuffer>();
+
+/** `roomSecs` of stereo noise dying away, made once per context */
+function getRoomImpulse(ctx: BaseAudioContext) {
+  const cached = roomImpulses.get(ctx);
+  if (cached !== undefined) return cached;
+  const length = Math.round(ctx.sampleRate * roomSecs);
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let channel = 0; channel < 2; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp((-roomDecay * i) / length);
+  }
+  roomImpulses.set(ctx, buffer);
+  return buffer;
+}
+
+const roomSecs = 0.45;
+/** How fast the room dies, over its length */
+const roomDecay = 7;

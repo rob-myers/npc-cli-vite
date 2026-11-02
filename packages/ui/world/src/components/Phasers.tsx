@@ -195,11 +195,12 @@ export default function Phasers() {
         });
       },
       disarm(...npcKeys) {
-        for (const npcKey of npcKeys) {
+        const lowered = npcKeys.filter((npcKey) => {
           const arm = state.arms.get(npcKey);
-          if (arm !== undefined) lower(arm);
-        }
+          return arm !== undefined && lower(arm);
+        });
         state.sync();
+        lowered.length > 0 && w.events.next({ key: "phasers", armed: false, npcKeys: lowered });
       },
       ensure(npcKey) {
         let arm = state.arms.get(npcKey);
@@ -561,7 +562,8 @@ export default function Phasers() {
         if (outcome !== "hit" && npc.key === w.player.key) w.hud?.say(outcome);
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
-        if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined) lower(theirs);
+        if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined && lower(theirs))
+          w.events.next({ key: "phasers", armed: false, npcKeys: [dst.key] });
       },
       meetPart(npc, arm, dst, to) {
         const tip = tipOf(npc, arm, tmpTip);
@@ -644,6 +646,7 @@ export default function Phasers() {
           lower(arm);
           arm.lowerAt = null;
           w.hud?.update();
+          w.events.next({ key: "phasers", armed: false, npcKeys: [npc.key] });
         }
         const { support } = npc.anim; // undefined on an instance from before hmr
         // a hand to steady it, once held a moment: a tap fires before it gets there
@@ -1513,8 +1516,9 @@ function levelOf(charge: undefined | ArmEntry["charge"], now: number) {
   return charge == null ? 0 : Math.min(1, (now - charge.since) / phaserConfig.chargeSecs);
 }
 
-/** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody */
+/** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody. `true` if it was raised */
 function lower(arm: ArmEntry) {
+  const raised = arm.armed;
   Object.assign(arm, {
     armed: false,
     target: null,
@@ -1526,6 +1530,7 @@ function lower(arm: ArmEntry) {
     charge: null,
     cool: null,
   });
+  return raised;
 }
 
 /** Faded right out, mid-teleport: in their hand until then, and again as they fade back in */
