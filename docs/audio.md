@@ -71,6 +71,8 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
   - A foot rising `liftMetres` above its floor is lifted. Coming back within `plantMetres`, it lands, and a step plays,
     panned a little to its side.
   - So walking, running, strafing, crouching and turning on the spot all step as the animation does.
+  - Sat or lain (`isNotStanding`), their feet are not read, so shifting in a seat or rolling over in bed steps
+    nowhere. Up again, their feet are read afresh.
   - A foot lifted longer than a stride (`strideSecs`) has its floor set afresh. So do both on setting off, or when the
     ground jumps (`jumpMetres`), as getting up off a chair, so the first steps after are never missed.
 - **A step** (`steps.ts`): one of the chosen set's recorded steps on tile, as recorded, never the same twice running,

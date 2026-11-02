@@ -227,6 +227,11 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     for (const npc of heard) {
       syncCharge(w, npc, charges);
       if (npc.group == null) continue;
+      // sat or lain, a foot moving is no step, as rolling over in bed: read afresh once up
+      if (npc.isNotStanding()) {
+        feet.delete(npc.key);
+        continue;
+      }
       let theirs = feet.get(npc.key);
       if (theirs?.group !== npc.group) feet.set(npc.key, (theirs = feetOf(npc.group, npc.position.y)));
       for (const side of footfalls(theirs, npc.position.y, npc.isMoving(), now)) {
