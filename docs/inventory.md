@@ -215,11 +215,11 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - Their left arm is drawn in too, hanging as in `phaser_aim_avoid`, else a run's guard puts that fist into the wall. Not
   whilst it has psi or a reach, nor whilst tucked.
 - Stood or crouched, an obstacle blocks too if the gun is within its span, with `gunClear` to spare. Its top is
-  tested against the gun's underside, `gunDrop` below the gun's line, as the hand and the gun's body hang below it. The gun
-  is `gunBelowHead` under their head's pivot (`anim.headY`): about 1.1m stood, 0.67m crouched. So most obstacles block
-  only a crouch. Sat or lain, obstacles are ignored, being what they sit or lie at.
+  tested against the gun's underside, `gunDrop` below the gun's line, as the hand and the gun's body hang below it.
+  The gun is `gunBelowHead` under their head's pivot (`anim.headY`): about 1.1m stood, 0.67m crouched. So most
+  obstacles block only a crouch. Sat or lain, obstacles are ignored, being what they sit or lie at.
 - A cast keeps every obstacle within reach, at any height (`arm.reach.obstacles`), and each tick tests them against the gun's
-  height now. So does decor that stops a shot. So crouching draws in at once, without waiting for the next cast. Crouched, it draws in over
+  height now. So crouching draws in at once, without waiting for the next cast. Crouched, it draws in over
   `quickDrawInSecs`.
 - A ray passes obstacles, as it does doors (`w.e.raycast`'s `obstacles`: `top`, `bottom`, then `dist` to `leave`
   inside its outline, nearest first). The nav worker keeps their edges in its ray grid, beside the walls, bar those

@@ -703,7 +703,9 @@ export default function Phasers() {
         let swingHit = false;
         if (gunY !== null) {
           for (const { top, bottom } of arm.reach.obstacles) {
-            if (gunY > bottom - phaserConfig.gunClear && gunY < top + phaserConfig.gunClear) arm.armHit = true;
+            // a top under the gun's line may still meet the hand and gun, which hang below it
+            const underside = gunY - phaserConfig.gunDrop;
+            if (gunY > bottom - phaserConfig.gunClear && underside < top + phaserConfig.gunClear) arm.armHit = true;
             if (top > gunY - phaserConfig.restBelowGun && bottom < gunY) swingHit = true;
           }
         }
@@ -1433,6 +1435,8 @@ const phaserConfig = {
   gunBelowHead: 0.07,
   /** Metres the gun must clear an obstacle by, above or below */
   gunClear: 0.05,
+  /** Metres the hand and the gun's body hang below the gun's line, as an obstacle's top must clear */
+  gunDrop: 0.12,
   /** Metres the hand hangs at rest below the gun raised, which a raise or lower swings between */
   restBelowGun: 0.5,
   /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
