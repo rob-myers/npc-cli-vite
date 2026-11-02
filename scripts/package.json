@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./vite-plugin-asset-history": "./src/vite-plugin-asset-history.ts",
+    "./vite-plugin-audio-defaults": "./src/vite-plugin-audio-defaults.ts",
     "./vite-plugin-build-id": "./src/vite-plugin-build-id.ts",
     "./vite-plugin-dev-mcp": "./src/vite-plugin-dev-mcp.ts",
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",

@@ -1,5 +1,6 @@
 import mdx from "@mdx-js/rollup";
 import { assetHistoryPlugin } from "@npc-cli/scripts/vite-plugin-asset-history";
+import { audioDefaultsPlugin } from "@npc-cli/scripts/vite-plugin-audio-defaults";
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
 import { buildSheetHashPlugin } from "@npc-cli/scripts/vite-plugin-build-sheet-hash";
 import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
@@ -42,6 +43,7 @@ export default defineConfig({
     spotsPlugin(),
     jobsExamplesPlugin(),
     scenarioPlugin(),
+    audioDefaultsPlugin(),
     worldRtcPlugin(),
     buildIdPlugin(),
     buildSheetHashPlugin(),
