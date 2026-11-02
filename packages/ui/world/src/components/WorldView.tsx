@@ -172,6 +172,8 @@ export function WorldView(props: React.PropsWithChildren) {
       wasdSnapped: true,
       wasdHeading: null,
       compassSnap: false,
+      wasdAlignMs: null,
+      wasdPolledMs: 0,
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
       extraFx: createExtraFx(),
@@ -521,18 +523,55 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       getWasdDirection() {
+        state.wasdPolledMs = performance.now(); // whatever the keys steer asks every step
         const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
         const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
-        // `w` heads up the screen, snapped onto a world axis near it
+        if (state.controls === null) return new Vect(0, 0); // remounting: none yet
+        // The w-key heads up the screen, snapped onto a world axis near it
         const heading = state.syncWasdHeading() ?? snapHeading(state.controls.spherical.theta);
         const [sin, cos] = [Math.sin(heading), Math.cos(heading)];
         return new Vect(right * cos - up * sin, -right * sin - up * cos);
       },
       syncWasdHeading() {
         const held = wasdKeys.some((key) => state.keysDown.has(key));
-        if (held === false) state.wasdHeading = null;
-        else state.wasdHeading ??= snapHeading(state.controls.spherical.theta);
+        const { wasdHeading } = state;
+        /**
+         * Held keys keep the heading, so turning the camera doesn't swerve them.
+         * Exception: when `alignWasdAzimuth` turns the view it is read off the view until snap onto world axis.
+         */
+        const kept = wasdHeading !== null && (isOnAxis(wasdHeading) || state.isWasdDriven() === false);
+        state.wasdHeading = held === false ? null : kept ? wasdHeading : snapHeading(state.controls.spherical.theta);
         return state.wasdHeading;
+      },
+      isWasdDriven() {
+        return performance.now() - state.wasdPolledMs < wasdAlign.drivenMs;
+      },
+      alignWasdAzimuth(spherical) {
+        const { controls } = state;
+        /** The world axis nearest the view, and how far the view is off it */
+        const axis = axisOf(spherical.theta);
+        const skew = deltaAngle(axis, spherical.theta);
+        if (state.wasdHeading === null || state.isWasdDriven() === false || Math.abs(skew) <= compassSnapRad) {
+          // let go, or snapped: the view stays where it got to
+          if (state.wasdAlignMs !== null) controls.sphericalDelta.theta = 0;
+          state.wasdAlignMs = null;
+          return;
+        }
+        // the user's own turn, or a `lookAt`, comes first
+        if (controls.pointers.length > 0 || state.lookAtAnimId !== 0) return;
+        const now = performance.now();
+        const secs = Math.min(0.1, (now - (state.wasdAlignMs ?? now - 16)) / 1000);
+        state.wasdAlignMs = now;
+        // just within snapping, slowing as it nears. `update` turns by this times its damping
+        const left = deltaAngle(spherical.theta, axis + Math.sign(skew) * (compassSnapRad - wasdAlign.insideRad));
+        const speed = THREE.MathUtils.clamp(
+          Math.abs(left) / wasdAlign.secs,
+          wasdAlign.minRadPerSec,
+          wasdAlign.maxRadPerSec,
+        );
+        controls.sphericalDelta.theta =
+          (Math.sign(left) * Math.min(Math.abs(left), speed * secs)) / controls.azimuthalDampingFactor;
+        w.r3f?.invalidate();
       },
       getFollowedPlayer() {
         const player = w.player?.get();
@@ -614,7 +653,7 @@ export function WorldView(props: React.PropsWithChildren) {
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
 
-        // where `w` heads: held whilst a move key is down, else up the screen, snapped near an axis
+        // where the w-key heads: held whilst a move key is down, else up the screen, snapped near an axis
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
         const compassPoint = Math.round(heading / halfPi) & 3;
         const wasdSnapped = Math.abs(deltaAngle(compassPoint * halfPi, heading)) < 1e-6;
@@ -622,7 +661,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const wasdSkew = Math.round(deltaAngle(heading, spherical.theta) / compassSkewStep) * compassSkewStep;
         if (compassPoint !== state.compassPoint || wasdSnapped !== state.wasdSnapped || wasdSkew !== state.wasdSkew) {
           Object.assign(state, { compassPoint, wasdSnapped, wasdSkew });
-          w.hud?.update(); // its compass names the point, and marks where `w` heads
+          w.hud?.update(); // its compass names the point, and marks where the w-key heads
         }
 
         const { controls } = state;
@@ -677,6 +716,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.shapeEmbodiedPolar(spherical); // the tilt is theirs, whatever the zoom
         state.advanceZoomPan(spherical);
         state.detentEmbodiedAzimuth(spherical);
+        state.alignWasdAzimuth(spherical);
       },
       /**
        * Room labels in or out, over `ms`. Only the first boot uses it: the world is REVEALED there
@@ -946,6 +986,8 @@ export function WorldView(props: React.PropsWithChildren) {
         if (isTypingTarget(e)) return;
         const key = e.key.toLowerCase();
         const presetStep = cameraPresetStepByKey[e.key];
+        // a move key pressed afresh whilst another is held takes the heading again, from the view as it is now
+        if (wasdKeys.includes(key) && e.repeat === false && state.keysDown.has(key) === false) state.wasdHeading = null;
         state.keysDown.add(key);
         state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
@@ -1221,7 +1263,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.rootEl.addEventListener("keyup", onKeyUp);
         w.rootEl.addEventListener("focusout", onBlur);
         window.addEventListener("blur", onBlur);
-        /** Asks before the page closes just after a key over the World, e.g. ctrl or cmd `w`. A reload is let through */
+        /** Asks before the page closes just after a key over the World, e.g. ctrl or cmd with the w-key. A reload is let through */
         const onBeforeUnload = (e: BeforeUnloadEvent) => {
           if (Date.now() - state.lastKeyMs < closeConfirmMs && state.keysDown.has("r") === false) e.preventDefault();
         };
@@ -1869,7 +1911,7 @@ export type State = {
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
-  /** Ground direction of the held `wasd` keys: `w` up the screen, snapped onto a world axis near it. Zero when none or opposites are held */
+  /** Ground direction of the held `wasd` keys: the w-key up the screen, snapped onto a world axis near it. Zero when none or opposites are held */
   getWasdDirection(): Vect;
   /** Shows the pick colours on screen, or stops: the debug menu's "view pick", and `0` */
   toggleViewPick(): void;
@@ -1936,15 +1978,23 @@ export type State = {
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
-  /** The compass point nearest where `w` heads: `0` north (-z), then west, south, east */
+  /** The compass point nearest where the w-key heads: `0` north (-z), then west, south, east */
   compassPoint: number;
-  /** `w`'s heading whilst a move key is down, as an azimuth, so a turn mid-walk does not swerve them */
+  /** The w-key's heading whilst a move key is down, as an azimuth, so a turn mid-walk does not swerve them */
   wasdHeading: null | number;
+  /** When `alignWasdAzimuth` last turned the view, `performance.now()`: `null` unless turning. It paces the turn, and letting go stops it */
+  wasdAlignMs: null | number;
+  /** When `getWasdDirection` was last asked, `performance.now()` */
+  wasdPolledMs: number;
+  /** Whether the keys steer someone: `getWasdDirection` was asked within `wasdAlign.drivenMs` */
+  isWasdDriven(): boolean;
+  /** Whilst a move key is held and the keys steer someone, eases the view round until the w-key's axis is within `compassSnapRad` of straight up */
+  alignWasdAzimuth(spherical: THREE.Spherical): void;
   /** Takes `wasdHeading` as the first move key goes down, and drops it once none is held. Returns it */
   syncWasdHeading(): null | number;
-  /** How far the view is turned off where `w` heads, in radians, in steps of `compassSkewStep`: `0` unless snapped */
+  /** How far the view is turned off where the w-key heads, in radians, in steps of `compassSkewStep`: `0` unless snapped */
   wasdSkew: number;
-  /** Whether `w` heads along a world axis, `compassPoint`, having snapped onto it */
+  /** Whether the w-key heads along a world axis, `compassPoint`, having snapped onto it */
   wasdSnapped: boolean;
   /** Whether a turn let go also snaps to a compass point — see `detentEmbodiedAzimuth`. Off: nothing sets it */
   compassSnap: boolean;
@@ -2166,9 +2216,14 @@ function getCameraFov(aspect: number, fov: number) {
   return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
 }
 
-/** Where `w` heads for a view turned `theta`: up the screen, onto the world axis nearest within `compassSnapRad` */
+/** The world axis nearest an azimuth */
+const axisOf = (rad: number) => Math.round(rad / halfPi) * halfPi;
+/** Whether `heading` is a world axis, as `axisOf` gives one */
+const isOnAxis = (heading: number) => heading === axisOf(heading);
+
+/** Where the w-key heads for a view turned `theta`: up the screen, onto the world axis nearest within `compassSnapRad` */
 function snapHeading(theta: number) {
-  const axis = Math.round(theta / halfPi) * halfPi;
+  const axis = axisOf(theta);
   return Math.abs(deltaAngle(axis, theta)) <= compassSnapRad ? axis : theta;
 }
 
@@ -2373,10 +2428,21 @@ const timeScaleStepByKey: Partial<Record<string, number>> = { ArrowUp: 0.2, Arro
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
-/** Radians off a world axis within which `w`, heading up the screen, snaps onto it. So doors line up without a square view */
+/** Radians off a world axis within which the w-key, heading up the screen, snaps onto it. So doors line up without a square view */
 const compassSnapRad = Math.PI / 9;
 const compassSkewStep = Math.PI / 36;
 const wasdKeys = ["w", "a", "s", "d"];
+/** `alignWasdAzimuth`'s turn of the view to within snapping of an axis */
+const wasdAlign = {
+  /** Within this of the last ask, the keys count as steering someone. Generous, as a slow time scale spaces the asks out */
+  drivenMs: 1500,
+  /** Radians inside `compassSnapRad` it turns to, so it ends clearly snapped */
+  insideRad: Math.PI / 180,
+  /** Its speed is what is left over this many seconds, between these radians a second */
+  secs: 0.35,
+  minRadPerSec: Math.PI / 9,
+  maxRadPerSec: (2 * Math.PI) / 3,
+} as const;
 /** A page closed within this of a key over the world asks first */
 const closeConfirmMs = 2000;
 /** In quarter turns: a turn from this near a compass point advances past the next one */
