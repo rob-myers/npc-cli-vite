@@ -53,31 +53,25 @@ export function crackle(ctx: AudioContext, at: number, secs: number, dest: Audio
   }
 }
 
-/** A sine struck at `at`: `hz` and a fainter partial above it, ringing for `decay` */
-export function ping(ctx: AudioContext, at: number, hz: number, dest: AudioNode, level: number, decay: number) {
-  for (const [ratio, share] of pingPartials) {
-    const tone = ctx.createOscillator();
-    tone.frequency.value = hz * ratio;
-    tone.connect(envelope(ctx, at, 0.001, decay * share, level * share)).connect(dest);
-    tone.start(at);
-    tone.stop(at + decay + 0.05);
-  }
-}
-
 /** A recorded sample from `at`, `rate` its speed and so its pitch */
-export function playBuffer(
-  ctx: AudioContext,
-  buffer: AudioBuffer,
-  at: number,
-  dest: AudioNode,
-  level: number,
-  rate = 1,
-) {
+function playBuffer(ctx: AudioContext, buffer: AudioBuffer, at: number, dest: AudioNode, level: number, rate = 1) {
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   source.playbackRate.value = rate;
   source.connect(gain(ctx, level)).connect(dest);
   source.start(at);
+}
+
+/** A recorded layer, if loaded */
+export function layer(
+  ctx: AudioContext,
+  buffer: null | AudioBuffer,
+  at: number,
+  out: AudioNode,
+  level: number,
+  rate = 1,
+) {
+  if (buffer !== null) playBuffer(ctx, buffer, at, out, level, rate);
 }
 
 const staticBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
@@ -96,9 +90,3 @@ export function getStatic(ctx: BaseAudioContext) {
   staticBuffers.set(ctx, buffer);
   return buffer;
 }
-
-/** A struck ping's partials, as `[frequency ratio, share of its level and decay]` */
-const pingPartials: [number, number][] = [
-  [1, 1],
-  [2.76, 0.35],
-];

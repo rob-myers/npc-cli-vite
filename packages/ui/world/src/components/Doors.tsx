@@ -425,7 +425,7 @@ export default function Doors() {
         else if (door.open) w.events.next({ key: "try-close-door", gdKey: door.gdKey });
         state.syncLockTint(door);
         state.persistLocks();
-        w.events.next({ key: "door-toggled", gdKey: door.gdKey });
+        w.events.next({ key: "door-toggled", gdKey: door.gdKey, what: "held", on: held });
       },
       setFlag(door, flag, next) {
         if (door.sealed === true || door[flag] === next) return;
@@ -434,7 +434,7 @@ export default function Doors() {
         if (flag === "proximity" && next === false && door.open)
           w.events.next({ key: "try-close-door", gdKey: door.gdKey });
         state.persistLocks();
-        w.events.next({ key: "door-toggled", gdKey: door.gdKey });
+        w.events.next({ key: "door-toggled", gdKey: door.gdKey, what: flag, on: next });
       },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
@@ -539,8 +539,9 @@ export default function Doors() {
 
         w.events.next({
           key: door.locked ? "door-locked" : "door-unlocked",
-          locked: door.locked,
           ...state.decodeInstanceId(door.instanceId),
+          // after the spread, whose map meta may hold its own `locked`
+          locked: door.locked,
         });
 
         return true;

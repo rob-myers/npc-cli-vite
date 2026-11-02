@@ -1,6 +1,17 @@
+import type { DoorVoice } from "./doors";
 import { gain, limiter, room } from "./nodes";
 import { loadSamples, pickSample, type SampleBank, type Samples, samplesKey } from "./samples";
-import { type HeldVoice, type HoldKey, type HoldParams, holds, playSfx, type SfxKey, sfxSecs } from "./sfx";
+import {
+  type HeldVoice,
+  type HoldKey,
+  type HoldParams,
+  holdBus,
+  holds,
+  playSfx,
+  type SfxKey,
+  sfxBus,
+  sfxSecs,
+} from "./sfx";
 import {
   type AudioConfig,
   audioChanges,
@@ -14,7 +25,8 @@ import {
   toAudioConfig,
 } from "./steps";
 
-export { type HoldKey, type HoldParams, holdKeys, isSfxKey, type SfxKey, sfxKeys } from "./sfx";
+export { type DoorVoice, doorVoices, isDoorVoice } from "./doors";
+export { type HoldKey, type HoldParams, holdKeys, isSfxKey, type SfxKey, sfxBus, sfxKeys } from "./sfx";
 export {
   type AudioConfig,
   type AudioKey,
@@ -32,8 +44,11 @@ export {
 
 export type AudioStatus = "stopped" | "playing" | "paused";
 export type AudioMeterKey = keyof AudioEngine["meters"];
-/** `pan` from `-1` (left) to `1` (right), and `amount` from `0` to `1`, e.g. a shot's charge */
-export type SfxOpts = { pan?: number; gain?: number; amount?: number };
+/**
+ * `pan` from `-1` (left) to `1` (right), `amount` from `0` to `1` (e.g. a shot's charge), and a door's `voice`.
+ * `speed` is the World's time scale: slower plays slower and lower, as tape does
+ */
+export type SfxOpts = { pan?: number; gain?: number; amount?: number; voice?: DoorVoice; speed?: number };
 
 /** The page's one audio engine, made on first use — see `docs/audio.md` */
 export function getAudio(): AudioEngine {
@@ -57,7 +72,8 @@ function createEngine() {
   if (shared.samplesKey !== samplesKey) [shared.samples, shared.samplesKey] = [null, samplesKey];
   const samples = (shared.samples ??= loadSamples(ctx));
   const kept = shared.configVersion === audioConfigVersion ? shared.config : null;
-  const config: AudioConfig = { ...audioDefaults, ...kept };
+  // only known numbers, as an older engine's config may lack a newer setting
+  const config: AudioConfig = { ...audioDefaults, ...toAudioConfig(kept ?? {}) };
   const now = () => ctx.currentTime;
 
   const master = gain(ctx, config.master);
@@ -68,8 +84,13 @@ function createEngine() {
   steps.connect(master);
   const fx = gain(ctx, config.fx);
   fx.connect(master);
+  const world = gain(ctx, config.world);
+  world.connect(master);
   // the effects sit in a small room: the steps' recordings carry their own
-  fx.connect(gain(ctx, roomWet)).connect(room(ctx)).connect(master);
+  const roomSend = gain(ctx, roomWet);
+  roomSend.connect(room(ctx)).connect(master);
+  fx.connect(roomSend);
+  world.connect(roomSend);
 
   /** Which set of footsteps plays, chosen on the desk */
   let stepSet: StepSet = isStepSet(shared.stepSet) ? shared.stepSet : stepSetDefault;
@@ -126,8 +147,10 @@ function createEngine() {
   const engine = {
     ctx,
     analyser,
+    /** Door voices chosen by hand, by gdKey, else `*` for every door, until the page reloads */
+    chosenVoices: (shared.chosenVoices ??= new Map()),
     config,
-    meters: { steps: meter(steps), fx: meter(fx), master: meter(analyser) },
+    meters: { steps: meter(steps), fx: meter(fx), world: meter(world), master: meter(analyser) },
     status: "stopped" as AudioStatus,
     /** One-shots still sounding, at most `maxVoices` */
     voices: 0,
@@ -145,7 +168,10 @@ function createEngine() {
       resume();
       const heldKey = `${key}:${id}`;
       let entry = held.get(heldKey);
-      if (entry === undefined) held.set(heldKey, (entry = { voice: holds[key](ctx, fx), params: null, until: 0 }));
+      if (entry === undefined) {
+        const voice = holds[key](ctx, holdBus(key) === "world" ? world : fx, params);
+        held.set(heldKey, (entry = { voice, params: null, until: 0 }));
+      }
       // eased towards only on a change, so a param's timeline is not filled every tick
       if (entry.params === null || differs(entry.params, params)) {
         entry.voice.set(params, now());
@@ -173,6 +199,7 @@ function createEngine() {
       ease(master.gain, config.master);
       ease(steps.gain, config.steps);
       ease(fx.gain, config.fx);
+      ease(world.gain, config.world);
       emit();
     },
     /** Fades out `key`'s voice for `id`, if held */
@@ -193,7 +220,10 @@ function createEngine() {
       window.setTimeout(() => engine.voices--, sfxSecs * 1000);
       const level = (opts.gain ?? 1) * vary();
       const sample = (bank: SampleBank) => pickSample(samples, bank);
-      playSfx(key, { ctx, out: fx, at, level, pan, amount: opts.amount ?? 1, pitch: vary(), sample });
+      const { amount = 1, voice = "glide", speed = 1 } = opts;
+      const out = sfxBus(key) === "world" ? world : fx;
+      const pitch = vary() * Math.max(minSpeed, speed);
+      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice });
     },
     /** One of the player's footfalls, heard at once whilst playing */
     footfall(footfall: Footfall) {
@@ -246,6 +276,8 @@ type Shared = {
   configVersion: number;
   stepSet: null | StepSet;
   status: AudioStatus;
+  /** Missing from the shared state of an older module */
+  chosenVoices?: Map<string, DoorVoice>;
 };
 
 /** Seconds without a sound before the context sleeps, sparing the audio thread */
@@ -266,6 +298,8 @@ const twinSecs = 0.06;
 const twinPan = 0.1;
 /** How far an effect's level and pitch stray, so no two alike */
 const varyBy = 0.04;
+/** The slowest an effect plays, however slow the World */
+const minSpeed = 0.125;
 /** The room's share of the effects */
 const roomWet = 0.22;
 

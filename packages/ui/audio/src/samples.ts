@@ -16,6 +16,8 @@ export const sampleFiles = {
   click: numbered("sfx/click-", 2),
   thud: numbered("sfx/thud-", 1),
   boom: numbered("sfx/boom-", 2),
+  lock: numbered("sfx/lock-", 1),
+  clunk: numbered("sfx/clunk-", 7),
 };
 
 export type SampleBank = keyof typeof sampleFiles;

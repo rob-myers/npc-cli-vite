@@ -877,6 +877,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "door-denied":
           case "npc-toggled":
           case "npc-posed":
           case "npc-hit":
@@ -1568,6 +1569,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         const toggled = w.door.toggleDoor(door, opts);
         if (toggled && opts.held !== undefined) w.door.setHeld(door, opts.held);
+        else if (!toggled && door.locked && !door.open && opts.access === false && willIntersect && opts.npcKey)
+          w.events.next({ key: "door-denied", gdKey, npcKey: opts.npcKey });
         return toggled;
       },
       toggleLock(gdKey, opts = {}) {

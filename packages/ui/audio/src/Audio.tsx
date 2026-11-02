@@ -23,10 +23,13 @@ import {
   audioDefaults,
   audioRanges,
   audioUnits,
+  type DoorVoice,
+  doorVoices,
   getAudio,
   isStepSet,
   type SfxKey,
   type Side,
+  sfxBus,
   sfxKeys,
   stepSets,
 } from "./engine";
@@ -48,8 +51,8 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       help: null,
       rootEl: null,
       stepSide: "left",
-      levels: { steps: 0, fx: 0, master: 0 },
-      meterEls: { steps: null, fx: null, master: null },
+      levels: { steps: 0, fx: 0, world: 0, master: 0 },
+      meterEls: { steps: null, fx: null, world: null, master: null },
       wave: new Float32Array(1024),
 
       draw() {
@@ -89,6 +92,13 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         });
         state.update();
       },
+      onKeyDown(e) {
+        if (e.key === "Escape") return state.setHelp(null);
+        const key = (e.target as HTMLElement).closest<HTMLElement>("[data-help]")?.dataset.help as AudioKey;
+        if (e.key !== "Enter" || key === undefined) return;
+        e.preventDefault();
+        state.help === null ? state.setHelp(key) : state.stepHelp(e.shiftKey ? -1 : 1);
+      },
       playCharge(cancel) {
         const audio = getAudio();
         const from = performance.now();
@@ -109,12 +119,18 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         };
         charge();
       },
-      onKeyDown(e) {
-        if (e.key === "Escape") return state.setHelp(null);
-        const key = (e.target as HTMLElement).closest<HTMLElement>("[data-help]")?.dataset.help as AudioKey;
-        if (e.key !== "Enter" || key === undefined) return;
-        e.preventDefault();
-        state.help === null ? state.setHelp(key) : state.stepHelp(e.shiftKey ? -1 : 1);
+      playDoor(voice, shut) {
+        const audio = getAudio();
+        const from = performance.now();
+        const move = () => {
+          if (performance.now() - from < doorDemoMs) {
+            audio.hold("door", "desk", { level: 1, pan: 0, gain: 1, voice });
+            return void requestAnimationFrame(move);
+          }
+          audio.release("door", "desk");
+          audio.sfx(shut ? "closed" : "opened", { voice });
+        };
+        move();
       },
       playStep(run) {
         state.stepSide = state.stepSide === "left" ? "right" : "left";
@@ -322,7 +338,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
               >
                 charge
               </button>
-              {sfxKeys.map((key) => (
+              {fxKeys.map((key) => (
                 <button
                   key={key}
                   type="button"
@@ -336,6 +352,35 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
             </div>
             {fader("fx", fxColour)}
             <Readout value={config.fx} colour={fxColour} />
+          </Strip>
+
+          <Strip title="world" colour={worldColour} className="@max-lg:grow">
+            <div className="grid grid-cols-[3.5rem_3.5rem] justify-center gap-1.5 px-2 pt-2">
+              {doorVoices.map((voice) => (
+                <button
+                  key={voice}
+                  type="button"
+                  title={`a ${voice} door opening: shift for shutting`}
+                  className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
+                  onClick={(e) => state.playDoor(voice, e.shiftKey)}
+                >
+                  {voice}
+                </button>
+              ))}
+              {worldKeys.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={`play ${key}`}
+                  className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
+                  onClick={() => audio.sfx(key)}
+                >
+                  {sfxLabels[key]}
+                </button>
+              ))}
+            </div>
+            {fader("world", worldColour)}
+            <Readout value={config.world} colour={worldColour} />
           </Strip>
 
           {/* too narrow for another strip, it lies along the foot of the desk */}
@@ -585,6 +630,8 @@ type State = {
   wave: Float32Array<ArrayBuffer>;
   /** Holds a phaser's charge as it would fill, then fires, else cancels and cools */
   playCharge(cancel: boolean): void;
+  /** Moves a door of `voice` as the World does, then stops it open, else shut */
+  playDoor(voice: DoorVoice, shut: boolean): void;
   /** Plays a step, a running one if `run` */
   playStep(run: boolean): void;
   /** Draws the meters and the spectrum each frame, whilst live and in sight */
@@ -607,14 +654,15 @@ type State = {
   togglePlay(): void;
 };
 
-const meterKeys: AudioMeterKey[] = ["steps", "fx", "master"];
+const meterKeys: AudioMeterKey[] = ["steps", "fx", "world", "master"];
 
 const stepsColour = graphColours.steps;
 const fxColour = graphColours.fx;
+const worldColour = graphColours.world;
 const masterColour = graphColours.master;
 
 /** The tour's order: across the desk, strip by strip */
-const tour: HelpStep[] = ["intro", "steps", "fx", "master"];
+const tour: HelpStep[] = ["intro", "steps", "fx", "world", "master"];
 
 const sfxLabels: Record<SfxKey, string> = {
   raise: "raise",
@@ -626,7 +674,20 @@ const sfxLabels: Record<SfxKey, string> = {
   armour: "armour",
   ghost: "ghost",
   wall: "wall",
+  opened: "opened",
+  closed: "closed",
+  lock: "lock",
+  unlock: "unlock",
+  hold: "hold",
+  unhold: "let go",
+  denied: "denied",
 };
+/** The phaser's sounds, on the fx strip */
+const fxKeys = sfxKeys.filter((key) => sfxBus(key) === "fx");
+/** The doors' sounds besides opening and shutting, on the world strip */
+const worldKeys = sfxKeys.filter((key) => sfxBus(key) === "world" && key !== "opened" && key !== "closed");
+/** How long the desk's door moves, as the World's at `doorSpeed` */
+const doorDemoMs = 250;
 /** The charge button's run, as `phaserConfig.chargeSecs` in the World */
 const chargeDemo = { id: "desk", chargeSecs: 1.2, fullSecs: 0.5 };
 const whenLabels: Record<HelpWhen, string> = {

@@ -1,6 +1,6 @@
 import { filter, gain, getPinkNoise, osc, panner, shaper } from "./nodes";
 import type { HeldVoice, SfxBuilder } from "./sfx";
-import { crackle, envelope, getStatic, noise, playBuffer, sfxLevel, sweep } from "./synth";
+import { crackle, envelope, getStatic, layer, noise, sfxLevel, sweep } from "./synth";
 
 /** A phaser's sounds, from raising it to where its shot ends — see `docs/audio.md` */
 export const phaserSfx = {
@@ -178,11 +178,6 @@ export function chargeVoice(ctx: AudioContext, dest: AudioNode): HeldVoice {
 const chargeHz = 100;
 /** How bright the charging buzz is at `level`, `0` to `1` */
 const chargeCutoff = (level: number) => 250 + 2250 * level;
-
-/** A recorded layer, if loaded */
-function layer(ctx: AudioContext, buffer: null | AudioBuffer, at: number, out: AudioNode, level: number, rate: number) {
-  if (buffer !== null) playBuffer(ctx, buffer, at, out, level, rate);
-}
 
 /** The weight of it meeting the hand: a soft low knock */
 function heft(ctx: AudioContext, at: number, out: AudioNode, level: number) {

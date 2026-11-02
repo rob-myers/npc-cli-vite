@@ -1,6 +1,9 @@
 import {
+  type DoorVoice,
+  doorVoices,
   type Footfall,
   getAudio,
+  isDoorVoice,
   isSfxKey,
   isStepSet,
   type SfxKey,
@@ -109,8 +112,34 @@ export function sfx({ api, args, w }: JshCli.RunArg) {
 }
 
 /**
+ * Lists the doors the player hears, with their voices. Else chooses a voice for one door, or for every door, until a
+ * reload. `off` forgets what was chosen
+ * ```sh
+ * doorvoice
+ * doorvoice smug
+ * doorvoice g1d19 heavy
+ * doorvoice off
+ * ```
+ */
+export function doorvoice({ args, w }: JshCli.RunArg) {
+  const { chosenVoices } = getAudio();
+  const [first, voice] = args;
+  if (first === "off") return void chosenVoices.clear();
+  if (isDoorVoice(first)) return void chosenVoices.set("*", first);
+  if (first !== undefined) {
+    if (!(first in w.door.byKey)) throw Error(`no such door: ${first}`);
+    if (!isDoorVoice(voice)) throw Error(`expected one of ${doorVoices.join(", ")}`);
+    return void chosenVoices.set(first, voice);
+  }
+  const player = w.n[w.player.key];
+  if (player === undefined) throw Error("no player");
+  return [...doorsInReach(w, player)].map((gdKey) => `${gdKey} ${voiceOf(w.door.byKey[gdKey])}`).join("\n");
+}
+
+/**
  * Plays footsteps, one per footfall read off their feet each tick: the player's, and quieter those of npcs near them.
- * Also the phaser's sounds: raised, lowered, charging, fired, and where each shot ends (idempotent).
+ * Also the phaser's sounds: raised, lowered, charging, fired, and where each shot ends.
+ * And the doors': sliding, locked, held, refusing someone (idempotent).
  * `set:` chooses the player's footsteps, as the desk does: tile, tile3 or tile4. See `docs/audio.md`
  * ```sh
  * sounds
@@ -130,9 +159,15 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     return;
   }
   warmAudio();
-  /** Npcs whose sounds are heard, found every `everySecs`, the player's among them */
-  const reach = new Set<string>();
-  w.e.addKeyedListener("sounds", (e, w) => onSoundsEvent(e, w, reach));
+  const hearing: Hearing = {
+    npcKeys: new Set(),
+    gdKeys: new Set(),
+    deniedAt: new Map(),
+    ratios: new Map(),
+    moving: new Map(),
+    doorsReadAt: 0,
+  };
+  w.e.addKeyedListener("sounds", (e, w) => onSoundsEvent(e, w, hearing));
   /** Each heard npc's feet, the player's among them */
   const feet = new Map<string, Feet>();
   /** Each heard npc's charge when last read, whilst charging */
@@ -147,9 +182,13 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     if (now - foundAt >= hearConfig.everySecs || heard[0] !== player) {
       foundAt = now;
       const inReach = npcsInReach(w, player);
-      reach.clear();
-      reach.add(player.key);
-      for (const { npc } of inReach) reach.add(npc.key);
+      hearing.npcKeys = new Set([player.key, ...inReach.map(({ npc }) => npc.key)]);
+      hearing.gdKeys = doorsInReach(w, player);
+      for (const gdKey of hearing.ratios.keys()) {
+        if (hearing.gdKeys.has(gdKey)) continue;
+        hearing.ratios.delete(gdKey);
+        hearing.moving.delete(gdKey) && getAudio().release("door", placeOf(w.door.byKey[gdKey]));
+      }
       const near = inReach.filter(({ dist }) => dist < hearConfig.hearMetres).slice(0, hearConfig.maxNear);
       heard = [player, ...near.map(({ npc }) => npc)];
       const keys = new Set(heard.map(({ key }) => key));
@@ -171,6 +210,7 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
         );
       }
     }
+    syncDoors(w, hearing, now);
   });
 }
 
@@ -210,10 +250,60 @@ function heardFrom(w: JshCli.WorldState, player: JshCli.Npc, npc: JshCli.Npc, fo
 }
 
 /** An npc's own set of footsteps: random across npcs, the same each time for one */
-function setOf(npcKey: string) {
+const setOf = (npcKey: string) => stepSets[hashOf(npcKey) % stepSets.length];
+
+/** A door's voice: chosen by hand, else its map's `meta.voice`, else one of them by its key */
+function voiceOf(door: Geomorph.DoorState): DoorVoice {
+  const { chosenVoices } = getAudio();
+  const chosen = chosenVoices.get(door.gdKey) ?? chosenVoices.get("*");
+  if (chosen !== undefined) return chosen;
+  const { voice } = door.connector.meta;
+  if (isDoorVoice(voice)) return voice;
+  return doorVoices[hashOf(door.gdKey) % doorVoices.length];
+}
+
+/** Holds the sound of each heard door whilst it moves, `level` its speed. One that stops is let go */
+function syncDoors(w: JshCli.WorldState, hearing: Hearing, now: number) {
+  const dt = now - hearing.doorsReadAt;
+  hearing.doorsReadAt = now;
+  for (const gdKey of hearing.gdKeys) {
+    const door = w.door.byKey[gdKey];
+    const ratio = w.door.openRatioArray[door.instanceId];
+    const was = hearing.ratios.get(gdKey) ?? ratio;
+    hearing.ratios.set(gdKey, ratio);
+    const level = dt > 0 ? Math.min(1, Math.abs(ratio - was) / dt / hearConfig.doorSpeed) : 0;
+    if (level > 0) {
+      hearing.moving.set(gdKey, level);
+      getAudio().hold("door", placeOf(door), { level, ...heardAt(w, centreOf(door)), voice: voiceOf(door) });
+    } else if (hearing.moving.delete(gdKey)) getAudio().release("door", placeOf(door));
+  }
+}
+
+/** A door's centre on the ground */
+const centreOf = (door: Geomorph.DoorState) => ({ x: (door.src.x + door.dst.x) / 2, z: (door.src.y + door.dst.y) / 2 });
+
+/** Where a door is, to the decimetre, so both sides of a hull door hold one voice */
+function placeOf(door: Geomorph.DoorState) {
+  const { x, z } = centreOf(door);
+  return `${Math.round(x * 10)},${Math.round(z * 10)}`;
+}
+
+/** A string's hash, a non-negative integer */
+function hashOf(key: string) {
   let hash = 0;
-  for (let i = 0; i < npcKey.length; i++) hash = (hash * 31 + npcKey.charCodeAt(i)) | 0;
-  return stepSets[Math.abs(hash) % stepSets.length];
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  return Math.abs(hash);
+}
+
+/** The doors of the rooms the player reaches through open doors, and of the rooms beyond those */
+function doorsInReach(w: JshCli.WorldState, player: JshCli.Npc) {
+  const at = w.npc.npcToRoom.get(player.key);
+  if (at === undefined || w.gmRoomGraph.getNode(at.grKey) === null) return new Set<Geomorph.GmDoorKey>();
+  // their room is depth 0, its doors 1, the rooms beyond 2, their doors 3
+  const nodes = w.gmRoomGraph.getReachableUpTo(at.grKey, (node, depth) =>
+    node.type === "room" ? depth >= 4 : node.type !== "door" || w.door.isSeenThrough(node.gdKey) === false,
+  );
+  return new Set(nodes.flatMap((node) => (node.type === "door" ? [node.gdKey] : [])));
 }
 
 const hearConfig = {
@@ -225,18 +315,71 @@ const hearConfig = {
   maxNear: 6,
   /** Beyond this, an npc's other sounds are not heard, as their phaser */
   reachMetres: 20,
+  /** Game seconds before a door refusing someone is heard again */
+  deniedSecs: 1.5,
+  /** A door's open ratio per game second, as the World's `doorSpeed`: a moving door's full level */
+  doorSpeed: 4,
   /** An npc's step beside the player, out of the player's own */
   npcLevel: 0.7,
 };
 
-/** `reach` holds whose sounds are heard. Without a player, all are */
-function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, reach: Set<string>) {
-  const heard = (...npcKeys: string[]) => w.n[w.player.key] === undefined || npcKeys.some((key) => reach.has(key));
-  if (e.key === "phasers") {
-    for (const npcKey of e.npcKeys) heard(npcKey) && playAt(w, e.armed ? "raise" : "lower", npcKey);
-  } else if (e.key === "phaser-fired") heard(e.by) && playAt(w, "fire", e.by, e.charge);
-  else if (e.key === "npc-shot") heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
-  else if (e.key === "phaser-struck" && e.what !== "nothing" && heard(e.by)) getAudio().sfx("wall", heardAt(w, e.at));
+/** Whose sounds are heard, and which doors, found every `everySecs` */
+type Hearing = {
+  npcKeys: Set<string>;
+  gdKeys: Set<Geomorph.GmDoorKey>;
+  /** When each door last refused someone, in game seconds */
+  deniedAt: Map<Geomorph.GmDoorKey, number>;
+  /** Each heard door's open ratio when last read */
+  ratios: Map<Geomorph.GmDoorKey, number>;
+  /** Each moving door's speed when last read, `0` to `1` */
+  moving: Map<Geomorph.GmDoorKey, number>;
+  doorsReadAt: number;
+};
+
+/** Plays what is heard. Without a player, all is */
+function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) {
+  const anyone = w.n[w.player.key] === undefined;
+  const heard = (...npcKeys: string[]) => anyone || npcKeys.some((key) => hearing.npcKeys.has(key));
+  const doorHeard = (gdKey: Geomorph.GmDoorKey) => anyone || hearing.gdKeys.has(gdKey);
+  switch (e.key) {
+    case "phasers":
+      for (const npcKey of e.npcKeys) heard(npcKey) && playAt(w, e.armed ? "raise" : "lower", npcKey);
+      break;
+    case "phaser-fired":
+      heard(e.by) && playAt(w, "fire", e.by, e.charge);
+      break;
+    case "npc-shot":
+      heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
+      break;
+    case "phaser-struck":
+      e.what !== "nothing" && heard(e.by) && getAudio().sfx("wall", heardAt(w, e.at));
+      break;
+    case "door-open":
+    case "door-closed": {
+      const amount = hearing.moving.get(e.gdKey) ?? 1;
+      doorHeard(e.gdKey) && playAtDoor(w, e.key === "door-open" ? "opened" : "closed", e.gdKey, amount);
+      break;
+    }
+    case "door-locked":
+    case "door-unlocked":
+      doorHeard(e.gdKey) && playAtDoor(w, e.key === "door-locked" ? "lock" : "unlock", e.gdKey);
+      break;
+    case "door-toggled":
+      e.what === "held" && doorHeard(e.gdKey) && playAtDoor(w, e.on ? "hold" : "unhold", e.gdKey);
+      break;
+    case "door-denied": {
+      const now = w.gameTime.now();
+      if (!doorHeard(e.gdKey) || now - (hearing.deniedAt.get(e.gdKey) ?? -Infinity) < hearConfig.deniedSecs) break;
+      hearing.deniedAt.set(e.gdKey, now);
+      playAtDoor(w, "denied", e.gdKey);
+      break;
+    }
+  }
+}
+
+function playAtDoor(w: JshCli.WorldState, key: SfxKey, gdKey: Geomorph.GmDoorKey, amount?: number) {
+  const door = w.door.byKey[gdKey];
+  if (door !== undefined) getAudio().sfx(key, { ...heardAt(w, centreOf(door)), voice: voiceOf(door), amount });
 }
 
 function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string, amount?: number) {
@@ -244,13 +387,17 @@ function playAt(w: JshCli.WorldState, key: SfxKey, npcKey: string, amount?: numb
   if (npc !== undefined) getAudio().sfx(key, { ...heardAt(w, npc.position), amount });
 }
 
-/** Panned by where `at` is across the view, and quieter the further it is from the view's centre */
-function heardAt(w: JshCli.WorldState, at: { x: number; z: number }): Required<Pick<SfxOpts, "pan" | "gain">> {
+/** Panned by where `at` is across the view, quieter the further it is from the view's centre, at the World's speed */
+function heardAt(
+  w: JshCli.WorldState,
+  at: { x: number; z: number },
+): Required<Pick<SfxOpts, "pan" | "gain" | "speed">> {
   const centre = w.view.controls?.target ?? w.r3f.camera.position;
   const [dx, dz] = [at.x - centre.x, at.z - centre.z];
   return {
     pan: panOf(w, dx, dz),
     gain: 1 / (1 + Math.max(0, Math.hypot(dx, dz) - heardConfig.nearMetres) / heardConfig.falloffMetres),
+    speed: w.gameTime.scale,
   };
 }
 

@@ -1,10 +1,14 @@
+import { type DoorVoice, doorSfx, doorVoice } from "./doors";
 import { gain, panner } from "./nodes";
 import { chargeVoice, phaserSfx } from "./phaser";
 import type { SampleBank } from "./samples";
 import { sfxLevel } from "./synth";
 
 /** The sound effects, synthesised over a few recorded layers — see `docs/audio.md` */
-export const sfxKeys = ["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost", "wall"] as const;
+export const sfxKeys = [
+  ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost", "wall"] as const),
+  ...(["opened", "closed", "lock", "unlock", "hold", "unhold", "denied"] as const),
+];
 export type SfxKey = (typeof sfxKeys)[number];
 
 export const isSfxKey = (key: unknown): key is SfxKey => sfxKeys.includes(key as SfxKey);
@@ -19,6 +23,8 @@ export type SfxContext = {
   amount: number;
   /** A pitch ratio near `1`, so no two alike */
   pitch: number;
+  /** A door's voice */
+  voice: DoorVoice;
   /** One of `bank`'s samples, else `null` before they load */
   sample(bank: SampleBank): null | AudioBuffer;
 };
@@ -36,15 +42,23 @@ export function playSfx(key: SfxKey, c: SfxContext) {
   window.setTimeout(() => out.disconnect(), (c.at - c.ctx.currentTime + sfxSecs) * 1000);
 }
 
-const sfx: Record<SfxKey, SfxBuilder> = phaserSfx;
+const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx };
 
-/** A sound held whilst something lasts, as a phaser charging: `level` from `0` to `1` */
-export type HoldParams = { level: number; pan: number; gain: number };
+/** The bus an effect plays through: the World's own sounds through `world`, the phaser's through `fx` */
+export const sfxBus = (key: SfxKey) => (key in doorSfx ? "world" : "fx");
+
+/** A sound held whilst something lasts, as a phaser charging or a door moving: `level` from `0` to `1` */
+export type HoldParams = { level: number; pan: number; gain: number; voice?: DoorVoice };
 export type HeldVoice = { set(params: HoldParams, at: number): void; stop(at: number): void };
 
-export const holdKeys = ["charge"] as const;
+export const holdKeys = ["charge", "door"] as const;
 export type HoldKey = (typeof holdKeys)[number];
 
-export const holds: Record<HoldKey, (ctx: AudioContext, out: AudioNode) => HeldVoice> = {
+/** Each held voice's builder, given the params it is first held with */
+export const holds: Record<HoldKey, (ctx: AudioContext, out: AudioNode, params: HoldParams) => HeldVoice> = {
   charge: chargeVoice,
+  door: doorVoice,
 };
+
+/** The bus a held voice plays through */
+export const holdBus = (key: HoldKey) => (key === "door" ? "world" : "fx");

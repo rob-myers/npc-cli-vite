@@ -15,6 +15,14 @@ declare namespace JshCli {
         /** A door was held or let go, or its `auto` or `proximity` changed */
         key: "door-toggled";
         gdKey: Geomorph.GmDoorKey;
+        what: "held" | keyof import("./service/storage").DoorFlags;
+        on: boolean;
+      }
+    | {
+        /** A locked door refused to open for `npcKey`, who would have walked through it */
+        key: "door-denied";
+        gdKey: Geomorph.GmDoorKey;
+        npcKey: string;
       }
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)

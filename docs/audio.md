@@ -1,25 +1,29 @@
 # Audio
 
-The page's sound: one engine, the player's footsteps (one each time a foot of theirs lands), synthesised weapon
-sounds, the Audio pane's desk, and the jsh commands that play them in the World. The ONLY doc for it.
+The page's sound: one engine, the player's footsteps (one each time a foot of theirs lands), the phaser's sounds, the
+Audio pane's desk, and the jsh commands that play them in the World. The ONLY doc for it.
 
 | file | what |
 | --- | --- |
 | `ui/audio/src/engine.ts` | the engine: `getAudio()`, `warmAudio()`, its buses and API |
-| `ui/audio/src/steps.ts` | the desk's settings (`audioDefaults`, `audioRanges`), the footstep samples, a step |
-| `ui/audio/src/sfx.ts` | the weapon sounds (`sfxKeys`), all synthesised |
-| `ui/audio/src/nodes.ts` | node builders and a noise buffer |
+| `ui/audio/src/steps.ts` | the desk's settings (`audioDefaults`, `audioRanges`), the sets of footsteps, a step |
+| `ui/audio/src/samples.ts` | the sample banks (`sampleFiles`), loading them, `pickSample` |
+| `ui/audio/src/sfx.ts` | the sound effects' keys (`sfxKeys`), `playSfx`, and the held voices (`holds`) |
+| `ui/audio/src/phaser.ts` | the phaser's sounds, and its charge (`chargeVoice`) |
+| `ui/audio/src/synth.ts` | builders the effects share: envelopes, noise, crackle, a recorded layer |
+| `ui/audio/src/nodes.ts` | node builders, a noise buffer, a waveshaper and the room |
 | `ui/audio/src/Audio.tsx` | the desk: a strip per channel, the help tour, the node graph |
 | `ui/audio/src/graph-data.ts` | the node graph's layout. Keep it in step with the engine |
 | `cli/src/jsh/world/audio.ts` | jsh `sounds` and `sfx`, and reading the player's footfalls |
-| `app/public/audio/` | the footstep samples, with a README of their sources and licence |
+| `app/public/audio/` | the samples, `steps/` and `sfx/`, with a README of their sources and licence |
 
 ## The engine
 
 - **One per page.** `getAudio()` makes it on first use: one `AudioContext` and a master bus.
   - The bus is a limiter (`limiter` in `nodes.ts`, catching peaks over -6 dBFS), then an analyser, then the speakers.
     Near the default faders an effect or a run's step peaks about -6 dBFS (`sfxLevel`, `stepLevel`).
-  - There is no reverb: the steps' recordings have their own room.
+  - **The room.** The fx bus sends a little (`roomWet`) to a small hard room (`room` in `nodes.ts`, 0.45 s of noise
+    dying away). The steps stay dry, as their recordings have their own.
   - **Sleeping.** After `idleSecs` (10 s) without a sound the context is suspended, sparing the audio thread, and the
     next sound resumes it. It sleeps only once all is silent, and wakes from silence, so neither pops.
   - The steps and the fx each reach it through their own level. Whilst not playing, `footfall` drops the steps.
@@ -27,7 +31,8 @@ sounds, the Audio pane's desk, and the jsh commands that play them in the World.
 - **The World never imports it.** jsh plays sounds for it.
 - **Autoplay.** Browsers start a context only after a press or key. The engine resumes on the next `pointerdown` or
   `keydown`. `warmAudio()` waits for one of those before making the engine, so nothing is refused at page load.
-- **Samples.** Only the footsteps: 26 CC0 steps in three sets, about 216 KB, fetched as the engine is made.
+- **Samples.** All CC0, in named banks (`sampleFiles`), all fetched as the engine is made: 26 steps (216 KB) and the
+  effects' layers (252 KB). `pickSample` never plays one twice running. A layer not yet loaded is left out.
 - **Hot reload.** The context, samples, listeners, config and status are kept on `import.meta.hot.data`.
   - An edit of any audio module re-runs `engine.ts`, which replaces the engine an older copy made.
   - Vite runs no `dispose` for a module that is not itself the boundary, so the swap is done at the module's top.
@@ -38,7 +43,13 @@ sounds, the Audio pane's desk, and the jsh commands that play them in the World.
   - `set(partial)` changes the config. Unknown keys are dropped, and values are kept within their range.
   - `footfall({ side, run, level })`, heard at once whilst playing. `step` plays one whatever the status, as the desk
     does.
-  - `sfx(key, { pan, gain })`.
+  - `sfx(key, { pan, gain, amount })`, `amount` from `0` to `1`, e.g. a shot's charge.
+    - Each plays a little louder or softer, and higher or lower (`varyBy`), so no two alike.
+    - **A budget.** At most `maxVoices` (24) sound at once (`voices`): more are dropped. So is a twin, the same key
+      again within `twinSecs` at about the same pan.
+  - `hold(key, id, { level, pan, gain })` holds a voice, e.g. a phaser charging, by `id` (an npcKey).
+    - It is eased towards its params only when they change.
+    - Unless held again within `leaseMs` (250 ms) it fades out, as when the World pauses. `release` fades it at once.
   - `subscribe(fn)`, called on every change of status or config, never per frame.
 
 ## Footsteps
@@ -68,25 +79,31 @@ sounds, the Audio pane's desk, and the jsh commands that play them in the World.
 - **Saved settings.** The desk saves only what differs from `audioDefaults`, marked with `audioConfigVersion`. Bump it
   when the defaults change in a way old desks should not keep: a desk saved against another version starts afresh.
 
-## Weapon sounds
+## Phaser sounds
 
-All synthesised, playing at once.
+Synthesised, over a few recorded layers (`phaser.ts`).
 
 | key | when | sound |
 | --- | --- | --- |
-| `phaser` | `phaser-fired` | a bright tone diving, bent fast by another, through a sweeping band-pass, with a crackle |
-| `hit` | `npc-shot` hit | a burn: a hiss and crackle flaring then sizzling away, over a soft thump |
-| `armour` | `npc-shot` armour | a clunk and a chink: a dull knock on plate, and a bright ring off it |
-| `ghost` | `npc-shot` ghost | static as it passes through them, then `wall` as it strikes beyond |
-| `wall` | `phaser-struck` | a short crack and thud, and a few sparks |
+| `raise` | `phasers` armed | a sleeve's rustle, a leather grip, a click as it settles, a soft knock |
+| `lower` | `phasers` not armed | a click as it is made safe, a rustle, the leather taking it back |
+| `charge` (held) | `w.phasers.isCharging` | a steady buzz and a rush of current, brightening and crackling as it fills |
+| `charged` | the charge reaching full | a snap of current |
+| `fire` | `phaser-fired` | a recorded crack, a short distorted burst, a sizzle. Charged, a low boom too |
+| `cool` | a charge cancelled (`isCooling`) | the buzz darkening and dying, crackling, with a hiss of venting |
+| `hit` | `npc-shot` hit | a burn: a hiss and crackle flaring then sizzling away, a soft thump, a wet sear |
+| `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
+| `ghost` | `npc-shot` ghost | at once, a phase shift: notches sweeping through a rush, two tones drifting apart. Then `wall` |
+| `wall` | `phaser-struck` | a recorded crunch, a thud, and a few sparks |
 
-To add one, add its key to `sfxKeys` and its builder to `sfx`. Then label it in the desk's
-`sfxLabels`.
+- A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
+- A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
 
 ## The desk
 
 The Audio pane, `Audio.tsx`: strips for steps (a button to hear one, shift for running), fx (a button per sound), and
-master.
+master. The fx strip's **charge** fills a charge over 1.2 s, holds it, then fires: shift cancels it, and it cools.
+Shift on **fire** fires a tap, uncharged.
 
 - **Changes.** A fader calls `set`. Every change, from jsh too, is saved into the pane's `meta.config`, and
   pushed back into the engine on mount. A saved config the schema cannot read is dropped.
@@ -99,17 +116,22 @@ master.
 ## jsh
 
 ```sh
-sounds                   # footsteps and weapon sounds, in the default profile (idempotent)
+sounds                   # footsteps and phaser sounds, in the default profile (idempotent)
 sounds set:tile3         # which footsteps, as the desk's buttons choose
 sounds off
-sfx phaser               # also hit, armour, ghost, wall
+sfx fire                 # any of sfxKeys
+sfx fire amount:0.2      # a shot charged a fifth
 sfx armour rob           # heard where rob is
 ```
 
-- **What `sounds` does.** Each tick it reads the feet of the player and the npcs near them as above, and plays a step
-  per footfall.
-  - It listens too: `phaser-fired` plays `phaser` at whoever fired, and `npc-shot` its outcome (`hit`, `ghost`,
-    `armour`) at whoever was shot. `phaser-struck` plays `wall` where a shot at no one struck.
+- **What `sounds` does.** Each tick it reads the feet and the charge of those `heard`: the player, and the npcs near
+  them as above. It plays a step per footfall, and holds a charge whilst they charge (`syncCharge`).
+  - It listens too: `phasers` plays `raise` or `lower`, `phaser-fired` plays `fire` by its charge at whoever fired,
+    and `npc-shot` its outcome (`hit`, `ghost`, `armour`) at whoever was shot. `phaser-struck` plays `wall` where a
+    shot at no one struck.
+  - **Who is heard.** A one-shot plays only if one of its npcs is in `reach`: the player, and npcs in reach of them
+    through open doors within `reachMetres` (20 m), found with `heard`. Without a player, all are heard.
+  - Its tick keeps the closure of the `sounds` that made it. So after an edit of jsh `audio.ts`, run `sounds` again.
   - `phaser-fired` is emitted by `w.phasers`: by `shoot` as a beam locks on someone, and by `fireAlong` for a shot at
     no one (see `docs/engagements.md`).
 - **Where a sound is heard** (`heardAt`). It is panned by where it is across the view, along the camera's right. It

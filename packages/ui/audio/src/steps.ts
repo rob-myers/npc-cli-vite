@@ -6,6 +6,7 @@ export const audioDefaults = {
   master: 0.7,
   steps: 0.8,
   fx: 0.8,
+  world: 0.8,
 };
 
 export type AudioConfig = typeof audioDefaults;
@@ -16,6 +17,7 @@ export const audioRanges: Record<AudioKey, [number, number, number]> = {
   master: [0, 1, 0.01],
   steps: [0, 1, 0.01],
   fx: [0, 1, 0.01],
+  world: [0, 1, 0.01],
 };
 
 export const audioUnits: Partial<Record<AudioKey, string>> = {};
