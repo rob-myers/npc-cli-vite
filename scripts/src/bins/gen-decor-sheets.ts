@@ -99,6 +99,10 @@ writeFileSync(sheetsJsonPath, safeJsonCompact(sheet));
 // 🔔 skiaCanvas SVG renders 4/8-digit hex (e.g. #ffffffe6) as black: use rgba() or fill-opacity
 const sheetDir = path.resolve(PROJECT_ROOT, "packages/app/public/sheet");
 mkdirSync(sheetDir, { recursive: true });
+/** Decor drawn with a black outline round it, white glyphs all: the spots overlay's icons — see `SpotOverlay` */
+const outlinedPrefix = "icon--spot-";
+/** Sheet pixels the outline reaches out */
+const outlinePx = 3;
 
 for (const [sheetId, bin] of bins.entries()) {
   const canvas = new Canvas(bin.width, bin.height);
@@ -110,6 +114,24 @@ for (const [sheetId, bin] of bins.entries()) {
     const scale = Math.min(rect.width / image.width, rect.height / image.height);
     const w = image.width * scale;
     const h = image.height * scale;
+    if (rect.data.key.startsWith(outlinedPrefix)) {
+      // its black silhouette stamped round it, within its own cell: the World reads glyph and outline in one sample
+      const silhouette = new Canvas(rect.width, rect.height);
+      const sc = silhouette.getContext("2d");
+      sc.drawImage(image, (rect.width - w) / 2, (rect.height - h) / 2, w, h);
+      sc.globalCompositeOperation = "source-in";
+      sc.fillStyle = "black";
+      sc.fillRect(0, 0, rect.width, rect.height);
+      ct.save();
+      ct.beginPath();
+      ct.rect(rect.x, rect.y, rect.width, rect.height);
+      ct.clip();
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        ct.drawImage(silhouette, rect.x + Math.cos(angle) * outlinePx, rect.y + Math.sin(angle) * outlinePx);
+      }
+      ct.restore();
+    }
     ct.drawImage(image, rect.x + (rect.width - w) / 2, rect.y + (rect.height - h) / 2, w, h);
   }
 

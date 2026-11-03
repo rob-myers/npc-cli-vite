@@ -68,6 +68,18 @@ Whilst the debug **context menu** is on, a right-click on a switch (a long press
 whilst used. `w.door.setFlag` sets the last two, and emits `door-toggled`, as
 `setHeld` does. A sealed door's rows are disabled.
 
+## Events
+
+| event | when |
+| --- | --- |
+| `door-opening`, `door-closing` | it starts to move. `open` is its state before |
+| `door-open`, `door-closed` | it reaches either end, a snap open (`snapOpen`) included |
+| `door-locked`, `door-unlocked` | `toggleLock` changed it. `locked` is its new state |
+| `door-toggled` | `what` changed (`held`, `auto` or `proximity`), and `on` is its new value |
+| `door-denied` | it stayed shut for an npc walking into it without a key (`w.e.toggleDoor`) |
+
+Their sounds are jsh's: see `docs/audio.md`.
+
 ## Saved
 
 - Per World and map (`getWorldMapStore`): `doorLocks` and `doorHolds`, both lists of gdKeys. `doorLocks` is

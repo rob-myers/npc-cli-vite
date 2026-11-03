@@ -148,16 +148,6 @@ export const spawnRoomLabels = ["corridor", "common"];
 
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = "embodied";
 /**
- * `embodied` camera mode: how far out — as a fraction of the travel between the zoom's stops —
- * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`
- */
-export const embodiedFlattenFrom = 0.4;
-/**
- * ...and how far out a drag locks to one axis. On a phone the zoom is free and comes to rest
- * anywhere, so "zoomed in" reaches much further out than the mouse's inner stop
- */
-export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
-/**
  * How far the rgb shift parts the channels, in css px, from the inner zoom stop to the outer.
  * Out far, it stays under a line's width, else each thin line keeps only its green.
  */

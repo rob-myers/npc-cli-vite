@@ -72,9 +72,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     TOUCH_PAN: 4,
     TOUCH_DOLLY_PAN: 5,
     TOUCH_DOLLY_ROTATE: 6,
+    TOUCH_LOOK: 7,
   } as const;
 
-  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 = this.STATE.NONE;
+  state: -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 = this.STATE.NONE;
 
   /** Update state */
   u = {
@@ -120,10 +121,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /**
    * Whether a mouse rotate LOCKS to the axis its first pixels favoured, for the rest of the drag.
-   * `embodied` takes it away whilst its polar is pinned, when a turn begun a little up or down
-   * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
+   * `embodied` locks only whilst aiming — see `WorldView`'s `onCameraFrame`
    */
   lockRotateAxis = true;
+  /** Whether a touch turn locks to one axis, as `lockRotateAxis` does a mouse's. `WorldView` sets it whilst aiming */
+  lockTouchRotateAxis = false;
+  /** Whilst set, a one-finger drag calls it at the finger, in client px, rather than panning or turning. `WorldView` sets it whilst following */
+  touchLook: null | ((clientX: number, clientY: number) => void) = null;
+  /** Where a one-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
+  touchLookFrom = { x: 0, y: 0, dragged: false };
+  /** Whilst true, fingers move nothing: they are firing the player's phaser — see `onFireTouch` */
+  holdTouch = false;
+  /** How far the fingers have moved since the turn began, in px — see `pickRotateAxis` */
+  rotateTravel = new THREE.Vector2();
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -300,12 +310,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
       const isFree = !this.params.fixedPolar;
-      if (isFree && this.lockRotateAxis === true && this.rotateAxis === "none") {
-        const ax = Math.abs(this.u.rotateDelta.x);
-        const ay = Math.abs(this.u.rotateDelta.y);
-        if (ax > 2 || ay > 2) {
-          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
-        }
+      if (isFree && this.lockRotateAxis === true) {
+        this.pickRotateAxis(this.u.rotateDelta.x, this.u.rotateDelta.y, 2);
       }
       const horiz = !isFree || this.rotateAxis !== "vertical";
       const vert = isFree && this.rotateAxis !== "horizontal";
@@ -366,10 +372,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const prevY = this.twoFingerCentroid.y;
     this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
 
-    this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
-    if (this.params.fixedPolar !== true) {
-      this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
-    }
+    const dx = this.twoFingerCentroid.x - prevX;
+    const dy = this.twoFingerCentroid.y - prevY;
+    const [horiz, vert] = this.getTouchRotateAxes(dx, dy);
+    if (horiz) this.rotateLeft((2 * Math.PI * dx * rotateScale) / element.clientHeight);
+    if (vert) this.rotateUp((2 * Math.PI * dy * rotateScale) / element.clientHeight);
 
     const prevDist = this.u.dollyStart.y;
     const nextDist = prevDist + (dist - prevDist) * twoFingerSmoothing;
@@ -426,13 +433,30 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
 
     if (element) {
-      // unlike the mouse, touch rotates both axes at once
-      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-      if (this.params.fixedPolar !== true) {
-        this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
-      }
+      // unlike the mouse, touch rotates both axes at once, unless `lockTouchRotateAxis`
+      const [horiz, vert] = this.getTouchRotateAxes(this.u.rotateDelta.x, this.u.rotateDelta.y);
+      if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+      if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
+  }
+
+  /** Which axes a touch turn moves, `[horizontal, vertical]`. Locked, neither until the fingers pick one */
+  getTouchRotateAxes(dx: number, dy: number): [boolean, boolean] {
+    const isFree = this.params.fixedPolar !== true;
+    if (isFree === false || this.lockTouchRotateAxis === false) return [true, isFree];
+    this.rotateTravel.x += dx;
+    this.rotateTravel.y += dy;
+    this.pickRotateAxis(this.rotateTravel.x, this.rotateTravel.y, touchAxisLockPx);
+    return [this.rotateAxis === "horizontal", this.rotateAxis === "vertical"];
+  }
+
+  /** Sets `rotateAxis` once, to whichever axis `(dx, dy)` favours, when either passes `minPx` */
+  pickRotateAxis(dx: number, dy: number, minPx: number) {
+    if (this.rotateAxis !== "none") return;
+    const ax = Math.abs(dx);
+    const ay = Math.abs(dy);
+    if (ax > minPx || ay > minPx) this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
   }
 
   handleTouchStartDolly() {
@@ -459,6 +483,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   handleTouchStartRotate() {
     this.setRotateAbout();
+    this.rotateTravel.set(0, 0);
     if (this.pointers.length === 1) {
       this.u.rotateStart.set(this.pointers[0].pageX, this.pointers[0].pageY);
     } else {
@@ -790,6 +815,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     this.trackPointer(event);
+    if (this.holdTouch === true) return;
 
     switch (this.state) {
       case this.STATE.TOUCH_ROTATE:
@@ -809,6 +835,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.update();
         break;
 
+      case this.STATE.TOUCH_LOOK: {
+        const from = this.touchLookFrom;
+        // a drag, not a tap's jitter, which picks
+        from.dragged ||= Math.hypot(event.pageX - from.x, event.pageY - from.y) > touchLookDragPx;
+        if (from.dragged === true) this.touchLook?.(event.clientX, event.clientY);
+        break;
+      }
+
       default:
         this.state = this.STATE.NONE;
     }
@@ -817,7 +851,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   onTouchStart = (event: PointerEvent) => {
     this.trackPointer(event);
 
-    if (this.pointers.length === 1) {
+    if (this.pointers.length === 1 && this.touchLook !== null) {
+      // the camera's own start is not sent: it is not being moved
+      Object.assign(this.touchLookFrom, { x: event.pageX, y: event.pageY, dragged: false });
+      this.state = this.STATE.TOUCH_LOOK;
+    } else if (this.pointers.length === 1) {
       switch (this.touches.ONE) {
         case TOUCH.ROTATE:
           if (this.enableRotate === false) return;
@@ -1121,6 +1159,10 @@ const wheelDeltaPerStop = 500;
 const pinchLogPerStop = 0.6;
 /** Under this much of a two-finger gesture being centroid motion, it counts as a pure pinch */
 const pinchPurity = 0.35;
+/** How far a locked touch turn travels before it picks its axis, in px */
+const touchAxisLockPx = 8;
+/** How far a finger travels before a touch look begins, in px: less is a tap, which picks */
+const touchLookDragPx = 8;
 /** How far a zoom must travel to commit to its stop rather than falling back to the one it left */
 /** Progress a zoom-in must pass to be committed — under it, letting go settles back out */
 export const zoomCommitIn = 0.1;

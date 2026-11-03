@@ -13,7 +13,7 @@ import debounce from "debounce";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { OverrideProperties } from "type-fest";
-import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
+import { AssetsSchema, type AssetsType, getSheetUrl, SheetsSchema, type SheetsType } from "../assets.schema";
 import { skinSliceDims } from "../const.both";
 import {
   assetsJsonChangedEvent,
@@ -273,7 +273,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       async loadDecorImages() {
         return await Promise.all(
           Array.from({ length: state.sheets?.decorSheetDims.length ?? 0 }, (_, i) =>
-            loadImage(`/sheet/decor.${i}.png${getDevCacheBustQueryParam()}`),
+            loadImage(getSheetUrl(state.sheets, `decor.${i}.png`, getDevCacheBustQueryParam())),
           ),
         );
       },

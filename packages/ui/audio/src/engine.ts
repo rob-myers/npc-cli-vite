@@ -1,5 +1,18 @@
-import { gain, limiter } from "./nodes";
-import { playSfx, type SfxKey } from "./sfx";
+import { isPsiVoice, type PsiVoice } from "./choir";
+import type { DoorVoice } from "./doors";
+import { gain, limiter, room } from "./nodes";
+import { bankSize, loadSamples, pickSample, type SampleBank, type Samples, samplesKey, wantSample } from "./samples";
+import {
+  type HeldVoice,
+  type HoldKey,
+  type HoldParams,
+  holdBus,
+  holds,
+  playSfx,
+  type SfxKey,
+  sfxBus,
+  sfxSecs,
+} from "./sfx";
 import {
   type AudioConfig,
   audioChanges,
@@ -8,15 +21,14 @@ import {
   createSteps,
   type Footfall,
   isStepSet,
-  loadSamples,
-  type Samples,
   type StepSet,
-  samplesKey,
   stepSetDefault,
   toAudioConfig,
 } from "./steps";
 
-export { isSfxKey, type SfxKey, sfxKeys } from "./sfx";
+export { chantOf, isPsiVoice, type PsiVoice, psiVoices } from "./choir";
+export { type DoorVoice, doorVoices, isDoorVoice } from "./doors";
+export { type HoldKey, type HoldParams, holdKeys, isSfxKey, type SfxKey, sfxBus, sfxKeys } from "./sfx";
 export {
   type AudioConfig,
   type AudioKey,
@@ -34,8 +46,19 @@ export {
 
 export type AudioStatus = "stopped" | "playing" | "paused";
 export type AudioMeterKey = keyof AudioEngine["meters"];
-/** `pan` from `-1` (left) to `1` (right) */
-export type SfxOpts = { pan?: number; gain?: number };
+/**
+ * `pan` from `-1` (left) to `1` (right), `amount` from `0` to `1` (e.g. a shot's charge), and a door's `voice`.
+ * `speed` is the World's time scale: slower plays slower and lower, as tape does
+ */
+export type SfxOpts = {
+  pan?: number;
+  gain?: number;
+  amount?: number;
+  voice?: DoorVoice;
+  speed?: number;
+  /** An item's kind */
+  kind?: string;
+};
 
 /** The page's one audio engine, made on first use — see `docs/audio.md` */
 export function getAudio(): AudioEngine {
@@ -59,7 +82,8 @@ function createEngine() {
   if (shared.samplesKey !== samplesKey) [shared.samples, shared.samplesKey] = [null, samplesKey];
   const samples = (shared.samples ??= loadSamples(ctx));
   const kept = shared.configVersion === audioConfigVersion ? shared.config : null;
-  const config: AudioConfig = { ...audioDefaults, ...kept };
+  // only known numbers, as an older engine's config may lack a newer setting
+  const config: AudioConfig = { ...audioDefaults, ...toAudioConfig(kept ?? {}) };
   const now = () => ctx.currentTime;
 
   const master = gain(ctx, config.master);
@@ -70,9 +94,18 @@ function createEngine() {
   steps.connect(master);
   const fx = gain(ctx, config.fx);
   fx.connect(master);
+  const world = gain(ctx, config.world);
+  world.connect(master);
+  // the effects sit in a small room: the steps' recordings carry their own
+  const roomSend = gain(ctx, roomWet);
+  roomSend.connect(room(ctx)).connect(master);
+  fx.connect(roomSend);
+  world.connect(roomSend);
 
   /** Which set of footsteps plays, chosen on the desk */
   let stepSet: StepSet = isStepSet(shared.stepSet) ? shared.stepSet : stepSetDefault;
+  /** What sings whilst psi is raised, chosen on the desk */
+  let psiVoice: PsiVoice = isPsiVoice(shared.psiVoice) ? shared.psiVoice : "random";
   const player = createSteps(ctx, steps, samples, () => stepSet);
 
   /** A tap per channel, for the desk's level meters */
@@ -99,6 +132,26 @@ function createEngine() {
   const sleeper = window.setInterval(() => {
     if (ctx.state === "running" && performance.now() - soundAt > idleSecs * 1000) void ctx.suspend();
   }, sleepCheckMs);
+
+  /** When each effect last played, and where, so a twin is dropped */
+  const lastPlayed = new Map<SfxKey, { at: number; pan: number }>();
+  /** Held voices by `key:id`, each kept until its lease, by the page's clock */
+  const held = new Map<string, { voice: HeldVoice; params: null | HoldParams; until: number }>();
+  let leaseTimer = 0;
+  const releaseLapsed = () => {
+    const lapsed = performance.now();
+    for (const [id, entry] of held) {
+      if (entry.until > lapsed) continue;
+      entry.voice.stop(now());
+      held.delete(id);
+    }
+    if (held.size > 0) return;
+    window.clearInterval(leaseTimer);
+    leaseTimer = 0;
+  };
+  /** A random ratio within `varyBy` of `1` */
+  const vary = () => 1 + varyBy * (Math.random() * 2 - 1);
+
   const emit = () => {
     for (const listener of shared.listeners) listener();
   };
@@ -106,14 +159,50 @@ function createEngine() {
   const engine = {
     ctx,
     analyser,
+    /** Door voices chosen by hand, by gdKey, else `*` for every door, until the page reloads */
+    chosenVoices: (shared.chosenVoices ??= new Map()),
     config,
-    meters: { steps: meter(steps), fx: meter(fx), master: meter(analyser) },
+    meters: { steps: meter(steps), fx: meter(fx), world: meter(world), master: meter(analyser) },
     status: "stopped" as AudioStatus,
+    /** One-shots still sounding, at most `maxVoices` */
+    voices: 0,
     dispose() {
+      for (const { voice } of held.values()) voice.stop(now());
+      held.clear();
+      window.clearInterval(leaseTimer);
       master.disconnect();
       window.clearInterval(sleeper);
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
+    },
+    bankSize,
+    /** Whether `bank`'s `index`th sample has loaded: a large bank's loads only once first asked for */
+    hasSample(bank: SampleBank, index: number) {
+      return wantSample(ctx, samples, bank, index);
+    },
+    /** One of `bank`'s samples at random, never `not` */
+    pickIndex(bank: SampleBank, not?: number) {
+      const size = bankSize(bank);
+      const index = Math.floor(Math.random() * size);
+      return index === not && size > 1 ? (index + 1) % size : index;
+    },
+    /** Holds `key`'s voice for `id`, e.g. an npcKey. Unless held again within `leaseMs`, it fades out */
+    hold(key: HoldKey, id: string, params: HoldParams) {
+      resume();
+      const heldKey = `${key}:${id}`;
+      let entry = held.get(heldKey);
+      if (entry === undefined) {
+        const sample = (bank: SampleBank, pick?: number) => pickSample(samples, bank, pick);
+        const voice = holds[key](ctx, holdBus(key) === "world" ? world : fx, params, sample);
+        held.set(heldKey, (entry = { voice, params: null, until: 0 }));
+      }
+      // eased towards only on a change, so a param's timeline is not filled every tick
+      if (entry.params === null || differs(entry.params, params)) {
+        entry.voice.set(params, now());
+        entry.params = params;
+      }
+      entry.until = performance.now() + leaseMs;
+      leaseTimer ||= window.setInterval(releaseLapsed, leaseCheckMs);
     },
     pause() {
       if (engine.status !== "playing") return;
@@ -134,11 +223,31 @@ function createEngine() {
       ease(master.gain, config.master);
       ease(steps.gain, config.steps);
       ease(fx.gain, config.fx);
+      ease(world.gain, config.world);
       emit();
     },
+    /** Fades out `key`'s voice for `id`, if held */
+    release(key: HoldKey, id: string) {
+      const entry = held.get(`${key}:${id}`);
+      if (entry !== undefined) entry.until = 0;
+      releaseLapsed();
+    },
+    /** Dropped if over budget, or the same effect just played at about the same place, as a hull door's twin */
     sfx(key: SfxKey, opts: SfxOpts = {}) {
+      const [at, pan] = [now(), opts.pan ?? 0];
+      const last = lastPlayed.get(key);
+      if (last !== undefined && at - last.at < twinSecs && Math.abs(last.pan - pan) < twinPan) return;
+      if (engine.voices >= maxVoices) return;
+      lastPlayed.set(key, { at, pan });
       resume();
-      playSfx(key, { ctx, out: fx, at: now(), level: opts.gain ?? 1, pan: opts.pan ?? 0 });
+      engine.voices++;
+      window.setTimeout(() => engine.voices--, sfxSecs * 1000);
+      const level = (opts.gain ?? 1) * vary();
+      const sample = (bank: SampleBank) => pickSample(samples, bank);
+      const { amount = 1, voice = "glide", speed = 1, kind = "" } = opts;
+      const out = sfxBus(key) === "world" ? world : fx;
+      const pitch = vary() * Math.max(minSpeed, speed);
+      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice, kind });
     },
     /** One of the player's footfalls, heard at once whilst playing */
     footfall(footfall: Footfall) {
@@ -147,6 +256,14 @@ function createEngine() {
       player.step(footfall);
     },
     /** Which set of footsteps plays */
+    get psiVoice() {
+      return psiVoice;
+    },
+    setPsiVoice(next: PsiVoice) {
+      if (!isPsiVoice(next) || next === psiVoice) return;
+      psiVoice = next;
+      emit();
+    },
     get stepSet() {
       return stepSet;
     },
@@ -190,12 +307,35 @@ type Shared = {
   config: null | Partial<AudioConfig>;
   configVersion: number;
   stepSet: null | StepSet;
+  /** Missing from the shared state of an older module */
+  psiVoice?: null | PsiVoice;
   status: AudioStatus;
+  /** Missing from the shared state of an older module */
+  chosenVoices?: Map<string, DoorVoice>;
 };
 
 /** Seconds without a sound before the context sleeps, sparing the audio thread */
 const idleSecs = 10;
 const sleepCheckMs = 2000;
+/** Whether held params changed enough to ease towards. Reaching either end of `level` always does */
+const differs = (a: HoldParams, b: HoldParams) =>
+  (a.level !== b.level && (b.level === 0 || b.level === 1)) ||
+  Math.abs(a.level - b.level) + Math.abs(a.pan - b.pan) + Math.abs(a.gain - b.gain) > holdEpsilon;
+const holdEpsilon = 0.01;
+/** How long a held voice lasts unless held again, so one left behind, as by a paused World, fades out */
+const leaseMs = 250;
+const leaseCheckMs = 100;
+/** The most one-shots sounding at once: more are dropped */
+const maxVoices = 24;
+/** The same effect again within this many seconds and this much pan is a twin, dropped */
+const twinSecs = 0.06;
+const twinPan = 0.1;
+/** How far an effect's level and pitch stray, so no two alike */
+const varyBy = 0.04;
+/** The slowest an effect plays, however slow the World */
+const minSpeed = 0.125;
+/** The room's share of the effects */
+const roomWet = 0.22;
 
 const hot = import.meta.hot;
 /** Kept across hot reloads, so a listener from an older module still finds the live engine */
@@ -220,7 +360,15 @@ if (shared.engine !== null) {
   const ours = "steps" in engine.config;
   const config = ours ? audioChanges(engine.config) : null;
   const stepSet = "stepSet" in engine ? engine.stepSet : null;
-  Object.assign(shared, { config, configVersion: audioConfigVersion, stepSet, status: engine.status, engine: null });
+  const psiVoice = "psiVoice" in engine ? engine.psiVoice : null;
+  Object.assign(shared, {
+    config,
+    configVersion: audioConfigVersion,
+    stepSet,
+    psiVoice,
+    status: engine.status,
+    engine: null,
+  });
   engine.dispose();
   getAudio(); // remade at once, so steps playing go on
 }

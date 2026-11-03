@@ -163,6 +163,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             items.splice(index, 1);
             w.decor.create(state.getItemDefAt(def, spot));
             state.onCarriedChange(npcKey);
+            const kind = String(def.meta?.item);
+            w.events.next({ key: "item-handled", npcKey, kind, taken: false, floor: spot.y3d === 0 });
           };
           /** Its top, as it is taken from: so the arm goes out the same either way */
           const top = { ...spot, y3d: spot.y3d + (Number(def.meta?.h) || 0) };
@@ -319,8 +321,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async move(opts) {
         const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
+        const { hurt } = npc.anim;
 
-        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
+        if (hurt !== null && (shove !== true || (hurt.key !== "pacified" && npc.anim.dragged === false))) {
           throw Error("hurt");
         }
         const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
@@ -401,6 +404,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door || door.locked === false) {
           return true; // absent onchange map
         }
+        // never opens, so its doorway is no way through, keys or not
+        if (door.sealed === true) return false;
         // An npc without access can slip through a locked door whilst it stands OPEN, but only
         // from right beside it. Asked whether they could get somewhere — rather than whether they
         // could step through from where they are standing — the proximity is beside the point:
@@ -679,10 +684,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             const ours = e.srcWorld === w.key;
             /** A right click, or a long press on touch */
             const contextPress = e.rightDown === true || (w.touchDevice && e.longDown === true);
+            /** A press held whilst armed, on touch: a finger readying the phaser — see `onFireTouch` */
+            const firing = w.touchDevice && w.phasers?.isArmed(w.player.key) === true;
             // one of ours opens a menu on an npc, decor or door
             const menu =
               contextPress &&
               ours &&
+              firing === false &&
               w.debug?.contextMenu === true &&
               (e.meta.type === "npc" || e.meta.type === "decor" || e.meta.type === "door");
             if (menu === true) state.openPickMenu(e);
@@ -700,6 +708,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // forwarded, and the server's mirrored speech comes back instead
             if (
               e.longDown === true &&
+              firing === false &&
               e.meta.type === "npc" &&
               typeof e.meta.npcKey === "string" &&
               w.client === false
@@ -872,6 +881,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "door-denied":
+          case "item-handled":
           case "npc-toggled":
           case "npc-posed":
           case "npc-hit":
@@ -1496,6 +1507,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
             w.decor.remove(decorKey);
             state.onCarriedChange(npcKey);
+            w.events.next({ key: "item-handled", npcKey, kind, taken: true, floor: at.y3d === 0 });
           }),
         );
         return true;
@@ -1563,6 +1575,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         const toggled = w.door.toggleDoor(door, opts);
         if (toggled && opts.held !== undefined) w.door.setHeld(door, opts.held);
+        else if (!toggled && door.locked && !door.open && opts.access === false && willIntersect && opts.npcKey)
+          w.events.next({ key: "door-denied", gdKey, npcKey: opts.npcKey });
         return toggled;
       },
       toggleLock(gdKey, opts = {}) {
@@ -1650,13 +1664,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
           // an aim held until rest, e.g. a sidestep's, gives way to a new move
           if (strafe !== true && npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
-          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
-          npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
+          // collapsed, they scoot back-first and turn as they go. Else aiming, they strafe unless told not to
+          const { dragged } = npc.anim;
+          npc.anim.strafe = dragged === false && (strafe ?? Boolean(npc.anim.face.aim));
+          npc.anim.strafeFollowsAim = dragged === false && strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
-            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
+            dragged ||
+            (npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config))));
           if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
-          await w.npc.turnBeforeMoving(npc);
+          if (dragged === false) await w.npc.turnBeforeMoving(npc); // a look throws "hurt"
           npc.anim.startMoving(arrive);
 
           w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });

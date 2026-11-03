@@ -1,6 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
 import { isTrackingDisabled, setTrackingDisabled } from "@npc-cli/ui-sdk/analytics";
+import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
@@ -12,13 +13,15 @@ import {
   MoonIcon,
   SquareHalfBottomIcon,
   SquareHalfIcon,
+  StackSimpleIcon,
   SunIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
+import { useStore } from "zustand";
 import { AboutModal } from "./AboutModal";
-import { resetPanes, splitRoot } from "./pane-service";
+import { countPanes, flattenPanes, resetPanes, splitRoot } from "./pane-service";
 
 const storageKey = "allotment-menu-y";
 const minY = 120;
@@ -39,6 +42,7 @@ export function GlobalMenu() {
   const y = useMotionValue(getInitialY());
   const vpOffset = useVisualViewportOffset();
   const theme = useThemeName();
+  const paneCount = useStore(uiStore, (s) => countPanes(s.persistedPanes.root));
 
   const state = useStateRef(() => ({
     y,
@@ -161,6 +165,13 @@ export function GlobalMenu() {
                     </Menu.Item>
                   </span>
                 </div>
+
+                {paneCount > 1 && (
+                  <Menu.Item className={itemCls} onClick={flattenPanes}>
+                    <StackSimpleIcon className={iconCls} />
+                    Flatten layout
+                  </Menu.Item>
+                )}
 
                 <Menu.Item
                   className={cn(itemCls, state.resetArmed && "text-red-300")}

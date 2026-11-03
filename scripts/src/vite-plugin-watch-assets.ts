@@ -151,6 +151,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 /** A `skin` or `skin-slices` sheet drawn by a DEV World — see `docs/skins.md` */
 async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, name: string, sheetId: number) {
+  // only this machine's: unsecured https may draw them wrongly
+  if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress ?? "")) {
+    return res.writeHead(403).end();
+  }
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);

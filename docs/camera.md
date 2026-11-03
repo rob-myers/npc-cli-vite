@@ -12,6 +12,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 - A left drag pans, a right drag turns. Shift, ctrl or alt held swaps them. The middle button zooms.
 - Whilst following, panning is off (`enablePan`), so a left drag turns.
 - On touch, one finger pans and two turn or pinch.
+- Whilst following on touch, a one-finger drag moves where the player looks instead (`touchLook`), and a tap still picks. Two fingers turn or pinch as ever.
 
 **Framing** (`w.view.cameraView`, `setCameraView`, `service/camera-view.ts`)
 - Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.
@@ -56,11 +57,9 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 
 Azimuth:
 - Free at every zoom, and untouched by zooming.
-- `w` heads up the screen, snapped onto a world axis within `compassSnapRad` (20°) of it (`snapHeading`, `getWasdDirection`). So doors line up without a square view, and a view near a diagonal walks diagonally, as seen.
-- That heading is held whilst any of `w`, `a`, `s` and `d` is down (`wasdHeading`), so a turn mid-walk doesn't swerve them.
-- On desktop the HUD's compass names `compassPoint`, the point nearest `w`'s heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where `w` heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
+- Where the w, a, s and d keys head is set by the view: see [WASD heading](#wasd-heading).
 - The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
-- Zoomed out (`t > embodiedAxisLockFrom`), a drag locks to one axis.
+- A drag turns and tilts at once, except whilst the phaser is raised.
 
 Polar:
 - Never clamped by the zoom. ONE tilt is tracked, `embodiedPolar`. A zoom neither flattens the view nor tips it back, so both angles survive it.
@@ -68,6 +67,29 @@ Polar:
 - Entering the mode and a reset set it to the camera's own tilt.
 
 There is no zooming past the outer stop: the radius is only ever a zoom stop.
+
+Whilst the player's phaser is raised (`isAiming`):
+- Each turn keeps to one axis, the one its first movement favours, on touch too (`lockTouchRotateAxis`, `pickRotateAxis`).
+- Lowering it frees both axes again.
+
+## WASD heading
+
+**The w-key heads along a world axis whenever it can, and where it heads depends on the view alone.** So doors line up without a square view.
+
+Which way (`getWasdDirection`, `syncWasdHeading`, `snapHeading`):
+- The w-key heads up the screen, snapped onto the nearest world axis when the view is within `compassSnapRad` (20°) of it. The a, s and d keys are quarter turns from it.
+- The heading is taken as the first move key goes down (`wasdHeading`), and kept whilst any is held, so a camera turn mid-walk does not swerve them.
+- A move key pressed afresh whilst another is held takes the heading again, from the view as it is then (`onKeyDown`). So after a camera turn, a tap re-aims.
+
+Whilst a `wasd_delta` runs (`isWasdDriven`: it asked `getWasdDirection` within `wasdAlign.drivenMs`):
+- A held move key turns the view towards the nearest axis, until just within 20° of it (`alignWasdAzimuth`). No further: the view keeps its slant.
+- Till then the heading is not kept: the w-key heads up the screen, curving gently as the view turns. Once the view is within 20° it snaps onto the axis, and is kept.
+- So a given view always ends heading the same way, never depending on the way before.
+- The turn is quick, slowing as it nears: its speed is what is left over `wasdAlign.secs`, between `minRadPerSec` and `maxRadPerSec`. Each frame's step goes through `sphericalDelta.theta`, divided by the damping.
+- A drag or a `lookAt` comes first. Letting go stops the turn where it got to.
+
+The HUD:
+- On desktop the compass names `compassPoint`, the point nearest the w-key's heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where the w-key heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
 
 ## Following the player
 

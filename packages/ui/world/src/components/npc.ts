@@ -9,7 +9,9 @@ import {
   getNodeByRef,
   moveAlongSurface,
   type NavMesh,
+  type NodeRef,
   type QueryFilter,
+  raycast,
   type Vec3,
 } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
@@ -18,6 +20,7 @@ import * as THREE from "three/webgpu";
 import {
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
+  npcConfig,
   npcLabelWeight,
   npcMaterialConfig,
   npcScale,
@@ -38,6 +41,8 @@ export class Npc {
   w: UseStateRef<import("./World").State>;
 
   agentId: string | null = null;
+  /** Their crowd agent, set and cleared with `agentId` by `placeNpcAt` and `removeAgents` */
+  agent: null | crowdApi.Agent = null;
   /** physics body */
   bodyUid: number;
   /** Object-picking id, which also indexes the label texture array. The UNIFORM is the state */
@@ -121,10 +126,6 @@ export class Npc {
     worker: rejectNoop,
   };
 
-  get agent() {
-    return this.agentId === null ? null : (this.w.npc.crowd.agents[this.agentId] ?? null);
-  }
-
   get clips() {
     return this.w.npc.clips;
   }
@@ -142,6 +143,11 @@ export class Npc {
   /** The way their head faces, as a rotation about the vertical: not always their body's, e.g. sat and turned, or lain on a side */
   get lookY() {
     return this.anim.getLookY();
+  }
+
+  /** The navmesh poly under them, which the crowd keeps under their feet: `null` without an agent */
+  get nodeRef(): null | NodeRef {
+    return this.agent?.corridor.path[0] ?? null;
   }
 
   /** Their pick id, which `compactPickIds` renumbers. The uniform IS the state */
@@ -211,7 +217,7 @@ export class Npc {
     if (isDoorAreaId(node.area) === true) {
       const gmDoorId = decodeDoorAreaId(node.area);
       if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
-        if (exemptStanding === true && nodeRef === this.agent?.corridor.path[0]) {
+        if (exemptStanding === true && nodeRef === this.nodeRef) {
           return true;
         }
         this.last.blockingArea = node.area;
@@ -407,12 +413,12 @@ export class Npc {
 
   /** Slide by `delta` from where they stand, stopped by walls and doors they cannot pass — `null` without an agent */
   getSlideResult(delta: Geom.VectJson) {
-    const agent = this.agent;
-    if (agent === null) return null;
+    const { nodeRef } = this;
+    if (nodeRef === null) return null;
     const { x, z } = this.position;
     const result = moveAlongSurface(
       this.w.nav.navMesh,
-      this.w.npc.getNodeRef(agent),
+      nodeRef,
       [x, 0, z],
       [x + delta.x, 0, z + delta.y],
       this.queryFilter,
@@ -563,6 +569,21 @@ export class Npc {
     reject.move(err);
     reject.scale(err);
     reject.look(err);
+  }
+
+  /**
+   * Room from `point` to a wall ahead of them, up to `depth`, along one ray leant out to the hands on `heading`'s side, e.g. at a corner.
+   * Heading more back than sideways, they lean back: `depth`
+   */
+  roomAhead(point: Geom.VectJson, nodeRef: NodeRef, depth: number, heading: Geom.VectJson): number {
+    const [sx, sz] = [-Math.sin(this.rotation.y), -Math.cos(this.rotation.y)];
+    const length = Math.hypot(heading.x, heading.y) || 1;
+    const [ahead, right] = [(heading.x * sx + heading.y * sz) / length, (heading.y * sx - heading.x * sz) / length];
+    if (ahead < -Math.abs(right)) return depth;
+    const side = right * npcConfig.dist.strafeWallSpan;
+    const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
+    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
+    return hit.t <= 1 ? hit.t * depth : depth;
   }
 
   setBubbleHeight(y: number) {

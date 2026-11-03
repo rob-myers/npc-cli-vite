@@ -96,7 +96,7 @@ a generator. `handle-message.ts` drives them all the same way.
 **`NpcQuery`** is an npc as an op sees them:
 
 - their point;
-- their `nodeRef`, the corridor head (`w.npc.getNodeRef`), looked up afresh if stale;
+- their `nodeRef`, the corridor head (`npc.nodeRef`), looked up afresh if stale;
 - their room;
 - the doors they may not pass. The worker's query filter refuses those door areas, bar the one they
   stand on, as `Npc.canPassNode` does.

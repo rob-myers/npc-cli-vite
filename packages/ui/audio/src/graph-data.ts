@@ -1,12 +1,13 @@
 import type { AudioKey } from "./steps";
 
-export type GraphGroup = "steps" | "style" | "fx" | "master";
+export type GraphGroup = "steps" | "style" | "fx" | "world" | "master";
 
 /** A channel's colour, on the desk and on the diagram */
 export const graphColours: Record<GraphGroup, string> = {
   steps: "#f59e0b",
   style: "#a78bfa",
   fx: "#5eead4",
+  world: "#93c5fd",
   master: "#f87171",
 };
 
@@ -33,9 +34,14 @@ export const graphNodes: GraphNode[] = [
   { id: "side", label: "pan", at: [3, 0.5], group: "steps", note: "by its foot" },
   { id: "stepsOut", label: "steps level", at: [5, 0.5], group: "steps", keys: ["steps"] },
 
-  { id: "sfx", label: "sound effect", at: [2, 2.5], group: "fx", note: "synthesised" },
+  { id: "sfx", label: "sound effect", at: [2, 2.5], group: "fx", note: "synthesised, sampled" },
+  { id: "held", label: "held voice", at: [2, 3.5], group: "fx", note: "a charge" },
   { id: "sfxPan", label: "pan", at: [3, 2.5], group: "fx", note: "by its npc" },
-  { id: "fxOut", label: "fx level", at: [4, 2.5], group: "fx", keys: ["fx"] },
+  { id: "fxOut", label: "fx level", at: [5, 2.5], group: "fx", keys: ["fx"] },
+  { id: "room", label: "room", at: [6, 3.5], group: "fx", note: "a small send" },
+  { id: "worldSfx", label: "door", at: [2, 4.5], group: "world", note: "sampled, synthesised" },
+  { id: "worldPan", label: "pan", at: [3, 4.5], group: "world", note: "by the door" },
+  { id: "worldOut", label: "world level", at: [5, 4.5], group: "world", keys: ["world"] },
 
   { id: "master", label: "master level", at: [8, 0.5], group: "master", keys: ["master"] },
   { id: "limiter", label: "limiter", at: [9, 0.5], group: "master", note: "peaks over -6 dB" },
@@ -51,8 +57,15 @@ export const graphEdges: GraphEdge[] = [
   { from: "stepsOut", to: "master" },
 
   { from: "sfx", to: "sfxPan" },
+  { from: "held", to: "sfxPan" },
   { from: "sfxPan", to: "fxOut" },
   { from: "fxOut", to: "master" },
+  { from: "fxOut", to: "room" },
+  { from: "room", to: "master" },
+  { from: "worldSfx", to: "worldPan" },
+  { from: "worldPan", to: "worldOut" },
+  { from: "worldOut", to: "master" },
+  { from: "worldOut", to: "room" },
 
   { from: "master", to: "limiter" },
   { from: "limiter", to: "analyser" },

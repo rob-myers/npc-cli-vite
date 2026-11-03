@@ -13,15 +13,15 @@ export function plan<O extends WW.JshOp>({ api, w, op }: Pick<JshCli.RunArg, "ap
 
 /** An npc as an op sees them: where they stand, their poly, their room and the doors they may not pass */
 export function npcQuery(w: JshCli.WorldState, npc: JshCli.Npc): WW.NpcQuery {
-  const agent = npc.agent;
-  if (agent === null) throw Error("no agent");
+  const { nodeRef } = npc;
+  if (nodeRef === null) throw Error("no agent");
   // an npc stood IN a doorway resolves to one of its two rooms, which owns that door either way
   const grKey = (w.npc.npcToRoom.get(npc.key) ?? w.findRoomContaining(npc.point, true))?.grKey ?? null;
   const doors = grKey === null ? [] : getRoomDoorKeys(w, grKey);
   return {
     key: npc.key,
     point: npc.point,
-    nodeRef: w.npc.getNodeRef(agent),
+    nodeRef,
     grKey,
     blockedGdKeys: doors.filter((gdKey) => w.e.npcCanAccess(npc.key, gdKey) === false),
   };

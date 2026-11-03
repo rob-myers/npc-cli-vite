@@ -1,11 +1,9 @@
-import { gain, loadBuffer, panner } from "./nodes";
+import savedDefaults from "./audio-defaults.json";
+import { gain, panner } from "./nodes";
+import { pickSample, type SampleBank, type Samples } from "./samples";
 
-/** The desk's settings: the footsteps, the sound effects and the mix */
-export const audioDefaults = {
-  master: 0.7,
-  steps: 0.8,
-  fx: 0.8,
-};
+/** The desk's settings: the footsteps, the sound effects and the mix. In DEV the desk saves them */
+export const audioDefaults = savedDefaults;
 
 export type AudioConfig = typeof audioDefaults;
 export type AudioKey = keyof AudioConfig;
@@ -15,6 +13,7 @@ export const audioRanges: Record<AudioKey, [number, number, number]> = {
   master: [0, 1, 0.01],
   steps: [0, 1, 0.01],
   fx: [0, 1, 0.01],
+  world: [0, 1, 0.01],
 };
 
 export const audioUnits: Partial<Record<AudioKey, string>> = {};
@@ -42,41 +41,11 @@ export function toAudioConfig(partial: Partial<Record<string, unknown>> = {}) {
   return config;
 }
 
-/** `count` files named `prefix0`, `prefix1`... */
-const numbered = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => `${prefix}${i}`);
-
-/** Each set of footsteps' files, under `samplesUrl`: all on tile. The player's is chosen on the desk */
-const stepFiles = {
-  tile: numbered("steps/tile-", 10),
-  tile3: numbered("steps/tile3-", 8),
-  tile4: numbered("steps/tile4-", 8),
-};
-
-export type StepSet = keyof typeof stepFiles;
-export const stepSets = Object.keys(stepFiles) as StepSet[];
-export const isStepSet = (key: unknown): key is StepSet => typeof key === "string" && key in stepFiles;
+/** The sets of footsteps, each a bank of samples: all on tile. The player's is chosen on the desk */
+export const stepSets = ["tile", "tile3", "tile4"] as const satisfies SampleBank[];
+export type StepSet = (typeof stepSets)[number];
+export const isStepSet = (key: unknown): key is StepSet => stepSets.includes(key as StepSet);
 export const stepSetDefault: StepSet = "tile4";
-
-/** Filled in as they arrive, so steps play once they have */
-export type Samples = Record<StepSet, AudioBuffer[]> & { ready: Promise<void> };
-
-/** Where the samples are served from — see its README for their sources */
-const samplesUrl = "/audio/";
-/** Changes with the files, so a hot reload fetches them again. Bump its version when they change in place */
-export const samplesKey = JSON.stringify([samplesUrl, stepFiles, 3]);
-
-export function loadSamples(ctx: BaseAudioContext): Samples {
-  const samples = { ready: Promise.resolve() } as Samples;
-  for (const set of stepSets) samples[set] = [];
-  samples.ready = Promise.all(
-    stepSets.map(async (set) => {
-      samples[set] = await Promise.all(stepFiles[set].map((path) => loadBuffer(ctx, `${samplesUrl}${path}.mp3`)));
-    }),
-  )
-    .then(() => {})
-    .catch((e) => console.error("audio: footsteps failed to load", e));
-  return samples;
-}
 
 export type Side = "left" | "right";
 
@@ -88,21 +57,15 @@ export type Footfall = { side: Side; run: boolean; level: number; pan?: number; 
 
 /** Footsteps, one per footfall, from the set `set()` names */
 export function createSteps(ctx: AudioContext, out: AudioNode, samples: Samples, set: () => StepSet) {
-  /** Each set's last sample, never played twice running */
-  const last = {} as Record<StepSet, number>;
-
   return {
     /** A footfall, now, as recorded */
     step({ side, level, pan = 0, set: own }: Footfall) {
       const key = own !== undefined && isStepSet(own) ? own : set();
-      const steps = samples[key];
-      if (steps.length === 0 || level <= 0) return;
-      let i = Math.floor(Math.random() * steps.length);
-      if (i === last[key] && steps.length > 1) i = (i + 1) % steps.length;
-      last[key] = i;
+      const buffer = level > 0 ? pickSample(samples, key) : null;
+      if (buffer === null) return;
       const at = ctx.currentTime;
       const source = ctx.createBufferSource();
-      source.buffer = steps[i];
+      source.buffer = buffer;
       // no two alike: a little louder or softer
       const amp = gain(ctx, level * stepLevel * (0.85 + Math.random() * 0.3));
       const place = panner(ctx, pan + (side === "left" ? -sidePan : sidePan));

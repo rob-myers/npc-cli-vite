@@ -610,7 +610,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 4},
           "type": "path",
-          "d": "M 57 234 L 129 234 L 246 409 L 246 541 L 114 541 L 57 484 Z",
+          "d": "M 65.5 234 L 129 234 L 246 409 L 246 541 L 128.5 541 L 65.5 478 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, -4.5, 4)"
         },

@@ -27,6 +27,7 @@
 
 - ✅ drop dodge animations
 - ✅ light-theme wall skirts/trims look worse now
+  - change ceiling hull/nonHull style
 
 - ✅ wasd look towards wall should be suppressed while strafe
 
@@ -53,20 +54,58 @@
   - ✅ `pose` cleanup
   - ✅ `pose kate head:rob --track`
 
-- fix psi arm while seated look to left
-- can hold space for more powerful phaser shot
-- while fully crouched c should totally un-crouch
-- `spots --show` -> `spots shown` and review other code
-- improve keychain icon e.g. lock
-- no park-teleport on collapse i.e. support collapse slow-move (nudged)
-  - change ceiling hull/nonHull style
-- tab select GlobalMenu should be able to open on enter
-- shade npcs by camera normal
-- consider improve turning animation
-- cleaner inventory toasts
-- armour recharge indicator
-- sound fx: open/close/lock/hold door, sit/stand/lie, phaser raise/lower
+- ✅ fix psi arm while seated look to left
+- ✅ `spots --show` -> `spots shown`
+- ✅ can hold space for more powerful phaser shot
+- ✅ while fully crouched c should totally un-crouch
+- ✅ improve keychain icon e.g. lock
+- ✅ tab selected GlobalMenu should open on enter
+- ❌ consider improve turning animation
+  - now have `pose rob head:kate` though
+- ✅ shade npcs by camera normal
+- ✅ option to flush old versions in netlify build
+  - ✅ try ASSET_HISTORY_RETAIN=1 in netlify ui
+  - ✅ verify https://lastredoubt.co/asset-history.json
+  - ✅ set ASSET_HISTORY_RETAIN=10
 
+- ✅ no park-teleport on collapse
+  - ✅ collapse slow-move
+- ✅ simplify `npc.agent`
+
+- ✅ can run in look-mode
+- ✅ ensure phaser does not jiggle whilst raised
+
+- ✅ combat mode on phaser raised
+  - force top-down with polar detent
+  - detent off during pause
+
+- ✅ mobile look and fire
+  - ✅ remove large fire thumb press
+  - ❌ follow-mode look via one-touch drag
+  - ✅ raised phaser ui: 1st touch + 300ms + 2nd touch charge + fire/cancel
+- ✅ clarify why saw old decor.0.png on mobile
+  - built sheets.json now has content hashes so can fetch images using `?v={hash}`
+- ❌ camera framing: continuous fov change
+
+- ✅ remove aim-mode but keep axes-locked-camera while phaser raised
+- ✅ try 0.2 slower/faster via down/up
+
+- ✅ improve run strafe: make more steady
+  - saw raised hand intersect wall
+
+- ✅ sound fx
+  - ✅ phaser raise/lower/charge/charged-fire/cool
+  - ✅ open/close/lock/hold door
+  - ✅ sit/stand/lie
+  - ✅ psi sounds
+  - ✅ change phaser fire
+  - ✅ BUG footsteps in bed
+  - ✅ put-down/pick-up item
+
+- phaser beam -> electricity?
+- rmb/2-tap look can be held e.g. for phaser aim
+- inventory toasts -> toasts at top
+- hide external spots in sense-mode
 
 - 🚧 return to scenarios and start acting them out
   - ✅ support `act {npcKey}` format
@@ -80,6 +119,13 @@
   - 🚧 guard-and-intruder sketch
 
 - narrator
+
+- BUG world connected to a hidden tab
+  - should probably always pause client when server paused
+  - could show toast in client too
+  - ensure World pauses on hide tab
+- armour integrity indicator
+- avoid initial sharp camera motion after change map and unpause
 
 ## World
 

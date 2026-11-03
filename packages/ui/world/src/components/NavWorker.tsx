@@ -23,7 +23,7 @@ export default function NavWorker() {
 
       onWorkerMessage(e: MessageEvent<WW.MsgFromNavWorker>) {
         const msg = e.data;
-        debug(`🤖 main thread received "${msg?.type}" from nav worker`);
+        if (msg?.type !== undefined) debug(`🤖 main thread received "${msg.type}" from nav worker`);
 
         switch (msg.type) {
           case "pong":
@@ -48,6 +48,7 @@ export default function NavWorker() {
           }
           default:
             msg satisfies never;
+            // debug(`🤖 main thread received reply "${(e.data as WW.NavWorkerReply).uid}" from nav worker`);
             state.settle(e.data as unknown as WW.NavWorkerReply); // another entry's, e.g. jsh's — see `nav-worker-factory`
         }
       },

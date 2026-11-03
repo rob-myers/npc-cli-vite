@@ -358,8 +358,17 @@ export const SheetsSchema = z.object({
   skinSlices: z.record(z.string(), SkinSlicesSheetEntrySchema).default({}),
   /** Aligned to sheets; its length is the number of the sheets. */
   skinSlicesSheetDims: z.array(SheetDimSchema).default([]),
+
+  /** A content hash per sheet png by filename, e.g. `decor.0.png`. Only a build writes it (`buildSheetHashPlugin`) */
+  hash: z.record(z.string(), z.string()).default({}),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
+
+/** A sheet png's url. Its hash, else `cacheBust`, ties it to this `sheets.json` */
+export function getSheetUrl(sheets: SheetsType, filename: string, cacheBust: string) {
+  const hash = sheets.hash[filename];
+  return `/sheet/${filename}${cacheBust || (hash ? `?v=${hash}` : "")}`;
+}
 
 export function getObstacleSheetKey(symbolKey: StarshipSymbolImageKey, obstacleId: number) {
   return `${symbolKey} ${obstacleId}`;
@@ -377,6 +386,7 @@ export const emptySheets: SheetsType = {
   maxSkinSheetDim: { width: 1, height: 1 },
   skinSlices: {},
   skinSlicesSheetDims: [],
+  hash: {},
 };
 
 export const AssetsSkinEntrySchema = z.object({

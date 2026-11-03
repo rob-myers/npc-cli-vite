@@ -168,8 +168,10 @@ export default function NpcFocus() {
       reachOf(by) {
         const entry = state.phasers.get(by);
         const npc = w.n?.[by];
-        const at = entry === undefined ? null : landingOf(entry, tmpEnd);
-        if (at === null || npc === undefined) return null;
+        if (entry === undefined || npc === undefined) return null;
+        // the red dot: on whom it targets, else where a shot at no one would land
+        const at = entry.npcKey !== null && entry.met != null ? entry.met.point : landingOf(entry, tmpEnd);
+        if (at === null) return null;
         return Math.hypot(at.x - npc.position.x, at.z - npc.position.z);
       },
       recast() {
@@ -506,7 +508,7 @@ export type State = {
   placeEnd(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson, shown: boolean): void;
   /** Pins `entry`'s dot where its ray meets whom it targets */
   placeOn(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson): void;
-  /** Metres along the ground from `by` to where a shot at no one would land. `null` unless aiming at something */
+  /** Metres along the ground from `by` to their red dot: on whom they target, else where a shot would land. `null` unless aiming */
   reachOf(by: string): null | number;
   /** Casts again along every aim, e.g. a door or shield changed */
   recast(): void;

@@ -7,7 +7,8 @@ export const helpIntro = {
   title: "The desk",
   text: [
     "The player's footsteps on a tile deck, one each time a foot of theirs lands: louder and a shade quicker running, quieter crouched or turning on the spot. The step button plays one, shift for a running one.",
-    "The fx strip plays the weapon sounds.",
+    "The fx strip plays the phaser's sounds. Its charge button fills a charge, then fires: shift cancels it instead.",
+    "The world strip plays the doors: a button per voice opens one, shift shuts it.",
     "Drag a knob or fader, or focus it and use the arrow keys, with shift for bigger steps. A double click restores its default.",
   ],
 };
@@ -26,7 +27,14 @@ export const help: Record<AudioKey, { title: string; when: HelpWhen; text: strin
     title: "Fx level",
     when: "now",
     text: [
-      "How loud the weapon sounds are: a phaser's zap, a burn, a clunk off armour, static through a ghost, and a shot striking a wall. The buttons above play each.",
+      "How loud the phaser's sounds are: raised, lowered, charging, fired, cooling, and where a shot ends. The buttons above play each.",
+    ],
+  },
+  world: {
+    title: "World level",
+    when: "now",
+    text: [
+      "How loud the World's own sounds are: doors sliding open and shut, locking, held, and refusing someone. The buttons above play each.",
     ],
   },
   master: {

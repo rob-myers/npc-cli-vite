@@ -5,7 +5,7 @@ import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import { wallHeight } from "../const.env";
-import { hitConfig, lieAim } from "../const.npc";
+import { hitConfig, lieAim, upperFadeSecs } from "../const.npc";
 import { aimToRay, alongAim } from "../service/aim-target";
 import { eased } from "../service/fade";
 import {
@@ -195,11 +195,12 @@ export default function Phasers() {
         });
       },
       disarm(...npcKeys) {
-        for (const npcKey of npcKeys) {
+        const lowered = npcKeys.filter((npcKey) => {
           const arm = state.arms.get(npcKey);
-          if (arm !== undefined) lower(arm);
-        }
+          return arm !== undefined && lower(arm);
+        });
         state.sync();
+        lowered.length > 0 && w.events.next({ key: "phasers", armed: false, npcKeys: lowered });
       },
       ensure(npcKey) {
         let arm = state.arms.get(npcKey);
@@ -561,7 +562,8 @@ export default function Phasers() {
         if (outcome !== "hit" && npc.key === w.player.key) w.hud?.say(outcome);
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
-        if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined) lower(theirs);
+        if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined && lower(theirs))
+          w.events.next({ key: "phasers", armed: false, npcKeys: [dst.key] });
       },
       meetPart(npc, arm, dst, to) {
         const tip = tipOf(npc, arm, tmpTip);
@@ -644,6 +646,7 @@ export default function Phasers() {
           lower(arm);
           arm.lowerAt = null;
           w.hud?.update();
+          w.events.next({ key: "phasers", armed: false, npcKeys: [npc.key] });
         }
         const { support } = npc.anim; // undefined on an instance from before hmr
         // a hand to steady it, once held a moment: a tap fires before it gets there
@@ -700,7 +703,9 @@ export default function Phasers() {
         let swingHit = false;
         if (gunY !== null) {
           for (const { top, bottom } of arm.reach.obstacles) {
-            if (gunY > bottom - phaserConfig.gunClear && gunY < top + phaserConfig.gunClear) arm.armHit = true;
+            // a top under the gun's line may still meet the hand and gun, which hang below it
+            const underside = gunY - phaserConfig.gunDrop;
+            if (gunY > bottom - phaserConfig.gunClear && underside < top + phaserConfig.gunClear) arm.armHit = true;
             if (top > gunY - phaserConfig.restBelowGun && bottom < gunY) swingHit = true;
           }
         }
@@ -733,7 +738,8 @@ export default function Phasers() {
         const pose = waiting ? null : via ? byAvoid(goal, shown, settled) : goal;
         if (pose === null) {
           // raised still, lain, it is stowed: slowly, as from a wall
-          if (isPhaserPose(shown)) anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined });
+          if (isPhaserPose(shown))
+            anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined, byWall: arm.armHit });
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs =
@@ -742,12 +748,24 @@ export default function Phasers() {
               : shown === null
                 ? undefined
                 : phaserConfig.drawOutSecs;
-          anim.setUpper(pose, { swapSecs, past: sat });
+          anim.setUpper(pose, { swapSecs, past: sat, byWall: arm.armHit });
+        }
+        // the left arm drawn in with the right, so a run's guard keeps off the wall: only ours, never psi's or a reach
+        const leftPose = pose === phaserConfig.avoid && tucked === false ? pose : null;
+        const shownLeft = anim.upperLeft.target === 1 ? anim.upperLeft.key : null;
+        if (leftPose !== shownLeft && (shownLeft === null || isPhaserPose(shownLeft))) {
+          anim.setUpper(leftPose, { side: "left", fadeSecs: phaserConfig.drawInSecs });
         }
 
         // the stance — theirs to stand in, and only ours to put back. Sat, lain or crouched, the seat's, bed's or crouch's
-        /** Past an obstacle, not before the arm is up: the stance's own arm would swing the gun through it */
-        const armUp = via === false || arm.ownIdle !== null || (isPhaserPose(anim.upper.key) && settled);
+        /**
+         * Past an obstacle or by a wall, not before the arm is up: the stance's own arm would swing the gun through it.
+         * Raised from rest, not before a cast says which.
+         */
+        const armUp =
+          (waiting === false && via === false && arm.armHit === false) ||
+          arm.ownIdle !== null ||
+          (isPhaserPose(anim.upper.key) && settled);
         const stance =
           armed === true && anim.posture === "stand" && anim.crouched === false && armUp ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {
@@ -833,6 +851,14 @@ export default function Phasers() {
           Object.assign(arm.armAim, { at: beam.at, weight: eased(beam.shown.presence), maxRad: undefined });
         }
         arm.armAim.head = sat === true ? 0 : undefined; // sat, their turn has the head on them already
+        // stood, the muzzle held on the aim's line, as the red dot is
+        const stood = sat === false && lain === false;
+        const holding = armed === true && stood && anim.upper.key !== phaserConfig.avoid; // not drawn in
+        const hold = (arm.hold ??= { line: new THREE.Ray(), ramp: 0, weight: 0 });
+        hold.ramp = THREE.MathUtils.clamp(hold.ramp + (holding ? delta : -delta) / upperFadeSecs, 0, 1);
+        hold.weight = eased(hold.ramp);
+        if (hold.weight > 0 && stood) holdLineOf(npc, arm, hold.line);
+        arm.armAim.hold = hold.weight > 0 && stood ? hold : undefined;
         if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = aiming ? arm.armAim : null;
         // in hand whilst they carry it and stand, raised or lowered — or still armed, having just lost it
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
@@ -1076,6 +1102,8 @@ type ArmEntry = {
   pitchAt: null | number;
   /** The arm's aim we set, down the beam */
   armAim: null | UpperAim;
+  /** Stood, the line the muzzle is held on, eased in whilst armed — see `holdLineOf` */
+  hold?: { line: THREE.Ray; ramp: number; weight: number };
   /** Where the arm points sat or lain, ahead of any beam — see `armAimAt` */
   armAt: THREE.Vector3;
   armed: boolean;
@@ -1254,6 +1282,14 @@ function gunLine(npc: Npc, arm: ArmEntry): Seg {
   return [x, z, x + fx * phaserConfig.reach, z + fz * phaserConfig.reach];
 }
 
+/** Stood, their aim's line from the muzzle at full aim, raised or still coming down: as `aimOf`, armed or not */
+function holdLineOf(npc: Npc, arm: ArmEntry, out: THREE.Ray) {
+  const [ax, az, x, z] = gunLine(npc, arm);
+  const bearing = geomService.getThreeRotationY(z - az, x - ax);
+  const y = npc.anim.headY - phaserConfig.gunBelowHead;
+  return aimToRay({ from: { x, y: z }, bearing, y, pitch: arm.pitch ?? 0 }, out);
+}
+
 /** Their muzzle at full aim, on the ground */
 function muzzleAt(npc: Npc, arm: ArmEntry): Geom.VectJson {
   const [, , x, y] = gunLine(npc, arm);
@@ -1406,6 +1442,8 @@ const phaserConfig = {
   gunBelowHead: 0.07,
   /** Metres the gun must clear an obstacle by, above or below */
   gunClear: 0.05,
+  /** Metres the hand and the gun's body hang below the gun's line, as an obstacle's top must clear */
+  gunDrop: 0.12,
   /** Metres the hand hangs at rest below the gun raised, which a raise or lower swings between */
   restBelowGun: 0.5,
   /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
@@ -1489,8 +1527,9 @@ function levelOf(charge: undefined | ArmEntry["charge"], now: number) {
   return charge == null ? 0 : Math.min(1, (now - charge.since) / phaserConfig.chargeSecs);
 }
 
-/** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody */
+/** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody. `true` if it was raised */
 function lower(arm: ArmEntry) {
+  const raised = arm.armed;
   Object.assign(arm, {
     armed: false,
     target: null,
@@ -1502,6 +1541,7 @@ function lower(arm: ArmEntry) {
     charge: null,
     cool: null,
   });
+  return raised;
 }
 
 /** Faded right out, mid-teleport: in their hand until then, and again as they fade back in */

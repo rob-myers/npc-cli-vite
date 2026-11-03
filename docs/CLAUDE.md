@@ -14,6 +14,7 @@
   - A plain statement, subject first, one idea to a sentence. Say what the thing is or returns before why.
   - No stream of consciousness: no clauses strung together on commas, dashes and colons, no "X, so Y — unless Z: W".
   - A second idea is a second short sentence, or left out.
+- **"The plan doc" is the plan review view** in the VS Code extension, opened by `ExitPlanMode` on the plan file (entering plan mode first if need be). It is never `code <file>` or a Claude Doc.
 - **Clipboard markdown is plain ASCII** (e.g. a PR body via `pbcopy`). No typographic dashes, arrows, `±`, `°`, `§`, no emoji such as 🤖. Check with `grep -P '[^\x00-\x7F]'` first.
 
 ## Project structure
@@ -46,6 +47,9 @@ Pnpm monorepo. Key packages:
   - The npc tuning is split off so editing it doesn't rebuild the World. `World.tsx` refetches on its own HMR, and so does every importer of `const.env`, its hooks included.
   - So only npc modules import `const.npc`, including those drawing npcs or what surrounds them, e.g. `NpcRings`, `NpcBreath`. Never `World`, `WorldView` or their hooks.
   - What the World builds around an npc, `npcDims`, is in `const.env`.
+- **An npc's body never shows through a wall.** Keep to this when adding a pose or gait.
+  - The navmesh stops `wallOutset` (0.25m) short of walls, room enough for an upright body.
+  - What reaches further gives way instead. A strafing run with a wall ahead walks (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
 
 **Decor**
 - Never scale a decor quad non-uniformly. To reshape one, e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`.
@@ -68,7 +72,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Strafing | `docs/npc-strafe.md` | Whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing. `syncStrafe` blends four directional gaits by heading, paced to the ground each covers. |
 | Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
 | Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their menu (`PickMenu`). |
-| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
+| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
 | Workers | `docs/workers.md` | See [Navigation](#navigation-and-crowd). |
 | Time | `docs/time.md` | Two clocks. `w.gameTime` is scaled (`0`-`2`, the menu's slider, jsh `timescale`) and held by a pause: behaviours, animations, timers and detection run on it. `w.realTime` never is: the camera and UI marks. Wait in game time with `w.e.after`, `w.e.wait` or jsh `wSleep`, never `setTimeout`. |
 | Tasks | `docs/tasks.md` | A jsh command's wait on the World, which a kill must end, runs as a `Task` (`@npc-cli/util`), e.g. `task.until` on World state. So does World code with async steps of its own. |
@@ -78,8 +82,8 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Inventory | `docs/inventory.md` | `WorldHud` is the player's bar: psi, phaser, keys, then carried items (`q` psi, `e` phaser). It reads `w.e.carried`, the defs of decor taken, by npcKey, per World. An item is a runtime decor with `meta.item`. jsh `give` / `drop`, and `inventory` for what a press does. |
 | Engagements | `docs/engagements.md` | One npc shooting another. A shot's outcome (`hit`, `ghost`, `armour`) is decided as it locks on: the bar's debug badge sets it, else it hits. Ghost: they become a dot screen and it passes through them. Armour: it glances off in sparks, and they flinch. Also what a hit does, and targeting: a raised phaser targets whom the muzzle's line crosses, in the rooms its cast passes through (a red dot, pulsing on them), and Space fires, along the line to the first wall, door, obstacle, decor quad (bar switches) or shield if no one is crossed (a red dot marks it, the player's or one given a laser). Who targets whom shows as a dot over them. |
 | Psi | `docs/psi.md` | Psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`). Raised, their left hand is at their temple, and a press on another npc focuses on them, offering placeholder actions (`psiActions`). A thought (`w.speech.readThought`, jsh `demo_thoughts`) shows over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha. |
-| Audio | `docs/audio.md` | One engine per page (`@npc-cli/ui__audio/engine`, `getAudio()`): the player's footsteps, one per footfall read off their foot bones each tick, and synthesised weapon sounds, both from jsh `sounds` (in the default profile). The Audio pane is its mixing desk. The World never imports it. |
-| Camera | `docs/camera.md` | A custom `MapControls` (`service/camera-controls.ts`). A left drag pans and a right drag turns, swapped by Shift, ctrl or alt. Zoom eases between two stops. `embodied` mode sets what may be steered by zoom, and `w` heads up the screen, snapped near an axis. Following, the view frames the player and their frontier, read off the light sweep. |
+| Audio | `docs/audio.md` | One engine per page (`@npc-cli/ui__audio/engine`, `getAudio()`): the player's footsteps, one per footfall read off their foot bones each tick, and the phaser's and doors' sounds, synthesised over CC0 samples, all from jsh `sounds` (in the default profile). Npcs near the player are heard too. The Audio pane is its mixing desk. The World never imports it. |
+| Camera | `docs/camera.md` | A custom `MapControls` (`service/camera-controls.ts`). A left drag pans and a right drag turns, swapped by Shift, ctrl or alt. Zoom eases between two stops. `embodied` mode sets what may be steered by zoom. WASD heading: the w-key heads along a world axis within 20° of screen-up, and whilst `wasd_delta` runs a held key turns the view to snap. Following, the view frames the player and their frontier, read off the light sweep. |
 | Shields | `docs/shields.md` | A decor rect with `meta.shield` stands as a see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav worker. One with a frequency (`meta.freq`, jsh `shield`) lets through a phaser granted it (jsh `phaser`), and deactivates any other carried through it. `freq: null` stops all fire and deactivates none. |
 | MapEdit saving | `docs/map-edit.md` | Playground files (key ending `--playground` / `-playground`) save to a localStorage draft, and are the only thing editable in production. Everything else saves to the filesystem in DEV via `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand, and its node NAMES are its tags. |
 | Symbol generation | `docs/symbol-generation.md` | A symbol's JSON can be written from its png, saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An obstacle polygon takes in its drawn border, with no more points than its curves need. Also covers placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks. |
@@ -97,7 +101,9 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 ## Player input
 
-- **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see `embodied` mode in `docs/camera.md`.
+- **Walking.** The w, a, s and d keys head as seen, snapped onto a world axis within 20°. See WASD heading in `docs/camera.md`.
+  - The heading is kept whilst a move key is held. A fresh press of another takes it again from the view.
+  - Whilst `wasd_delta` runs, a held key turns the view to within 20° of the nearest axis, and the w-key snaps onto it there. So where the w-key heads depends on the view alone.
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Gait.** `x` held runs, once the key repeats, and a tap ends the run (`w.player.setGait`, `getGait`). A toast names each.
@@ -105,12 +111,12 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Strafing.** A double tap of Shift toggles it (`toggleStrafe`), whatever else is held, but not whilst aiming. Whilst on they keep their facing, so WASD strafes (`w.player.strafe`, `keepAim` in `aimAtPointer`). Standing only, never over another's aim. A raised phaser strafes them whatever is held. See `docs/npc-strafe.md`.
 - **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
-  - A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
-- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held charges it (the gun brightens and shakes), and let go fires, the beam fuller by the charge. `e` whilst charging cancels into a cooldown, the phaser left raised. The "aim" notice's fire button does the same on touch. Space with the phaser lowered raises it. See `docs/engagements.md`.
-- **Closing the page.** Ctrl or cmd with `w` closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
+  - A double tap of the w, a, s or d key runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
+- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held charges it (the gun brightens and shakes), and let go fires, the beam fuller by the charge. `e` whilst charging cancels into a cooldown, the phaser left raised. On touch, raised, a finger held anywhere, then a second after `fireTouchDelayMs`, charges where they face, and letting it go fires (`onFireTouch`). Space with the phaser lowered raises it. See `docs/engagements.md`.
+- **Closing the page.** Ctrl or cmd with the w-key closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**
   - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
-  - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross.
+  - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross, unless a finger drags it whilst following.
   - On a desktop, a right click that picks something does the same (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
   - A double tap of `r` starts look mode (`w.player.look`, `toggleLook`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "look" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
     - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `lookYieldSecs` after. Its notice greys meanwhile.
@@ -122,6 +128,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
 - **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
+- **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
 
 **Workers** (see `docs/workers.md`):
 - Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycasts on a `SegGrid`, `w.navWorker`). See `docs/workers.md`.

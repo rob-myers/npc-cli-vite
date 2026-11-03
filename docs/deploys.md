@@ -13,6 +13,7 @@ still on the site, and the site keeps it only if nothing renamed it needlessly.
 | `packages/ui-sdk/src/StaleSiteNotice.tsx` | what a ui shows when its chunk won't load |
 | `packages/util/src/service/build-info.ts` | `getBuildInfo`, `fetchLatestBuild`, `simulatedStaleUi` |
 | `scripts/src/vite-plugin-asset-history.ts` | `assetHistoryPlugin` — carries old assets forward, `/asset-history.json` |
+| `scripts/src/vite-plugin-build-sheet-hash.ts` | `buildSheetHashPlugin` — a hash per sheet png in the built `sheets.json` |
 | `scripts/src/vite-plugin-stable-entry.ts` | `stableEntryPlugin` — keeps chunks from importing the entry |
 | `packages/ui-registry/src/ui-schemas.ts` | `uiSchemas` — each ui's schema, without its lazy component |
 | `packages/app/netlify/functions/asset-not-found.mts` | the uncached 404 for a missing asset |
@@ -59,6 +60,11 @@ node -e "require('fs').writeFileSync('packages/app/dist/version.json', JSON.stri
 `sheets.json`, `sheet/*`, ...) is unhashed, so `max-age=0, must-revalidate`: a 304 when unchanged,
 but never new code paired with old data. `sheets.json` and `sheet/*` are keyed by index, so a
 stale pair gives wrong uvs rather than an error.
+
+A page's in-memory image cache ignores those headers, e.g. mobile Safari's on a World remount. So a
+build writes each sheet png's content hash into `dist/sheets.json` (`hash`, `buildSheetHashPlugin`), and
+`getSheetUrl` loads it as `sheet/decor.0.png?v=<hash>`. A png is then only ever paired with the
+`sheets.json` that names it. The committed `sheets.json` has no `hash`, and dev uses its own cache bust.
 
 ## Keeping old assets
 

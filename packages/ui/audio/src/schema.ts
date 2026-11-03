@@ -14,6 +14,8 @@ export const AudioUiMetaSchema = z.object({
   configVersion: z.number().optional(),
   /** Which set of footsteps plays. One unreadable is dropped */
   stepSet: z.string().optional().catch(undefined),
+  /** What sings whilst psi is raised. One unreadable is dropped */
+  psiVoice: z.string().optional().catch(undefined),
   /** The desk of controls, else the diagram of the engine's nodes */
   view: z.enum(["desk", "graph"]).optional(),
 });

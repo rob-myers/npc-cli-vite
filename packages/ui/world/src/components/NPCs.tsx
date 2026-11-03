@@ -11,7 +11,6 @@ import {
   createFindNearestPolyResult,
   type FindNearestPolyResult,
   findNearestPoly,
-  type NodeRef,
   type QueryFilter,
 } from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
@@ -278,9 +277,6 @@ export default function NPCs() {
         }
         return npc;
       },
-      getNodeRef(agent) {
-        return agent.corridor.path[0];
-      },
       getClosestPoly(targetPos, accuracy = 0.005, queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
         const { halfExtents, distance } = closestPolyByAccuracy[accuracy];
@@ -373,7 +369,9 @@ export default function NPCs() {
             // to arrive they walk in — see `walkIn`; gliding through, they keep running
             const { maxSpeed, walkIn } = agentConfig;
             const t = npc.anim.arrive === true ? (targetDist - walkIn.to) / (walkIn.from - walkIn.to) : 1;
-            agent.maxSpeed = maxSpeed.walk + (maxSpeed.run - maxSpeed.walk) * Math.max(0, Math.min(1, t));
+            // strafing, as fast as this heading allows
+            const { walk, run } = npc.anim.strafing === true ? npc.anim.strafeTop : maxSpeed;
+            agent.maxSpeed = walk + (run - walk) * Math.max(0, Math.min(1, t));
           }
 
           // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
@@ -445,6 +443,7 @@ export default function NPCs() {
           getAgentParams(),
         );
         state.byAgentId[npc.agentId] = npc;
+        npc.agent = state.crowd.agents[npc.agentId];
 
         npc.pinTo(closePolyResult, groundPoint);
 
@@ -459,6 +458,7 @@ export default function NPCs() {
           crowdApi.removeAgent(state.crowd, npc.agentId);
           delete state.byAgentId[npc.agentId];
           npc.agentId = null;
+          npc.agent = null;
         }
 
         if (keepPhysics === true) return;
@@ -916,8 +916,6 @@ export type State = {
   findFreeDoMeta(meta: Meta, npcKey: string, near?: Geom.VectJson): JshCli.FindDoMetaResult;
   /** Of `points`, the free one nearest `near`, e.g. the point picked, theirs included: without it, theirs, else the first free */
   findFreeDoPoint(points: Geomorph.DecorPoint[], npcKey: string, near?: Geom.VectJson): null | Geomorph.DecorPoint;
-  /** The navmesh poly under an agent, which the crowd keeps under their feet */
-  getNodeRef(agent: crowd.Agent): NodeRef;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
     accuracy?: 0.005 | 0.1 | 0.5 | 4,
@@ -1030,7 +1028,17 @@ const tmpVector3 = new THREE.Vector3();
  * run together, so a crossfade between them near the target does not hold the arrival up
  */
 function moveClipFadedIn(npc: Npc) {
-  const gaits = ["walk", "run", "backwards", "strafe_left", "strafe_right"] as const;
+  const gaits = [
+    "walk",
+    "run",
+    "run_ahead",
+    "backwards",
+    "strafe_left",
+    "strafe_right",
+    "run_backwards",
+    "run_strafe_left",
+    "run_strafe_right",
+  ] as const;
   return (
     gaits.reduce((sum, key) => sum + (npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0), 0) >=
     0.99

@@ -45,6 +45,14 @@ turning to it is the usual exponential ease.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
+## Walls
+
+An npc's body never shows through a wall (see `CLAUDE.md`). Strafing along a wall they face, the run's forward lean takes their head and hands past the navmesh's margin from walls (`wallOutset`).
+- So with such a wall within `strafeWalkNear`, `wasd_delta --nav` has a strafing player walk (`anim.nearWall`, which `anim.fast` heeds). Upright, the navmesh's margin is room enough. Clear of it, they run again.
+- `npc.roomAhead` casts one navmesh ray ahead, `strafeWalkNear` deep, leant out towards the side they move by up to `strafeWallSpan`, to their hands. So a corner they run into is seen. Backing up, they lean back, so none is cast.
+- It is not cast in a doorway (`w.e.npcToDoors[key].inside`), whose sides would read as a wall ahead whilst they pass through sideways.
+- Npcs moving by path are not checked.
+
 ## The blend
 
 Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
@@ -99,19 +107,52 @@ They were not keyed by hand but **solved from a foot plan**, so a planted foot n
   slightly bent, can reach. The rig's hips are off-centre, so it bobs once per cycle.
 - Each leg's hip, knee and foot angles are then solved exactly against the rig's bone lengths, feet
   kept flat, and keyed at 24 samples a cycle. The torso and arms stay upright.
+- A leg has two solutions, its knee bent either way. The solver keeps the knee bent forwards (negative),
+  else a long reach can settle on the other and carry it on from frame to frame.
 - `strafe_right` is `strafe_left` mirrored (left and right bones swapped, `y`/`z` rotations negated)
   and offset half a cycle, so the right foot still swings first.
 
-Stride `0.6` model units per cycle, i.e. `0.41` m in game — `gaitStride`'s strafe entries. Change
-the clips and those must be re-measured.
+Stride `0.6` model units per cycle, i.e. `0.48` m in game at `npcScale` `0.8`. `gaitStride`'s strafe
+entries (`0.41`) date from `npcScale` `0.7`, so need re-measuring. Change the clips and they must be too.
+
+**The run set** is `run_ahead`, `run_strafe_right`, `run_backwards` and `run_strafe_left`, each `run`'s
+`0.752` s. All four hold the arms in a guard, fists before the chest, bobbing a little with the hips. A run
+not strafing is `run`, whose arms swing.
+
+- `run_ahead` is `run` with guard arms. It is the pose whilst run-strafing. Let go, it crossfades to `run`.
+
+- `run_strafe_left` is solved the same way, on `run`'s timing: each foot planted `7/24` of a cycle, the
+  right lifting at `19/24`, with flight between. Stride `1.0` model units (`0.8` m).
+  - The swinging foot leaves and lands at `0.3` of the planted feet's speed (`--tangent`). At full speed a
+    long swing overshoots out of reach.
+  - In flight the hips may rise as high as a leg hanging straight.
+  - Its torso is `run`'s.
+- `run_strafe_right` is its mirror, as above.
+- `run_backwards` is a backpedal, solved the same way with `--axis back`: each foot in line with its hip, planted
+  feet travelling forwards. Short quick steps: stride `1.25` model units (`1.0` m), each foot planted `0.45` of a
+  cycle, so a little flight. The right foot lifts at `0.3458`, so that, offset half a cycle in the blend, its stance
+  is centred on the strafes'.
+  - Backing up, a swinging foot far ahead or behind holds the hips down too, else it lifts off out of reach.
+  - Its torso was `run`'s reversed in time, then the hips and stomach tipped back `23°` and `12°`, the
+    head `23°` down to stay level. The solve keeps them.
 
 **Regenerating** — `scripts/src/bins/gen-strafe-keys.ts` does the solve, reading the leg bones from
-`current.gltf`; its flags are the plan's parameters (`--stride --duty --lift --soft --harmonics --gap`).
-It prints the keyframes as JSON, or with `--blockbench` a snippet to paste into Blockbench's console
-(or run via its MCP `risky_eval`): it keys `strafe_left`'s legs and hips, keeps its torso and arms,
-and regenerates `strafe_right`. Then export `current.gltf`.
+`current.gltf`. Its flags are the plan's parameters (`--stride --duty --lift --tangent --soft --harmonics --gap --bob`),
+and the clip's (`--name --length --swing --upper --axis`). It prints the keyframes as JSON, or with
+`--blockbench` a snippet to paste into Blockbench's console (or run via its MCP `risky_eval`).
+- The snippet keys `--name`'s legs and hips, and regenerates its `right` mirror (not with `--axis back`).
+- `--bob` scales the hips' rise and fall about their lowest point. The run strafes and backpedal keep `0.5` and `0.3`, so they bob
+  as little as `run_ahead`, about `0.037` model units. At `1` they bobbed two and three times as much, with longer flight.
+- It keeps the torso and arms, unless `--upper` names a clip to take them from. Then the guard arms must be keyed
+  again: each arm bone's rotation, a fixed pose plus the hips' bob, by hand in Blockbench's console.
+
+Then export `current.gltf`.
 ```sh
 node scripts/src/bins/gen-strafe-keys.ts --stride 0.6 --harmonics 2 --blockbench | pbcopy
+node scripts/src/bins/gen-strafe-keys.ts --name run_strafe_left --length 0.75188 --swing 0.7917 \
+  --duty 0.2917 --stride 1.0 --lift 0.2 --tangent 0.3 --bob 0.5 --blockbench | pbcopy
+node scripts/src/bins/gen-strafe-keys.ts --axis back --name run_backwards --length 0.75188 --swing 0.3458 \
+  --stride 1.25 --duty 0.45 --lift 0.12 --tangent 0.5 --bob 0.3 --blockbench | pbcopy
 ```
 
 ## `backstep`

@@ -1,6 +1,14 @@
 declare namespace JshCli {
   type Event =
     | { key: "carried"; npcKey: string }
+    | {
+        /** An item of `kind` changed hands, after their reach: taken up, else put down, maybe on the floor */
+        key: "item-handled";
+        npcKey: string;
+        kind: string;
+        taken: boolean;
+        floor: boolean;
+      }
     | { key: "decor-created"; decorKeys: string[] }
     | { key: "decor-removed"; decorKeys: string[] }
     | { key: "decor-ready" }
@@ -15,6 +23,14 @@ declare namespace JshCli {
         /** A door was held or let go, or its `auto` or `proximity` changed */
         key: "door-toggled";
         gdKey: Geomorph.GmDoorKey;
+        what: "held" | keyof import("./service/storage").DoorFlags;
+        on: boolean;
+      }
+    | {
+        /** A locked door refused to open for `npcKey`, who would have walked through it */
+        key: "door-denied";
+        gdKey: Geomorph.GmDoorKey;
+        npcKey: string;
       }
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
@@ -62,7 +78,12 @@ declare namespace JshCli {
         key: "stopped-moving";
         npcKey: string;
       }
-    | { key: "phasers"; armed: boolean; npcKeys: string[] }
+    | {
+        /** Their phasers were raised, else lowered */
+        key: "phasers";
+        armed: boolean;
+        npcKeys: string[];
+      }
     | {
         /** A shot left `by`'s phaser: at someone as its beam locks on, else along its aim */
         key: "phaser-fired";
@@ -233,7 +254,7 @@ declare namespace JshCli {
     strafe?: boolean;
     /** A target neither doable nor navigable becomes the navigable point nearest it, rather than throwing */
     near?: boolean;
-    /** A push, e.g. a sidestep's: it moves them even whilst stood pacified */
+    /** A push, e.g. a sidestep's: it moves them even whilst stood pacified, or collapsed */
     shove?: boolean;
     /** Fade onto or off a doable however far. Else only within `doableLook`, walking the rest */
     far?: boolean;

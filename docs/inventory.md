@@ -81,7 +81,8 @@ ONE arm. After `reachSecs` the item is there and their arm comes back. It stays 
 put down one thing at a time.
 
 Taking is the same in reverse (`w.e.takeItem`): they turn to the item and reach, the `pick_up` clip. After
-`reachSecs` it is theirs and gone from the map. Both share `w.e.reachFor`.
+`reachSecs` it is theirs and gone from the map. Both share `w.e.reachFor`. As the item changes hands, either emits `item-handled`
+(`kind`, `taken`, `floor`), which jsh `sounds` plays: see `docs/audio.md`.
 
 Which arm:
 
@@ -211,9 +212,14 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - A wall, door or shield is looked for along two rays from their middle (`armEnds`): ahead, and to the gun's outer
   side at `reach`. Stood, the gun is right of their middle, so a jamb meets it before it meets the first ray.
 - Both rays end `leadSecs` of their velocity on, so the arm is in before a strafe takes the gun into a wall.
-- Stood or crouched, an obstacle blocks too if the gun's height is within its span, with `gunClear` to spare. The gun
-  is `gunBelowHead` under their head's pivot (`anim.headY`): about 1.1m stood, 0.67m crouched. So most obstacles block
-  only a crouch. Sat or lain, obstacles are ignored, being what they sit or lie at.
+- Their left arm is drawn in too, hanging as in `phaser_aim_avoid`, else a run's guard puts that fist into the wall. Not
+  whilst it has psi or a reach, nor whilst tucked.
+- Raised or lowered by a wall (`armHit`), the arm goes by way of `sitArmVia`, as sat at a table (`byWall` in
+  `setUpper`). Their stance waits until the arm is up. Else either swings the hand out through the wall.
+- Stood or crouched, an obstacle blocks too if the gun is within its span, with `gunClear` to spare. Its top is
+  tested against the gun's underside, `gunDrop` below the gun's line, as the hand and the gun's body hang below it.
+  The gun is `gunBelowHead` under their head's pivot (`anim.headY`): about 1.1m stood, 0.67m crouched. So most
+  obstacles block only a crouch. Sat or lain, obstacles are ignored, being what they sit or lie at.
 - A cast keeps every obstacle within reach, at any height (`arm.reach.obstacles`), and each tick tests them against the gun's
   height now. So crouching draws in at once, without waiting for the next cast. Crouched, it draws in over
   `quickDrawInSecs`.

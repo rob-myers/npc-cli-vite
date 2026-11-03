@@ -19,6 +19,13 @@ the gather and its re-gather threshold. `getAgentParams` sets both; `devHotReloa
 It is `0` (`crowdConfig`): the navmesh is already cut back from walls by a body's width, so avoidance takes
 no walls, else a narrow strip of navmesh slows a walker as if they touched one.
 
+So `agent.boundary.segments` is always empty. Code wanting the walls near an npc gathers them itself,
+as the crowd would: `findLocalNeighbourhood` from their poly (`npc.nodeRef`), then
+`getPolyWallSegments` on each poly found, kept within range. Two places do:
+
+- `queryBoundary` in `plan.worker.ts`, for `park`. `debug_boundary npc:rob` draws what it finds.
+- `wallNear` in `sidestep.ts`, so a collapsed npc keeps to a wall.
+
 ## 3. A corner given up stays given up
 
 Each tick an agent steers at the first corner of its corridor. Navcat gives a corner up only

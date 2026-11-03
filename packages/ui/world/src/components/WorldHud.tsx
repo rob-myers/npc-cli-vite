@@ -3,7 +3,6 @@ import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
 import {
   ArrowsHorizontalIcon,
-  FingerprintIcon,
   LockIcon,
   LockOpenIcon,
   PersonSimpleRunIcon,
@@ -110,14 +109,6 @@ export default function WorldHud() {
       watchAim(el) {
         return w.e.addFrameCallback(() => {
           el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
-        });
-      },
-      watchFire(el) {
-        return w.e.addFrameCallback(() => {
-          if (el === null) return;
-          const { key } = w.player;
-          el.classList.toggle("blocked", w.phasers?.isDrawnIn(key) === true || w.phasers?.isCooling(key) === true);
-          el.style.setProperty("--charge", `${w.phasers?.chargeOf(key) ?? 0}`); // it glows as it charges
         });
       },
       watchLook(el) {
@@ -280,31 +271,6 @@ export default function WorldHud() {
           {/* kept whilst aiming or strafing, an "x" ending one that may be ended */}
           {kept.length > 0 && (
             <div className="flex items-center gap-1">
-              {armed && big && (
-                // touch has no Space: held it charges, let go it fires
-                <button
-                  ref={state.watchFire}
-                  type="button"
-                  tabIndex={-1}
-                  title="fire: hold to charge"
-                  className={cn(
-                    "pointer-events-auto mr-1 grid size-12 shrink-0 cursor-pointer touch-none place-items-center rounded-full border-2 border-red-300/50 bg-red-950/90",
-                    "shadow-[0_0_calc(var(--charge,0)*16px)_rgb(248_113_113)] [&.blocked]:pointer-events-none [&.blocked]:opacity-40",
-                  )}
-                  // the canvas keeps the focus: losing it cancels a charge
-                  onMouseDown={(e) => e.preventDefault()}
-                  onContextMenu={(e) => e.preventDefault()}
-                  onPointerDown={(e) => {
-                    e.stopPropagation(); // not a drag of the bar
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    w.player.startCharge();
-                  }}
-                  onPointerUp={() => w.player.releaseCharge()}
-                  onPointerCancel={() => w.player.cancelCharge()}
-                >
-                  <FingerprintIcon className="size-8 text-red-300" weight="regular" />
-                </button>
-              )}
               {kept.map(({ label, title, end }) => (
                 <div
                   key={label}
@@ -883,8 +849,6 @@ export type State = {
   press(index: number): void;
   /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
   watchAim(el: null | HTMLDivElement): () => void;
-  /** Greys the touch fire button whilst blocked or cooling, and glows it by the charge */
-  watchFire(el: null | HTMLButtonElement): () => void;
   /** Greys the "look" notice whilst look mode yields to what they do themselves */
   watchLook(el: null | HTMLDivElement): () => void;
 };

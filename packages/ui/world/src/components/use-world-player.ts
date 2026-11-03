@@ -19,8 +19,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
     (): State => ({
       key: defaultPlayerKey,
       tap: null,
+      fireTouch: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
+      lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
       look: false,
@@ -133,6 +135,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.tapMs[key] = double ? -Infinity : ms; // a third is a fresh first
         return double;
       },
+      dragLookTowards(clientX, clientY) {
+        state.lookTowards(clientX, clientY);
+        state.lookMarked = false;
+      },
       lookTowards(clientX, clientY) {
         const npc = state.get();
         // paused, the look would run out before they could turn
@@ -151,6 +157,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (npc === undefined || w.client === true || w.disabled === true) return;
         if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
         state.lookAt = { x, y: z };
+        state.lookMarked = true;
         // held as `r` would be, long enough to come round
         state.cancelLook();
         state.cancelLook = w.e.after(lookHoldMs / 1000, () => {
@@ -197,7 +204,43 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       onKeyUp(e) {
         if (e.code === "Space") state.releaseCharge();
       },
+      onFireTouch(e) {
+        const fire = state.fireTouch;
+        if (e.type === "touchstart" && e.touches.length === 1) {
+          const { identifier, target } = e.touches[0];
+          state.fireTouch =
+            target === w.view.canvas ? { anchorId: identifier, downMs: e.timeStamp, shotId: null } : null;
+          return false; // as yet a press like any other
+        }
+        if (fire === null) return false;
+        if (e.type === "touchstart") {
+          // a pinch, a third finger, or no phaser raised
+          if (
+            e.touches.length !== 2 ||
+            e.timeStamp - fire.downMs < fireTouchDelayMs ||
+            w.phasers?.isArmed(state.key) !== true
+          )
+            return false;
+          fire.shotId = e.changedTouches[0].identifier;
+          state.tap = null; // nor a look tap
+          w.view.controls.holdTouch = true;
+          state.startCharge(); // where they face
+          return true;
+        }
+        const ended = (id: null | number) =>
+          e.type === "touchcancel" || [...e.changedTouches].some((t) => t.identifier === id);
+        const charging = fire.shotId !== null;
+        // the second finger let go fires, even as the first does. The first alone cancels
+        if (charging && e.type === "touchend" && ended(fire.shotId)) state.releaseCharge();
+        else if (ended(fire.anchorId)) state.cancelCharge();
+        else return false;
+        fire.shotId = null;
+        w.view.controls.holdTouch = false;
+        if (ended(fire.anchorId)) state.fireTouch = null;
+        return charging;
+      },
       onTouch(e) {
+        if (state.onFireTouch(e) === true) return; // the phaser's, not a look
         if (e.type === "touchstart") {
           const [a, b, c] = e.touches; // a second finger begins one, a third ends it
           const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
@@ -419,6 +462,8 @@ const lookTapMs = 300;
 const doubleTapMs = 300;
 const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
+/** On touch, a second finger this long after the first charges a raised phaser, rather than pinching */
+const fireTouchDelayMs = 300;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
@@ -460,6 +505,10 @@ export type State = {
   pointerAim: { at: number; rate: number; untilRest: boolean };
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
+  /** On touch, a finger held down, and a second charging the player's phaser — see `onFireTouch` */
+  fireTouch: null | { anchorId: number; downMs: number; shotId: null | number };
+  /** Phaser raised, hold a finger, then a second charges and fires on release. True if the phaser's */
+  onFireTouch(e: TouchEvent): boolean;
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
@@ -468,6 +517,8 @@ export type State = {
   syncRun(): void;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
+  /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
+  lookMarked: boolean;
   /** Ends the look hold early, a game-time timer */
   cancelLook(): void;
   /** A two-finger tap on the canvas has them look where it lands */
@@ -479,6 +530,8 @@ export type State = {
   is(npcKey: string): boolean;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
+  /** The same, unmarked: a finger dragged whilst following is already on the spot */
+  dragLookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */
   lookAtPoint(x: number, z: number): void;
 
