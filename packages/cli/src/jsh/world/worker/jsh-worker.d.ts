@@ -95,7 +95,7 @@ declare namespace WW {
         away?: number;
         /** Where any of `from` are walking to: they are as good as there */
         ahead?: Geom.VectJson[];
-        /** Unseen is its whole region, its room's doors open: the hider opens one going in. Else the spot alone */
+        /** Unseen is its whole region, its room's doors open: the hider opens one going in. Else the spot alone, by lines */
         strict?: boolean;
       }
     | {
@@ -169,8 +169,8 @@ declare namespace WW {
      * `settled` says how: by the lists alone unless `lines`, as always with a room or door either side
      */
     | { sees: boolean; settled: SeesSettled; via: null | string; crouchHides: boolean; from: string; to: string }
-    /** `seen`: their spots any watcher may see */
-    | { hidden: boolean; seen: string[] }
+    /** `seen`: their spots any watcher may see, how far off, and who may see each from where */
+    | { hidden: boolean; seen: { spot: string; metres: number; by: string }[] }
     | { view: Record<string, SpotHow> }
     | {
         sees: boolean;

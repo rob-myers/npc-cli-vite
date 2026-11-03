@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { Switch } from "@base-ui/react/switch";
 import type { WorldState } from "@npc-cli/ui__world";
 import { scenarioShared, useScenarioCharacters, useScenarioShared } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -464,7 +465,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             )}
             {state.sidebarTab === "spot" &&
               (meta.show.spots === false ? (
-                <SidebarHint>turn on the spots layer</SidebarHint>
+                <SidebarHint>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    turn on the spots layer
+                    <Switch.Root
+                      checked={meta.show.spots}
+                      onCheckedChange={() => state.toggleLayer("spots")}
+                      className="flex h-4 w-7 shrink-0 cursor-pointer rounded-full bg-zinc-700 p-0.5 data-checked:bg-zinc-400"
+                    >
+                      <Switch.Thumb className="size-3 rounded-full bg-zinc-200 transition-transform data-checked:translate-x-3" />
+                    </Switch.Root>
+                  </label>
+                </SidebarHint>
               ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
                 <>
                   <div className="shrink-0 flex px-3 pt-3">

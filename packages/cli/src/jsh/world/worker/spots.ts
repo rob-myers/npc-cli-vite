@@ -130,24 +130,26 @@ export function answerSpotQueries(
     return verdict;
   };
   /**
-   * Every spot `from`, or where they are headed, may see, as the doors stand, else with `alsoOpen` open too.
-   * An npc sees only their rooms in view, bar with `alsoOpen`, as those are worked out with the doors as they stand
+   * The spots `from` may see, each mapped to who sees it first, e.g. `rob at g0r7-3`. Where they are headed counts too.
+   * Doors are as they stand, plus `alsoOpen`. Without `alsoOpen`, an npc sees only their rooms in view.
    */
   const unsafeFrom = (from: string[], ahead: Geom.VectJson[] = [], alsoOpen?: string[]) => {
     const opened = alsoOpen === undefined ? isOpen : (gdKey: string) => isOpen(gdKey) || alsoOpen.includes(gdKey);
-    const unsafe = new Set<string>();
-    const add = (at: At, inView?: string[]) => {
+    const unsafe = new Map<string, string>();
+    const add = (at: At, by: string, inView?: string[]) => {
       for (const s of at.spots) {
         for (const key of all.seenFrom(s, at.seated, opened)) {
           const grKey = all.get(key)?.grKey ?? null;
-          if (inView === undefined || grKey === null || inView.includes(grKey)) unsafe.add(key);
+          if (unsafe.has(key) || (inView !== undefined && grKey !== null && !inView.includes(grKey))) continue;
+          unsafe.set(key, `${by} ${s.alias}`);
         }
       }
     };
-    for (const ref of from) add(spotsAt(ref), alsoOpen === undefined ? npcByKey.get(ref)?.seeRooms : undefined);
+    for (const ref of from)
+      add(spotsAt(ref), `${ref} at`, alsoOpen === undefined ? npcByKey.get(ref)?.seeRooms : undefined);
     for (const p of ahead) {
       const spot = all.nearestTo(p);
-      if (spot !== undefined) add({ spots: [spot], seated: false });
+      if (spot !== undefined) add({ spots: [spot], seated: false }, "one headed to");
     }
     return unsafe;
   };
@@ -185,7 +187,7 @@ export function answerSpotQueries(
           };
         }
         case "seenBy":
-          return [...unsafeFrom([query.a])].flatMap((key) => all.get(key) ?? []).map(all.json);
+          return [...unsafeFrom([query.a]).keys()].flatMap((key) => all.get(key) ?? []).map(all.json);
         case "at": {
           const spot = all.nearestTo(query.point, query.grKey);
           return spot === undefined ? null : all.json(spot);
@@ -200,15 +202,21 @@ export function answerSpotQueries(
           const { away = 0 } = query;
           const isFar = (s: MapSpot) => watchers.every((w) => dist(s, w) >= away);
           /** By room, what they may see with its doors open */
-          const unsafeIn = new Map<string, Set<string>>();
+          const unsafeIn = new Map<string, Map<string, string>>();
           const unsafeOf = (grKey: string) => {
             let seen = unsafeIn.get(grKey);
             if (seen === undefined)
               unsafeIn.set(grKey, (seen = unsafeFrom(query.from, query.ahead, all.roomDoors.get(grKey))));
             return seen;
           };
+          /** What they may see from where they are headed, by the lists: they are not there yet */
+          const aheadSees = unsafeFrom([], query.ahead);
           const isUnseen = (s: MapSpot) => {
-            if (query.strict !== true || s.grKey === null) return !unsafe.has(s.key);
+            if (query.strict !== true)
+              return (
+                !aheadSees.has(s.key) && (!unsafe.has(s.key) || query.from.every((ref) => !seesNow(ref, s.key).sees))
+              );
+            if (s.grKey === null) return !unsafe.has(s.key);
             const seen = unsafeOf(s.grKey);
             return all.spotsOf({ point: s, grKeys: [s.grKey] }).every((t) => !seen.has(t.key));
           };
@@ -220,9 +228,13 @@ export function answerSpotQueries(
           return best === undefined ? null : all.json(best);
         }
         case "hidden": {
-          const doors = resolveNpc(query.npc).grKeys.flatMap((grKey) => all.roomDoors.get(grKey) ?? []);
+          const npc = resolveNpc(query.npc);
+          const doors = npc.grKeys.flatMap((grKey) => all.roomDoors.get(grKey) ?? []);
           const unsafe = unsafeFrom(query.from, query.ahead, doors);
-          const seen = spotsAt(query.npc).spots.flatMap((s) => (unsafe.has(s.key) ? [s.alias] : []));
+          const seen = spotsAt(query.npc).spots.flatMap((s) => {
+            const by = unsafe.get(s.key);
+            return by === undefined ? [] : [{ spot: s.alias, metres: dist(s, npc.point), by }];
+          });
           return { hidden: seen.length === 0, seen };
         }
         case "view": {
@@ -403,17 +415,16 @@ export class MapSpots {
     return spot;
   }
 
-  /** Every spot `npc` is at: in each of their rooms, those within `ownReach`, else the nearest */
+  /** Every spot `npc` is at, once: in each of their rooms, those within `ownReach`, else the nearest */
   spotsOf({ point, grKeys }: Pick<WW.SpotNpc, "point" | "grKeys">) {
     const close = this.near(point, ownReach);
     // a door spot is in no room
     const door = close.filter((s) => s.kind === "door" && dist(s, point) <= doorReach);
-    return door.concat(
-      (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
-        const own = close.filter((s) => s.grKey === grKey);
-        return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
-      }),
-    );
+    const own = (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
+      const inRoom = close.filter((s) => s.grKey === grKey);
+      return inRoom.length > 0 ? inRoom : (this.nearestTo(point, grKey) ?? []);
+    });
+    return [...new Set(door.concat(own))];
   }
 
   /** Infinite for a room's only spot: anywhere in that room is nearest it */

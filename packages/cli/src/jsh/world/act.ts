@@ -266,7 +266,8 @@ async function seenWhy(ctx: Ctx, opts: Opts, strict: boolean) {
   if (strict === false) return seenBy(ctx, from);
   const [answer] = await spotQuery(ctx.ct, [{ q: "hidden", npc: ctx.npcKey, from, ahead: aheadOf(ctx, opts) }]);
   if (answer == null || !("hidden" in answer)) return "not answered";
-  return answer.hidden ? null : `their spots ${answer.seen.join(",")} may be seen`;
+  if (answer.hidden) return null;
+  return answer.seen.map(({ spot, metres, by }) => `${by} may see ${spot}, ${metres.toFixed(1)}m off`).join("; ");
 }
 
 /** Which of `from` sees them now, and how, whichever way they face: `null` if none */
