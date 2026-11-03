@@ -146,7 +146,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // nearest-filtered is a crawl — see `TexArray.applyOpts`, where this also brings mipmaps
         anisotropy: touchDevice ? undefined : 4,
       }),
-      texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
+      texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS, anisotropy: 4 }),
       texSkinSlices: new TexArray({
         ctKey: "skin-slices",
         width: skinSliceDims.cell,
