@@ -738,7 +738,8 @@ export default function Phasers() {
         const pose = waiting ? null : via ? byAvoid(goal, shown, settled) : goal;
         if (pose === null) {
           // raised still, lain, it is stowed: slowly, as from a wall
-          if (isPhaserPose(shown)) anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined });
+          if (isPhaserPose(shown))
+            anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined, byWall: arm.armHit });
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs =
@@ -747,7 +748,7 @@ export default function Phasers() {
               : shown === null
                 ? undefined
                 : phaserConfig.drawOutSecs;
-          anim.setUpper(pose, { swapSecs, past: sat });
+          anim.setUpper(pose, { swapSecs, past: sat, byWall: arm.armHit });
         }
         // the left arm drawn in with the right, so a run's guard keeps off the wall: only ours, never psi's or a reach
         const leftPose = pose === phaserConfig.avoid && tucked === false ? pose : null;
@@ -757,8 +758,14 @@ export default function Phasers() {
         }
 
         // the stance — theirs to stand in, and only ours to put back. Sat, lain or crouched, the seat's, bed's or crouch's
-        /** Past an obstacle, not before the arm is up: the stance's own arm would swing the gun through it */
-        const armUp = via === false || arm.ownIdle !== null || (isPhaserPose(anim.upper.key) && settled);
+        /**
+         * Past an obstacle or by a wall, not before the arm is up: the stance's own arm would swing the gun through it.
+         * Raised from rest, not before a cast says which.
+         */
+        const armUp =
+          (waiting === false && via === false && arm.armHit === false) ||
+          arm.ownIdle !== null ||
+          (isPhaserPose(anim.upper.key) && settled);
         const stance =
           armed === true && anim.posture === "stand" && anim.crouched === false && armUp ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {

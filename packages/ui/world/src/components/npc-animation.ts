@@ -716,6 +716,7 @@ export class NpcAnimation {
    * Ease `key` in over an arm (and the head), or out with `null`, over `fadeSecs` — from another shown, in `swapSecs`.
    * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
    * `past`: sat at a table (`isUnderTable`), the arm goes up and comes down by way of `sitArmVia`, past its edge.
+   * `byWall`: stood, likewise, so the hand keeps in. Kept until given again, a lowering included.
    * `onHead`: its hand is at their head, and stays there as the head turns — see `tickTurn`
    */
   setUpper(
@@ -727,11 +728,13 @@ export class NpcAnimation {
       played = false,
       past = false,
       onHead = false,
+      byWall = undefined as undefined | boolean,
     } = {},
   ) {
     const u = this.upperOf(side);
     u.fadeSecs = fadeSecs;
     if (key !== null) Object.assign(u, { past, onHead });
+    if (byWall !== undefined) u.byWall = byWall;
     if (played === true) Object.assign(u, { time: 0, blend: 1 });
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
       // shown: ease over from where they are, in `swapSecs`
@@ -1238,7 +1241,11 @@ export class NpcAnimation {
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
     if (u.key === null) return; // let go of: its blend is nought already
-    const via = u.past === true && this.posture === "sit" && this.isUnderTable() ? tmpVias : null;
+    const via =
+      (u.past === true && this.posture === "sit" && this.isUnderTable()) ||
+      (u.byWall === true && this.posture === "stand")
+        ? tmpVias
+        : null;
     const fadeSecs = u.fadeSecs * (via === null ? 1 : sitArmVia.slow);
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / fadeSecs, 0, 1);
     if (this.npc.group === null) return;
@@ -1493,6 +1500,8 @@ const newUpper = () => ({
   time: 0,
   /** Sat at a table, it goes up and down by way of `sitArmVia` */
   past: false,
+  /** Stood by a wall, likewise */
+  byWall: false,
   /** Its hand is at their head */
   onHead: false,
   /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
