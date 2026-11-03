@@ -11,17 +11,14 @@ what works as TypeScript, run it, and see what happened.
 - On first use it attaches to Chrome on CDP port `NPC_MCP_CDP_PORT` (9382). If none is running, it
   launches a visible one with its own profile, and opens the dev page there.
 - That Chrome is a second instance, not a window of your own: the Dock and Spotlight open your usual one.
-  If it has no window, e.g. started with `--no-startup-window`, ask it for one on the dev page:
-  ```sh
-  curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
-  ```
-  `open -na "Google Chrome" --args --user-data-dir=…` hands off to it and opens nothing.
-- That `curl` needs the instance running, else the connection is refused. Claude's first call to any npc-cli tool starts
-  it (`openPage` in `cdp.ts`). To start it yourself, run what `openPage` runs:
-  ```sh
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9382 \
-    --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --window-size=1400,900 http://localhost:5173/ &
-  ```
+```sh
+# If MCP not started, do what `openPage` in `cdp.ts` does
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9382 \
+  --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --window-size=1400,900 http://localhost:5173/ &
+
+# If it has no window, e.g. started with `--no-startup-window`, ask it for one on the dev page:
+curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
+```
 
 ## The page side
 

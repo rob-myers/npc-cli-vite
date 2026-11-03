@@ -9,6 +9,24 @@
 
 ### Animation and Npc
 
+- ✅ refine look-mode
+  - ✅ suppress on npc-pre-do not on leave sit/lie
+  - ✅ suppress on pick-up/put-down
+  - ✅ `pose kate head:rob`
+  - ✅ `pose` cleanup
+  - ✅ `pose kate head:rob --track`
+
+- ✅ refract -> ghost i.e. green dot-screen effect which ignores phaser
+
+- ❌ bug when move to chair while crouch_half phaser raised
+- ✅ improve shielded npc animation
+  - refract: psi-power plus intercepting beam from forehead
+  - armour: flinch + ricochet
+
+- ✅ drop dodge animations
+- ❌ on turn off strafe maintain direction initially?
+- ✅ faster strafe
+
 - ✅ `move` to doable goes nearby by default
   - `move --far` is previous behaviour
 
@@ -58,7 +76,20 @@
 - ✅ predicates -> preds
 - ✅ preds -> predicates, kamma -> inventory
 
+### Controls
+
+- ✅ try look-mode via double-tap r
+  - ✅ fix raised phaser aim
+  - ✅ pad look overrides e.g. put down box
+
+- ✅ wasd look towards wall should be suppressed while strafe
+
 ### Decor
+
+- ✅ simplify npc/decor contextmenu: use psi dialog style
+  - static decor has contextmenu too
+  - switches has contextmenu too
+    - can change door's auto/proximity/held etc.
 
 - ✅ improve gun box
 - ❌ add shelves
@@ -86,7 +117,11 @@
 
 - ✅ try eliminate some draw calls
 
-### Player
+### Player and PlayerLight
+
+- ✅ faced npc too dark when not very far away
+
+- ✅ LightSweep central lighter cone falls off linearly from midline
 
 - ✅ long held r aims with pointer
 - ✅ bug: sight mode: all hull doors showing
@@ -102,7 +137,10 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
-### Perception
+### Perception and Spots
+
+- ✅ clean spots in Debug.tsx
+- ✅ held open door has blue/purple lock and is persisted
 
 - ✅ avoid main thread stall on show spot-overlay first 1st time via `0`
 
@@ -113,6 +151,15 @@
 - ✅ some cover spots don't provide cover
 
 ### Phaser and Psi
+
+- ✅ fix psi arm while seated look to left
+
+- ✅ look further with phaser raised i.e. at red dot if possible
+
+- ✅ phaser rethink
+  - show red dot when phaser raised
+  - intersect npc
+- ✅ phaser red dot supports decor quads too e.g. screen
 
 - ✅ phaser beam should use 3D sees intersection for miss detection
 
@@ -260,6 +307,11 @@
 
 ## Audio
 
+- ✅ ui/audio
+  - player footsteps track feet
+  - nearby npc footsteps
+  - phaser shoot/hit/ghost/armour/wall
+  
 - ✅ try web synth for background music
 
 ## Blockbench
@@ -342,7 +394,15 @@
 
 - ✅ ask Claude to create some sub-symbols of 101
 
-## Site
+## Site and Theme
+
+- ✅ light-theme wall skirts/trims look worse now
+  - change ceiling hull/nonHull style
+
+- ✅ light-theme
+  - laser red dot more visible
+  - cursor dark
+  - selected blue spots more visible
 
 - ✅ deploy on https://staging.lastredoubt.co/
 - ✅ deploy on https://lastredoubt.co/
