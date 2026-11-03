@@ -61,6 +61,8 @@ export type WorldSettings = {
   spotsShown: boolean;
   /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
   hudDebug: boolean;
+  /** The player's bar along the bottom, or a column on the World's left or right — see `Debug`'s `hudLayout` */
+  hudLayout: HudLayout;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
@@ -74,6 +76,8 @@ export type WorldSettings = {
   speechY: number;
   /** How far the player's bar was dragged up from its place, as a `y` offset: never positive */
   hudY: number;
+  /** Where the player's column was dragged, as a `y` offset from the top: `null` if never */
+  hudColumnY: null | number;
   speechWidth: null | number;
   speechHeight: null | number;
   /** By npcKey, so it goes with them from map to map — see `w.e.carried` */
@@ -85,6 +89,8 @@ export type WorldSettings = {
    */
   netParent: null | { worldKey: string; remote: boolean };
 };
+
+export type HudLayout = "bar" | "left" | "right";
 
 const defaultWorldSettings: WorldSettings = {
   cameraMode: "embodied",
@@ -104,8 +110,9 @@ const defaultWorldSettings: WorldSettings = {
   contextMenu: true,
   spotsShown: false,
   hudDebug: false,
+  hudLayout: isTouchDevice() ? "right" : "bar",
   timeScale: 1,
-  timeSliderOpen: true,
+  timeSliderOpen: false,
   breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,
@@ -113,6 +120,7 @@ const defaultWorldSettings: WorldSettings = {
   menuHeight: 288,
   speechY: 40,
   hudY: 0,
+  hudColumnY: null,
   speechWidth: null,
   speechHeight: null,
   // the player sets out with psi and a phaser
