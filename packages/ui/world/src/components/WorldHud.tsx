@@ -14,7 +14,7 @@ import "./world-hud.css";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
-import { getWorldStore } from "../service/storage";
+import { getWorldStore, type HudLayout } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 /**
@@ -29,7 +29,9 @@ export default function WorldHud() {
   const state = useStateRef(
     (): State => ({
       barEl: null,
+      colEl: null,
       dragged: false,
+      itemsEl: null,
       menu: null,
       pressTimer: 0,
       longPressed: false,
@@ -48,13 +50,22 @@ export default function WorldHud() {
         state.update();
         w.view.forceUpdate();
       },
-      getMinY() {
-        return Math.min(0, hudDragTop + hudBarHeight - (w.rootEl?.clientHeight ?? 0));
+      fitColumns() {
+        const { colEl, itemsEl } = state;
+        const rootH = w.rootEl?.clientHeight ?? 0;
+        if (state.isColumn() === false || colEl === null || itemsEl === null || rootH === 0) return;
+        // the slots scroll once the column would not fit, below the menu's on the left
+        const menuH = state.getLayout() === "left" ? (w.menu.colEl?.offsetHeight ?? 0) + columnGap : 0;
+        const restH = colEl.offsetHeight - itemsEl.offsetHeight + menuH;
+        itemsEl.style.maxHeight = `${Math.max(columnSlotHeight, rootH - (w.menu.minY ?? 0) - columnGap - restH)}px`;
+        itemsEl.style.touchAction = itemsEl.scrollHeight > itemsEl.clientHeight ? "pan-y" : "none";
+        state.makeWay("menu");
       },
-      say(notice) {
-        window.clearTimeout(state.noticeTimer);
-        state.noticeTimer = window.setTimeout(() => state.set({ notice: null }), noticeMs);
-        state.set({ notice });
+      getDragBounds() {
+        const rootH = w.rootEl?.clientHeight ?? 0;
+        if (state.isColumn() === false) return { top: Math.min(0, noticesHeight + hudBarHeight - rootH), bottom: 0 };
+        const top = w.menu.minY ?? 0;
+        return { top, bottom: Math.max(top, rootH - (state.colEl?.offsetHeight ?? 0) - columnGap) };
       },
       getItems() {
         return (w.e.carried[w.player.key]?.items ?? []).filter((def) => def.meta?.item !== "phaser");
@@ -74,6 +85,34 @@ export default function WorldHud() {
         }
         return nearest;
       },
+      getLayout() {
+        return w.debug?.hudLayout ?? store.read().hudLayout;
+      },
+      getSavedY() {
+        const saved = store.read();
+        if (state.isColumn()) return saved.hudColumnY ?? defaultColumnY;
+        return Math.max(state.getDragBounds().top, saved.hudY ?? 0);
+      },
+      isColumn() {
+        return state.getLayout() !== "bar";
+      },
+      makeWay(moved) {
+        const { colEl: menuEl, colY: menuY, minY } = w.menu;
+        const rootH = w.rootEl?.clientHeight ?? 0;
+        if (state.getLayout() !== "left" || state.colEl === null || !menuEl || rootH === 0) return;
+        const hud = { y, h: state.colEl.offsetHeight };
+        const menu = { y: menuY, h: menuEl.offsetHeight };
+        const [a, b] = moved === "hud" ? [hud, menu] : [menu, hud];
+        const [at, bt] = [a.y.get(), b.y.get()];
+        if (at + a.h + columnGap <= bt || bt + b.h + columnGap <= at) return;
+        // pushed along, else hopped over
+        const below = at + a.h + columnGap;
+        const above = at - columnGap - b.h;
+        const fitsBelow = below + b.h <= rootH - columnGap;
+        const fitsAbove = above >= minY;
+        if (fitsBelow && (bt + b.h / 2 >= at + a.h / 2 || fitsAbove === false)) b.y.set(below);
+        else if (fitsAbove) b.y.set(above);
+      },
       onBarPointerDown(e) {
         const { controls } = w.view;
         if (e.pointerType !== "touch" || controls === null) return;
@@ -91,6 +130,9 @@ export default function WorldHud() {
       onTouchEnd(e) {
         state.touches.delete(e.pointerId);
       },
+      persistY() {
+        store.patch(state.isColumn() ? { hudColumnY: y.get() } : { hudY: y.get() });
+      },
       press(index) {
         if (w.client === true) return;
         if (index === 0) w.player.togglePsi();
@@ -105,6 +147,11 @@ export default function WorldHud() {
         }
         state.update();
         w.view.forceUpdate();
+      },
+      say(notice) {
+        window.clearTimeout(state.noticeTimer);
+        state.noticeTimer = window.setTimeout(() => state.set({ notice: null }), noticeMs);
+        state.set({ notice });
       },
       watchAim(el) {
         return w.e.addFrameCallback(() => {
@@ -121,20 +168,32 @@ export default function WorldHud() {
 
   w.hud = state;
 
-  const y = useMotionValue(Math.max(state.getMinY(), store.read().hudY ?? 0));
+  /** The bar along the bottom, or a column on either side: by default on the right on touch */
+  const layout = state.getLayout();
+  const column = layout !== "bar";
+  const outerClass = column ? cn(columnBarClass, layout === "left" ? "left-1" : "right-1") : barClass;
+
+  const y = useMotionValue(state.getSavedY());
   /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
   const dragProps = {
+    ref: (el: null | HTMLDivElement) => void (state.colEl = el),
     style: { y },
     drag: "y",
     dragListener: false,
     dragControls,
-    dragConstraints: { top: state.getMinY(), bottom: 0 },
+    dragConstraints: state.getDragBounds(),
     dragMomentum: false,
     dragElastic: 0,
-    onPointerDown: (e: React.PointerEvent) => dragControls.start(e),
+    onPointerDown(e: React.PointerEvent) {
+      // an overflowing column's slots scroll instead
+      if (state.itemsEl?.style.touchAction === "pan-y" && state.itemsEl.contains(e.target as Node)) return;
+      dragControls.start(e);
+    },
+    onDrag: layout === "left" ? () => state.makeWay("hud") : undefined,
     onDragStart: () => void (state.dragged = true),
     onDragEnd() {
-      store.patch({ hudY: y.get() });
+      state.persistY();
+      if (layout === "left") w.menu.persistY?.();
       requestAnimationFrame(() => (state.dragged = false));
     },
   } as const;
@@ -161,12 +220,25 @@ export default function WorldHud() {
     return () => ctrl.abort();
   }, []);
 
+  /** The column makes way for the menu's as either grows */
+  useEffect(() => {
+    y.set(state.getSavedY());
+    if (column === false) {
+      state.itemsEl?.style.removeProperty("max-height");
+      state.itemsEl?.style.removeProperty("touch-action");
+      return;
+    }
+    const observer = new ResizeObserver(() => state.fitColumns());
+    for (const el of [state.colEl, w.rootEl]) if (el) observer.observe(el);
+    return () => observer.disconnect();
+  }, [layout]);
+
   // neither psi nor phasers are mirrored
   if (w.client === true)
     return (
-      <div ref={(el) => void (state.barEl = el)} className={barClass}>
-        <motion.div className={rowClass} {...dragProps}>
-          <PlayerButtons />
+      <div ref={(el) => void (state.barEl = el)} className={outerClass}>
+        <motion.div className={column ? columnClass : rowClass} {...dragProps}>
+          <PlayerButtons column={column} />
         </motion.div>
       </div>
     );
@@ -203,9 +275,17 @@ export default function WorldHud() {
         key={index}
         title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
         className={cn(
-          "group pointer-events-auto relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
+          "group pointer-events-auto relative grid shrink-0 cursor-pointer place-items-center rounded-md",
+          column === false && "touch-pan-x",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          big ? "h-15 w-12.5" : "h-18 w-15",
+          // a column's slots are shorter, its icons as big as the bar's
+          big
+            ? column
+              ? "h-12 w-12.5 [--hud-icon-base:60px]"
+              : "h-15 w-12.5"
+            : column
+              ? "h-15 w-15 [--hud-icon-base:72px]"
+              : "h-18 w-15",
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
           opts.had === false && "*:opacity-25",
         )}
@@ -261,13 +341,10 @@ export default function WorldHud() {
   };
 
   return (
-    <div ref={(el) => void (state.barEl = el)} className={barClass}>
-      {/* out here, not in the row: it scrolls, so would clip it */}
+    <>
+      {/* at the World's top, clear of the bar wherever it is dragged */}
       {(state.notice !== null || kept.length > 0) && (
-        <motion.div
-          style={{ y }}
-          className="absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200"
-        >
+        <div className={noticesClass}>
           {/* kept whilst aiming or strafing, an "x" ending one that may be ended */}
           {kept.length > 0 && (
             <div className="flex items-center gap-1">
@@ -301,134 +378,141 @@ export default function WorldHud() {
             </div>
           )}
           {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
-        </motion.div>
+        </div>
       )}
-      <motion.div className={rowClass} {...dragProps}>
-        {/* what they are, then what they carry, scrolled sideways: the buttons after stay in view */}
-        <div className={itemsClass}>
-          <div className="flex shrink-0">
-            {slot(
-              0,
-              { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
-              <BrainIcon firing={psiOn} paused={w.disabled} />,
+      <div ref={(el) => void (state.barEl = el)} className={outerClass}>
+        <motion.div className={column ? columnClass : rowClass} {...dragProps}>
+          {/* what they are, then what they carry, scrolled: the buttons after stay in view */}
+          <div ref={(el) => void (state.itemsEl = el)} className={column ? columnItemsClass : itemsClass}>
+            <div className={cn("flex shrink-0", column && "flex-col")}>
+              {slot(
+                0,
+                { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
+                <BrainIcon firing={psiOn} paused={w.disabled} />,
+              )}
+              {slot(
+                1,
+                {
+                  title: dead ? "phaser (deactivated)" : "phaser",
+                  hotkey: "e",
+                  had: hasPhaser,
+                  active: armed,
+                  plain: true,
+                  drop: hasPhaser ? "phaser" : undefined,
+                  // dropped without drawing it first
+                  menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
+                },
+                <>
+                  <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
+                  {w.debug?.hudDebug === true && (
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      title="debug: how every shot ends"
+                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const at = shotCycle.indexOf(w.debug.forceShot);
+                        w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+                        state.update();
+                        w.view.focus();
+                      }}
+                    >
+                      {w.debug.forceShot}
+                    </button>
+                  )}
+                </>,
+              )}
+              {slot(
+                2,
+                {
+                  title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
+                  had: keyCount > 0,
+                  active: keyDoor !== null,
+                  plain: true,
+                  menu: heldDoors.map((gdKey) => ({
+                    label: `split ${gdKey}`,
+                    run: () => w.e.unchainKey(playerKey, gdKey),
+                  })),
+                },
+                <>
+                  <ItemIcon kind="keychain" />
+                  {keyCount > 0 && (
+                    <span className="absolute right-1 bottom-3 text-xs font-bold leading-3 p-0.5 rounded bg-on-background text-background">
+                      {keyCount}
+                    </span>
+                  )}
+                  {/* {keyDoor !== null && (
+                <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />
+              )} */}
+                </>,
+              )}
+            </div>
+            {state.getItems().map((def, i) =>
+              slot(
+                i + 3,
+                {
+                  title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
+                  had: true,
+                  active: state.selected === def.key,
+                  drop: def.key,
+                  // a keycard for a door joins the keys
+                  menu: [
+                    ...(def.meta?.door
+                      ? [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }]
+                      : []),
+                    { label: "drop", run: () => state.drop(def.key) },
+                  ],
+                },
+                <>
+                  <ItemIcon kind={def.meta?.item} />
+                  {def.meta?.door && (
+                    <span className="absolute right-1 bottom-0.5 text-[10px] leading-3 text-sky-100 [text-shadow:0_0_3px_#000,0_0_3px_#000]">
+                      {def.meta.door}
+                    </span>
+                  )}
+                </>,
+              ),
             )}
-            {slot(
-              1,
-              {
-                title: dead ? "phaser (deactivated)" : "phaser",
-                hotkey: "e",
-                had: hasPhaser,
-                active: armed,
-                plain: true,
-                drop: hasPhaser ? "phaser" : undefined,
-                // dropped without drawing it first
-                menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
-              },
-              <>
-                <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
-                {w.debug?.hudDebug === true && (
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    title="debug: how every shot ends"
-                    className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const at = shotCycle.indexOf(w.debug.forceShot);
-                      w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
-                      state.update();
+          </div>
+          <PlayerButtons column={column} />
+        </motion.div>
+
+        <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
+          <Menu.Portal container={w.rootEl}>
+            <Menu.Positioner
+              anchor={state.menu?.el}
+              side={layout === "bar" ? "top" : layout === "left" ? "right" : "left"}
+              sideOffset={6}
+              className="z-50"
+            >
+              <Menu.Popup className="pointer-events-auto max-h-48 select-none overflow-y-auto rounded-md border border-neutral-700 bg-neutral-800/90 py-1 text-xs shadow-lg">
+                {menus[state.menu?.index ?? -1]?.map(({ label, run }) => (
+                  <Menu.Item
+                    key={label}
+                    className={cn(
+                      "cursor-pointer px-3 py-1 text-neutral-300 hover:bg-neutral-700",
+                      big && "py-2 text-sm",
+                    )}
+                    onClick={() => {
+                      run();
                       w.view.focus();
                     }}
                   >
-                    {w.debug.forceShot}
-                  </button>
-                )}
-              </>,
-            )}
-            {slot(
-              2,
-              {
-                title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
-                had: keyCount > 0,
-                active: keyDoor !== null,
-                plain: true,
-                menu: heldDoors.map((gdKey) => ({
-                  label: `split ${gdKey}`,
-                  run: () => w.e.unchainKey(playerKey, gdKey),
-                })),
-              },
-              <>
-                <ItemIcon kind="keychain" />
-                {keyCount > 0 && (
-                  <span className="absolute right-1 bottom-3 text-xs font-bold leading-3 p-0.5 rounded bg-on-background text-background">
-                    {keyCount}
-                  </span>
-                )}
-                {/* {keyDoor !== null && (
-                <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />
-              )} */}
-              </>,
-            )}
-          </div>
-          {state.getItems().map((def, i) =>
-            slot(
-              i + 3,
-              {
-                title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
-                had: true,
-                active: state.selected === def.key,
-                drop: def.key,
-                // a keycard for a door joins the keys
-                menu: [
-                  ...(def.meta?.door
-                    ? [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }]
-                    : []),
-                  { label: "drop", run: () => state.drop(def.key) },
-                ],
-              },
-              <>
-                <ItemIcon kind={def.meta?.item} />
-                {def.meta?.door && (
-                  <span className="absolute right-1 bottom-0.5 text-[10px] leading-3 text-sky-100 [text-shadow:0_0_3px_#000,0_0_3px_#000]">
-                    {def.meta.door}
-                  </span>
-                )}
-              </>,
-            ),
-          )}
-        </div>
-        <PlayerButtons />
-      </motion.div>
-
-      <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
-        <Menu.Portal container={w.rootEl}>
-          <Menu.Positioner anchor={state.menu?.el} side="top" sideOffset={6} className="z-50">
-            <Menu.Popup className="pointer-events-auto max-h-48 select-none overflow-y-auto rounded-md border border-neutral-700 bg-neutral-800/90 py-1 text-xs shadow-lg">
-              {menus[state.menu?.index ?? -1]?.map(({ label, run }) => (
-                <Menu.Item
-                  key={label}
-                  className={cn(
-                    "cursor-pointer px-3 py-1 text-neutral-300 hover:bg-neutral-700",
-                    big && "py-2 text-sm",
-                  )}
-                  onClick={() => {
-                    run();
-                    w.view.focus();
-                  }}
-                >
-                  {label}
-                </Menu.Item>
-              ))}
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
-    </div>
+                    {label}
+                  </Menu.Item>
+                ))}
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      </div>
+    </>
   );
 }
 
-/** The player themself, after the slots: where the camera stands by them, and how they go */
-function PlayerButtons() {
+/** The player themself, after the slots or atop a column: where the camera stands by them, and how they go */
+function PlayerButtons({ column }: { column: boolean }) {
   const w = useContext(WorldContext);
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
@@ -445,7 +529,10 @@ function PlayerButtons() {
 
   return (
     <div
-      className="pointer-events-auto ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
+      className={cn(
+        "pointer-events-auto flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60",
+        column ? "order-first mb-2 flex-col" : "ml-4",
+      )}
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -550,8 +637,15 @@ const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex sele
 const rowClass = "pointer-events-none mx-auto flex max-w-full";
 /** Its slots, scrolled sideways once they outgrow a narrow World; padded, else the scroll clips a slot's ring */
 const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scrollbar-width:none]";
+/** The bar as a column on either side */
+const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
+const columnClass = "pointer-events-none flex flex-col items-center";
+const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-1 [scrollbar-width:none]";
+/** The notices: top centre, clear of the bar */
+const noticesClass =
+  "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
 
-/** Each icon's size, as a fraction of its slot's height: alike, bar art that fills its square */
+/** Each icon's size, as a fraction of its slot's height (else `--hud-icon-base`): alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   psi: 0.7,
   phaser: 0.7,
@@ -563,7 +657,9 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   "box-tote": 0.7,
   keycard: 0.58,
 };
-const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
+const iconStyle = (kind: keyof typeof iconScale) => ({
+  height: `calc(var(--hud-icon-base, 100%) * ${iconScale[kind]})`,
+});
 
 /** The shadow is each icon's own */
 const iconShadow = "drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
@@ -781,9 +877,16 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
   "door-unlocked",
 ]);
 
-/** The bar's height, and how near the World's top it may be dragged */
+/** The bar's height */
 const hudBarHeight = 110;
-const hudDragTop = 8;
+/** How near the World's top the bar may be dragged: below the notices */
+const noticesHeight = 68;
+/** The space kept between the column and the menu's, and below the column */
+const columnGap = 8;
+/** A touch column slot's height, padded: the least the column's slots shrink to */
+const columnSlotHeight = 56;
+/** Where the column starts, before any drag: the menu's makes way */
+const defaultColumnY = 180;
 /** Compass points by `w.view.compassPoint` */
 const compassLetters = ["N", "W", "S", "E"];
 /** How long a touch is held before a slot's menu opens */
@@ -819,10 +922,25 @@ type SlotOpts = {
 
 export type State = {
   barEl: null | HTMLDivElement;
+  /** What is dragged: the row, or the column */
+  colEl: null | HTMLDivElement;
   /** The bar is being dragged, so what ends on it is no press */
   dragged: boolean;
-  /** The furthest up it may be dragged, as a `y` offset */
-  getMinY(): number;
+  /** The slots, scrolled once they outgrow the bar */
+  itemsEl: null | HTMLDivElement;
+  /** In a column, caps the slots so it fits, beside the menu's on the left. Run as either resizes */
+  fitColumns(): void;
+  /** How far up and down it may be dragged, as `y` offsets */
+  getDragBounds(): { top: number; bottom: number };
+  /** Along the bottom, or a column on either side: the debug "hud" select */
+  getLayout(): HudLayout;
+  /** Where it was last dragged to, in its layout */
+  getSavedY(): number;
+  /** Whether it is a column on either side */
+  isColumn(): boolean;
+  /** In the left column, moves it or the menu's out of `moved`'s way */
+  makeWay(moved: "hud" | "menu"): void;
+  persistY(): void;
   /** The slot whose right-click menu shows, hung off its element */
   menu: null | { index: number; el: HTMLElement };
   pressTimer: number;

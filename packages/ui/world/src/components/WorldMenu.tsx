@@ -27,7 +27,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
-import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
+import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -44,7 +44,7 @@ import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug"
 import { extraFxKeys } from "../service/extra-fx";
 import { probeWebRtc, webRtcWorks } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
-import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
+import { type CameraView, getSiteStore, getWorldStore, type HudLayout, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
 import { WorldContext } from "./world-context";
@@ -68,6 +68,8 @@ export function WorldMenu() {
     (): State => ({
       unconfirmed: null,
       unconfirmedTimeoutId: 0,
+      colEl: null,
+      colY: null as any,
       debugHitOpen: false,
       dragged: false,
       gmGraphsOpen: false,
@@ -81,7 +83,7 @@ export function WorldMenu() {
       stateSelectOpen: false,
       themeEditorOpen: false,
       themeEditorRef: null as any,
-      timeSliderOpen: saved.timeSliderOpen !== false,
+      timeSliderOpen: saved.timeSliderOpen === true,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
 
@@ -249,7 +251,16 @@ export function WorldMenu() {
   useEffect(() => void probeWebRtc().then(() => state.update()), []); // greys WebRTC if it cannot connect
 
   const y = useMotionValue(state.getClampedY(state.y));
+  state.colY = y;
   const dragControls = useDragControls();
+
+  /** The player's column makes way as this grows */
+  useEffect(() => {
+    if (state.colEl === null) return;
+    const observer = new ResizeObserver(() => w.hud?.fitColumns());
+    observer.observe(state.colEl);
+    return () => observer.disconnect();
+  }, []);
 
   /** Spots greyed out until jsh `spots show`, run by a terminal's profile, fills them */
   const withSpotsGreyed = <T extends { value: string }>(item: T) =>
@@ -293,6 +304,10 @@ export function WorldMenu() {
         return w.debug?.contextMenu ?? false;
       case "hud debug":
         return w.debug?.hudDebug ?? false;
+      case "hud left":
+        return w.hud?.getLayout() === "left";
+      case "hud right":
+        return w.hud?.getLayout() === "right";
       default:
         return false;
     }
@@ -395,6 +410,17 @@ export function WorldMenu() {
         state.update();
         break;
       }
+      case "hud left":
+      case "hud right": {
+        // one side at most: unticking the side puts the bar back along the bottom
+        const side = item === "hud left" ? "left" : "right";
+        const next: HudLayout = w.hud.getLayout() === side ? "bar" : side;
+        w.debug?.set({ hudLayout: next });
+        store.patch({ hudLayout: next });
+        w.hud.update();
+        state.update();
+        break;
+      }
       case "context menu": {
         const next = !w.debug?.contextMenu;
         w.debug?.set({ contextMenu: next });
@@ -436,6 +462,7 @@ export function WorldMenu() {
         //   carry the popup rightwards with it
         // - above the popup's `z-50`, so the toasts below it are not covered. The drag
         //   transform makes this a stacking context, so a child cannot escape on its own
+        ref={(el) => void (state.colEl = el)}
         className="outline-none absolute top-0 left-1 z-60 touch-none select-none flex flex-col items-start gap-0.5"
         style={{ y }}
         drag="y"
@@ -444,9 +471,11 @@ export function WorldMenu() {
         onPointerDown={(e) => dragControls.start(e)}
         dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
         dragMomentum={false}
+        onDrag={() => w.hud?.makeWay("menu")}
         onDragStart={() => (state.dragged = true)}
         onDragEnd={() => {
           state.persistY();
+          if (w.hud?.getLayout() === "left") w.hud.persistY();
           requestAnimationFrame(() => (state.dragged = false));
         }}
       >
@@ -1454,6 +1483,9 @@ export type State = {
   skinDebugOpen: boolean;
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
+  colEl: null | HTMLDivElement;
+  /** The column's `y`, which the player's left column may push */
+  colY: MotionValue<number>;
   menuOpen: boolean;
   themeEditorOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -1548,7 +1580,7 @@ const cameraModes: CameraModeType[] = ["free", "embodied"];
 const debugItems = [
   "context menu",
   "door ui",
-  "hud debug",
+  "hud",
   "modals",
   "net",
   "npcs",
@@ -1580,6 +1612,11 @@ const debugGroups = {
     key: value,
     value,
   })),
+  hud: [
+    { key: "debug", value: "hud debug" },
+    { key: "left", value: "hud left" },
+    { key: "right", value: "hud right" },
+  ],
   "door ui": [
     { key: "pick", value: "pick doors" },
     { key: "toggle", value: "toggle doors" },

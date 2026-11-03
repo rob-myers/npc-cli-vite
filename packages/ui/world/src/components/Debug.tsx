@@ -61,6 +61,7 @@ export function Debug() {
       pickDoors: getWorldStore(w.key).read().pickDoors,
       contextMenu: getWorldStore(w.key).read().contextMenu,
       hudDebug: getWorldStore(w.key).read().hudDebug,
+      hudLayout: getWorldStore(w.key).read().hudLayout,
       forceShot: "hit",
 
       physicsLines: new THREE.BufferGeometry(),
@@ -489,6 +490,8 @@ export type State = {
   contextMenu: boolean;
   /** Whether the player's bar shows debug controls — see `WorldHud` */
   hudDebug: boolean;
+  /** The player's bar along the bottom, or a column on either side: the "hud" select — see `WorldHud` */
+  hudLayout: import("../service/storage").HudLayout;
   /** How every phaser shot at someone ends: set by the hud's debug badge */
   forceShot: JshCli.ShotOutcome;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
