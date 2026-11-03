@@ -46,7 +46,7 @@ export const agentConfig = {
     /** Separating idle npcs should not move by default */
     idleSeparating: 0.005,
     walk: 1.5,
-    run: 3,
+    run: 3.5,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
   },
@@ -599,7 +599,7 @@ export const strafeSpeed = {
   crouch_half_strafe_right: 0.4,
   crouch_half_backwards: 0.6,
   crouch_half_strafe_left: 0.4,
-  /** Running, as `maxSpeed.run` ahead. Each way paced near a straight run's cadence */
+  /** Running, each way paced near a straight run's cadence. Ahead may differ from `maxSpeed.run` */
   run_ahead: 3,
   run_strafe_right: 1.7,
   run_backwards: 1.7,
