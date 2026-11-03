@@ -76,7 +76,7 @@ Each step only runs if the one before leaves it open:
 
 **The spots overlay** is **spots** in the debug **overlay** select, or the `0` key (`w.spots.toggle`, persisted).
 - Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way, bar cover, seats and beds.
-- They are coloured by sight from the player: blue their own, green `always`, yellow `may`, white once a shut door opens, grey `never`. Only in the "sight" fade mode do they fade with their room. A door spot shows whilst either of its rooms does. They fade with the world's fold too (`w.view.foldNode`), so come up as it unfolds on load.
+- They are coloured by sight from the player: blue their own, green `always`, yellow `may`, white once a shut door opens, grey `never`. They fade with their room, so only "ship" mode shows them all: "sense" hides those in rooms unlit and out of view. A door spot shows whilst either of its rooms does. They fade with the world's fold too (`w.view.foldNode`), so come up as it unfolds on load.
 - jsh `spots show`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`SpotOverlay`: `w.spots.draw`, `colour`).
 - A right click on one, or a long press on touch, chooses it in an open Decorator alone (event `spot-chosen`), which says "decorator selected" on the player's bar. The overlay still colours from the player, and the Decorator's own choice never reaches it. A press walks there, as on the floor.
 

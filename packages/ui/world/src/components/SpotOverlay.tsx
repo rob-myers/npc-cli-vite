@@ -128,16 +128,14 @@ export function SpotOverlay() {
     [opacity.icon.value, opacity.outline.value, opacity.arrow.value] = [ink.icon, ink.outline, ink.arrow];
   });
 
-  /** How much of a spot shows, given its rooms' fade `shown`: only in sight mode does it fade with them */
-  const spotSeen = (shown: THREE.Node<"float">) => shown.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-
   const iconsMaterial = useMemo(() => {
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
     const texNode = texture(w.texDecor.tex, vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs));
     texNode.depthNode = uint(attribute<"float">("uvTextureIds", "float"));
     const slots = vec2(attribute<"float">("spotSlot", "float"), attribute<"float">("spotSlotB", "float"));
-    const seen = spotSeen(w.view.fadeRoomsFx.fadeAtPair(slots));
+    // faded with its rooms, so in `sense` mode an unlit room's are hidden
+    const seen = w.view.fadeRoomsFx.fadeAtPair(slots);
     // biome-ignore format: succint
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false, alphaTest: 0.05 });
     // a billboard `w` across, upright on screen: its arrow on the floor gives its facing
@@ -182,7 +180,7 @@ export function SpotOverlay() {
 
   const arrowsMaterial = useMemo(() => {
     const ink = attribute<"vec4">("arrowInk", "vec4");
-    const seen = spotSeen(w.view.fadeRoomsFx.getVisiblity(ink.w));
+    const seen = w.view.fadeRoomsFx.getVisiblity(ink.w);
     // biome-ignore format: succint
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
     const alpha = seen.mul(opacity.arrow).mul(w.view.foldNode);
