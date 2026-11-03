@@ -640,7 +640,7 @@ const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scroll
 /** The bar as a column on either side */
 const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
 const columnClass = "pointer-events-none flex flex-col items-center";
-const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-1 [scrollbar-width:none]";
+const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
 /** The notices: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
