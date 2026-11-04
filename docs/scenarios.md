@@ -8,7 +8,7 @@ A query becomes an interaction when it is asked again, on a tick or an event, an
 
 `@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
-On the left is one list in three sections: **scenarios**, **characters** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
+On the left is one list in four sections: **scenarios**, **characters**, **routes** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}`, `route/{slug}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
 ## The scenarios
 
@@ -162,7 +162,7 @@ A character has, per map, `maps[mapKey].rooms` (grKeys) and `.doors` (the gdKeys
 
 ## Routes
 
-A way a guard walks, on one map. One JSON file each, `packages/media/src/scenario/route/{slug}.json`, saved and served as characters are. The Scenario panel does not list them.
+A way a guard walks, on one map. One JSON file each, `packages/media/src/scenario/route/{slug}.json`, saved and served as characters are. The Scenario panel lists every map's by name, and shows one chosen (`RouteCard`): its fields and points, read-only. The Decorator edits them.
 
 | Field | Default | |
 | --- | --- | --- |

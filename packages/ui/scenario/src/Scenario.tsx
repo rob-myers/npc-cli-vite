@@ -3,6 +3,8 @@ import { helper } from "@npc-cli/ui__world/helper";
 import {
   type CharacterEntry,
   isCharacterEntry,
+  isRouteEntry,
+  type RouteEntry,
   scenarioChangedEvent,
   scenarioSlugRe,
 } from "@npc-cli/ui__world/scenario.schema";
@@ -11,6 +13,7 @@ import {
   loadScenarioEntries,
   saveScenarioEntry,
   scenarioShared,
+  useScenarioEntries,
   useScenarioShared,
 } from "@npc-cli/ui__world/scenario-shared";
 import { useWorld } from "@npc-cli/ui__world/use-world";
@@ -25,7 +28,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
-import { useContext, useEffect, useRef, useState } from "react";
+import { Fragment, useContext, useEffect, useRef, useState } from "react";
 import { ConversationCard } from "./ConversationCard";
 import { columnClass, inputClass } from "./classes";
 import { conversations } from "./demo/trees";
@@ -210,6 +213,8 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   }, []);
 
   const { draft, entries } = state;
+  /** Every map's routes, shown here: the Decorator edits them */
+  const routes = Object.values(useScenarioEntries()).filter(isRouteEntry);
   const zoom = meta.zoom ?? 1;
   /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
@@ -251,6 +256,10 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
           <IconButton title="add a character" icon={PlusIcon} onClick={state.add} />
         </div>
       )}
+      <div>
+        <div className={sectionClass}>routes</div>
+        {routes.map((r) => listButton(r.key, r.name || r.key, r.mapKey))}
+      </div>
       <div>
         <div className={sectionClass}>conversations</div>
         {conversations.map((c) => listButton(`${talkPrefix}${c.key}`, c.title, c.summary))}
@@ -295,10 +304,13 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     );
   const conv = conversations.find((c) => `${talkPrefix}${c.key}` === meta.entryKey);
   const stub = scenarios.find((x) => `${scenarioPrefix}${x.key}` === meta.entryKey);
+  const route = routes.find((r) => r.key === meta.entryKey);
   /** The scenario or conversation chosen, else the character */
   const shownCol =
     stub !== undefined ? (
       <ScenarioCard stub={stub} />
+    ) : route !== undefined ? (
+      <RouteCard route={route} />
     ) : conv !== undefined ? (
       <ConversationCard key={conv.key} w={w} conv={conv} />
     ) : (
@@ -363,6 +375,43 @@ function ScenarioCard({ stub }: { stub: ScenarioStub }) {
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+/** A route as saved, read-only: the Decorator's route tab edits it, and `act guard` walks it */
+function RouteCard({ route }: { route: RouteEntry }) {
+  const rows: [string, string][] = [
+    ["map", route.mapKey],
+    ["npc", route.npcKey ?? "guard-0"],
+    ["walked", route.cycle ? "round, as a cycle" : "back and forth"],
+    ["watches", route.watch.length > 0 ? route.watch.join(", ") : "the player"],
+    ["says", route.say === "" ? "nothing: a script reads guard-spotted" : `"${route.say}", halting`],
+    ["stops", `${route.stop.secs}s, then looks ${route.stop.lookDeg}° each way for ${route.stop.lookSecs}s`],
+  ];
+  return (
+    <div className="p-3 flex flex-col gap-2">
+      <div className="text-zinc-100">{route.name || route.key}</div>
+      <div className="text-zinc-500">{route.key}</div>
+      <div className="grid grid-cols-[auto_1fr] gap-x-3">
+        {rows.map(([label, value]) => (
+          <Fragment key={label}>
+            <span className="text-zinc-500">{label}</span>
+            <span>{value}</span>
+          </Fragment>
+        ))}
+      </div>
+      <div className="text-zinc-500">points</div>
+      <ol className="flex flex-col list-decimal pl-6 font-mono" start={0}>
+        {route.points.map(([x, y], i) => (
+          <li key={i}>
+            {x}, {y}
+          </li>
+        ))}
+      </ol>
+      <div className="text-zinc-500">
+        Edit it in the Decorator's route tab. <code>act guard route:{route.key.slice("route/".length)}</code> walks it.
+      </div>
     </div>
   );
 }
