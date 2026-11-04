@@ -1,14 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import {
-  isScenarioKey,
-  type ScenarioEntry,
-  ScenarioEntrySchema,
-  scenarioApiPath,
-  scenarioChangedEvent,
-  scenarioKinds,
-} from "@npc-cli/ui__world/scenario.schema";
+import * as staticSchema from "@npc-cli/ui__world/scenario.schema";
+import { type ScenarioEntry, scenarioApiPath, scenarioChangedEvent } from "@npc-cli/ui__world/scenario.schema";
 import stringify from "json-stringify-pretty-compact";
 import type { Plugin } from "vite";
 
@@ -57,9 +51,10 @@ export function scenarioPlugin(): Plugin {
         res.setHeader("Cache-Control", "no-store");
         try {
           // loaded afresh, so an edit to the schema needs no restart: the static import is cached
-          const { ScenarioEntrySchema } = (await server.ssrLoadModule(SCHEMA_PATH)) as ScenarioSchemaModule;
+          const schema = (await server.ssrLoadModule(SCHEMA_PATH)) as ScenarioSchemaModule;
+          const { ScenarioEntrySchema, isScenarioKey } = schema;
           if (url === scenarioApiPath && req.method === "GET") {
-            return res.end(JSON.stringify(readEntries(ScenarioEntrySchema)));
+            return res.end(JSON.stringify(readEntries(schema)));
           }
           const key = url.slice(FILE_PREFIX.length);
           const filePath = path.join(SCENARIO_DIR, `${key}.json`);
@@ -116,18 +111,17 @@ export function scenarioPlugin(): Plugin {
 }
 
 /** By key; a file that does not parse is skipped with a warning */
-function readEntries(
-  schema: ScenarioSchemaModule["ScenarioEntrySchema"] = ScenarioEntrySchema,
-): Record<string, ScenarioEntry> {
+function readEntries(schema: ScenarioSchemaModule = staticSchema): Record<string, ScenarioEntry> {
   const entries: Record<string, ScenarioEntry> = {};
-  for (const kind of scenarioKinds) {
+  for (const kind of schema.scenarioKinds) {
     const dir = path.join(SCENARIO_DIR, kind);
     if (!fs.existsSync(dir)) continue;
     for (const filename of fs.readdirSync(dir).filter((x) => x.endsWith(".json"))) {
       const key = `${kind}/${filename.slice(0, -".json".length)}`;
       try {
-        const entry = schema.parse(JSON.parse(fs.readFileSync(path.join(dir, filename), "utf8")));
-        entries[key] = { ...entry, key, kind };
+        const entry = schema.ScenarioEntrySchema.parse(JSON.parse(fs.readFileSync(path.join(dir, filename), "utf8")));
+        if (entry.kind !== kind) throw Error(`its kind is not ${kind}`);
+        entries[key] = { ...entry, key };
       } catch (e) {
         console.warn(`[scenario] skipped ${key}: ${e instanceof Error ? e.message : e}`);
       }

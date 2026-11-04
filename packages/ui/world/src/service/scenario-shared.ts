@@ -3,6 +3,7 @@ import bundledEntries from "virtual:scenario";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import z from "zod";
 import {
+  type CharacterEntry,
   isScenarioCharacter,
   type ScenarioCharacter,
   type ScenarioEntry,
@@ -17,7 +18,7 @@ import {
  */
 export type ScenarioShared = {
   /** The entry the Scenario panel shows, as edited, for the map to outline */
-  entry: null | ScenarioEntry;
+  entry: null | CharacterEntry;
   /** The npc last chosen on the map, whose entry the Scenario panel then shows */
   npcKey: null | string;
   /** A world point the Scenario panel asks the map to centre on: a new object each time */
@@ -52,7 +53,7 @@ export function useScenarioShared(worldKey: string): ScenarioShared {
  * Every character with an npc, loaded from the files so no Scenario panel need be open.
  * `shown`, the one being edited, stands in for its saved self
  */
-export function useScenarioCharacters(shown: null | ScenarioEntry): ScenarioCharacter[] {
+export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCharacter[] {
   const [entries, setEntries] = useState<Record<string, ScenarioEntry>>({});
 
   useEffect(() => {

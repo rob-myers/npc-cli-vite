@@ -343,7 +343,7 @@ const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
 /** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */
 const makeWay = { within: 2, clear: 0.6, pass: 0.4 };
 
-export class MapSpots {
+class MapSpots {
   byKey = new Map<string, MapSpot>();
   byAlias = new Map<string, MapSpot>();
   /** By a room's or door's key, e.g. `g0r12`, the spots whose alias it begins */
@@ -551,7 +551,7 @@ export class MapSpots {
 type Verdict = { sees: boolean; settled: WW.SeesSettled };
 
 /** A spot of the map, in world coords. `spot` is its geomorph's own record */
-export type MapSpot = {
+type MapSpot = {
   key: string;
   /** Its key as answered and typed, e.g. `g0r12-3` — see `spotAliasesOf` */
   alias: string;

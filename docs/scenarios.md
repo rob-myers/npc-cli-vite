@@ -17,7 +17,7 @@ As yet each is a stub in `ui/scenario/src/scenarios.ts`, its card listing its st
 | Scenario | Npcs | Status |
 | --- | --- | --- |
 | [Hide and seek](#hide-and-seek) | a seeker, 2-3 hiders | not started |
-| [Guard and intruder](#guard-and-intruder) | 2 guards, an intruder | not started |
+| [Guard and intruder](#guard-and-intruder) | 2 guards, an intruder | started: [routes](#routes) |
 | [Meeting in secret](#meeting-in-secret) | 2 conspirators, a watcher | not started |
 | [Breach and clear](#breach-and-clear) | a squad of 3, those inside | not started |
 
@@ -89,7 +89,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 ## Characters
 
-Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below). `scenarioKinds` is `character` alone, as yet.
+Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, of `character` and [`route`](#routes). A character has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below).
 
 `scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -99,7 +99,7 @@ Authored in DEV and shipped as data. One JSON file per character, `packages/medi
 | write | `POST` / `DELETE /api/scenario/file/{kind}/{slug}`, zod-checked | read-only |
 | change | the watcher sends `scenario-changed`, and the panel reloads | |
 
-A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, so a schema edit needs no restart. An edit to the plugin itself does.
+A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, kinds included, so a schema edit needs no restart. An edit to the plugin itself does.
 
 The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator uses them without depending on the panel.
 
@@ -118,6 +118,29 @@ A character has, per map, `maps[mapKey].rooms` (grKeys) and `.doors` (the gdKeys
 - Selecting a character centres the Decorator's map on their npc, else their first room. Choosing an npc on that map shows the character whose `npcKey` they are.
 - Both go through `scenarioShared`, a small store keyed by `worldKey` (`entry`, `npcKey`, `locate`, `renamed`). Neither panel imports the other, and either may be absent.
 - Editing `npcKey` (committed on enter or blur) removes their npc and adds it back under the new key where they stood, keeping their doors. Clearing it only removes. Editing `skin` reskins them.
+
+## Routes
+
+A way a guard walks, on one map. One JSON file each, `packages/media/src/scenario/route/{slug}.json`, saved and served as characters are. The Scenario panel does not list them.
+
+| Field | Default | |
+| --- | --- | --- |
+| `mapKey` | | The map its points are on |
+| `points` | | Floor points `[x, y]`, at least 2 |
+| `cycle` | `false` | Back to the first after the last, else back and forth |
+| `npcKey` | `guard-0` | Who walks it |
+| `watch` | `[]` | Who they watch for: none listed is the player |
+| `say` | `"Halt!"` | Said on seeing one, unless `false` |
+| `stop` | `{ secs: 2, lookSecs: 2, lookDeg: 60 }` | Seconds stopped at each point, then looking each way, and how far |
+
+jsh `sc` (`packages/cli/src/jsh/world/scenario.ts`) reads and writes them:
+
+| | |
+| --- | --- |
+| `sc ls route`, `sc list route` | This map's routes, a line each. `--all` for every map's. `sc ls character` lists characters |
+| `sc get route/basic-route` | The entry, as a value |
+| `sc save route/basic-route path:$( pick 3 ) [cycle] [npc:guard-0] [watch:rob,kate] [say:Stop!]` | DEV. Points are pick events, `[x, y]` or spot keys, snapped onto the navmesh to the cm, on this map. `cycle:<points>` is a cycle. Saved over, a route keeps what is not given |
+| `sc rm route/basic-route` | DEV |
 
 ## Conversations
 

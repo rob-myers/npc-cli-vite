@@ -1,6 +1,11 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
-import { type ScenarioEntry, scenarioChangedEvent, scenarioSlugRe } from "@npc-cli/ui__world/scenario.schema";
+import {
+  type CharacterEntry,
+  isCharacterEntry,
+  scenarioChangedEvent,
+  scenarioSlugRe,
+} from "@npc-cli/ui__world/scenario.schema";
 import {
   deleteScenarioEntry,
   loadScenarioEntries,
@@ -50,7 +55,9 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
 
       async load() {
         try {
-          const entries = await loadScenarioEntries();
+          const entries = Object.fromEntries(
+            Object.entries(await loadScenarioEntries()).filter(([, e]) => isCharacterEntry(e)),
+          ) as Record<string, CharacterEntry>;
           state.set({ entries, error: null });
           // an edit under way is kept, and our own save left alone
           const key = state.draft?.key ?? meta.entryKey;
@@ -363,7 +370,7 @@ function ScenarioCard({ stub }: { stub: ScenarioStub }) {
 /** Their npc and skin in the World */
 function NpcFields(props: {
   w: WorldState;
-  draft: ScenarioEntry;
+  draft: CharacterEntry;
   onNpcKey(npcKey: string | undefined): void;
   onSkin(skin: string | undefined): void;
 }) {
@@ -416,8 +423,8 @@ function hasRoom(w: WorldState, key: string) {
  */
 function KeyBox(props: {
   w: WorldState | undefined;
-  draft: ScenarioEntry;
-  onPatch(partial: Partial<ScenarioEntry>): void;
+  draft: CharacterEntry;
+  onPatch(partial: Partial<CharacterEntry>): void;
 }) {
   const { w, draft } = props;
   const [text, setText] = useState("");
@@ -533,10 +540,10 @@ const minZoom = 0.7;
 const maxZoom = 2;
 
 type State = {
-  entries: Record<string, ScenarioEntry>;
+  entries: Record<string, CharacterEntry>;
   error: null | string;
   /** The entry shown, as edited */
-  draft: null | ScenarioEntry;
+  draft: null | CharacterEntry;
   dirty: boolean;
   /** Counts edits, so a save knows whether more came whilst it was under way */
   rev: number;
@@ -551,10 +558,10 @@ type State = {
   setNpcKey(npcKey: string | undefined): Promise<void>;
   /** Their npc in the World, if there, takes it */
   setSkin(skin: string | undefined): void;
-  patch(partial: Partial<ScenarioEntry>): void;
+  patch(partial: Partial<CharacterEntry>): void;
   save(): Promise<void>;
   remove(): Promise<void>;
   add(): Promise<void>;
   /** Centre the map on their npc, else their room */
-  locate(entry: ScenarioEntry): void;
+  locate(entry: CharacterEntry): void;
 };

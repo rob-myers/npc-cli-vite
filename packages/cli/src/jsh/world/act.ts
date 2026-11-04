@@ -1,4 +1,3 @@
-import { standConfig } from "@npc-cli/ui__world/const.npc";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
@@ -26,15 +25,16 @@ import { padded, parked } from "./pred";
 export async function act(ct: JshCli.RunArg) {
   const { verb, npcKey, args } = parseAct(ct.args);
   const found = verb === undefined ? undefined : verbs[verb];
-  if (verb === undefined || found === undefined || npcKey === undefined) {
+  if (verb === undefined || found === undefined || (npcKey === undefined && !npclessVerbs.has(verb))) {
     const names = Object.keys(verbs).join(",");
     throw Error(`usage: act {${names}} <npc> …, or act <npc> {${names}}:<value> …`);
   }
   // several, as `rob kate` or `rob,kate`: its options are `key:value`
-  const several = severalVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
-  const npcKeys = [npcKey, ...several].flatMap((key) => key.split(","));
+  const several =
+    severalVerbs.has(verb) || npclessVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
+  const npcKeys = [...(npcKey === undefined ? [] : [npcKey]), ...several].flatMap((key) => key.split(","));
   const opts = args.filter((arg) => several.includes(arg) === false);
-  if (npcKeys.length > 1 && severalVerbs.has(verb) === false) throw Error(`${verb}: one npc only`);
+  if (npcKeys.length > 1 && !severalVerbs.has(verb) && !npclessVerbs.has(verb)) throw Error(`${verb}: one npc only`);
   for (const key of npcKeys) ct.w.npc.get(key);
   ct.api.meta.stack.push(verb); // an error then names it, e.g. `act: hide: …`
   // its waits run down only whilst it runs
@@ -51,7 +51,7 @@ export async function act(ct: JshCli.RunArg) {
     ),
   });
   try {
-    await task.run(() => found({ ct, npcKey: npcKeys[0], npcKeys, task }, ct.api.jsArg(opts) as Opts, opts));
+    await task.run(() => found({ ct, npcKey: npcKeys[0] ?? "", npcKeys, task }, ct.api.jsArg(opts) as Opts, opts));
   } finally {
     handlers.dispose();
   }
@@ -59,6 +59,7 @@ export async function act(ct: JshCli.RunArg) {
 
 /** `act <verb> <npc> …`, else `act <npc> <verb>:<value> …` as the args that verb takes */
 function parseAct([first, ...rest]: string[]) {
+  if (first !== undefined && npclessVerbs.has(first)) return { verb: first, npcKey: undefined, args: rest };
   if (first !== undefined && Object.hasOwn(verbs, first)) return { verb: first, npcKey: rest[0], args: rest.slice(1) };
   for (const [i, arg] of rest.entries()) {
     const [verb, value] = [arg.slice(0, arg.indexOf(":")), arg.slice(arg.indexOf(":") + 1)];
@@ -80,6 +81,8 @@ const shorthands: Record<string, (value: string) => string[]> = {
 
 /** Verbs taking several npcs, planned together */
 const severalVerbs = new Set(["park", "pad"]);
+/** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
+const npclessVerbs = new Set<string>();
 /** Verbs a pause lets finish, as `rejectAll` would zero their fade */
 const fadeVerbs = new Set(["park", "pad"]);
 
@@ -372,3 +375,20 @@ const nudgeMinMove = 0.05;
 const hideTries = 3;
 /** Under `dist` metres walked in `secs` of game time is a stall */
 const stall = { secs: 2, dist: 0.3 };
+
+/**
+ * Where `park` and `pad` stand npcs. `as const` is load-bearing: `plan.worker` keeps typed copies
+ * of these, and only literal types make a drifted copy a compile error
+ */
+export const standConfig = {
+  /** Below this much of a move, `park` turns them on the spot instead */
+  parkMinMove: 0.02,
+  /** How far out `park` looks for a wall to stand against */
+  parkQueryRange: 2,
+  /** How much room `pad` wants round them, from walls and from the parked or padded */
+  padClearance: 0.6,
+  /** How far from where they stand `pad` looks for such a spot */
+  padQueryRange: 3,
+  /** How far clear of a door somebody must stand to be out of the traffic through it */
+  doorwayClearance: 0.6,
+} as const;

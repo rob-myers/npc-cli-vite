@@ -1,0 +1,12 @@
+{
+  "key": "route/test-route",
+  "name": "test-route",
+  "kind": "route",
+  "mapKey": "101-only",
+  "points": [[17.5, 10.4], [17.5, 11.4], [16.5, 10.2]],
+  "cycle": true,
+  "npcKey": "guard-0",
+  "watch": ["rob", "kate"],
+  "say": false,
+  "stop": {"secs": 2, "lookSecs": 2, "lookDeg": 60}
+}

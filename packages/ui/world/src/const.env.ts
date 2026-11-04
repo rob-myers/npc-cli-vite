@@ -151,7 +151,7 @@ export const defaultCameraMode: import("./components/CameraControls").CameraMode
  * How far the rgb shift parts the channels, in css px, from the inner zoom stop to the outer.
  * Out far, it stays under a line's width, else each thin line keeps only its green.
  */
-export const rgbShiftPx = { near: 3, far: 0.5 };
+export const rgbShiftPx = { near: 2, far: 1 } as const;
 /** `embodied` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const embodiedSnapArm = (10 * Math.PI) / 180;
 /**
@@ -188,14 +188,14 @@ export const frontierConfig = {
   panFrac: 0.5,
   /** How far past the outer stop a follow may zoom out to show a raised phaser's dot, as a factor */
   aimOuterScale: 3,
-};
+} as const;
 
 /** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */
 export const cameraSpeed = {
   rotate: { desktop: 1, touch: 1.75 },
   /** An exponent on the pinch's spread ratio, and on the wheel's scale */
   zoom: { desktop: 0.3, touch: 0.8 },
-};
+} as const;
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   post: { lightBg: "#000000", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
@@ -237,7 +237,7 @@ export const doorHeight = wallHeight - 0.001;
 /** Metres a lintel hangs down over a door, in front of it */
 export const lintelHeight = 0.1;
 /** A door's depth: just proud of the walls beside it (faces ±0.05, a hull's ±0.1), so their trim stays behind */
-export const doorPanelDepth = { hull: 0.201, nonHull: 0.101 };
+export const doorPanelDepth = { hull: 0.201, nonHull: 0.101 } as const;
 
 export const floorFadeDelayMs = 260;
 
@@ -293,7 +293,7 @@ export const roomLabel = {
   farAlpha: 0.5,
   /** How much of that is left with the outer stop fully drawn in — a follow at a wall */
   drawnInAlpha: 0.2,
-};
+} as const;
 /** The texture array behind them — see `RoomLabels` */
 export const roomLabelTexOpts = {
   ctKey: "room-labels",
@@ -302,7 +302,7 @@ export const roomLabelTexOpts = {
   numTextures: MAX_ROOM_LABELS,
   srgb: true,
   anisotropy: 4,
-};
+} as const;
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;

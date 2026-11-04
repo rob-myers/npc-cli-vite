@@ -13,17 +13,45 @@ import { ask, detachedUid } from "./worker.main";
  * The npcs they name are snapshotted now — see `docs/perception.md`
  */
 export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.SpotQuery[]) {
-  return awaitPausable(ct.api, (signal) => perceive(ct.w, ct.api.getUid(), spotOp(ct.w, queries), signal));
+  return awaitPausable(ct.api, (signal) => askWorker(ct.w, ct.api.getUid(), spotOp(ct.w, queries), signal));
 }
 
 /** As `spotQuery`, outside any process, e.g. from a keyed tick */
 export function spotQueryDetached(w: JshCli.WorldState, queries: WW.SpotQuery[]) {
-  return perceive(w, detachedUid(), spotOp(w, queries), new AbortController().signal);
+  return askWorker(w, detachedUid(), spotOp(w, queries), new AbortController().signal);
 }
 
-function perceive(w: JshCli.WorldState, uid: string, op: WW.SpotsOp, signal: AbortSignal) {
+function askWorker(w: JshCli.WorldState, uid: string, op: WW.SpotsOp, signal: AbortSignal) {
   return ask<WW.SpotAnswer[]>(w, { type: "perception-query", uid, op }, signal);
 }
+
+/**
+ * The pairs whose first sees the second: eyes open, within `sightHalfArc` of where their head faces, then in sight.
+ * The worker decides the last, e.g. a low obstacle hiding one crouched. `los` asks only that
+ */
+export async function perceive(ct: Pick<JshCli.RunArg, "api" | "w">, pairs: [string, string][], los: boolean) {
+  const facing = pairs.filter(([a, b]) => los || unfaced(ct.w, a, b) === null);
+  if (facing.length === 0) return [];
+  const answers = await spotQuery(
+    ct,
+    facing.map(([a, b]) => ({ q: "sees", a, b })),
+  );
+  return facing.filter((_, i) => {
+    const x = answers[i];
+    return x != null && "crouchHides" in x && x.sees;
+  });
+}
+
+/** Why npc `a` cannot see `b` for their eyes or the way their head faces, else `null` */
+export function unfaced(w: JshCli.WorldState, a: string, b: string) {
+  const [watcher, seen] = [w.n[a], w.n[b]];
+  if (watcher.anim.eyes.look === "shut") return "eyes shut";
+  const off = watcher.anim.bearingOf(seen.point) - watcher.lookY; // the head's way, e.g. sat and turned
+  return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc ? null : "fov";
+}
+
+/** Radians either side of where their head faces that an npc sees */
+const sightHalfArc = Math.PI / 3;
 
 /** An npc's eyes on the front of their head, and its centre, as last posed. Else both above their point */
 function headOf(npc: JshCli.WorldState["n"][string]): Pick<WW.SpotNpc, "eye" | "head"> {
