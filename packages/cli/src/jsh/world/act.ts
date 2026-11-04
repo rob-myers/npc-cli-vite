@@ -23,7 +23,7 @@ import { routes } from "./scenario";
  * act pad kate by:1
  * act kate nudge:rob
  * act guard route:basic-route
- * act guard cycle:$( pick 4 ) guard-0,guard-1 custom
+ * act guard cycle:$( pick 4 ) guard-0,guard-1 say:""
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
@@ -35,9 +35,7 @@ export async function act(ct: JshCli.RunArg) {
   }
   // several, as `rob kate` or `rob,kate`: its options are `key:value`
   const several =
-    severalVerbs.has(verb) || npclessVerbs.has(verb)
-      ? args.filter((arg) => arg.includes(":") === false && verbFlags[verb]?.has(arg) !== true)
-      : [];
+    severalVerbs.has(verb) || npclessVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
   const npcKeys = [...(npcKey === undefined ? [] : [npcKey]), ...several].flatMap((key) => key.split(","));
   const opts = args.filter((arg) => several.includes(arg) === false);
   if (npcKeys.length > 1 && !severalVerbs.has(verb) && !npclessVerbs.has(verb)) throw Error(`${verb}: one npc only`);
@@ -89,8 +87,6 @@ const shorthands: Record<string, (value: string) => string[]> = {
 const severalVerbs = new Set(["park", "pad"]);
 /** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
 const npclessVerbs = new Set(["guard"]);
-/** Bare options a verb takes, which are not npcs */
-const verbFlags: Partial<Record<string, Set<string>>> = { guard: new Set(["custom"]) };
 /** Verbs a pause lets finish, as `rejectAll` would zero their fade */
 const fadeVerbs = new Set(["park", "pad"]);
 
@@ -126,7 +122,7 @@ const verbs: Record<string, Verb> = {
   },
   /**
    * `route:<slug>`, else `path:<points>` or `cycle:<points>`, then `[npcs]`: they walk it, stopping at each point to look either side.
-   * Those absent are spawned. Seeing whom they watch, they emit `guard-spotted`, then halt and speak unless `custom`
+   * Those absent are spawned. Seeing whom they watch, they emit `guard-spotted`, then halt and say `say`, unless it is empty
    */
   async guard(ctx, opts) {
     const { ct } = ctx;
@@ -146,7 +142,6 @@ const verbs: Record<string, Verb> = {
       ...saved,
       watch: typeof opts.watch === "string" ? opts.watch.split(",") : saved.watch,
       say: typeof opts.say === "string" ? opts.say : saved.say,
-      custom: typeof opts.custom === "boolean" ? opts.custom : saved.custom,
       stop: {
         secs: Number(opts.secs ?? saved.stop.secs),
         lookSecs: Number(opts.lookSecs ?? saved.stop.lookSecs),
@@ -311,7 +306,7 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
               if (now - move.at < stall.secs) break;
               if (npc.distanceTo(move.from) < stall.dist) npc.rejectAll(Error("blocked"));
               [move.from, move.at] = [{ ...npc.point }, now];
-            } else if (move.result === "paused") {
+            } else if (move.result === "paused" || move.result === "again") {
               walk(g, now);
             } else if (move.result instanceof Error) {
               throw move.result;
@@ -361,7 +356,7 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
         const fresh = now - (g.sightings.get(seen) ?? -Infinity) > guardLoseSecs;
         g.sightings.set(seen, now);
         if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, route: route.key || null });
-        if (route.custom) continue;
+        if (route.say === "") continue;
         if (g.phase !== "halt") {
           [g.phase, g.since, g.seen] = ["halt", now, seen];
           g.move = null;
@@ -378,7 +373,7 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
 
 type GuardPhase = "walk" | "stop" | "left" | "right" | "halt";
 /** A move in flight, not awaited: `result` once it ends, and where and when they last made headway */
-type GuardMove = { result: undefined | boolean | "paused" | Error; from: Geom.VectJson; at: number };
+type GuardMove = { result: undefined | boolean | "paused" | "again" | Error; from: Geom.VectJson; at: number };
 
 /** A metre from `p` at `angle` */
 const along = (p: Geom.VectJson, angle: number) => ({ x: p.x + Math.cos(angle), y: p.y + Math.sin(angle) });
@@ -543,7 +538,9 @@ async function goTo(ctx: Ctx, at: Geom.VectJson) {
   let move = walk();
   for (let from = npc.point; ; from = npc.point) {
     const arrived = await ctx.task.wait(move, 1000 * stall.secs);
-    if (arrived === "paused") {
+    if (arrived === "again") {
+      move = walk();
+    } else if (arrived === "paused") {
       await ctx.task.wait(api.awaitResume());
       move = walk();
     } else if (arrived !== undefined) {
@@ -584,8 +581,13 @@ function isSpot(answer: undefined | WW.SpotAnswer): answer is WW.SpotJson {
 /** `a,b,c` as a list, e.g. `rooms:g0r1,g0r2` */
 const csv = (x: Opts[string]) => (typeof x === "string" ? x.split(",") : undefined);
 
-/** How a walk ends besides arriving, by its error: given up on, or stopped by a pause */
-const walkEnds: Partial<Record<string, false | "paused">> = { blocked: false, stuck: false, paused: "paused" };
+/** How a walk ends besides arriving, by its error: given up on, stopped by a pause, or cut short by a look and walked again */
+const walkEnds: Partial<Record<string, false | "paused" | "again">> = {
+  blocked: false,
+  stuck: false,
+  paused: "paused",
+  "look again": "again",
+};
 /** Below this, a nudge slid short against something is no move at all */
 const nudgeMinMove = 0.05;
 /** Spots `hide` tries, each it is blocked from skipped, before failing */

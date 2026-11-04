@@ -21,6 +21,8 @@ menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
 | `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots. A view left over no geomorph is reset |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
 | `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor; `HeightInput` |
+| `ui/decorator/src/RouteLayer.tsx` | the chosen route: its legs and numbered points, a point draggable |
+| `ui/decorator/src/route-edit.ts` | pure helpers over a route's points: `snapped`, `movedPoint`, `inserted`, `removed`, `legsOf` |
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
 | `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show`, the sidebar |
@@ -206,6 +208,18 @@ SVG's own screen transform (`toMap`), which letterboxing does not fool.
 
 The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to at least
 `locateZoom`) — never the World's camera, which is the player's.
+
+## Routes
+
+The sidebar's **route** tab lists this map's routes (`useScenarioRoutes`): name, npc, point count, and ↻ for a cycle. See Routes in `docs/scenarios.md`. Choosing one draws it on the map (`RouteLayer`), with an arrow mid-leg the way it is walked, and centres the map on it.
+
+In DEV it is editable, each edit saving its file (`saveScenarioEntry`):
+
+- **Drag a point.** Shift or ctrl/alt snap it, as for decor. On release it is snapped onto the navmesh, to the cm. Off it, the point springs back.
+- **Drag a leg** to move the whole route, snapped the same way. If any point would be off the navmesh, it all springs back.
+- **Right-click a leg** to insert a point there, **a point** to delete it (2 are kept), **either** to toggle cycle (`DecorMenu`).
+
+Until the reload has the save, the edited route is drawn from a draft, so the old points never flash back. Route edits are not in the decor history, so there is no undo. Making or removing a route is jsh `sc save` and `sc rm`.
 
 ## Not built yet
 

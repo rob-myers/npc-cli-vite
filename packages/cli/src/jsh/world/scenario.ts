@@ -18,7 +18,7 @@ import { spotQuery } from "./perception.main";
  * sc list route --all
  * sc get route/basic-route
  * sc save route/basic-route path:$( pick 3 ) npc:guard-0
- * sc save route/basic-route cycle custom watch:rob,kate say:Stop!
+ * sc save route/basic-route cycle watch:rob,kate say:Stop!
  * sc rm route/basic-route
  * ```
  */
@@ -83,7 +83,6 @@ async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
     npc?: string;
     watch?: string | string[];
     say?: string;
-    custom?: boolean;
     name?: string;
   };
   const prev = (await loadScenarioEntries())[key] as undefined | RouteEntry;
@@ -102,7 +101,6 @@ async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
     npcKey: opts.npc ?? prev?.npcKey,
     watch: watch ?? prev?.watch,
     say: opts.say ?? prev?.say,
-    custom: opts.custom ?? prev?.custom,
   });
   await saveScenarioEntry(entry);
   ct.api.writeInfo(`saved ${summary(entry, true)}`);

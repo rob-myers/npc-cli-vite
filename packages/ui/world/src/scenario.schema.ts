@@ -38,10 +38,8 @@ export const RouteEntrySchema = z.object({
   npcKey: z.string().optional(),
   /** Who they watch for: none listed is the player */
   watch: z.array(z.string()).default([]),
-  /** What they say on seeing one */
+  /** What they say on seeing one, halting. Empty, they neither halt nor speak: a script reads `guard-spotted` */
   say: z.string().default("Halt!"),
-  /** Their sighting is left to a script reading `guard-spotted`: they neither halt nor speak */
-  custom: z.boolean().default(false),
   /** Game seconds stopped at each point, then looking each way, and how far each way in degrees */
   stop: z
     .object({ secs: z.number().default(2), lookSecs: z.number().default(2), lookDeg: z.number().default(60) })

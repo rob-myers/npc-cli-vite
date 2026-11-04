@@ -1,7 +1,14 @@
 import { Menu } from "@base-ui/react/menu";
 import { Switch } from "@base-ui/react/switch";
 import type { WorldState } from "@npc-cli/ui__world";
-import { scenarioShared, useScenarioCharacters, useScenarioShared } from "@npc-cli/ui__world/scenario-shared";
+import type { RouteEntry } from "@npc-cli/ui__world/scenario.schema";
+import {
+  saveScenarioEntry,
+  scenarioShared,
+  useScenarioCharacters,
+  useScenarioRoutes,
+  useScenarioShared,
+} from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
@@ -35,6 +42,7 @@ import {
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { RouteLayer } from "./RouteLayer";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
@@ -49,6 +57,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
   const characters = useScenarioCharacters(character);
+  /** This map's routes, as their files have them */
+  const routes = useScenarioRoutes(w.mapKey);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
@@ -100,6 +110,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       spot: null,
       sidebarTab: "decor",
       mapEl: null,
+      route: null,
+      routeDraft: null,
+      routeError: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -248,6 +261,20 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
+      chooseRoute(key) {
+        const points = routes[key]?.points ?? [];
+        state.set({ route: key, routeError: null, sidebarTab: "route" });
+        if (points.length === 0) return;
+        const [x, y] = points.reduce(
+          ([sx, sy], [px, py]) => [sx + px / points.length, sy + py / points.length],
+          [0, 0],
+        );
+        map.current?.centreOn(x, y, locateZoom, sidebarOffset());
+      },
+      saveRoute(next) {
+        state.set({ routeDraft: next, routeError: null });
+        saveScenarioEntry(next).catch((e) => state.set({ routeDraft: null, routeError: String(e) }));
+      },
       chooseSpot(pick) {
         state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
         if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
@@ -262,8 +289,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, routes], reset: { history: false } },
   );
+
+  // a reload has the saved route, so its draft may go
+  useEffect(() => void (state.routeDraft = null), [routes]);
+  /** The chosen route, as edited */
+  const route =
+    state.route === null
+      ? null
+      : state.routeDraft?.key === state.route
+        ? state.routeDraft
+        : (routes[state.route] ?? null);
 
   /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
@@ -495,6 +532,34 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
+            {state.sidebarTab === "route" && (
+              <div className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
+                {Object.values(routes).map((x) => (
+                  <button
+                    key={x.key}
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-0.5 text-left cursor-pointer hover:bg-zinc-800",
+                      x.key === state.route ? "bg-zinc-800 text-zinc-100" : "text-zinc-400",
+                    )}
+                    onClick={() => state.chooseRoute(x.key)}
+                  >
+                    <span className="truncate">{x.name || x.key}</span>
+                    <span className="ml-auto shrink-0 text-zinc-500">
+                      {x.npcKey ?? "guard-0"} · {x.points.length}
+                      {x.cycle ? " ↻" : ""}
+                    </span>
+                  </button>
+                ))}
+                {Object.keys(routes).length === 0 && (
+                  <div className="px-2 py-1 text-zinc-600">
+                    no routes on this map: <code>sc save route/{"{slug}"} path:$( pick 3 )</code>
+                  </div>
+                )}
+                {routesEditable === false && <div className="px-2 py-1 text-zinc-600">read-only outside DEV</div>}
+                {state.routeError !== null && <div className="px-2 py-1 text-red-300">{state.routeError}</div>}
+              </div>
+            )}
           </div>
         )}
         {meta.sidebarOpen === false && (
@@ -522,6 +587,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onTarget={(key) => state.selected.includes(key) || state.select([key])}
           onCommit={(def, merge) => state.commit([def], merge)}
           onRemove={(key) => state.remove([key])}
+          route={routesEditable ? route : null}
+          onRouteCommit={state.saveRoute}
         >
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
@@ -547,6 +614,15 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             }
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
+            {route !== null && (
+              <RouteLayer
+                w={w}
+                route={route}
+                editable={routesEditable}
+                onCommit={state.saveRoute}
+                onPressing={state.onPressing}
+              />
+            )}
             {meta.show.spots && spots !== undefined && (
               <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={revealSpot} />
             )}
@@ -708,11 +784,22 @@ type State = {
   /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
   sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
+  /** The route chosen in the route tab, drawn on the map, by key */
+  route: null | string;
+  /** The chosen route as last edited, until a reload has it saved */
+  routeDraft: null | RouteEntry;
+  routeError: null | string;
+  /** Chooses a route, and centres the map on it */
+  chooseRoute(key: string): void;
+  /** DEV: saves it, keeping it as a draft meanwhile */
+  saveRoute(next: RouteEntry): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const sidebarTabs = ["decor", "spot"] as const;
+const sidebarTabs = ["decor", "spot", "route"] as const;
+/** Saving reaches a route's file in DEV alone */
+const routesEditable = import.meta.env.DEV === true;
 type SidebarTab = (typeof sidebarTabs)[number];
 
 function SidebarHint({ children }: { children: React.ReactNode }) {

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import z from "zod";
 import {
   type CharacterEntry,
+  isRouteEntry,
   isScenarioCharacter,
+  type RouteEntry,
   type ScenarioCharacter,
   type ScenarioEntry,
   ScenarioEntrySchema,
@@ -49,11 +51,8 @@ export function useScenarioShared(worldKey: string): ScenarioShared {
   return useSyncExternalStore(scenarioShared.subscribe, () => scenarioShared.get(worldKey));
 }
 
-/**
- * Every character with an npc, loaded from the files so no Scenario panel need be open.
- * `shown`, the one being edited, stands in for its saved self
- */
-export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCharacter[] {
+/** Every entry by key, loaded from the files so no Scenario panel need be open, and reloaded as they change */
+export function useScenarioEntries(): Record<string, ScenarioEntry> {
   const [entries, setEntries] = useState<Record<string, ScenarioEntry>>({});
 
   useEffect(() => {
@@ -70,10 +69,31 @@ export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCha
     };
   }, []);
 
+  return entries;
+}
+
+/** Every character with an npc. `shown`, the one being edited, stands in for its saved self */
+export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCharacter[] {
+  const entries = useScenarioEntries();
   // kept whilst neither changes: a caller may depend on its identity
   return useMemo(
     () => Object.values(shown === null ? entries : { ...entries, [shown.key]: shown }).filter(isScenarioCharacter),
     [entries, shown],
+  );
+}
+
+/** The routes on map `mapKey`, by key */
+export function useScenarioRoutes(mapKey: string): Record<string, RouteEntry> {
+  const entries = useScenarioEntries();
+  return useMemo(
+    () =>
+      Object.fromEntries(
+        Object.values(entries)
+          .filter(isRouteEntry)
+          .filter((x) => x.mapKey === mapKey)
+          .map((x) => [x.key, x]),
+      ),
+    [entries, mapKey],
   );
 }
 
