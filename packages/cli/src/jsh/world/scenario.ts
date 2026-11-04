@@ -18,7 +18,7 @@ import { spotQuery } from "./perception.main";
  * sc list route --all
  * sc get route/basic-route
  * sc save route/basic-route path:$( pick 3 ) npc:guard-0
- * sc save route/basic-route cycle watch:rob,kate say:Stop!
+ * sc save route/basic-route cycle custom watch:rob,kate say:Stop!
  * sc rm route/basic-route
  * ```
  */
@@ -82,7 +82,8 @@ async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
     cycle?: boolean | unknown[];
     npc?: string;
     watch?: string | string[];
-    say?: string | false;
+    say?: string;
+    custom?: boolean;
     name?: string;
   };
   const prev = (await loadScenarioEntries())[key] as undefined | RouteEntry;
@@ -101,6 +102,7 @@ async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
     npcKey: opts.npc ?? prev?.npcKey,
     watch: watch ?? prev?.watch,
     say: opts.say ?? prev?.say,
+    custom: opts.custom ?? prev?.custom,
   });
   await saveScenarioEntry(entry);
   ct.api.writeInfo(`saved ${summary(entry, true)}`);
@@ -132,3 +134,17 @@ async function toPoints(ct: JshCli.RunArg, given: unknown[]): Promise<[number, n
 }
 
 const cm = (x: number) => Math.round(x * 100) / 100;
+
+/** For `act guard`: kept off the shell as an object */
+export const routes = {
+  /** A saved route by `{slug}` or `route/{slug}`, else a route value, e.g. `$( sc get … )`: on this map */
+  async find(ct: JshCli.RunArg, value: unknown): Promise<RouteEntry> {
+    const key = typeof value === "string" ? (value.startsWith("route/") ? value : `route/${value}`) : null;
+    const entry = key === null ? value : (await loadScenarioEntries())[key];
+    if (entry === undefined) throw Error(`not found: ${key}`);
+    const route = RouteEntrySchema.parse(entry);
+    if (route.mapKey !== ct.w.mapKey) throw Error(`${route.key} is on ${route.mapKey}`);
+    return route;
+  },
+  toPoints,
+};

@@ -102,7 +102,8 @@ export function answerSpotQueries(
   };
   /**
    * Whether `a` sees `b` now, and what settled it. Rooms out of view, and pairs the lists never list, are no.
-   * Spot to spot the lists say. Those always listed are yes, unless `b` crouches. Only the rest cast lines
+   * Spot to spot the lists say. Always listed from spots within `alwaysReach` of each is yes, unless `b` crouches.
+   * Only the rest cast lines
    */
   const judge = (refA: string, refB: string): Verdict => {
     const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
@@ -115,7 +116,12 @@ export function answerSpotQueries(
     // a room has no one eye to cast lines from
     if ((na === undefined && nb === undefined) || isGroup(refA) || isGroup(refB))
       return { sees: true, settled: listed };
-    if (listed === "always" && nb?.crouched !== true) return { sees: true, settled: "always" };
+    if (
+      listed === "always" &&
+      nb?.crouched !== true &&
+      all.listedAny(nearTo(A, na), nearTo(B, nb), isOpen) === "always"
+    )
+      return { sees: true, settled: "always" };
     return { sees: eyeSees(eyeOf(refA), headOf(refB), na, nb), settled: "lines" };
   };
   /** `judge`'s verdict, cached with an npc by where they stand and how */
@@ -573,6 +579,11 @@ const cellSize = 2;
 const spotOfReach = 2;
 /** Metres: the spots of their room this near are all theirs */
 const ownReach = sightConfig.regionRadius;
+/** Metres from a spot within which its `always` stands for an npc's own view */
+const alwaysReach = 0.3;
+/** Their spots within `alwaysReach`, if an npc */
+const nearTo = (at: At, npc: undefined | WW.SpotNpc): At =>
+  npc === undefined ? at : { ...at, spots: at.spots.filter((s) => dist(s, npc.point) <= alwaysReach) };
 /** Metres from a door spot that stand in its door */
 const doorReach = 0.5;
 /** Metres from where they sit or lie to its doable spot */

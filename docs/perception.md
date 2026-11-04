@@ -49,7 +49,7 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
 2. **Rooms:** `b` must be in a room `a` has in view.
-3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
+3. **The lists,** over every pair of their spots: never listed is no. `always` is yes unless `b` is crouched, but between npcs only from spots within `alwaysReach` (0.3 m) of each: a spot further off has a view their eye may not.
 4. **Lines,** for the rest: from `a`'s eyes to `b`'s head: its centre, and 0.15 m either side across the line. An npc's eyes are on the front of their head as last posed, and its centre inside it, from its bone (`headOf` in `perception.main.ts`), so they follow a crouch, a seat, a bed or a top bunk. Which way `b` faces does not move the lines. A spot's are 1.37 m up. A low obstacle stops a line passing at or below its top. Lines to a fully crouched npc end 0.6 m up by rule, though their head clears a desk, so cover `crouchHideHeight` tall hides them.
 
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.

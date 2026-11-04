@@ -92,6 +92,14 @@ declare namespace JshCli {
         charge: number;
       }
     | {
+        /** A guard on a route saw someone they watch for — jsh `act guard` */
+        key: "guard-spotted";
+        npcKey: string;
+        seen: string;
+        /** Its key, e.g. `route/basic-route`, else `null` for an unsaved path */
+        route: null | string;
+      }
+    | {
         /** `by`'s psi acted on them, a placeholder */
         key: "psi-action";
         by: string;

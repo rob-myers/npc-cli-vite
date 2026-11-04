@@ -882,6 +882,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "carried":
           case "door-denied":
+          case "guard-spotted":
           case "item-handled":
           case "npc-toggled":
           case "npc-posed":

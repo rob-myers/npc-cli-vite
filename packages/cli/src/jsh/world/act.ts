@@ -1,9 +1,11 @@
+import { type RouteEntry, RouteEntrySchema } from "@npc-cli/ui__world/scenario.schema";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { spotQuery } from "./perception.main";
+import { perceive, spotQuery } from "./perception.main";
 import { isPaused, npcQuery, parkedNow, requestDetached, roomOthers } from "./plan.main";
 import { padded, parked } from "./pred";
+import { routes } from "./scenario";
 
 /**
  * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.
@@ -20,6 +22,8 @@ import { padded, parked } from "./pred";
  * act park rob kate
  * act pad kate by:1
  * act kate nudge:rob
+ * act guard route:basic-route
+ * act guard cycle:$( pick 4 ) guard-0,guard-1 custom
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
@@ -31,11 +35,13 @@ export async function act(ct: JshCli.RunArg) {
   }
   // several, as `rob kate` or `rob,kate`: its options are `key:value`
   const several =
-    severalVerbs.has(verb) || npclessVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
+    severalVerbs.has(verb) || npclessVerbs.has(verb)
+      ? args.filter((arg) => arg.includes(":") === false && verbFlags[verb]?.has(arg) !== true)
+      : [];
   const npcKeys = [...(npcKey === undefined ? [] : [npcKey]), ...several].flatMap((key) => key.split(","));
   const opts = args.filter((arg) => several.includes(arg) === false);
   if (npcKeys.length > 1 && !severalVerbs.has(verb) && !npclessVerbs.has(verb)) throw Error(`${verb}: one npc only`);
-  for (const key of npcKeys) ct.w.npc.get(key);
+  if (npclessVerbs.has(verb) === false) for (const key of npcKeys) ct.w.npc.get(key);
   ct.api.meta.stack.push(verb); // an error then names it, e.g. `act: hide: …`
   // its waits run down only whilst it runs
   const task = new Task(
@@ -82,7 +88,9 @@ const shorthands: Record<string, (value: string) => string[]> = {
 /** Verbs taking several npcs, planned together */
 const severalVerbs = new Set(["park", "pad"]);
 /** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
-const npclessVerbs = new Set<string>();
+const npclessVerbs = new Set(["guard"]);
+/** Bare options a verb takes, which are not npcs */
+const verbFlags: Partial<Record<string, Set<string>>> = { guard: new Set(["custom"]) };
 /** Verbs a pause lets finish, as `rejectAll` would zero their fade */
 const fadeVerbs = new Set(["park", "pad"]);
 
@@ -115,6 +123,40 @@ const verbs: Record<string, Verb> = {
     if (point === null) throw Error(`${at ?? "nothing"}: not wall, npc or spot`);
     const npc = ctx.ct.w.npc.get(ctx.npcKey);
     await resumable(ctx, () => npc.look({ at: point }));
+  },
+  /**
+   * `route:<slug>`, else `path:<points>` or `cycle:<points>`, then `[npcs]`: they walk it, stopping at each point to look either side.
+   * Those absent are spawned. Seeing whom they watch, they emit `guard-spotted`, then halt and speak unless `custom`
+   */
+  async guard(ctx, opts) {
+    const { ct } = ctx;
+    const [cycle, path]: unknown[] = [opts.cycle, opts.path];
+    const given = Array.isArray(cycle) ? cycle : Array.isArray(path) ? path : undefined;
+    const saved =
+      given === undefined
+        ? await settled(ctx, routes.find(ct, opts.route))
+        : RouteEntrySchema.parse({
+            key: "",
+            kind: "route",
+            mapKey: ct.w.mapKey,
+            points: await settled(ctx, routes.toPoints(ct, given)),
+            cycle: Array.isArray(cycle),
+          });
+    const route: RouteEntry = {
+      ...saved,
+      watch: typeof opts.watch === "string" ? opts.watch.split(",") : saved.watch,
+      say: typeof opts.say === "string" ? opts.say : saved.say,
+      custom: typeof opts.custom === "boolean" ? opts.custom : saved.custom,
+      stop: {
+        secs: Number(opts.secs ?? saved.stop.secs),
+        lookSecs: Number(opts.lookSecs ?? saved.stop.lookSecs),
+        lookDeg: Number(opts.lookDeg ?? saved.stop.lookDeg),
+      },
+    };
+    if (ctx.npcKeys.length === 0) ctx.npcKeys.push(route.npcKey ?? "guard-0");
+    const guards = startsOf(ct.w, route, ctx.npcKeys.length).map((start, i) => ({ key: ctx.npcKeys[i], ...start }));
+    await settled(ctx, Promise.all(guards.map((g, i) => postGuard(ctx, g, i))));
+    await patrol(ctx, route, guards);
   },
   /** As `avoid`, judged by every spot they will be at, their room's doors open: they open one going in, or stand by one */
   hide: (ctx, opts) => hideFrom(ctx, opts, true),
@@ -167,6 +209,181 @@ const verbs: Record<string, Verb> = {
     });
   },
 };
+
+/** Where each of `count` guards starts, spaced evenly round a cycle, else along a path there and back */
+function startsOf(w: JshCli.WorldState, route: RouteEntry, count: number) {
+  const pts = route.points.map(([x, y]) => ({ x, y }));
+  // the legs walked in one round: a path's back the same way
+  const order = route.cycle ? [...pts.keys(), 0] : [...pts.keys(), ...[...pts.keys()].reverse().slice(1)];
+  const legs = order
+    .slice(1)
+    .map((to, i) => ({ from: order[i], to, len: Vect.distanceBetween(pts[order[i]], pts[to]) }));
+  const total = legs.reduce((sum, leg) => sum + leg.len, 0);
+  return Array.from({ length: count }, (_, k) => {
+    let s = (k * total) / count;
+    const leg = legs.find((leg) => (s -= leg.len) < 0) ?? legs[0];
+    const t = leg.len === 0 ? 0 : 1 + s / leg.len;
+    const [a, b] = [pts[leg.from], pts[leg.to]];
+    const at = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+    const found = w.npc.getClosestPoly(at, 0.5);
+    return {
+      at: found.success ? { x: found.position[0], y: found.position[2] } : a,
+      next: leg.to,
+      dir: (route.cycle || leg.to > leg.from ? 1 : -1) as 1 | -1,
+      heading: Math.atan2(b.y - a.y, b.x - a.x),
+    };
+  });
+}
+
+type GuardStart = ReturnType<typeof startsOf>[number] & { key: string };
+
+/** Spawned at their start in an `mtf` skin facing along the route, else walked there */
+async function postGuard(ctx: Ctx, g: GuardStart, i: number) {
+  const { w } = ctx.ct;
+  if (w.n[g.key] === undefined) {
+    return void (await w.npc.spawn({ npcKey: g.key, at: g.at, facing: along(g.at, g.heading), as: `mtf-${i % 3}` }));
+  }
+  if ((await goTo({ ...ctx, npcKey: g.key }, g.at)) === false) throw Error(`${g.key}: blocked from their start`);
+}
+
+/**
+ * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/scenarios.md`.
+ * One loop for all, so a kill or a pause holds them at once
+ */
+async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
+  const { ct } = ctx;
+  const { w } = ct;
+  const pts = route.points.map(([x, y]) => ({ x, y }));
+  const { secs, lookSecs, lookDeg } = route.stop;
+  const look = (lookDeg * Math.PI) / 180;
+  const isEnd = (i: number) => route.cycle === false && (i === 0 || i === pts.length - 1);
+  const guards = starts.map((s) => ({
+    ...s,
+    phase: "walk" as GuardPhase,
+    /** Game seconds the phase began */
+    since: 0,
+    move: null as null | GuardMove,
+    /** Who they halted for */
+    seen: null as null | string,
+    /** By whom they saw, game seconds last seen */
+    sightings: new Map<string, number>(),
+  }));
+  type Guard = (typeof guards)[number];
+
+  const walk = (g: Guard, now: number) => {
+    const npc = w.npc.get(g.key);
+    const to = pts[g.next];
+    g.heading = Math.atan2(to.y - npc.point.y, to.x - npc.point.x);
+    const move: GuardMove = { result: undefined, from: { ...npc.point }, at: now };
+    w.e.move({ npcKey: g.key, to }).then(
+      () => void (move.result = true),
+      (e) => void (move.result = e instanceof Error ? (walkEnds[e.message] ?? e) : Error(String(e))),
+    );
+    [g.phase, g.since, g.move] = ["walk", now, move];
+  };
+  /** The next point: round a cycle, else turning back at a path's end */
+  const advance = (g: Guard) => {
+    if (route.cycle) return void (g.next = (g.next + g.dir + pts.length) % pts.length);
+    if (g.next + g.dir < 0 || g.next + g.dir >= pts.length) g.dir = -g.dir as 1 | -1;
+    g.next += g.dir;
+  };
+  const face = (g: Guard, angle: number) => w.n[g.key]?.look({ at: along(w.n[g.key].point, angle) }).catch(noop);
+
+  const distracted = new Set<string>();
+  const sub = w.events.subscribe({
+    next(e) {
+      if (e.key === "psi-action" && e.action === "distract") distracted.add(e.npcKey);
+    },
+  });
+  for (const g of guards) walk(g, w.gameTime.now());
+  try {
+    while (true) {
+      await waitSecs(ctx, guardTickSecs);
+      const now = w.gameTime.now();
+      for (const g of guards) {
+        if (w.n[g.key] === undefined) throw Error(`${g.key}: gone`);
+        const done = distracted.delete(g.key);
+        switch (g.phase) {
+          case "walk": {
+            const move = g.move as GuardMove;
+            const npc = w.npc.get(g.key);
+            if (move.result === undefined) {
+              if (now - move.at < stall.secs) break;
+              if (npc.distanceTo(move.from) < stall.dist) npc.rejectAll(Error("blocked"));
+              [move.from, move.at] = [{ ...npc.point }, now];
+            } else if (move.result === "paused") {
+              walk(g, now);
+            } else if (move.result instanceof Error) {
+              throw move.result;
+            } else if (move.result === false) {
+              ct.api.writeInfo(`${g.key}: blocked from point ${g.next}`);
+              advance(g);
+              walk(g, now);
+            } else {
+              [g.phase, g.since] = ["stop", now];
+              face(g, g.heading);
+            }
+            break;
+          }
+          case "stop":
+            if (done || now - g.since >= secs) {
+              if (isEnd(g.next)) advance(g), walk(g, now);
+              else ([g.phase, g.since] = ["left", now]), face(g, g.heading + look);
+            }
+            break;
+          case "left":
+            if (done || now - g.since >= lookSecs) ([g.phase, g.since] = ["right", now]), face(g, g.heading - look);
+            break;
+          case "right":
+            if (done || now - g.since >= lookSecs) advance(g), walk(g, now);
+            break;
+          case "halt": {
+            const seenAt = g.sightings.get(g.seen as string) ?? -Infinity;
+            if (now - seenAt > guardLoseSecs) {
+              const npc = w.npc.get(g.key);
+              g.next = pts.reduce((best, p, i) => (npc.distanceTo(p) < npc.distanceTo(pts[best]) ? i : best), 0);
+              g.seen = null;
+              walk(g, now);
+            }
+            break;
+          }
+        }
+      }
+
+      const keys = guards.map((g) => g.key);
+      const watched = (route.watch.length > 0 ? route.watch : [w.player.key]).filter(
+        (key): key is string => key !== undefined && w.n[key] !== undefined && keys.includes(key) === false,
+      );
+      if (watched.length === 0) continue;
+      const pairs = keys.flatMap((a) => watched.map((b): [string, string] => [a, b]));
+      for (const [key, seen] of await settled(ctx, perceive(ct, pairs, false))) {
+        const g = guards[keys.indexOf(key)];
+        const fresh = now - (g.sightings.get(seen) ?? -Infinity) > guardLoseSecs;
+        g.sightings.set(seen, now);
+        if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, route: route.key || null });
+        if (route.custom) continue;
+        if (g.phase !== "halt") {
+          [g.phase, g.since, g.seen] = ["halt", now, seen];
+          g.move = null;
+          w.npc.get(key).rejectAll(Error("halt"));
+          w.speech.say(key, route.say, guardSaySecs);
+        }
+        if (g.seen === seen) w.n[key]?.look({ at: seen }).catch(noop);
+      }
+    }
+  } finally {
+    sub.unsubscribe();
+  }
+}
+
+type GuardPhase = "walk" | "stop" | "left" | "right" | "halt";
+/** A move in flight, not awaited: `result` once it ends, and where and when they last made headway */
+type GuardMove = { result: undefined | boolean | "paused" | Error; from: Geom.VectJson; at: number };
+
+/** A metre from `p` at `angle` */
+const along = (p: Geom.VectJson, angle: number) => ({ x: p.x + Math.cos(angle), y: p.y + Math.sin(angle) });
+
+const noop = () => {};
 
 /** Each npc to their plan at once. Those with none are left where they stand, and named once the rest are done */
 async function placeAll<P>(
@@ -373,6 +590,12 @@ const walkEnds: Partial<Record<string, false | "paused">> = { blocked: false, st
 const nudgeMinMove = 0.05;
 /** Spots `hide` tries, each it is blocked from skipped, before failing */
 const hideTries = 3;
+/** Game seconds between a patrol's ticks: their checks for whom they watch */
+const guardTickSecs = 0.25;
+/** Game seconds unseen before a halted guard walks on, and before a sighting is told again */
+const guardLoseSecs = 3;
+/** Seconds a halted guard's words stay over their head */
+const guardSaySecs = 3;
 /** Under `dist` metres walked in `secs` of game time is a stall */
 const stall = { secs: 2, dist: 0.3 };
 

@@ -19,7 +19,7 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
 - **Raised, a press on another npc focuses on them** (from jsh `inventory`, `w.npcFocus.focus`). No line of sight
   is needed. Four placeholder actions show beside them: distract, rush, tired, toilet (`psiActions` in `const.npc`).
   - Opened by a press, Cancel sits under it, and the column keeps there relative to them.
-  - One chosen emits `psi-action` and says so on the bar.
+  - One chosen emits `psi-action` and says so on the bar. Distract ends a patrolling guard's stop (`act guard`).
   - Psi lowered, their room going unlit, or Cancel drops it.
 - **Anyone may focus**, through jsh: `psi rob on:kate`, `psi rob act:distract`, `psi rob --cancel`. No mark shows
   over whom they focus on.

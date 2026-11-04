@@ -39,6 +39,23 @@ Queries: `sees`, `crouchHidden`, spots in reach, spots held by npcs, an npc's ro
 
 Queries: pairs of spots, `seesDoors`, `seesVia` with open doors, a route through spots, facing, who sees whom.
 
+#### Patrolling: `act guard`
+
+`act guard route:test-route [npcs]` walks a [route](#routes), else `path:<points>` or `cycle:<points>` unsaved. The npcs follow as `g1,g2`, else the route's `npcKey`, else `guard-0`. Those absent are spawned at their start in an `mtf` skin. Several are spaced evenly by length: round a cycle, else along a path there and back, so on a path they pass each other.
+
+One loop (`patrol`) ticks every 0.25 game seconds for all of them, so a kill or a pause holds them together. Each guard is in a phase:
+
+| Phase | |
+| --- | --- |
+| `walk` | To their next point. A stall is given up: they skip that point, saying so |
+| `stop` | `stop.secs` facing the way they came. At a path's end, nothing more |
+| `left`, `right` | `stop.lookSecs` each, `stop.lookDeg` either side of that way |
+| `halt` | Facing whom they saw, until 3 s unseen. Then they walk to their nearest point and go on |
+
+A cycle wraps round, and a path turns back at either end. A psi distract ends a guard's `stop`, `left` or `right` early.
+
+Each tick they look for whom they watch (`watch`, else the player) with `perceive`, as `sees` does. A sighting emits `guard-spotted` (`npcKey`, `seen`, `route`), again only after 3 s unseen. Then, unless `custom`, they halt and say `say` for 3 s (`guardSaySecs`). A `custom` guard walks on, leaving the sighting to a script: `events 'e => e.key === "guard-spotted"' | …`.
+
 ### Meeting in secret
 
 1. **Choose a place.** Two spots, near each other and in sight of each other, that the watcher's spot does not see. Doables are preferred, so they sit and talk.
@@ -79,6 +96,7 @@ Npc first, a verb takes its main option as `<verb>:<value>`: `act kate avoid:rob
 | `avoid cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is, judged by that spot alone. Skips spots others stand at or head for. Already unseen, it stays put. Sat or lain, it first gets up beside its seat or bed. Blocked, it tries another, failing after 3. Seen on arrival, it fails saying why, e.g. which of its spots may be seen |
 | `park rob,kate` | Against a nearby wall, clear of its corners, the room's doorways and others parked: they fade there, or turn if already there. Marked parked (`pred.ts`). One with no clear spot stays put and is named in the error |
 | `pad kate [by:1]` | Where there is room to walk right round them, `by` metres (`standConfig.padClearance`) from walls, doorways and others. Marked padded. One with no room is named in the error, e.g. `not padded: kate` |
+| `guard route:test-route [g1,g2] [watch:rob,kate] [say:Stop!] [custom] [secs:2] [lookSecs:2] [lookDeg:60]` | Walks a route until killed, stopping at each point to look either side, else `path:<points>` or `cycle:<points>`. Options replace the route's. See [Patrolling](#patrolling-act-guard) |
 | `nudge kate [from:rob] [by:0.5]` | Walks `by` metres away from `from`, an npc or a point, else a random way, slid along the navmesh so a wall or a door they cannot pass stops them |
 
 A walk that stalls, e.g. blocked by the player, is given up.
@@ -130,7 +148,8 @@ A way a guard walks, on one map. One JSON file each, `packages/media/src/scenari
 | `cycle` | `false` | Back to the first after the last, else back and forth |
 | `npcKey` | `guard-0` | Who walks it |
 | `watch` | `[]` | Who they watch for: none listed is the player |
-| `say` | `"Halt!"` | Said on seeing one, unless `false` |
+| `say` | `"Halt!"` | Said on seeing one |
+| `custom` | `false` | Their sighting is left to a script reading `guard-spotted`: they neither halt nor speak |
 | `stop` | `{ secs: 2, lookSecs: 2, lookDeg: 60 }` | Seconds stopped at each point, then looking each way, and how far |
 
 jsh `sc` (`packages/cli/src/jsh/world/scenario.ts`) reads and writes them:
@@ -139,8 +158,10 @@ jsh `sc` (`packages/cli/src/jsh/world/scenario.ts`) reads and writes them:
 | --- | --- |
 | `sc ls route`, `sc list route` | This map's routes, a line each. `--all` for every map's. `sc ls character` lists characters |
 | `sc get route/basic-route` | The entry, as a value |
-| `sc save route/basic-route path:$( pick 3 ) [cycle] [npc:guard-0] [watch:rob,kate] [say:Stop!]` | DEV. Points are pick events, `[x, y]` or spot keys, snapped onto the navmesh to the cm, on this map. `cycle:<points>` is a cycle. Saved over, a route keeps what is not given |
+| `sc save route/basic-route path:$( pick 3 ) [cycle] [custom] [npc:guard-0] [watch:rob,kate] [say:Stop!]` | DEV. Points are pick events, `[x, y]` or spot keys, snapped onto the navmesh to the cm, on this map. `cycle:<points>` is a cycle. Saved over, a route keeps what is not given |
 | `sc rm route/basic-route` | DEV |
+
+`act guard route:basic-route` walks one: see [Patrolling](#patrolling-act-guard).
 
 ## Conversations
 
