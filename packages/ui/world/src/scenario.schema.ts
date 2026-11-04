@@ -1,17 +1,20 @@
 import z from "zod";
 
-/** Only characters, as yet: still a folder of their own, so another kind can join them */
-export const scenarioKinds = ["character"] as const;
+/** A folder of entries each */
+export const scenarioKinds = ["character", "patrol"] as const;
 
 /** A file's name, and an entry's key after its kind */
 export const scenarioSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
-export const ScenarioEntrySchema = z.object({
+const EntryBase = {
   /** `{kind}/{slug}`, as its path */
   key: z.string(),
-  kind: z.enum(scenarioKinds),
   name: z.string().default(""),
+};
+
+export const CharacterEntrySchema = z.object({
+  ...EntryBase,
+  kind: z.literal("character"),
   /** Their npc in the World */
   npcKey: z.string().optional(),
   /** e.g. `medic-0` */
@@ -22,13 +25,47 @@ export const ScenarioEntrySchema = z.object({
     .default({}),
 });
 
+/** A way a guard walks on one map, stopping at each point to look either side — `act patrol {slug}` */
+export const PatrolEntrySchema = z.object({
+  ...EntryBase,
+  kind: z.literal("patrol"),
+  mapKey: z.string(),
+  /** Floor points `[x, y]`, in metres */
+  points: z.array(z.tuple([z.number(), z.number()])).min(2),
+  /** Back to the first after the last, else back and forth */
+  cycle: z.boolean().default(false),
+  /** Who walks it, else `guard-0` */
+  npcKey: z.string().optional(),
+  /** Who they watch for: none listed is the player */
+  watch: z.array(z.string()).default([]),
+  /** What they say on seeing one, halting. Empty, they neither halt nor speak: a script reads `guard-spotted` */
+  say: z.string().default("Halt!"),
+  /** Game seconds stopped at each point, then looking each way, and how far each way in degrees */
+  stop: z
+    .object({ secs: z.number().default(2), lookSecs: z.number().default(2), lookDeg: z.number().default(60) })
+    .default({ secs: 2, lookSecs: 2, lookDeg: 60 }),
+});
+
+/** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
+export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, PatrolEntrySchema]);
+
 export type ScenarioEntry = z.infer<typeof ScenarioEntrySchema>;
+export type CharacterEntry = z.infer<typeof CharacterEntrySchema>;
+export type PatrolEntry = z.infer<typeof PatrolEntrySchema>;
 
 /** A character with an npc, who can be spawned */
-export type ScenarioCharacter = ScenarioEntry & { kind: "character"; npcKey: string };
+export type ScenarioCharacter = CharacterEntry & { npcKey: string };
+
+export function isCharacterEntry(entry: ScenarioEntry): entry is CharacterEntry {
+  return entry.kind === "character";
+}
 
 export function isScenarioCharacter(entry: ScenarioEntry): entry is ScenarioCharacter {
   return entry.kind === "character" && entry.npcKey !== undefined;
+}
+
+export function isPatrolEntry(entry: ScenarioEntry): entry is PatrolEntry {
+  return entry.kind === "patrol";
 }
 
 export function isScenarioKey(key: string) {

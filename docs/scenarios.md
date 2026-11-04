@@ -8,7 +8,7 @@ A query becomes an interaction when it is asked again, on a tick or an event, an
 
 `@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
-On the left is one list in three sections: **scenarios**, **characters** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
+On the left is one list in four sections: **scenarios**, **characters**, **patrols** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}`, `patrol/{slug}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
 ## The scenarios
 
@@ -17,7 +17,7 @@ As yet each is a stub in `ui/scenario/src/scenarios.ts`, its card listing its st
 | Scenario | Npcs | Status |
 | --- | --- | --- |
 | [Hide and seek](#hide-and-seek) | a seeker, 2-3 hiders | not started |
-| [Guard and intruder](#guard-and-intruder) | 2 guards, an intruder | not started |
+| [Guard and intruder](#guard-and-intruder) | 2 guards, an intruder | started: [patrols](#patrols) |
 | [Meeting in secret](#meeting-in-secret) | 2 conspirators, a watcher | not started |
 | [Breach and clear](#breach-and-clear) | a squad of 3, those inside | not started |
 
@@ -32,12 +32,52 @@ Queries: `sees`, `crouchHidden`, spots in reach, spots held by npcs, an npc's ro
 
 ### Guard and intruder
 
-1. **Post.** The guards take an overwatch pair: two spots which between them see every door of a room, and see each other.
+1. **Patrol.** Each guard walks a [patrol](#patrols), stopping at each point to look either side (`act patrol`).
 2. **Slip through.** The intruder goes door to door through spots neither guard sees. It waits whilst a guard faces its way.
 3. **Alert.** A guard who sees the intruder tells the other, in a speech bubble. The other moves to a spot that sees the intruder's way out.
 4. **Standoff.** The guards raise their phasers. The intruder hides behind cover from the nearer guard, or gives up, and both guards walk to them.
 
 Queries: pairs of spots, `seesDoors`, `seesVia` with open doors, a route through spots, facing, who sees whom.
+
+#### Patrolling: `act patrol`
+
+`act patrol test-patrol [npcs]` walks a [patrol](#patrols), else `path:<points>` or `cycle:<points>` unsaved. The npcs follow as `g1,g2`, else the patrol's `npcKey`, else `guard-0`. Those absent are spawned at their start in an `mtf` skin. Several are spaced evenly by length: round a cycle, else along a path there and back, so on a path they pass each other.
+
+One loop (`walkPatrol`) ticks every 0.25 game seconds for all of them, so a kill or a pause holds them together. Each guard is in a phase:
+
+| Phase | |
+| --- | --- |
+| `walk` | To their next point. A stall is given up: they skip that point, saying so |
+| `stop` | `stop.secs` facing the way they came. At a path's end, nothing more |
+| `left`, `right` | `stop.lookSecs` each, `stop.lookDeg` either side of that way |
+| `halt` | Facing whom they saw, until 3 s unseen. Then they walk to their nearest point and go on |
+
+A cycle wraps round, and a path turns back at either end. A psi distract ends a guard's `stop`, `left` or `right` early.
+
+Each tick they look for whom they watch (`watch`, else the player) with `perceive`, as `sees` does. A sighting emits `guard-spotted` (`npcKey`, `seen`, `patrol`), again only after 3 s unseen. Then they halt and say `say` for 3 s (`guardSaySecs`). With `say` empty (`say:""`) they walk on silent, leaving the sighting to a script: `events 'e => e.key === "guard-spotted"' | …`.
+
+#### So far
+
+Step 1 is built, and the start of step 3.
+
+- **Patrols** are scenario entries, one file each, with the map's key inside. jsh `sc` lists, gets, saves and removes them. See [Patrols](#patrols).
+- **`act patrol`** walks one, with one npc or several, who halt on a sighting.
+- **The Decorator** lists this map's patrols, draws the chosen one, and in DEV edits it. See Patrols in `docs/decorator.md`.
+- **`guard-spotted`** lets a script react instead of the halt (`say:""`).
+- **Sight is stricter** between npcs: a spot's `always` counts only for an npc within 0.3 m of it, else lines decide (`docs/perception.md`).
+
+This replaced an earlier `act guard room:<grKey>`, which posted guards on spots that between them saw a room's doors. Patrols say where guards walk, rather than covering a room for them.
+
+#### Future work
+
+- **Follow edits.** A running `act patrol` reads its patrol once. It could re-read it on `scenario-changed`: re-aim each guard at their point if it moved, else at the nearest.
+- **A halt that ends.** A guard halts until 3 s after losing sight, so someone always in view holds them for good. Give it a limit, or step closer.
+- **Alert** (step 3, the rest). On `guard-spotted`, the guard tells the others in speech, and one moves to see the intruder's way out.
+- **The intruder** (step 2). Spots unseen along their way, waiting whilst a guard faces it, from the guards' patrols and phases.
+- **Per-point stops.** How long to stop, and how far to look, at each point.
+- **Spacing kept.** Several guards drift together after a halt or a stall. They could slow or wait to keep their spacing.
+- **Patrols in the Decorator:** making and removing them, and undo for their edits.
+- **An in-World overlay** of patrols, as the spots overlay.
 
 ### Meeting in secret
 
@@ -79,6 +119,7 @@ Npc first, a verb takes its main option as `<verb>:<value>`: `act kate avoid:rob
 | `avoid cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is, judged by that spot alone. Skips spots others stand at or head for. Already unseen, it stays put. Sat or lain, it first gets up beside its seat or bed. Blocked, it tries another, failing after 3. Seen on arrival, it fails saying why, e.g. which of its spots may be seen |
 | `park rob,kate` | Against a nearby wall, clear of its corners, the room's doorways and others parked: they fade there, or turn if already there. Marked parked (`pred.ts`). One with no clear spot stays put and is named in the error |
 | `pad kate [by:1]` | Where there is room to walk right round them, `by` metres (`standConfig.padClearance`) from walls, doorways and others. Marked padded. One with no room is named in the error, e.g. `not padded: kate` |
+| `patrol test-patrol [g1,g2] [watch:rob,kate] [say:Stop!] [secs:2] [lookSecs:2] [lookDeg:60]` | Walks a patrol until killed, stopping at each point to look either side, else `path:<points>` or `cycle:<points>`. Options replace the patrol's. See [Patrolling](#patrolling-act-patrol) |
 | `nudge kate [from:rob] [by:0.5]` | Walks `by` metres away from `from`, an npc or a point, else a random way, slid along the navmesh so a wall or a door they cannot pass stops them |
 
 A walk that stalls, e.g. blocked by the player, is given up.
@@ -89,7 +130,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 ## Characters
 
-Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below). `scenarioKinds` is `character` alone, as yet.
+Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, of `character` and [`patrol`](#patrols). A character has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below).
 
 `scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -99,7 +140,7 @@ Authored in DEV and shipped as data. One JSON file per character, `packages/medi
 | write | `POST` / `DELETE /api/scenario/file/{kind}/{slug}`, zod-checked | read-only |
 | change | the watcher sends `scenario-changed`, and the panel reloads | |
 
-A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, so a schema edit needs no restart. An edit to the plugin itself does.
+A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, kinds included, so a schema edit needs no restart. An edit to the plugin itself does.
 
 The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator uses them without depending on the panel.
 
@@ -118,6 +159,31 @@ A character has, per map, `maps[mapKey].rooms` (grKeys) and `.doors` (the gdKeys
 - Selecting a character centres the Decorator's map on their npc, else their first room. Choosing an npc on that map shows the character whose `npcKey` they are.
 - Both go through `scenarioShared`, a small store keyed by `worldKey` (`entry`, `npcKey`, `locate`, `renamed`). Neither panel imports the other, and either may be absent.
 - Editing `npcKey` (committed on enter or blur) removes their npc and adds it back under the new key where they stood, keeping their doors. Clearing it only removes. Editing `skin` reskins them.
+
+## Patrols
+
+A way a guard walks, on one map. One JSON file each, `packages/media/src/scenario/patrol/{slug}.json`, saved and served as characters are. The Scenario panel lists every map's by name, and shows one chosen (`PatrolCard`): its fields and points, read-only. The Decorator edits them.
+
+| Field | Default | |
+| --- | --- | --- |
+| `mapKey` | | The map its points are on |
+| `points` | | Floor points `[x, y]`, at least 2 |
+| `cycle` | `false` | Back to the first after the last, else back and forth |
+| `npcKey` | `guard-0` | Who walks it |
+| `watch` | `[]` | Who they watch for: none listed is the player |
+| `say` | `"Halt!"` | Said on seeing one, halting. Empty, they neither halt nor speak: a script reads `guard-spotted` |
+| `stop` | `{ secs: 2, lookSecs: 2, lookDeg: 60 }` | Seconds stopped at each point, then looking each way, and how far |
+
+jsh `sc` (`packages/cli/src/jsh/world/scenario.ts`) reads and writes them:
+
+| | |
+| --- | --- |
+| `sc ls patrol`, `sc list patrol` | This map's patrols, a line each. `--all` for every map's. `sc ls character` lists characters |
+| `sc get patrol/basic-patrol` | The entry, as a value |
+| `sc save patrol/basic-patrol path:$( pick 3 ) [cycle] [npc:guard-0] [watch:rob,kate] [say:Stop!]` | DEV. Points are pick events, `[x, y]` or spot keys, snapped onto the navmesh to the cm, on this map. `cycle:<points>` is a cycle. Saved over, a patrol keeps what is not given |
+| `sc rm patrol/basic-patrol` | DEV |
+
+`act patrol basic-patrol` walks one: see [Patrolling](#patrolling-act-patrol). The Decorator's patrol tab lists this map's, draws the chosen one, and in DEV edits its points: see Patrols in `docs/decorator.md`.
 
 ## Conversations
 

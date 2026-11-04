@@ -10,6 +10,10 @@ pickGdKeys () {
   pick as:meta.gdKey $@
 }
 
+pickGrKey () {
+  pick as:meta.grKey 1
+}
+
 playerKey () {
   w player.key
 }

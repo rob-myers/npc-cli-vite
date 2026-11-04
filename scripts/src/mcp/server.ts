@@ -185,7 +185,7 @@ function formatRead({ entries, done, exitCode, last }: DevMcpRead) {
   );
   let text = lines.join("\n");
   if (text.length > maxChars) text = `…(truncated)\n${text.slice(-maxChars)}`;
-  return `${text}\n---\n${JSON.stringify({ running: !done, exitCode, since: last })}`;
+  return `\n\n${text}\n---\n${JSON.stringify({ running: !done, exitCode, since: last })}`;
 }
 
 async function tryText(run: () => Promise<string>) {

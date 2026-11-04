@@ -21,6 +21,7 @@
     "@npc-cli/parse-sh": "workspace:^",
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/ui__audio": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@xterm/addon-fit": "^0.11.0",
@@ -42,7 +43,6 @@
     "zustand": "catalog:"
   },
   "devDependencies": {
-    "@npc-cli/ui__world": "workspace:^",
     "@types/braces": "catalog:",
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/react-beforeunload": "catalog:"

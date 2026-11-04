@@ -49,7 +49,7 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
 2. **Rooms:** `b` must be in a room `a` has in view.
-3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
+3. **The lists,** over every pair of their spots: never listed is no. `always` is yes unless `b` is crouched, but between npcs only from spots within `alwaysReach` (0.3 m) of each: a spot further off has a view their eye may not.
 4. **Lines,** for the rest: from `a`'s eyes to `b`'s head: its centre, and 0.15 m either side across the line. An npc's eyes are on the front of their head as last posed, and its centre inside it, from its bone (`headOf` in `perception.main.ts`), so they follow a crouch, a seat, a bed or a top bunk. Which way `b` faces does not move the lines. A spot's are 1.37 m up. A low obstacle stops a line passing at or below its top. Lines to a fully crouched npc end 0.6 m up by rule, though their head clears a desk, so cover `crouchHideHeight` tall hides them.
 
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
@@ -76,7 +76,7 @@ Each step only runs if the one before leaves it open:
 
 **The spots overlay** is **spots** in the debug **overlay** select, or the `0` key (`w.spots.toggle`, persisted).
 - Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way, bar cover, seats and beds.
-- They are coloured by sight from the player: blue their own, green `always`, yellow `may`, white once a shut door opens, grey `never`. Only in the "sight" fade mode do they fade with their room. A door spot shows whilst either of its rooms does. They fade with the world's fold too (`w.view.foldNode`), so come up as it unfolds on load.
+- They are coloured by sight from the player: blue their own, green `always`, yellow `may`, white once a shut door opens, grey `never`. They fade with their room, so only "ship" mode shows them all: "sense" hides those in rooms unlit and out of view. A door spot shows whilst either of its rooms does. They fade with the world's fold too (`w.view.foldNode`), so come up as it unfolds on load.
 - jsh `spots show`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`SpotOverlay`: `w.spots.draw`, `colour`).
 - A right click on one, or a long press on touch, chooses it in an open Decorator alone (event `spot-chosen`), which says "decorator selected" on the player's bar. The overlay still colours from the player, and the Decorator's own choice never reaches it. A press walks there, as on the floor.
 

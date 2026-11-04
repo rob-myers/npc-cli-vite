@@ -1,6 +1,14 @@
 import { Menu } from "@base-ui/react/menu";
+import { Switch } from "@base-ui/react/switch";
 import type { WorldState } from "@npc-cli/ui__world";
-import { scenarioShared, useScenarioCharacters, useScenarioShared } from "@npc-cli/ui__world/scenario-shared";
+import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
+import {
+  saveScenarioEntry,
+  scenarioShared,
+  useScenarioCharacters,
+  useScenarioPatrols,
+  useScenarioShared,
+} from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
@@ -34,6 +42,7 @@ import {
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { PatrolLayer } from "./PatrolLayer";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
@@ -48,6 +57,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
   const characters = useScenarioCharacters(character);
+  /** This map's patrols, as their files have them */
+  const patrols = useScenarioPatrols(w.mapKey);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
@@ -99,6 +110,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       spot: null,
       sidebarTab: "decor",
       mapEl: null,
+      patrol: null,
+      patrolDraft: null,
+      patrolError: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -247,6 +261,20 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
+      choosePatrol(key) {
+        const points = patrols[key]?.points ?? [];
+        state.set({ patrol: key, patrolError: null, sidebarTab: "patrol" });
+        if (points.length === 0) return;
+        const [x, y] = points.reduce(
+          ([sx, sy], [px, py]) => [sx + px / points.length, sy + py / points.length],
+          [0, 0],
+        );
+        map.current?.centreOn(x, y, locateZoom, sidebarOffset());
+      },
+      savePatrol(next) {
+        state.set({ patrolDraft: next, patrolError: null });
+        saveScenarioEntry(next).catch((e) => state.set({ patrolDraft: null, patrolError: String(e) }));
+      },
       chooseSpot(pick) {
         state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
         if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
@@ -261,8 +289,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, patrols], reset: { history: false } },
   );
+
+  // a reload has the saved patrol, so its draft may go
+  useEffect(() => void (state.patrolDraft = null), [patrols]);
+  /** The chosen patrol, as edited */
+  const patrol =
+    state.patrol === null
+      ? null
+      : state.patrolDraft?.key === state.patrol
+        ? state.patrolDraft
+        : (patrols[state.patrol] ?? null);
 
   /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
@@ -464,7 +502,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             )}
             {state.sidebarTab === "spot" &&
               (meta.show.spots === false ? (
-                <SidebarHint>turn on the spots layer</SidebarHint>
+                <SidebarHint>
+                  <label className="flex cursor-pointer items-center gap-2">
+                    turn on the spots layer
+                    <Switch.Root
+                      checked={meta.show.spots}
+                      onCheckedChange={() => state.toggleLayer("spots")}
+                      className="flex h-4 w-7 shrink-0 cursor-pointer rounded-full bg-zinc-700 p-0.5 data-checked:bg-zinc-400"
+                    >
+                      <Switch.Thumb className="size-3 rounded-full bg-zinc-200 transition-transform data-checked:translate-x-3" />
+                    </Switch.Root>
+                  </label>
+                </SidebarHint>
               ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
                 <>
                   <div className="shrink-0 flex px-3 pt-3">
@@ -483,6 +532,34 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
+            {state.sidebarTab === "patrol" && (
+              <div className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
+                {Object.values(patrols).map((x) => (
+                  <button
+                    key={x.key}
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-0.5 text-left cursor-pointer hover:bg-zinc-800",
+                      x.key === state.patrol ? "bg-zinc-800 text-zinc-100" : "text-zinc-400",
+                    )}
+                    onClick={() => state.choosePatrol(x.key)}
+                  >
+                    <span className="truncate">{x.name || x.key}</span>
+                    <span className="ml-auto shrink-0 text-zinc-500">
+                      {x.npcKey ?? "guard-0"} · {x.points.length}
+                      {x.cycle ? " ↻" : ""}
+                    </span>
+                  </button>
+                ))}
+                {Object.keys(patrols).length === 0 && (
+                  <div className="px-2 py-1 text-zinc-600">
+                    no patrols on this map: <code>sc save patrol/{"{slug}"} path:$( pick 3 )</code>
+                  </div>
+                )}
+                {patrolsEditable === false && <div className="px-2 py-1 text-zinc-600">read-only outside DEV</div>}
+                {state.patrolError !== null && <div className="px-2 py-1 text-red-300">{state.patrolError}</div>}
+              </div>
+            )}
           </div>
         )}
         {meta.sidebarOpen === false && (
@@ -510,6 +587,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onTarget={(key) => state.selected.includes(key) || state.select([key])}
           onCommit={(def, merge) => state.commit([def], merge)}
           onRemove={(key) => state.remove([key])}
+          patrol={patrolsEditable ? patrol : null}
+          onPatrolCommit={state.savePatrol}
         >
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
@@ -535,6 +614,15 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             }
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
+            {patrol !== null && (
+              <PatrolLayer
+                w={w}
+                patrol={patrol}
+                editable={patrolsEditable}
+                onCommit={state.savePatrol}
+                onPressing={state.onPressing}
+              />
+            )}
             {meta.show.spots && spots !== undefined && (
               <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={revealSpot} />
             )}
@@ -696,11 +784,22 @@ type State = {
   /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
   sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
+  /** The patrol chosen in the patrol tab, drawn on the map, by key */
+  patrol: null | string;
+  /** The chosen patrol as last edited, until a reload has it saved */
+  patrolDraft: null | PatrolEntry;
+  patrolError: null | string;
+  /** Chooses a patrol, and centres the map on it */
+  choosePatrol(key: string): void;
+  /** DEV: saves it, keeping it as a draft meanwhile */
+  savePatrol(next: PatrolEntry): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const sidebarTabs = ["decor", "spot"] as const;
+const sidebarTabs = ["decor", "spot", "patrol"] as const;
+/** Saving reaches a patrol's file in DEV alone */
+const patrolsEditable = import.meta.env.DEV === true;
 type SidebarTab = (typeof sidebarTabs)[number];
 
 function SidebarHint({ children }: { children: React.ReactNode }) {

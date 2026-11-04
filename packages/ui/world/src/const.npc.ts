@@ -15,24 +15,6 @@ export const npcScale = 0.8;
 
 export const npcShadowRadius = npcScale / 2.5;
 
-/**
- * Where `park` and `pad` stand npcs. `as const` is load-bearing: `plan.worker` keeps typed copies
- * of these, and only literal types make a drifted copy a compile error
- */
-export const standConfig = {
-  /** Below this much of a move, `park` turns them on the spot instead */
-  parkMinMove: 0.02,
-  /** How far out `park` looks for a wall to stand against */
-  parkQueryRange: 2,
-  /** How much room `pad` wants round them, from walls and from the parked or padded: 4 x `npcDims.agentRadius` */
-  // padClearance: 0.72,
-  padClearance: 0.6,
-  /** How far from where they stand `pad` looks for such a spot */
-  padQueryRange: 3,
-  /** How far clear of a door somebody must stand to be out of the traffic through it */
-  doorwayClearance: 0.6,
-} as const;
-
 /** A crowd agent's acceleration, speed and separation, by what they are doing */
 export const agentConfig = {
   maxAcceleration: {

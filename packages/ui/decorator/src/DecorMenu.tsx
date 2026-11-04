@@ -1,5 +1,6 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import type { WorldState } from "@npc-cli/ui__world";
+import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
 import { cn } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { CaretRightIcon, CheckIcon, TrashIcon } from "@phosphor-icons/react";
@@ -18,9 +19,11 @@ import {
   withTilt,
 } from "./decor-edit";
 import { mergeKey } from "./history";
+import { inserted, minPoints, removed, snapped } from "./patrol-edit";
 
 /**
  * The map's context menu: on empty map it adds decor where it was opened, on a decor it edits it.
+ * On the chosen patrol's leg it inserts a point, on its point it deletes one, and on either it toggles cycle.
  * A ctrl-click is a fine-step drag, not a menu, as is any press a drag is blocking. None on touch, for now
  */
 export function DecorMenu({
@@ -33,6 +36,8 @@ export function DecorMenu({
   onTarget,
   onCommit,
   onRemove,
+  patrol,
+  onPatrolCommit,
 }: Props) {
   const [target, setTarget] = useState<Target | null>(null);
 
@@ -49,13 +54,21 @@ export function DecorMenu({
   function locate(e: React.MouseEvent<HTMLDivElement>) {
     const svg = e.currentTarget.querySelector("svg");
     if (svg === null) return;
+    const at = toMap(svg, e.clientX, e.clientY);
+    const patrolEl = (e.target as Element).closest?.("[data-patrol-point], [data-patrol-leg]");
+    if (patrolEl != null && patrol !== null) {
+      const [point, leg] = [patrolEl.getAttribute("data-patrol-point"), patrolEl.getAttribute("data-patrol-leg")];
+      return setTarget({ key: null, at, patrol: point !== null ? { point: Number(point) } : { leg: Number(leg) } });
+    }
     const el = (e.target as Element).closest?.("[data-decor], [data-handle]");
     const key = el?.getAttribute("data-decor") ?? el?.getAttribute("data-handle") ?? null;
-    setTarget({ key, at: toMap(svg, e.clientX, e.clientY) });
+    setTarget({ key, at });
     if (key !== null) onTarget(key);
   }
 
   const def = target?.key == null ? undefined : w.decor.runtime.defByKey[target.key];
+  const onPatrol = target?.patrol !== undefined && patrol !== null ? { ...target.patrol, patrol } : null;
+  const insertAt = onPatrol?.leg === undefined || target === null ? null : snapped(w, target.at);
   const imgs = Object.keys(w.sheets?.decor ?? {});
 
   if (touchDevice) return <div className="flex-1 min-w-0">{children}</div>;
@@ -68,7 +81,49 @@ export function DecorMenu({
       <ContextMenu.Portal>
         <ContextMenu.Positioner className="z-50" sideOffset={2}>
           <ContextMenu.Popup className={popupCls}>
-            {target !== null && def === undefined && (
+            {onPatrol !== null && (
+              <ContextMenu.Group>
+                <ContextMenu.GroupLabel className={labelCls}>{onPatrol.patrol.key}</ContextMenu.GroupLabel>
+                {onPatrol.leg !== undefined && (
+                  <ContextMenu.Item
+                    className={itemCls}
+                    disabled={insertAt === null}
+                    onClick={() =>
+                      insertAt !== null && onPatrolCommit(inserted(onPatrol.patrol, onPatrol.leg ?? 0, insertAt))
+                    }
+                  >
+                    insert point here
+                  </ContextMenu.Item>
+                )}
+                <ContextMenu.CheckboxItem
+                  className={itemCls}
+                  checked={onPatrol.patrol.cycle}
+                  onCheckedChange={(cycle) => onPatrolCommit({ ...onPatrol.patrol, cycle })}
+                >
+                  <span className="w-3">
+                    <ContextMenu.CheckboxItemIndicator>
+                      <CheckIcon className="size-3" />
+                    </ContextMenu.CheckboxItemIndicator>
+                  </span>
+                  cycle
+                </ContextMenu.CheckboxItem>
+                {onPatrol.point !== undefined && (
+                  <>
+                    <ContextMenu.Separator className="my-1 border-t border-zinc-700" />
+                    <ContextMenu.Item
+                      className={cn(itemCls, "text-red-300 data-disabled:opacity-50")}
+                      disabled={onPatrol.patrol.points.length <= minPoints}
+                      onClick={() => onPatrolCommit(removed(onPatrol.patrol, onPatrol.point ?? 0))}
+                    >
+                      <TrashIcon className="size-3.5" />
+                      delete point {onPatrol.point}
+                    </ContextMenu.Item>
+                  </>
+                )}
+              </ContextMenu.Group>
+            )}
+
+            {target !== null && onPatrol === null && def === undefined && (
               <ContextMenu.Group>
                 <ContextMenu.GroupLabel className={labelCls}>add here</ContextMenu.GroupLabel>
                 {addTypes.map((type) => {
@@ -273,10 +328,13 @@ type Props = {
   /** `merge` names an edit that repeats, e.g. a spinner's steps: one undo takes back the run */
   onCommit(def: Geomorph.DecorDef, merge?: string): void;
   onRemove(key: string): void;
+  /** The chosen patrol, if it may be edited */
+  patrol: null | PatrolEntry;
+  onPatrolCommit(next: PatrolEntry): void;
 };
 
-/** Where the menu was opened, and on which decor if any */
-type Target = { key: string | null; at: Geom.VectJson };
+/** Where the menu was opened, and on which decor, or which of the patrol's points or legs, if any */
+type Target = { key: string | null; at: Geom.VectJson; patrol?: { point?: number; leg?: number } };
 
 const touchDevice = isTouchDevice();
 const addTypes: DecorType[] = ["point", "rect", "circle", "quad"];

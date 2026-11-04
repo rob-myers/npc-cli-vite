@@ -1,15 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
-import {
-  ArrowsHorizontalIcon,
-  LockIcon,
-  LockOpenIcon,
-  PersonSimpleRunIcon,
-  PersonSimpleWalkIcon,
-  UserFocusIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { ListIcon, LockIcon, LockOpenIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
 import "./world-hud.css";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
@@ -18,8 +10,8 @@ import { getWorldStore, type HudLayout } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 /**
- * The player's bar: psi, their phaser, their keys and what they carry, then walk/run and
- * follow — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
+ * The player's bar: psi, their phaser, their keys and what they carry, then follow, the compass
+ * and an options menu — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
  */
 export default function WorldHud() {
   const w = useContext(WorldContext);
@@ -171,7 +163,7 @@ export default function WorldHud() {
   /** The bar along the bottom, or a column on either side: by default on the right on touch */
   const layout = state.getLayout();
   const column = layout !== "bar";
-  const outerClass = column ? cn(columnBarClass, layout === "left" ? "left-1" : "right-1") : barClass;
+  const outerClass = column ? cn(columnBarClass, layout === "left" ? "left-0" : "right-0") : barClass;
 
   const y = useMotionValue(state.getSavedY());
   /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
@@ -517,8 +509,6 @@ function PlayerButtons({ column }: { column: boolean }) {
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const big = w.touchDevice;
-  const hurry = w.player.get()?.anim.hurry === true;
-  const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
   const buttonClass = cn(
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",
     big ? "size-12" : "size-9",
@@ -536,23 +526,6 @@ function PlayerButtons({ column }: { column: boolean }) {
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
-      {/* a client's moves are not theirs to pace */}
-      {w.client !== true && (
-        <div
-          className={buttonClass}
-          title={`${hurry ? "run" : "walk"}: shift twice strafes`}
-          onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
-        >
-          {/* always white: the icon itself changes with the gait */}
-          <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
-          {w.player.strafe && w.player.get()?.posture === "stand" && (
-            <ArrowsHorizontalIcon
-              className={cn(buttonIcon(true), "absolute right-0.5 bottom-0.5 size-3")}
-              weight="bold"
-            />
-          )}
-        </div>
-      )}
       {/* follow on (white) or off, as `v` */}
       <div
         className={buttonClass}
@@ -591,7 +564,51 @@ function PlayerButtons({ column }: { column: boolean }) {
           skew={w.view?.wasdSkew ?? 0}
         />
       )}
+      {/* last: right-most in the bar, bottom-most in a column */}
+      <PlayerMenu buttonClass={buttonClass} iconClass={cn(buttonIcon(true), "size-5")} column={column} />
     </div>
+  );
+}
+
+/** The bar's options, each saved and highlighted whilst on: toggled in place, so the menu stays open */
+function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; iconClass: string; column: boolean }) {
+  const w = useContext(WorldContext);
+  const [labels, setLabels] = useState(() => getWorldStore(w.key).read().roomLabelsShown);
+  const side = column === false ? "top" : getWorldStore(w.key).read().hudLayout === "left" ? "right" : "left";
+  /** Its button whilst open: opened by a click, so a drag of the bar begun on it opens nothing */
+  const [anchor, setAnchor] = useState<null | HTMLDivElement>(null);
+  return (
+    <>
+      <div
+        className={buttonClass}
+        title="options"
+        onClick={(e) => w.hud?.dragged !== true && setAnchor(anchor === null ? e.currentTarget : null)}
+      >
+        <ListIcon className={iconClass} weight="light" />
+      </div>
+      <Menu.Root open={anchor !== null} onOpenChange={(open) => open || setAnchor(null)} modal={false}>
+        <Menu.Portal container={w.rootEl}>
+          <Menu.Positioner anchor={anchor} side={side} sideOffset={6} className="z-50">
+            <Menu.Popup className="pointer-events-auto select-none rounded-md border border-neutral-700 overflow-hidden bg-neutral-800/90 text-xs shadow-lg">
+              <Menu.CheckboxItem
+                className={cn(
+                  "flex cursor-pointer items-center px-3 py-1 text-neutral-500 hover:bg-neutral-700 data-checked:text-amber-200",
+                  w.touchDevice && "py-2 text-sm",
+                )}
+                checked={labels}
+                closeOnClick={false}
+                onCheckedChange={(shown) => {
+                  setLabels(shown);
+                  w.roomLabels?.setShown(shown);
+                }}
+              >
+                room labels
+              </Menu.CheckboxItem>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+    </>
   );
 }
 
@@ -640,7 +657,7 @@ const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scroll
 /** The bar as a column on either side */
 const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
 const columnClass = "pointer-events-none flex flex-col items-center";
-const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-1 [scrollbar-width:none]";
+const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
 /** The notices: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";

@@ -10,6 +10,7 @@ export * as debug from "./world/debug.ts";
 export * as decor from "./world/decor.ts";
 export * as demo from "./world/demo.ts";
 export * as pred from "./world/pred.ts";
+export * as scenario from "./world/scenario.ts";
 export * as sidestep from "./world/sidestep.ts";
 export * as spot from "./world/spot.ts";
 

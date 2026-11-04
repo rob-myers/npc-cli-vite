@@ -1,60 +1,5 @@
 # TODO
 
-- ✅ phaser rethink
-  - show red dot when phaser raised
-  - intersect npc
-- ✅ phaser red dot supports decor quads too e.g. screen
-- ✅ LightSweep central lighter cone falls off linearly from midline
-
-- ✅ faster strafe
-- ✅ clean spots in Debug.tsx
-- ❌ on turn off strafe maintain direction initially?
-- ✅ held open door has blue/purple lock and is persisted
-
-- ✅ simplify npc/decor contextmenu: use psi dialog style
-  - static decor has contextmenu too
-  - switches has contextmenu too
-    - can change door's auto/proximity/held etc.
-
-- ✅ light-theme
-  - laser red dot more visible
-  - cursor dark
-  - selected blue spots more visible
-- ❌ bug when move to chair while crouch_half phaser raised
-- ✅ improve shielded npc animation
-  - refract: psi-power plus intercepting beam from forehead
-  - armour: flinch + ricochet
-
-- ✅ drop dodge animations
-- ✅ light-theme wall skirts/trims look worse now
-  - change ceiling hull/nonHull style
-
-- ✅ wasd look towards wall should be suppressed while strafe
-
-- ✅ refract -> ghost i.e. green dot-screen effect which ignores phaser
-
-- ✅ ui/audio
-  - player footsteps track feet
-  - nearby npc footsteps
-  - phaser shoot/hit/ghost/armour/wall
-
-- ✅ faced npc too dark when not very far away
-- ✅ look further with phaser raised i.e. at red dot if possible
-
-- ❌ arm bug when put down phaser
-
-- ✅ try look-mode via double-tap r
-  - ✅ fix raised phaser aim
-  - ✅ pad look overrides e.g. put down box
-
-- ✅ refine look-mode
-  - ✅ suppress on npc-pre-do not on leave sit/lie
-  - ✅ suppress on pick-up/put-down
-  - ✅ `pose kate head:rob`
-  - ✅ `pose` cleanup
-  - ✅ `pose kate head:rob --track`
-
-- ✅ fix psi arm while seated look to left
 - ✅ `spots --show` -> `spots shown`
 - ✅ can hold space for more powerful phaser shot
 - ✅ while fully crouched c should totally un-crouch
@@ -102,30 +47,43 @@
   - ✅ BUG footsteps in bed
   - ✅ put-down/pick-up item
 
-- phaser beam -> electricity?
-- rmb/2-tap look can be held e.g. for phaser aim
-- inventory toasts -> toasts at top
-- hide external spots in sense-mode
+- ✅ phaser beam -> electricity
 
-- 🚧 return to scenarios and start acting them out
+- ✅ inventory toasts -> toasts at top
+- ✅ mobile inventory obscures player with phaser raised
+
+- 🚧 return to Scenario and start acting them out
   - ✅ support `act {npcKey}` format
     - `act kate count:3 down` or `act count kate from:3`
     - `act kate avoid:rob`
   - ✅ hide-and-seek sketch
-    - can `act hide kate from:rob` failing if any dst nearby spot maybe seen by rob
-    - can `act avoid kate from:rob` failing if dst's nearest spot maybe seen by rob
+    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by room
+    - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
     - can `act kate count:3 down`
     - can `act count kate from:3 to:0`
   - 🚧 guard-and-intruder sketch
+    - 🚧 `act guard room:{grKey}`
+    - 🚧 try provide structure via dfas with synchronising words
 
+- muted by default
 - narrator
+- simplify JobsLibrary
+  - tldr only contains most common
+  - better layout for others
+- clarify Blog component
+- npc context menu close button on right
+- npc key thin font flickers
 
+- rmb/2-tap look can be held e.g. for phaser aim
+- hide external spots in sense-mode
 - BUG world connected to a hidden tab
   - should probably always pause client when server paused
   - could show toast in client too
   - ensure World pauses on hide tab
 - armour integrity indicator
 - avoid initial sharp camera motion after change map and unpause
+- avoid phaser through wall when walk into wall
+- avoid psi-arm through wall when next to wall
 
 ## World
 

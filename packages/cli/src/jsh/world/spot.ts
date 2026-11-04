@@ -1,6 +1,6 @@
 import { wallHeight } from "@npc-cli/ui__world/const.env";
 import { spotKindInk } from "@npc-cli/ui__world/spot.schema";
-import { spotQuery, spotQueryDetached } from "./perception.main";
+import { perceive, spotQuery, spotQueryDetached, unfaced } from "./perception.main";
 import { getSpotsRev } from "./worker.main";
 
 /**
@@ -86,40 +86,12 @@ export async function spot(ct: JshCli.RunArg) {
   return answered(answer);
 }
 
-/**
- * The pairs whose first sees the second: eyes open, within `sightHalfArc` of where their head faces, then in sight.
- * The worker decides the last, e.g. a low obstacle hiding one crouched. `los` asks only that
- */
-async function perceive(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
-  const facing = pairs.filter(([a, b]) => los || unfaced(ct.w, a, b) === null);
-  if (facing.length === 0) return [];
-  const answers = await spotQuery(
-    ct,
-    facing.map(([a, b]) => ({ q: "sees", a, b })),
-  );
-  return facing.filter((_, i) => {
-    const x = answers[i];
-    return x != null && "crouchHides" in x && x.sees;
-  });
-}
-
 /** The first and each of the rest, else with `all` every ordered pair */
 function pairsOf(keys: string[], all: boolean): [string, string][] {
   return all
     ? keys.flatMap((u) => keys.flatMap((v): [string, string][] => (u === v ? [] : [[u, v]])))
     : keys.slice(1).map((v): [string, string] => [keys[0], v]);
 }
-
-/** Why npc `a` cannot see `b` for their eyes or the way their head faces, else `null` */
-function unfaced(w: JshCli.WorldState, a: string, b: string) {
-  const [watcher, seen] = [w.n[a], w.n[b]];
-  if (watcher.anim.eyes.look === "shut") return "eyes shut";
-  const off = watcher.anim.bearingOf(seen.point) - watcher.lookY; // the head's way, e.g. sat and turned
-  return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc ? null : "fov";
-}
-
-/** Radians either side of where their head faces that an npc sees */
-const sightHalfArc = Math.PI / 3;
 
 /**
  * Until killed, why each pair's first sees the second or not: said at first, then each time that changes.
