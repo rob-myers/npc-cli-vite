@@ -1,11 +1,11 @@
-import { type RouteEntry, RouteEntrySchema } from "@npc-cli/ui__world/scenario.schema";
+import { type PatrolEntry, PatrolEntrySchema } from "@npc-cli/ui__world/scenario.schema";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { perceive, spotQuery } from "./perception.main";
 import { isPaused, npcQuery, parkedNow, requestDetached, roomOthers } from "./plan.main";
 import { padded, parked } from "./pred";
-import { routes } from "./scenario";
+import { patrols } from "./scenario";
 
 /**
  * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.
@@ -22,8 +22,8 @@ import { routes } from "./scenario";
  * act park rob kate
  * act pad kate by:1
  * act kate nudge:rob
- * act guard route:basic-route
- * act guard cycle:$( pick 4 ) guard-0,guard-1 say:""
+ * act patrol basic-patrol
+ * act patrol cycle:$( pick 4 ) guard-0,guard-1 say:""
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
@@ -86,7 +86,7 @@ const shorthands: Record<string, (value: string) => string[]> = {
 /** Verbs taking several npcs, planned together */
 const severalVerbs = new Set(["park", "pad"]);
 /** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
-const npclessVerbs = new Set(["guard"]);
+const npclessVerbs = new Set(["patrol"]);
 /** Verbs a pause lets finish, as `rejectAll` would zero their fade */
 const fadeVerbs = new Set(["park", "pad"]);
 
@@ -121,24 +121,28 @@ const verbs: Record<string, Verb> = {
     await resumable(ctx, () => npc.look({ at: point }));
   },
   /**
-   * `route:<slug>`, else `path:<points>` or `cycle:<points>`, then `[npcs]`: they walk it, stopping at each point to look either side.
+   * `<name> [npcs]`, else `path:<points>` or `cycle:<points>` then `[npcs]`: they walk it, stopping at each point to look either side.
    * Those absent are spawned. Seeing whom they watch, they emit `guard-spotted`, then halt and say `say`, unless it is empty
    */
-  async guard(ctx, opts) {
+  async patrol(ctx, opts) {
     const { ct } = ctx;
     const [cycle, path]: unknown[] = [opts.cycle, opts.path];
     const given = Array.isArray(cycle) ? cycle : Array.isArray(path) ? path : undefined;
+    // its name comes first, before the npcs
+    const name = given === undefined ? ctx.npcKeys.shift() : undefined;
+    if (given === undefined && name === undefined)
+      throw Error("expected a patrol's name, else path:<points> or cycle:<points>");
     const saved =
       given === undefined
-        ? await settled(ctx, routes.find(ct, opts.route))
-        : RouteEntrySchema.parse({
+        ? await settled(ctx, patrols.find(ct, name))
+        : PatrolEntrySchema.parse({
             key: "",
-            kind: "route",
+            kind: "patrol",
             mapKey: ct.w.mapKey,
-            points: await settled(ctx, routes.toPoints(ct, given)),
+            points: await settled(ctx, patrols.toPoints(ct, given)),
             cycle: Array.isArray(cycle),
           });
-    const route: RouteEntry = {
+    const patrol: PatrolEntry = {
       ...saved,
       watch: typeof opts.watch === "string" ? opts.watch.split(",") : saved.watch,
       say: typeof opts.say === "string" ? opts.say : saved.say,
@@ -148,10 +152,10 @@ const verbs: Record<string, Verb> = {
         lookDeg: Number(opts.lookDeg ?? saved.stop.lookDeg),
       },
     };
-    if (ctx.npcKeys.length === 0) ctx.npcKeys.push(route.npcKey ?? "guard-0");
-    const guards = startsOf(ct.w, route, ctx.npcKeys.length).map((start, i) => ({ key: ctx.npcKeys[i], ...start }));
+    if (ctx.npcKeys.length === 0) ctx.npcKeys.push(patrol.npcKey ?? "guard-0");
+    const guards = startsOf(ct.w, patrol, ctx.npcKeys.length).map((start, i) => ({ key: ctx.npcKeys[i], ...start }));
     await settled(ctx, Promise.all(guards.map((g, i) => postGuard(ctx, g, i))));
-    await patrol(ctx, route, guards);
+    await walkPatrol(ctx, patrol, guards);
   },
   /** As `avoid`, judged by every spot they will be at, their room's doors open: they open one going in, or stand by one */
   hide: (ctx, opts) => hideFrom(ctx, opts, true),
@@ -206,10 +210,10 @@ const verbs: Record<string, Verb> = {
 };
 
 /** Where each of `count` guards starts, spaced evenly round a cycle, else along a path there and back */
-function startsOf(w: JshCli.WorldState, route: RouteEntry, count: number) {
-  const pts = route.points.map(([x, y]) => ({ x, y }));
+function startsOf(w: JshCli.WorldState, patrol: PatrolEntry, count: number) {
+  const pts = patrol.points.map(([x, y]) => ({ x, y }));
   // the legs walked in one round: a path's back the same way
-  const order = route.cycle ? [...pts.keys(), 0] : [...pts.keys(), ...[...pts.keys()].reverse().slice(1)];
+  const order = patrol.cycle ? [...pts.keys(), 0] : [...pts.keys(), ...[...pts.keys()].reverse().slice(1)];
   const legs = order
     .slice(1)
     .map((to, i) => ({ from: order[i], to, len: Vect.distanceBetween(pts[order[i]], pts[to]) }));
@@ -224,7 +228,7 @@ function startsOf(w: JshCli.WorldState, route: RouteEntry, count: number) {
     return {
       at: found.success ? { x: found.position[0], y: found.position[2] } : a,
       next: leg.to,
-      dir: (route.cycle || leg.to > leg.from ? 1 : -1) as 1 | -1,
+      dir: (patrol.cycle || leg.to > leg.from ? 1 : -1) as 1 | -1,
       heading: Math.atan2(b.y - a.y, b.x - a.x),
     };
   });
@@ -232,7 +236,7 @@ function startsOf(w: JshCli.WorldState, route: RouteEntry, count: number) {
 
 type GuardStart = ReturnType<typeof startsOf>[number] & { key: string };
 
-/** Spawned at their start in an `mtf` skin facing along the route, else walked there */
+/** Spawned at their start in an `mtf` skin facing along the patrol, else walked there */
 async function postGuard(ctx: Ctx, g: GuardStart, i: number) {
   const { w } = ctx.ct;
   if (w.n[g.key] === undefined) {
@@ -245,13 +249,13 @@ async function postGuard(ctx: Ctx, g: GuardStart, i: number) {
  * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/scenarios.md`.
  * One loop for all, so a kill or a pause holds them at once
  */
-async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
+async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
   const { ct } = ctx;
   const { w } = ct;
-  const pts = route.points.map(([x, y]) => ({ x, y }));
-  const { secs, lookSecs, lookDeg } = route.stop;
+  const pts = patrol.points.map(([x, y]) => ({ x, y }));
+  const { secs, lookSecs, lookDeg } = patrol.stop;
   const look = (lookDeg * Math.PI) / 180;
-  const isEnd = (i: number) => route.cycle === false && (i === 0 || i === pts.length - 1);
+  const isEnd = (i: number) => patrol.cycle === false && (i === 0 || i === pts.length - 1);
   const guards = starts.map((s) => ({
     ...s,
     phase: "walk" as GuardPhase,
@@ -278,7 +282,7 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
   };
   /** The next point: round a cycle, else turning back at a path's end */
   const advance = (g: Guard) => {
-    if (route.cycle) return void (g.next = (g.next + g.dir + pts.length) % pts.length);
+    if (patrol.cycle) return void (g.next = (g.next + g.dir + pts.length) % pts.length);
     if (g.next + g.dir < 0 || g.next + g.dir >= pts.length) g.dir = -g.dir as 1 | -1;
     g.next += g.dir;
   };
@@ -346,7 +350,7 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
       }
 
       const keys = guards.map((g) => g.key);
-      const watched = (route.watch.length > 0 ? route.watch : [w.player.key]).filter(
+      const watched = (patrol.watch.length > 0 ? patrol.watch : [w.player.key]).filter(
         (key): key is string => key !== undefined && w.n[key] !== undefined && keys.includes(key) === false,
       );
       if (watched.length === 0) continue;
@@ -355,13 +359,13 @@ async function patrol(ctx: Ctx, route: RouteEntry, starts: GuardStart[]) {
         const g = guards[keys.indexOf(key)];
         const fresh = now - (g.sightings.get(seen) ?? -Infinity) > guardLoseSecs;
         g.sightings.set(seen, now);
-        if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, route: route.key || null });
-        if (route.say === "") continue;
+        if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, patrol: patrol.key || null });
+        if (patrol.say === "") continue;
         if (g.phase !== "halt") {
           [g.phase, g.since, g.seen] = ["halt", now, seen];
           g.move = null;
           w.npc.get(key).rejectAll(Error("halt"));
-          w.speech.say(key, route.say, guardSaySecs);
+          w.speech.say(key, patrol.say, guardSaySecs);
         }
         if (g.seen === seen) w.n[key]?.look({ at: seen }).catch(noop);
       }

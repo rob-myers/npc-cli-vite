@@ -1,7 +1,7 @@
 import {
   isScenarioKey,
-  type RouteEntry,
-  RouteEntrySchema,
+  type PatrolEntry,
+  PatrolEntrySchema,
   type ScenarioEntry,
   scenarioKinds,
 } from "@npc-cli/ui__world/scenario.schema";
@@ -11,15 +11,15 @@ import { spotQuery } from "./perception.main";
 
 /**
  * Scenario entries, as saved in `packages/media/src/scenario` — see `docs/scenarios.md`.
- * `list` or `ls` a kind's, routes on this map unless `--all`. `get` one. `save` a route, or `rm` an entry (DEV)
+ * `list` or `ls` a kind's, patrols on this map unless `--all`. `get` one. `save` a patrol, or `rm` an entry (DEV)
  *
  * ```sh
- * sc ls route
- * sc list route --all
- * sc get route/basic-route
- * sc save route/basic-route path:$( pick 3 ) npc:guard-0
- * sc save route/basic-route cycle watch:rob,kate say:Stop!
- * sc rm route/basic-route
+ * sc ls patrol
+ * sc list patrol --all
+ * sc get patrol/basic-patrol
+ * sc save patrol/basic-patrol path:$( pick 3 ) npc:guard-0
+ * sc save patrol/basic-patrol cycle watch:rob,kate say:Stop!
+ * sc rm patrol/basic-patrol
  * ```
  */
 export async function* sc(ct: JshCli.RunArg) {
@@ -34,7 +34,7 @@ export async function* sc(ct: JshCli.RunArg) {
         throw Error(`unknown kind: ${kind}`);
       for (const entry of Object.values(await loadScenarioEntries())) {
         if (kind !== undefined && entry.kind !== kind) continue;
-        if (entry.kind === "route" && all === false && entry.mapKey !== ct.w.mapKey) continue;
+        if (entry.kind === "patrol" && all === false && entry.mapKey !== ct.w.mapKey) continue;
         yield summary(entry, all);
       }
       return;
@@ -43,7 +43,7 @@ export async function* sc(ct: JshCli.RunArg) {
       yield await getEntry(rest[0]);
       return;
     case "save":
-      return void (await saveRoute(ct, rest));
+      return void (await savePatrol(ct, rest));
     case "rm": {
       const { key } = await getEntry(rest[0]);
       if (import.meta.env.DEV !== true) throw Error("removing needs the dev server");
@@ -62,7 +62,7 @@ async function getEntry(key: undefined | string) {
   return entry;
 }
 
-/** One line, e.g. `route/basic-route guard-0 3 points cycle` */
+/** One line, e.g. `patrol/basic-patrol guard-0 3 points cycle` */
 function summary(entry: ScenarioEntry, all: boolean) {
   if (entry.kind === "character") return `${entry.key} ${entry.npcKey ?? "-"}`;
   const cycle = entry.cycle ? " cycle" : "";
@@ -70,12 +70,12 @@ function summary(entry: ScenarioEntry, all: boolean) {
 }
 
 /**
- * A route on this map, from `path:` or `cycle:` points, else the saved one's.
- * Options given replace the saved route's
+ * A patrol on this map, from `path:` or `cycle:` points, else the saved one's.
+ * Options given replace the saved patrol's
  */
-async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
-  if (key === undefined || isScenarioKey(key) === false || key.startsWith("route/") === false)
-    throw Error(`expected route/{slug}: ${key}`);
+async function savePatrol(ct: JshCli.RunArg, [key, ...args]: string[]) {
+  if (key === undefined || isScenarioKey(key) === false || key.startsWith("patrol/") === false)
+    throw Error(`expected patrol/{slug}: ${key}`);
   if (import.meta.env.DEV !== true) throw Error("saving needs the dev server");
   const opts = ct.api.jsArg(args) as {
     path?: unknown[];
@@ -85,16 +85,16 @@ async function saveRoute(ct: JshCli.RunArg, [key, ...args]: string[]) {
     say?: string;
     name?: string;
   };
-  const prev = (await loadScenarioEntries())[key] as undefined | RouteEntry;
+  const prev = (await loadScenarioEntries())[key] as undefined | PatrolEntry;
   const given = Array.isArray(opts.cycle) ? opts.cycle : opts.path;
   if (given === undefined && prev === undefined) throw Error("expected path:<points> or cycle:<points>");
   const points = given === undefined ? undefined : await toPoints(ct, given);
   const watch = typeof opts.watch === "string" ? opts.watch.split(",") : opts.watch;
-  const entry = RouteEntrySchema.parse({
+  const entry = PatrolEntrySchema.parse({
     ...prev,
     key,
-    kind: "route",
-    name: opts.name ?? prev?.name ?? key.slice("route/".length),
+    kind: "patrol",
+    name: opts.name ?? prev?.name ?? key.slice("patrol/".length),
     mapKey: points === undefined ? prev?.mapKey : ct.w.mapKey,
     points: points ?? prev?.points,
     cycle: opts.cycle === undefined ? prev?.cycle : opts.cycle !== false,
@@ -133,16 +133,16 @@ async function toPoints(ct: JshCli.RunArg, given: unknown[]): Promise<[number, n
 
 const cm = (x: number) => Math.round(x * 100) / 100;
 
-/** For `act guard`: kept off the shell as an object */
-export const routes = {
-  /** A saved route by `{slug}` or `route/{slug}`, else a route value, e.g. `$( sc get … )`: on this map */
-  async find(ct: JshCli.RunArg, value: unknown): Promise<RouteEntry> {
-    const key = typeof value === "string" ? (value.startsWith("route/") ? value : `route/${value}`) : null;
+/** For `act patrol`: kept off the shell as an object */
+export const patrols = {
+  /** A saved patrol by `{slug}` or `patrol/{slug}`, else a patrol value, e.g. `$( sc get … )`: on this map */
+  async find(ct: JshCli.RunArg, value: unknown): Promise<PatrolEntry> {
+    const key = typeof value === "string" ? (value.startsWith("patrol/") ? value : `patrol/${value}`) : null;
     const entry = key === null ? value : (await loadScenarioEntries())[key];
     if (entry === undefined) throw Error(`not found: ${key}`);
-    const route = RouteEntrySchema.parse(entry);
-    if (route.mapKey !== ct.w.mapKey) throw Error(`${route.key} is on ${route.mapKey}`);
-    return route;
+    const patrol = PatrolEntrySchema.parse(entry);
+    if (patrol.mapKey !== ct.w.mapKey) throw Error(`${patrol.key} is on ${patrol.mapKey}`);
+    return patrol;
   },
   toPoints,
 };

@@ -1,12 +1,12 @@
 import { Menu } from "@base-ui/react/menu";
 import { Switch } from "@base-ui/react/switch";
 import type { WorldState } from "@npc-cli/ui__world";
-import type { RouteEntry } from "@npc-cli/ui__world/scenario.schema";
+import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
 import {
   saveScenarioEntry,
   scenarioShared,
   useScenarioCharacters,
-  useScenarioRoutes,
+  useScenarioPatrols,
   useScenarioShared,
 } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -42,7 +42,7 @@ import {
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
-import { RouteLayer } from "./RouteLayer";
+import { PatrolLayer } from "./PatrolLayer";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
@@ -57,8 +57,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
   const characters = useScenarioCharacters(character);
-  /** This map's routes, as their files have them */
-  const routes = useScenarioRoutes(w.mapKey);
+  /** This map's patrols, as their files have them */
+  const patrols = useScenarioPatrols(w.mapKey);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
@@ -110,9 +110,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       spot: null,
       sidebarTab: "decor",
       mapEl: null,
-      route: null,
-      routeDraft: null,
-      routeError: null,
+      patrol: null,
+      patrolDraft: null,
+      patrolError: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -261,9 +261,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
-      chooseRoute(key) {
-        const points = routes[key]?.points ?? [];
-        state.set({ route: key, routeError: null, sidebarTab: "route" });
+      choosePatrol(key) {
+        const points = patrols[key]?.points ?? [];
+        state.set({ patrol: key, patrolError: null, sidebarTab: "patrol" });
         if (points.length === 0) return;
         const [x, y] = points.reduce(
           ([sx, sy], [px, py]) => [sx + px / points.length, sy + py / points.length],
@@ -271,9 +271,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         );
         map.current?.centreOn(x, y, locateZoom, sidebarOffset());
       },
-      saveRoute(next) {
-        state.set({ routeDraft: next, routeError: null });
-        saveScenarioEntry(next).catch((e) => state.set({ routeDraft: null, routeError: String(e) }));
+      savePatrol(next) {
+        state.set({ patrolDraft: next, patrolError: null });
+        saveScenarioEntry(next).catch((e) => state.set({ patrolDraft: null, patrolError: String(e) }));
       },
       chooseSpot(pick) {
         state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
@@ -289,18 +289,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, routes], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, patrols], reset: { history: false } },
   );
 
-  // a reload has the saved route, so its draft may go
-  useEffect(() => void (state.routeDraft = null), [routes]);
-  /** The chosen route, as edited */
-  const route =
-    state.route === null
+  // a reload has the saved patrol, so its draft may go
+  useEffect(() => void (state.patrolDraft = null), [patrols]);
+  /** The chosen patrol, as edited */
+  const patrol =
+    state.patrol === null
       ? null
-      : state.routeDraft?.key === state.route
-        ? state.routeDraft
-        : (routes[state.route] ?? null);
+      : state.patrolDraft?.key === state.patrol
+        ? state.patrolDraft
+        : (patrols[state.patrol] ?? null);
 
   /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
@@ -532,17 +532,17 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
-            {state.sidebarTab === "route" && (
+            {state.sidebarTab === "patrol" && (
               <div className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
-                {Object.values(routes).map((x) => (
+                {Object.values(patrols).map((x) => (
                   <button
                     key={x.key}
                     type="button"
                     className={cn(
                       "w-full flex items-center gap-2 px-2 py-0.5 text-left cursor-pointer hover:bg-zinc-800",
-                      x.key === state.route ? "bg-zinc-800 text-zinc-100" : "text-zinc-400",
+                      x.key === state.patrol ? "bg-zinc-800 text-zinc-100" : "text-zinc-400",
                     )}
-                    onClick={() => state.chooseRoute(x.key)}
+                    onClick={() => state.choosePatrol(x.key)}
                   >
                     <span className="truncate">{x.name || x.key}</span>
                     <span className="ml-auto shrink-0 text-zinc-500">
@@ -551,13 +551,13 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                     </span>
                   </button>
                 ))}
-                {Object.keys(routes).length === 0 && (
+                {Object.keys(patrols).length === 0 && (
                   <div className="px-2 py-1 text-zinc-600">
-                    no routes on this map: <code>sc save route/{"{slug}"} path:$( pick 3 )</code>
+                    no patrols on this map: <code>sc save patrol/{"{slug}"} path:$( pick 3 )</code>
                   </div>
                 )}
-                {routesEditable === false && <div className="px-2 py-1 text-zinc-600">read-only outside DEV</div>}
-                {state.routeError !== null && <div className="px-2 py-1 text-red-300">{state.routeError}</div>}
+                {patrolsEditable === false && <div className="px-2 py-1 text-zinc-600">read-only outside DEV</div>}
+                {state.patrolError !== null && <div className="px-2 py-1 text-red-300">{state.patrolError}</div>}
               </div>
             )}
           </div>
@@ -587,8 +587,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onTarget={(key) => state.selected.includes(key) || state.select([key])}
           onCommit={(def, merge) => state.commit([def], merge)}
           onRemove={(key) => state.remove([key])}
-          route={routesEditable ? route : null}
-          onRouteCommit={state.saveRoute}
+          patrol={patrolsEditable ? patrol : null}
+          onPatrolCommit={state.savePatrol}
         >
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
@@ -614,12 +614,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             }
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
-            {route !== null && (
-              <RouteLayer
+            {patrol !== null && (
+              <PatrolLayer
                 w={w}
-                route={route}
-                editable={routesEditable}
-                onCommit={state.saveRoute}
+                patrol={patrol}
+                editable={patrolsEditable}
+                onCommit={state.savePatrol}
                 onPressing={state.onPressing}
               />
             )}
@@ -784,22 +784,22 @@ type State = {
   /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
   sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
-  /** The route chosen in the route tab, drawn on the map, by key */
-  route: null | string;
-  /** The chosen route as last edited, until a reload has it saved */
-  routeDraft: null | RouteEntry;
-  routeError: null | string;
-  /** Chooses a route, and centres the map on it */
-  chooseRoute(key: string): void;
+  /** The patrol chosen in the patrol tab, drawn on the map, by key */
+  patrol: null | string;
+  /** The chosen patrol as last edited, until a reload has it saved */
+  patrolDraft: null | PatrolEntry;
+  patrolError: null | string;
+  /** Chooses a patrol, and centres the map on it */
+  choosePatrol(key: string): void;
   /** DEV: saves it, keeping it as a draft meanwhile */
-  saveRoute(next: RouteEntry): void;
+  savePatrol(next: PatrolEntry): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const sidebarTabs = ["decor", "spot", "route"] as const;
-/** Saving reaches a route's file in DEV alone */
-const routesEditable = import.meta.env.DEV === true;
+const sidebarTabs = ["decor", "spot", "patrol"] as const;
+/** Saving reaches a patrol's file in DEV alone */
+const patrolsEditable = import.meta.env.DEV === true;
 type SidebarTab = (typeof sidebarTabs)[number];
 
 function SidebarHint({ children }: { children: React.ReactNode }) {

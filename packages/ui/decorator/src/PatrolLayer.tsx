@@ -1,15 +1,15 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import type { RouteEntry } from "@npc-cli/ui__world/scenario.schema";
+import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
 import { useEffect } from "react";
 import { isPress, stepOf, toMap } from "./decor-edit";
-import { legsOf, movedPoint, snapped } from "./route-edit";
+import { legsOf, movedPoint, snapped } from "./patrol-edit";
 
 /**
- * On the map, the chosen route: its legs, an arrow on each the way it is walked, and a numbered handle per point.
- * Editable, a handle drags its point, and a leg the whole route, snapped onto the navmesh on release.
+ * On the map, the chosen patrol: its legs, an arrow on each the way it is walked, and a numbered handle per point.
+ * Editable, a handle drags its point, and a leg the whole patrol, snapped onto the navmesh on release.
  * Off it, what was dragged springs back
  */
-export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) {
+export function PatrolLayer({ w, patrol, editable, onCommit, onPressing }: Props) {
   useEffect(() => () => onPressing(false), []); // a press cut short by an unmount blocks nothing
 
   function onHandlePointerDown(e: React.PointerEvent<SVGGElement>, i: number) {
@@ -20,7 +20,7 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
     if (svg === null) return;
     handle.setPointerCapture(e.pointerId);
     onPressing(true);
-    const from = route.points[i];
+    const from = patrol.points[i];
     const start = toMap(svg, e.clientX, e.clientY);
     let [to, travel] = [from, 0];
     const onMove = (ev: PointerEvent) => {
@@ -39,7 +39,7 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
       onPressing(false);
       place(svg, i, from, false); // React redraws it where it ends
       const at = commit && travel >= dragThreshold ? snapped(w, { x: to[0], y: to[1] }) : null;
-      if (at !== null) onCommit(movedPoint(route, i, at));
+      if (at !== null) onCommit(movedPoint(patrol, i, at));
     };
     const [onUp, onLost] = [onEnd(true), onEnd(false)];
     handle.addEventListener("pointermove", onMove);
@@ -52,7 +52,7 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
     if (editable === false || isPress(e) === false) return;
     e.stopPropagation();
     const leg = e.currentTarget;
-    const group = leg.closest("[data-route]");
+    const group = leg.closest("[data-patrol]");
     const svg = leg.ownerSVGElement;
     if (svg === null || group === null) return;
     leg.setPointerCapture(e.pointerId);
@@ -75,8 +75,8 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
       onPressing(false);
       group.removeAttribute("transform"); // React redraws it where it ends
       if (commit === false || travel < dragThreshold) return;
-      const points = route.points.map(([x, y]) => snapped(w, { x: x + dx, y: y + dy }));
-      if (points.every((p) => p !== null)) onCommit({ ...route, points });
+      const points = patrol.points.map(([x, y]) => snapped(w, { x: x + dx, y: y + dy }));
+      if (points.every((p) => p !== null)) onCommit({ ...patrol, points });
     };
     const [onUp, onLost] = [onEnd(true), onEnd(false)];
     leg.addEventListener("pointermove", onMove);
@@ -85,21 +85,21 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
     leg.addEventListener("lostpointercapture", onLost);
   }
 
-  const legs = legsOf(route);
+  const legs = legsOf(patrol);
   return (
-    <g data-route={route.key}>
+    <g data-patrol={patrol.key}>
       {legs.map(({ i, a, b }) => {
         const angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
         return (
           <g key={i} pointerEvents={editable ? undefined : "none"}>
-            {/* wide and clear, so a press finds the leg: a drag moves the route, a right click opens the menu */}
+            {/* wide and clear, so a press finds the leg: a drag moves the patrol, a right click opens the menu */}
             <line
-              data-route-leg={i}
+              data-patrol-leg={i}
               data-no-pan={editable ? true : undefined}
               className={editable ? "cursor-move" : undefined}
               onPointerDown={onLegPointerDown}
-              data-route-a={legEnd(i)}
-              data-route-b={legEnd((i + 1) % route.points.length)}
+              data-patrol-a={legEnd(i)}
+              data-patrol-b={legEnd((i + 1) % patrol.points.length)}
               x1={a[0]}
               y1={a[1]}
               x2={b[0]}
@@ -109,23 +109,23 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
               vectorEffect="non-scaling-stroke"
             />
             <line
-              data-route-a={legEnd(i)}
-              data-route-b={legEnd((i + 1) % route.points.length)}
+              data-patrol-a={legEnd(i)}
+              data-patrol-b={legEnd((i + 1) % patrol.points.length)}
               x1={a[0]}
               y1={a[1]}
               x2={b[0]}
               y2={b[1]}
-              stroke={ink.route}
+              stroke={ink.patrol}
               strokeWidth={2}
               vectorEffect="non-scaling-stroke"
               pointerEvents="none"
             />
             <path
-              data-route-arrow={`${i} ${(i + 1) % route.points.length}`}
+              data-patrol-arrow={`${i} ${(i + 1) % patrol.points.length}`}
               d="M -0.12 -0.08 L 0.04 0 L -0.12 0.08"
               transform={`translate(${(a[0] + b[0]) / 2} ${(a[1] + b[1]) / 2}) rotate(${angle})`}
               fill="none"
-              stroke={ink.route}
+              stroke={ink.patrol}
               strokeWidth={2}
               vectorEffect="non-scaling-stroke"
               pointerEvents="none"
@@ -133,17 +133,17 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
           </g>
         );
       })}
-      {route.points.map(([x, y], i) => (
+      {patrol.points.map(([x, y], i) => (
         <g
           key={i}
-          data-route-point={i}
+          data-patrol-point={i}
           data-no-pan={editable ? true : undefined}
           transform={`translate(${x} ${y})`}
           className={editable ? "cursor-grab" : undefined}
           pointerEvents={editable ? undefined : "none"}
           onPointerDown={(e) => onHandlePointerDown(e, i)}
         >
-          <circle r={handleRadius} fill={ink.route} />
+          <circle r={handleRadius} fill={ink.patrol} />
           <text
             fontSize={handleRadius * 1.3}
             fill={ink.text}
@@ -162,13 +162,13 @@ export function RouteLayer({ w, route, editable, onCommit, onPressing }: Props) 
 /** Point `i`'s handle at `to`, and the ends of its legs. Their arrows are hidden whilst `dragging` */
 function place(svg: SVGSVGElement, i: number, to: [number, number], dragging: boolean) {
   const [x, y] = to.map(String);
-  svg.querySelector(`[data-route-point="${i}"]`)?.setAttribute("transform", `translate(${x} ${y})`);
-  for (const el of svg.querySelectorAll(`[data-route-a="${legEnd(i)}"]`))
+  svg.querySelector(`[data-patrol-point="${i}"]`)?.setAttribute("transform", `translate(${x} ${y})`);
+  for (const el of svg.querySelectorAll(`[data-patrol-a="${legEnd(i)}"]`))
     el.setAttribute("x1", x), el.setAttribute("y1", y);
-  for (const el of svg.querySelectorAll(`[data-route-b="${legEnd(i)}"]`))
+  for (const el of svg.querySelectorAll(`[data-patrol-b="${legEnd(i)}"]`))
     el.setAttribute("x2", x), el.setAttribute("y2", y);
-  for (const el of svg.querySelectorAll<SVGElement>("[data-route-arrow]")) {
-    const ends = el.getAttribute("data-route-arrow")?.split(" ") ?? [];
+  for (const el of svg.querySelectorAll<SVGElement>("[data-patrol-arrow]")) {
+    const ends = el.getAttribute("data-patrol-arrow")?.split(" ") ?? [];
     el.style.visibility = dragging && ends.includes(String(i)) ? "hidden" : "";
   }
 }
@@ -178,10 +178,10 @@ const legEnd = (i: number) => `p${i}`;
 
 type Props = {
   w: WorldState;
-  route: RouteEntry;
+  patrol: PatrolEntry;
   /** DEV, where a save reaches the file */
   editable: boolean;
-  onCommit(next: RouteEntry): void;
+  onCommit(next: PatrolEntry): void;
   /** A press began or ended: whilst one is under way the context menu stays shut */
   onPressing(pressing: boolean): void;
 };
@@ -190,4 +190,4 @@ type Props = {
 const handleRadius = 0.16;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
-const ink = { route: "var(--deco-route)", text: "var(--deco-route-text)" };
+const ink = { patrol: "var(--deco-patrol)", text: "var(--deco-patrol-text)" };

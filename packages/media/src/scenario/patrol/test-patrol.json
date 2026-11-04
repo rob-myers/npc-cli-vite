@@ -1,7 +1,7 @@
 {
-  "key": "route/test-route",
-  "name": "test-route",
-  "kind": "route",
+  "key": "patrol/test-patrol",
+  "name": "test-patrol",
+  "kind": "patrol",
   "mapKey": "101-only",
   "points": [[17.37, 11.47], [15.32, 5.43], [19.51, 8.59]],
   "cycle": true,

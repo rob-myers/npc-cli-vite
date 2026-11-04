@@ -1,7 +1,7 @@
 import z from "zod";
 
 /** A folder of entries each */
-export const scenarioKinds = ["character", "route"] as const;
+export const scenarioKinds = ["character", "patrol"] as const;
 
 /** A file's name, and an entry's key after its kind */
 export const scenarioSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -25,10 +25,10 @@ export const CharacterEntrySchema = z.object({
     .default({}),
 });
 
-/** A way a guard walks on one map, stopping at each point to look either side — `act guard route:{slug}` */
-export const RouteEntrySchema = z.object({
+/** A way a guard walks on one map, stopping at each point to look either side — `act patrol {slug}` */
+export const PatrolEntrySchema = z.object({
   ...EntryBase,
-  kind: z.literal("route"),
+  kind: z.literal("patrol"),
   mapKey: z.string(),
   /** Floor points `[x, y]`, in metres */
   points: z.array(z.tuple([z.number(), z.number()])).min(2),
@@ -47,11 +47,11 @@ export const RouteEntrySchema = z.object({
 });
 
 /** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
-export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, RouteEntrySchema]);
+export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, PatrolEntrySchema]);
 
 export type ScenarioEntry = z.infer<typeof ScenarioEntrySchema>;
 export type CharacterEntry = z.infer<typeof CharacterEntrySchema>;
-export type RouteEntry = z.infer<typeof RouteEntrySchema>;
+export type PatrolEntry = z.infer<typeof PatrolEntrySchema>;
 
 /** A character with an npc, who can be spawned */
 export type ScenarioCharacter = CharacterEntry & { npcKey: string };
@@ -64,8 +64,8 @@ export function isScenarioCharacter(entry: ScenarioEntry): entry is ScenarioChar
   return entry.kind === "character" && entry.npcKey !== undefined;
 }
 
-export function isRouteEntry(entry: ScenarioEntry): entry is RouteEntry {
-  return entry.kind === "route";
+export function isPatrolEntry(entry: ScenarioEntry): entry is PatrolEntry {
+  return entry.kind === "patrol";
 }
 
 export function isScenarioKey(key: string) {
