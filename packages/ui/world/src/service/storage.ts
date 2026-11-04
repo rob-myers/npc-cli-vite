@@ -67,6 +67,8 @@ export type WorldSettings = {
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
   timeSliderOpen: boolean;
+  /** Whether rooms' names show, from the player's bar's menu — see `RoomLabels` */
+  roomLabelsShown: boolean;
   /** What the player's bubble set of their breathing, over its defaults */
   breathTune: Partial<import("../const.npc").BreathTune>;
   gmGraphsFilter: "gm" | "room";
@@ -113,6 +115,7 @@ const defaultWorldSettings: WorldSettings = {
   hudLayout: isTouchDevice() ? "right" : "bar",
   timeScale: 1,
   timeSliderOpen: false,
+  roomLabelsShown: true,
   breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,

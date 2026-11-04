@@ -6,6 +6,7 @@ import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabel, wallHeight } from
 import { helper } from "../service/helper";
 import { createLabelResources, drawLabel } from "../service/labels";
 import { slotOf } from "../service/room-slots";
+import { getWorldStore } from "../service/storage";
 import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
@@ -62,9 +63,14 @@ export default function RoomLabels() {
         }
 
         geo.instanceCount = i;
-        mesh.visible = i > 0; // nothing labelled: no draw call at all
+        mesh.visible = i > 0 && getWorldStore(w.key).read().roomLabelsShown; // else no draw call at all
         instAttr.needsUpdate = true;
         slotAttr.needsUpdate = true;
+      },
+      setShown(shown) {
+        getWorldStore(w.key).patch({ roomLabelsShown: shown });
+        state.position();
+        w.update();
       },
       redraw() {
         // decor carries the labels AND the rooms they stand in, so there is nothing to show before it
@@ -133,6 +139,8 @@ export type State = {
   position(): void;
   /** Draw and place the labels, once decor is built */
   redraw(): void;
+  /** Shows or hides every label, persisted */
+  setShown(shown: boolean): void;
 };
 
 /** Off the floor, so it is not in the floor's own plane */
