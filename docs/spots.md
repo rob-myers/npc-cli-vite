@@ -64,6 +64,7 @@ An obstacle reaches down from its top (`height`) by `meta.h`, else by `sightConf
 2. Its boundary edges are walked. Each is put down to the wall or obstacle nearest its middle, which gives wall and cover spots.
 3. Fill spots are on a grid, kept only on the navmesh.
 4. Sight is segment tests through a grid of occluders (`SegGrid`).
+5. Sight between regions is judged pair by pair, the slowest part. `gen-spots` judges them across threads (`createSightPool` in `scripts/src/service/sight-pool.ts`), sharing the cores among the geomorphs it makes at once (`--threads`). However judged, they are listed in the same order, so the files do not change (`judgePairs`, `computeSight`).
 
 ## When they are made
 

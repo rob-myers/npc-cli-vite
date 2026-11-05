@@ -3,12 +3,14 @@
 /**
  * Writes `public/spot/{gmKey}.json` per hull geomorph in `assets.json`, bar playgrounds — see `docs/spots.md`.
  * A geomorph whose layout and spot code are unchanged is skipped. Several are made at once, a process each.
+ * Each judges its pairs of spots across threads, sharing the cores (`--threads`).
  *
  * USAGE:
  * ```sh
  * pnpm gen-spots
  * pnpm gen-spots --gmKeys='["g-101--multipurpose"]'
  * pnpm gen-spots --force
+ * pnpm gen-spots --threads=4
  * ```
  */
 import childProcess from "node:child_process";
@@ -25,10 +27,11 @@ import { jsonParser } from "@npc-cli/util/json-parser";
 import { hashJson, hashText, info } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
+import { createSightPool } from "../service/sight-pool";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
-  options: { gmKeys: { type: "string" }, force: { type: "boolean" } },
+  options: { gmKeys: { type: "string" }, force: { type: "boolean" }, threads: { type: "string" } },
 });
 const onlyGmKeys = jsonParser.pipe(z.array(z.string())).safeParse(opts.values.gmKeys).data;
 
@@ -59,9 +62,11 @@ const todo = Object.values(assets.layout).flatMap((layout) => {
 });
 
 const startMs = performance.now();
+const cores = os.availableParallelism();
 if (todo.length > 1) {
   // a child process each, as many at once as there are cores: each is independent
   const queue = todo.map(({ layout }) => layout.key);
+  const concurrent = Math.min(queue.length, cores);
   const runOne = async (): Promise<void> => {
     const gmKey = queue.shift();
     if (gmKey === undefined) return;
@@ -71,6 +76,7 @@ if (todo.length > 1) {
         fileURLToPath(import.meta.url),
         `--gmKeys=${JSON.stringify([gmKey])}`,
         "--force",
+        `--threads=${Math.max(1, Math.floor(cores / concurrent))}`,
       ];
       const proc = childProcess.spawn(process.execPath, args, { stdio: "inherit" });
       proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`${gmKey}: exit code ${code}`))));
@@ -78,10 +84,13 @@ if (todo.length > 1) {
     });
     return runOne();
   };
-  await Promise.all(Array.from({ length: Math.min(queue.length, os.availableParallelism()) }, runOne));
+  await Promise.all(Array.from({ length: concurrent }, runOne));
 } else {
+  const threads = Number(opts.values.threads ?? cores);
+  const pool = threads > 1 ? createSightPool(threads) : null;
   for (const { layout, file, layoutHash } of todo) {
-    const { spots, rooms, hull, regionRadius, coverage, ms } = computeSpots(layout, await createGmNavMesh(layout));
+    const navMesh = await createGmNavMesh(layout);
+    const { spots, rooms, hull, regionRadius, coverage, ms } = await computeSpots(layout, navMesh, pool?.judge);
     const out: SpotsFile = {
       gmKey: layout.key,
       layoutHash,
@@ -105,6 +114,7 @@ if (todo.length > 1) {
       `${Math.round(performance.now() - startMs)}ms (${parts.join(", ")})`,
     );
   }
+  await pool?.close();
 }
 if (todo.length !== 1 || onlyGmKeys === undefined) {
   info("[gen-spots]", `${todo.length} made in ${Math.round(performance.now() - startMs)}ms`);
