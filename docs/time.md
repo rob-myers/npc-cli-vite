@@ -36,7 +36,8 @@ Both are in `packages/ui/world/src/service/clock.ts`.
 
 - `w.gameTime.setScale(s)` clamps it, sets the Timer's timescale, and saves it in the world store (`timeScale`), so it survives a reload.
 - The menu's vertical slider sits below its first three buttons. Its bottom half is logarithmic from 1/32 up to `1`, so small scales have room, and its top half linear up to `2`. Its bottom is `0`.
-- 9 and 8 step it up and down by `0.2`, held too, with a notice on the bar (`timeScaleStepByKey`, `WorldView`'s `onKeyDown`). The arrow keys move, as w, a, s and d.
+- `]` and `[` step it up and down by `0.2`, held too, by `code` so wherever a layout puts them (`timeScaleStepByCode`, `WorldView`'s `onKeyDown`).
+- Whilst it is not `1`, a notice over the player's bar says so, e.g. "time 0.8", its "x" setting it back to `1`. `GameTime`'s `onScale` (in `World`) redraws the bar and the menu's slider. The arrow keys move, as w, a, s and d.
 - jsh `timescale` prints it, or sets it first: `timescale 0.25`.
 - Scale `0` freezes the game, but not the frame loop. The camera still moves, and jsh still runs. Pausing is different: it stops the World's tick, and the World's pause group suspends world commands (`docs/jsh-pause.md`).
 - On a net client the slider is disabled. The scale is not synced from the host.

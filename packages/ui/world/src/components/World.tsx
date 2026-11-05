@@ -92,10 +92,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npcBrightness: defaultNpcBrightness, // the theme's, once there is one — see `onChangeTheme`
 
       events: new Broadcaster(),
-      gameTime: new GameTime(getWorldStore(meta.worldKey).read().timeScale, (timeScale) => {
-        getWorldStore(meta.worldKey).patch({ timeScale });
-        state.menu.update?.(); // only its slider shows it: not the whole World
-      }),
+      // through a method, which HMR replaces: the clock itself is kept
+      gameTime: new GameTime(getWorldStore(meta.worldKey).read().timeScale, (timeScale) =>
+        state.onTimeScale(timeScale),
+      ),
       realTime,
       realTickSecs: 0,
       reqAnimId: -1,
@@ -298,6 +298,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.speech?.onTick(delta);
         state.bubble?.onTick(delta);
         state.view.followPlayer(realDelta);
+      },
+      onTimeScale(timeScale) {
+        getWorldStore(meta.worldKey).patch({ timeScale });
+        // only the menu's slider and the bar's notice show it: not the whole World
+        state.menu.update?.();
+        state.hud?.update?.();
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -704,6 +710,8 @@ export type State = {
   /** Announce the map once its pending keys stop changing */
   mapSettled: () => void;
   onTick(): void;
+  /** The clock's scale changed: saved, and shown by the menu's slider and the bar */
+  onTimeScale(timeScale: number): void;
   setupDevAssetsSync(): () => void;
   setupDraftAssetsSync(): () => void;
   setDisabled(nextDisabled?: boolean): void;

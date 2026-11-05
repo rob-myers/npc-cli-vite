@@ -1015,11 +1015,9 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         } else if (key === "v") {
           if (e.repeat === false) state.setFollow(!state.follow);
-        } else if (timeScaleStepByKey[e.key] !== undefined && w.client === false) {
-          // 9 and 8 step the time scale, held too. Not a client's, as the menu's slider
-          w.gameTime.setScale(Math.round((w.gameTime.scale + (timeScaleStepByKey[e.key] ?? 0)) * 100) / 100);
-          w.hud?.say(`time ${w.gameTime.scale}`);
-          w.menu?.update();
+        } else if (timeScaleStepByCode[e.code] !== undefined && w.client === false) {
+          // ] and [ step the time scale, held too. Not a client's, as the menu's slider
+          w.gameTime.setScale(Math.round((w.gameTime.scale + (timeScaleStepByCode[e.code] ?? 0)) * 100) / 100);
         }
       },
       onKeyUp(e) {
@@ -2423,8 +2421,8 @@ const zoomPanDoneAlpha = 0.97;
 const zoomOutStopEpsilon = 0.001;
 /** Near enough the polar it is easing to, so no further frame is asked for */
 const phiSettledEpsilon = 0.0001;
-/** 9 and 8 step `w.gameTime`'s scale */
-const timeScaleStepByKey: Partial<Record<string, number>> = { "9": 0.2, "8": -0.2 };
+/** ] and [ step `w.gameTime`'s scale, as media players' speed */
+const timeScaleStepByCode: Partial<Record<string, number>> = { BracketRight: 0.2, BracketLeft: -0.2 };
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
