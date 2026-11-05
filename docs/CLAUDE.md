@@ -101,7 +101,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 ## Player input
 
-- **Walking.** The w, a, s and d keys head as seen, snapped onto a world axis within 20°. See WASD heading in `docs/camera.md`.
+- **Walking.** The w, a, s and d keys head as seen, snapped onto a world axis within 20°. The arrow keys are the same keys (`wasdOfArrow`). See WASD heading in `docs/camera.md`.
   - The heading is kept whilst a move key is held. A fresh press of another takes it again from the view.
   - Whilst `wasd_delta` runs, a held key turns the view to within 20° of the nearest axis, and the w-key snaps onto it there. So where the w-key heads depends on the view alone.
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.

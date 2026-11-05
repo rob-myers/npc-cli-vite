@@ -984,7 +984,8 @@ export function WorldView(props: React.PropsWithChildren) {
       }, 100),
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
-        const key = e.key.toLowerCase();
+        const key = wasdOfArrow[e.key] ?? e.key.toLowerCase();
+        if (key !== e.key.toLowerCase()) e.preventDefault(); // an arrow scrolls nothing
         const presetStep = cameraPresetStepByKey[e.key];
         // a move key pressed afresh whilst another is held takes the heading again, from the view as it is now
         if (wasdKeys.includes(key) && e.repeat === false && state.keysDown.has(key) === false) state.wasdHeading = null;
@@ -1015,15 +1016,14 @@ export function WorldView(props: React.PropsWithChildren) {
         } else if (key === "v") {
           if (e.repeat === false) state.setFollow(!state.follow);
         } else if (timeScaleStepByKey[e.key] !== undefined && w.client === false) {
-          // up and down step the time scale, held too. Not a client's, as the menu's slider
-          e.preventDefault(); // nor scroll
+          // 9 and 8 step the time scale, held too. Not a client's, as the menu's slider
           w.gameTime.setScale(Math.round((w.gameTime.scale + (timeScaleStepByKey[e.key] ?? 0)) * 100) / 100);
           w.hud?.say(`time ${w.gameTime.scale}`);
           w.menu?.update();
         }
       },
       onKeyUp(e) {
-        const key = e.key.toLowerCase();
+        const key = wasdOfArrow[e.key] ?? e.key.toLowerCase();
         state.keysDown.delete(key);
         if (state.wasdHeading !== null) w.r3f?.invalidate(); // a frame, for the compass to drop a held heading
       },
@@ -2423,8 +2423,8 @@ const zoomPanDoneAlpha = 0.97;
 const zoomOutStopEpsilon = 0.001;
 /** Near enough the polar it is easing to, so no further frame is asked for */
 const phiSettledEpsilon = 0.0001;
-/** Up and down step `w.gameTime`'s scale */
-const timeScaleStepByKey: Partial<Record<string, number>> = { ArrowUp: 0.2, ArrowDown: -0.2 };
+/** 9 and 8 step `w.gameTime`'s scale */
+const timeScaleStepByKey: Partial<Record<string, number>> = { "9": 0.2, "8": -0.2 };
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
@@ -2432,6 +2432,8 @@ const halfPi = Math.PI / 2;
 const compassSnapRad = Math.PI / 9;
 const compassSkewStep = Math.PI / 36;
 const wasdKeys = ["w", "a", "s", "d"];
+/** The arrow keys, read as the move keys they mirror */
+const wasdOfArrow: Partial<Record<string, string>> = { ArrowUp: "w", ArrowLeft: "a", ArrowDown: "s", ArrowRight: "d" };
 /** `alignWasdAzimuth`'s turn of the view to within snapping of an axis */
 const wasdAlign = {
   /** Within this of the last ask, the keys count as steering someone. Generous, as a slow time scale spaces the asks out */
