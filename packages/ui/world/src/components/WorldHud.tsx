@@ -586,7 +586,14 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
       >
         <ListIcon className={iconClass} weight="light" />
       </div>
-      <Menu.Root open={anchor !== null} onOpenChange={(open) => open || setAnchor(null)} modal={false}>
+      <Menu.Root
+        open={anchor !== null}
+        // a press on its own button is left to that button's click, which closes it
+        onOpenChange={(open, { event }) =>
+          open || (anchor?.contains(event?.target as Node) === true ? undefined : setAnchor(null))
+        }
+        modal={false}
+      >
         <Menu.Portal container={w.rootEl}>
           <Menu.Positioner anchor={anchor} side={side} sideOffset={6} className="z-50">
             <Menu.Popup className="pointer-events-auto select-none rounded-md border border-neutral-700 overflow-hidden bg-neutral-800/90 text-xs shadow-lg">
