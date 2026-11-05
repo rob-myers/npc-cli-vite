@@ -169,7 +169,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
           .filter((o) => Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach)
           .flatMap((o) => o.segs.map(([a, b]): Occluder => ({ a, b, kind: "obstacle", id: o.obstacleId }))),
   );
-  const { sight, always, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = computeSight({
+  const { sight, always, rims, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = computeSight({
     spots,
     layout,
     grid,
@@ -189,6 +189,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     Object.assign(spot, {
       sight: sight[i],
       always: always[i],
+      rim: rims[i],
       via: via[i],
       crouchSafe: crouchSafe[i],
       ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
@@ -246,6 +247,7 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       ...(ref === undefined ? {} : { ref }),
       sight: [],
       always: [],
+      rim: [],
       via: [],
       crouchSafe: [],
       doSight: [],

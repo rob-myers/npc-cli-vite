@@ -64,7 +64,7 @@ Step 1 is built, and the start of step 3.
 - **`act patrol`** walks one, with one npc or several, who halt on a sighting.
 - **The Decorator** lists this map's patrols, draws the chosen one, and in DEV edits it. See Patrols in `docs/decorator.md`.
 - **`guard-spotted`** lets a script react instead of the halt (`say:""`).
-- **Sight is stricter** between npcs: a spot's `always` counts only for an npc within 0.3 m of it, else lines decide (`docs/perception.md`).
+- **Sight is sounder** between npcs: a spot's `always` counts only for an npc inside its region, the hull of its rim samples, else lines decide (`docs/perception.md`).
 
 This replaced an earlier `act guard room:<grKey>`, which posted guards on spots that between them saw a room's doors. Patrols say where guards walk, rather than covering a room for them.
 

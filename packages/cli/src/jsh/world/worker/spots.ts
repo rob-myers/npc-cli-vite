@@ -1,6 +1,6 @@
 import type { SegGrid } from "@npc-cli/ui__world/seg-grid";
 import { type Spot, SpotsFileSchema, spotAliasesOf, spotKeyRe } from "@npc-cli/ui__world/spot.schema";
-import { sightConfig, sightIdStride } from "@npc-cli/ui__world/spot-sight";
+import { convexHull, inConvex, rimPoints, sightConfig, sightIdStride } from "@npc-cli/ui__world/spot-sight";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 
 /**
@@ -100,9 +100,12 @@ export function answerSpotQueries(
     });
     return hit;
   };
+  /** Their spots whose region they stand in, where its `always` holds for them too */
+  const inRegion = (at: At, npc: undefined | WW.SpotNpc): At =>
+    npc === undefined ? at : { ...at, spots: at.spots.filter((s) => inConvex(s.region, npc.point)) };
   /**
    * Whether `a` sees `b` now, and what settled it. Rooms out of view, and pairs the lists never list, are no.
-   * Spot to spot the lists say. Always listed from spots within `alwaysReach` of each is yes, unless `b` crouches.
+   * Spot to spot the lists say. Always listed between spots whose regions they stand in is yes, unless `b` crouches.
    * Only the rest cast lines
    */
   const judge = (refA: string, refB: string): Verdict => {
@@ -119,7 +122,7 @@ export function answerSpotQueries(
     if (
       listed === "always" &&
       nb?.crouched !== true &&
-      all.listedAny(nearTo(A, na), nearTo(B, nb), isOpen) === "always"
+      all.listedAny(inRegion(A, na), inRegion(B, nb), isOpen) === "always"
     )
       return { sees: true, settled: "always" };
     return { sees: eyeSees(eyeOf(refA), headOf(refB), na, nb), settled: "lines" };
@@ -307,6 +310,7 @@ async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][
       Math.atan2(b * Math.cos(angle) + d * Math.sin(angle), a * Math.cos(angle) + c * Math.sin(angle));
     const file = byGmKey[gm.key];
     const aliases = file === undefined ? [] : spotAliasesOf(file);
+    const toWorld = (p: Geom.VectJson) => ({ x: a * p.x + c * p.y + e, y: b * p.x + d * p.y + f });
     return (file?.spots ?? []).map((spot) => ({
       key: `g${gmId}s${spot.id}`,
       alias: `g${gmId}${aliases[spot.id]}`,
@@ -317,6 +321,8 @@ async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][
       grKey: spot.roomId === null ? null : `g${gmId}r${spot.roomId}`,
       facing: spot.facing === undefined ? undefined : turn(spot.facing),
       wall: turn((2 * Math.PI * spot.depth.indexOf(Math.min(...spot.depth))) / spot.depth.length),
+      // hulled again in world coords: a mirrored geomorph turns its winding round
+      region: spot.rim.length === 0 ? [] : convexHull([spot, ...rimPoints(spot, spot.rim)].map(toWorld)),
       spot,
     }));
   });
@@ -570,6 +576,8 @@ type MapSpot = {
   facing: undefined | number;
   /** Radians towards its nearest occluder, its least `depth` */
   wall: number;
+  /** Its region's hull, in world coords: empty without a `rim` */
+  region: Geom.VectJson[];
   spot: Spot;
 };
 
@@ -579,11 +587,6 @@ const cellSize = 2;
 const spotOfReach = 2;
 /** Metres: the spots of their room this near are all theirs */
 const ownReach = sightConfig.regionRadius;
-/** Metres from a spot within which its `always` stands for an npc's own view */
-const alwaysReach = 0.3;
-/** Their spots within `alwaysReach`, if an npc */
-const nearTo = (at: At, npc: undefined | WW.SpotNpc): At =>
-  npc === undefined ? at : { ...at, spots: at.spots.filter((s) => dist(s, npc.point) <= alwaysReach) };
 /** Metres from a door spot that stand in its door */
 const doorReach = 0.5;
 /** Metres from where they sit or lie to its doable spot */

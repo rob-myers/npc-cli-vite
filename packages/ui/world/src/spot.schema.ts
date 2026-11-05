@@ -51,6 +51,8 @@ export const SpotSchema = z.object({
   sight: z.array(z.number()).default([]),
   /** Spots whose region its region always sees: every line between is clear */
   always: z.array(z.number()).default([]),
+  /** Its region's rim samples, metres out from it — see `rimPoints`. Within their hull, `always` holds */
+  rim: z.array(z.number()).default([]),
   /** `[doorIds, spotIds]`: spots it may see once all those doors are open */
   via: z.array(z.tuple([z.array(z.number()), z.array(z.number())])).default([]),
   /** Cover only: spots whose region cannot see it fully crouched */

@@ -114,6 +114,14 @@ export function rimSamples(v: Vision) {
   });
 }
 
+/** A region's rim samples from its spot's `rim`: as `rimSamples` made them, at as many angles from -π */
+export function rimPoints(p: Geom.VectJson, rim: number[]) {
+  return rim.map((r, k) => {
+    const a = (2 * Math.PI * k) / rim.length - Math.PI;
+    return { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r };
+  });
+}
+
 /** Metres a rim sample is pulled in at a time, until clear */
 const rimStep = 0.05;
 
@@ -262,6 +270,10 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
   return {
     sight,
     always,
+    // floored, so a region never grows past what was judged
+    rims: regions.map(({ samples: [p, ...rim] }) =>
+      rim.map((q) => Math.floor(Math.hypot(q.x - p.x, q.y - p.y) * 100) / 100),
+    ),
     via: via.map((byDoors) =>
       [...byDoors].map(([key, ids]): [number[], number[]] => [key.split(",").map(Number), ids]),
     ),
@@ -513,7 +525,7 @@ function someAngleIn(angles: number[], lo: number, hi: number, fn: (angle: numbe
   return false;
 }
 
-function convexHull(ps: Geom.VectJson[]) {
+export function convexHull(ps: Geom.VectJson[]) {
   const sorted = ps.slice().sort((u, v) => u.x - v.x || u.y - v.y);
   const cross = (o: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) =>
     (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
@@ -528,7 +540,8 @@ function convexHull(ps: Geom.VectJson[]) {
   return [...half(sorted), ...half(sorted.slice().reverse())];
 }
 
-function inConvex(vs: Geom.VectJson[], p: Geom.VectJson) {
+/** Whether `p` is inside or on convex `vs`, anticlockwise as `convexHull` gives them */
+export function inConvex(vs: Geom.VectJson[], p: Geom.VectJson) {
   if (vs.length < 3) return false;
   for (let i = 0; i < vs.length; i++) {
     const [a, b] = [vs[i], vs[(i + 1) % vs.length]];
@@ -581,6 +594,8 @@ type SightResult = {
   sight: number[][];
   /** By spot, the spots its region always sees: every line between is clear */
   always: number[][];
+  /** By spot, its region's rim samples as metres out — see `rimPoints` */
+  rims: number[][];
   /** By spot, `[doorIds, spotIds]`: those it may see once all those doors are open */
   via: [number[], number[]][][];
   /** By cover spot, those its region cannot see it from, fully crouched */
