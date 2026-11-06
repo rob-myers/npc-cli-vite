@@ -235,7 +235,7 @@ export function onGrid(def: Geomorph.DecorDef) {
 }
 
 /** To a multiple of `step` when given */
-function snap(n: number, step?: number) {
+export function snap(n: number, step?: number) {
   return step === undefined ? n : Math.round(n / step) * step;
 }
 

@@ -78,6 +78,7 @@ Whilst the player's phaser is raised (`isAiming`):
 
 Which way (`getWasdDirection`, `syncWasdHeading`, `snapHeading`):
 - The w-key heads up the screen, snapped onto the nearest world axis when the view is within `compassSnapRad` (20°) of it. The a, s and d keys are quarter turns from it.
+- The arrow keys are read as w, a, s and d (`wasdOfArrow`), so up is the w-key.
 - The heading is taken as the first move key goes down (`wasdHeading`), and kept whilst any is held, so a camera turn mid-walk does not swerve them.
 - A move key pressed afresh whilst another is held takes the heading again, from the view as it is then (`onKeyDown`). So after a camera turn, a tap re-aims.
 

@@ -1,7 +1,7 @@
 import z from "zod";
 
 /** A folder of entries each */
-export const scenarioKinds = ["character", "patrol"] as const;
+export const scenarioKinds = ["character", "graph"] as const;
 
 /** A file's name, and an entry's key after its kind */
 export const scenarioSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -25,33 +25,58 @@ export const CharacterEntrySchema = z.object({
     .default({}),
 });
 
-/** A way a guard walks on one map, stopping at each point to look either side — `act patrol {slug}` */
-export const PatrolEntrySchema = z.object({
-  ...EntryBase,
-  kind: z.literal("patrol"),
-  mapKey: z.string(),
-  /** Floor points `[x, y]`, in metres */
-  points: z.array(z.tuple([z.number(), z.number()])).min(2),
-  /** Back to the first after the last, else back and forth */
-  cycle: z.boolean().default(false),
-  /** Who walks it, else `guard-0` */
-  npcKey: z.string().optional(),
-  /** Who they watch for: none listed is the player */
-  watch: z.array(z.string()).default([]),
-  /** What they say on seeing one, halting. Empty, they neither halt nor speak: a script reads `guard-spotted` */
-  say: z.string().default("Halt!"),
-  /** Game seconds stopped at each point, then looking each way, and how far each way in degrees */
-  stop: z
-    .object({ secs: z.number().default(2), lookSecs: z.number().default(2), lookDeg: z.number().default(60) })
-    .default({ secs: 2, lookSecs: 2, lookDeg: 60 }),
+/** Free-form, read by the behaviours using a graph */
+const GraphMetaSchema = z.record(z.string(), z.unknown()).default({});
+
+const GraphNodeSchema = z.object({
+  /** Stable, e.g. `n3`, so edges survive edits */
+  id: z.string(),
+  /** Floor point `[x, y]`, in metres: its spot's when last saved */
+  at: z.tuple([z.number(), z.number()]),
+  /** A spot's alias or key, e.g. `g0r12-3`: readers take its point over `at` */
+  spot: z.string().optional(),
+  meta: GraphMetaSchema,
 });
 
+const GraphEdgeSchema = z.object({ from: z.string(), to: z.string(), meta: GraphMetaSchema });
+
+/** Two edges with one key are the same edge: either way round unless directed */
+export function edgeKey(from: string, to: string, directed: boolean) {
+  return directed || from < to ? `${from} ${to}` : `${to} ${from}`;
+}
+
+/** Nodes and edges on one map, read by jsh behaviours, e.g. `act patrol {slug}` — see `docs/npc-graphs.md` */
+export const GraphEntrySchema = z
+  .object({
+    ...EntryBase,
+    kind: z.literal("graph"),
+    mapKey: z.string(),
+    directed: z.boolean().default(false),
+    meta: GraphMetaSchema,
+    nodes: z.array(GraphNodeSchema).min(1),
+    edges: z.array(GraphEdgeSchema).default([]),
+  })
+  .superRefine((graph, ctx) => {
+    const ids = new Set(graph.nodes.map((n) => n.id));
+    if (ids.size < graph.nodes.length) ctx.addIssue({ code: "custom", message: "node ids repeat" });
+    const seen = new Set<string>();
+    for (const { from, to } of graph.edges) {
+      if (!ids.has(from) || !ids.has(to)) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: no such node` });
+      if (from === to) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: a loop` });
+      const key = edgeKey(from, to, graph.directed);
+      if (seen.has(key)) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: repeated` });
+      seen.add(key);
+    }
+  });
+
 /** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
-export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, PatrolEntrySchema]);
+export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, GraphEntrySchema]);
 
 export type ScenarioEntry = z.infer<typeof ScenarioEntrySchema>;
 export type CharacterEntry = z.infer<typeof CharacterEntrySchema>;
-export type PatrolEntry = z.infer<typeof PatrolEntrySchema>;
+export type GraphEntry = z.infer<typeof GraphEntrySchema>;
+export type GraphNode = z.infer<typeof GraphNodeSchema>;
+export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
 
 /** A character with an npc, who can be spawned */
 export type ScenarioCharacter = CharacterEntry & { npcKey: string };
@@ -64,8 +89,8 @@ export function isScenarioCharacter(entry: ScenarioEntry): entry is ScenarioChar
   return entry.kind === "character" && entry.npcKey !== undefined;
 }
 
-export function isPatrolEntry(entry: ScenarioEntry): entry is PatrolEntry {
-  return entry.kind === "patrol";
+export function isGraphEntry(entry: ScenarioEntry): entry is GraphEntry {
+  return entry.kind === "graph";
 }
 
 export function isScenarioKey(key: string) {

@@ -1,8 +1,10 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { type Spot, type SpotsFile, spotAliasesOf } from "@npc-cli/ui__world/spot.schema";
 import {
+  convexHull,
   createWorldSightGrid,
   obstaclesAt,
+  rimPoints,
   rimSamples,
   sightIdStride,
   visionAt,
@@ -137,7 +139,7 @@ function ChosenVision({ w, gmId, spot, radius }: { w: WorldState; gmId: number; 
 
 /**
  * What `spot`'s region may see in its geomorph: a ring on each spot it may see, green if always, dashed if
- * through doors, red if it is hidden from it crouched. Its region as a circle — see `docs/sight.md`
+ * through doors, red if it is hidden from it crouched. Its reach as a circle, and within it its region as saved
  */
 function ChosenSpot({ spot, file }: { spot: Spot; file: SpotsFile }) {
   const { x, y } = spot;
@@ -167,6 +169,8 @@ function ChosenSpot({ spot, file }: { spot: Spot; file: SpotsFile }) {
         strokeDasharray="4 2"
         vectorEffect="non-scaling-stroke"
       />
+      {/* its region as saved: inside, its `always` holds */}
+      <path d={regionPath(spot)} fill="none" stroke={ink.line} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       {spot.always.map((id) => ring(id, ink.always))}
       {spot.sight.map((id) => ring(id, ink.may))}
       {spot.via.flatMap(([, ids]) => ids.map((id) => ring(id, ink.may, true)))}
@@ -181,6 +185,14 @@ function ChosenSpot({ spot, file }: { spot: Spot; file: SpotsFile }) {
       />
     </g>
   );
+}
+
+/** A spot's region, the hull of it and its `rim` samples, as a closed subpath. None without a rim */
+function regionPath(s: Spot) {
+  if (s.rim.length === 0) return "";
+  return `M${convexHull([s, ...rimPoints(s, s.rim)])
+    .map((p) => `${p.x},${p.y}`)
+    .join("L")}Z`;
 }
 
 /** Rounded to a millimetre, without repeats: polygon-clipping fails on near-duplicate points */

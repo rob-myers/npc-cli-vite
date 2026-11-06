@@ -1,11 +1,11 @@
 /** Occluding segments bucketed by cell, so a line meets only those along it */
 export class SegGrid {
-  cells = new Map<string, Occluder[]>();
-  /** Stamped as met, so one in many cells is met once per walk */
-  seen = new Map<Occluder, number>();
+  /** By `cellKey` */
+  cells = new Map<number, Occluder[]>();
+  /** Each walk's, marked on what it meets, so one in many cells is met once per walk */
   stamp = 0;
   /** By id, the cells each decor occluder is in: only decor is removed */
-  decorCells = new Map<number, string[]>();
+  decorCells = new Map<number, number[]>();
   /** Metres */
   cell: number;
 
@@ -13,12 +13,25 @@ export class SegGrid {
     this.cell = cell;
   }
 
+  /** A grid of `occluders`, e.g. a list `occluders()` gave, posted to a thread */
+  static of(cell: number, occluders: Occluder[]) {
+    const grid = new SegGrid(cell);
+    for (const o of occluders) grid.add([o.a, o.b], o.kind, o.id, o.top);
+    return grid;
+  }
+
+  /** Each occluder once, as plain data */
+  occluders() {
+    return [...new Set([...this.cells.values()].flat())];
+  }
+
   add([a, b]: [Geom.VectJson, Geom.VectJson], kind: Occluder["kind"], id: number, top?: number) {
-    const o: Occluder = top === undefined ? { a, b, kind, id } : { a, b, kind, id, top };
+    // one shape for all, however made, and none met yet
+    const o: Occluder = { a, b, kind, id, top, stamp: 0 };
     const c = this.cell;
     for (let x = Math.floor(Math.min(a.x, b.x) / c); x <= Math.floor(Math.max(a.x, b.x) / c); x++) {
       for (let y = Math.floor(Math.min(a.y, b.y) / c); y <= Math.floor(Math.max(a.y, b.y) / c); y++) {
-        const key = `${x},${y}`;
+        const key = cellKey(x, y);
         this.cells.get(key)?.push(o) ?? this.cells.set(key, [o]);
         if (kind === "decor") this.decorCells.get(id)?.push(key) ?? this.decorCells.set(id, [key]);
       }
@@ -28,11 +41,7 @@ export class SegGrid {
   /** Removes decor `id`'s occluders */
   removeDecor(id: number) {
     for (const key of this.decorCells.get(id) ?? []) {
-      const kept = (this.cells.get(key) ?? []).filter((o) => {
-        if (o.kind !== "decor" || o.id !== id) return true;
-        this.seen.delete(o);
-        return false;
-      });
+      const kept = (this.cells.get(key) ?? []).filter((o) => o.kind !== "decor" || o.id !== id);
       if (kept.length === 0) this.cells.delete(key);
       else this.cells.set(key, kept);
     }
@@ -41,19 +50,7 @@ export class SegGrid {
 
   /** Each occluder in a cell within `r` of `p`, once */
   around(p: Geom.VectJson, r: number) {
-    const stamp = ++this.stamp;
-    const c = this.cell;
-    const found: Occluder[] = [];
-    for (let x = Math.floor((p.x - r) / c); x <= Math.floor((p.x + r) / c); x++) {
-      for (let y = Math.floor((p.y - r) / c); y <= Math.floor((p.y + r) / c); y++) {
-        for (const o of this.cells.get(`${x},${y}`) ?? []) {
-          if (this.seen.get(o) === stamp) continue;
-          this.seen.set(o, stamp);
-          found.push(o);
-        }
-      }
-    }
-    return found;
+    return this.inBox(p.x - r, p.y - r, p.x + r, p.y + r);
   }
 
   /** Each occluder in a cell overlapping the box, once */
@@ -63,9 +60,11 @@ export class SegGrid {
     const found: Occluder[] = [];
     for (let x = Math.floor(minX / c); x <= Math.floor(maxX / c); x++) {
       for (let y = Math.floor(minY / c); y <= Math.floor(maxY / c); y++) {
-        for (const o of this.cells.get(`${x},${y}`) ?? []) {
-          if (this.seen.get(o) === stamp) continue;
-          this.seen.set(o, stamp);
+        const cell = this.cells.get(cellKey(x, y));
+        if (cell === undefined) continue;
+        for (const o of cell) {
+          if (o.stamp === stamp) continue;
+          o.stamp = stamp;
           found.push(o);
         }
       }
@@ -86,11 +85,14 @@ export class SegGrid {
     let tmx = dx === 0 ? Infinity : ((sx > 0 ? cx + 1 : cx) * c - p.x) / dx;
     let tmy = dy === 0 ? Infinity : ((sy > 0 ? cy + 1 : cy) * c - p.y) / dy;
     for (let n = Math.abs(ex - cx) + Math.abs(ey - cy); n >= 0; n--) {
-      for (const o of this.cells.get(`${cx},${cy}`) ?? []) {
-        if (this.seen.get(o) === stamp) continue;
-        this.seen.set(o, stamp);
-        const lambda = segsHit(p, q, o.a, o.b);
-        if (lambda !== -1 && fn(o, lambda) === true) return;
+      const cell = this.cells.get(cellKey(cx, cy));
+      if (cell !== undefined) {
+        for (const o of cell) {
+          if (o.stamp === stamp) continue;
+          o.stamp = stamp;
+          const lambda = segsHit(p, q, o.a, o.b);
+          if (lambda !== -1 && fn(o, lambda) === true) return;
+        }
       }
       if (tmx < tmy) (tmx += tdx), (cx += sx);
       else (tmy += tdy), (cy += sy);
@@ -115,4 +117,9 @@ export type Occluder = {
   kind: "wall" | "door" | "window" | "obstacle" | "low" | "decor";
   id: number;
   top?: number;
+  /** The walk that last met it — see `SegGrid.stamp` */
+  stamp?: number;
 };
+
+/** A cell's key: one number, as a string key costs more than the walk itself. Cells span ±32768 */
+const cellKey = (x: number, y: number) => (x + 32768) * 65536 + (y + 32768);

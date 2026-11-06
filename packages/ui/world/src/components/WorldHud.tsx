@@ -255,6 +255,12 @@ export default function WorldHud() {
   else if (strafing)
     kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
   if (w.player.look) kept.push({ label: "look", title: "stop looking: r", end: () => w.player.toggleLook() });
+  if (w.gameTime.scale !== 1)
+    kept.push({
+      label: `time ${Number(w.gameTime.scale.toFixed(2))}`,
+      title: "back to time 1: [ and ] step it",
+      end: () => w.gameTime.setScale(1),
+    });
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -337,7 +343,7 @@ export default function WorldHud() {
       {/* at the World's top, clear of the bar wherever it is dragged */}
       {(state.notice !== null || kept.length > 0) && (
         <div className={noticesClass}>
-          {/* kept whilst aiming or strafing, an "x" ending one that may be ended */}
+          {/* kept whilst aiming, strafing, looking or off time 1, an "x" ending one that may be ended */}
           {kept.length > 0 && (
             <div className="flex items-center gap-1">
               {kept.map(({ label, title, end }) => (
@@ -586,7 +592,14 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
       >
         <ListIcon className={iconClass} weight="light" />
       </div>
-      <Menu.Root open={anchor !== null} onOpenChange={(open) => open || setAnchor(null)} modal={false}>
+      <Menu.Root
+        open={anchor !== null}
+        // a press on its own button is left to that button's click, which closes it
+        onOpenChange={(open, { event }) =>
+          open || (anchor?.contains(event?.target as Node) === true ? undefined : setAnchor(null))
+        }
+        modal={false}
+      >
         <Menu.Portal container={w.rootEl}>
           <Menu.Positioner anchor={anchor} side={side} sideOffset={6} className="z-50">
             <Menu.Popup className="pointer-events-auto select-none rounded-md border border-neutral-700 overflow-hidden bg-neutral-800/90 text-xs shadow-lg">

@@ -1,6 +1,6 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import type { WorldState } from "@npc-cli/ui__world";
-import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
+import type { GraphEntry, GraphNode } from "@npc-cli/ui__world/scenario.schema";
 import { cn } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { CaretRightIcon, CheckIcon, TrashIcon } from "@phosphor-icons/react";
@@ -18,12 +18,24 @@ import {
   withHeight,
   withTilt,
 } from "./decor-edit";
+import {
+  addedNode,
+  minNodes,
+  movedNodes,
+  onSpot,
+  type Pt,
+  removedEdge,
+  removedNode,
+  reversedEdge,
+  snapped,
+  splitEdge,
+  withDirected,
+} from "./graph-edit";
 import { mergeKey } from "./history";
-import { inserted, minPoints, removed, snapped } from "./patrol-edit";
 
 /**
  * The map's context menu: on empty map it adds decor where it was opened, on a decor it edits it.
- * On the chosen patrol's leg it inserts a point, on its point it deletes one, and on either it toggles cycle.
+ * With a graph chosen, empty map adds a node, and its nodes and edges have their own items.
  * A ctrl-click is a fine-step drag, not a menu, as is any press a drag is blocking. None on touch, for now
  */
 export function DecorMenu({
@@ -36,8 +48,10 @@ export function DecorMenu({
   onTarget,
   onCommit,
   onRemove,
-  patrol,
-  onPatrolCommit,
+  graph,
+  onGraphCommit,
+  onGraphConnect,
+  spotNear,
 }: Props) {
   const [target, setTarget] = useState<Target | null>(null);
 
@@ -50,25 +64,32 @@ export function DecorMenu({
     locate(e);
   }
 
-  /** What was pressed */
+  /** What was pressed: with a graph chosen, also where a node would go, and the spot near a node */
   function locate(e: React.MouseEvent<HTMLDivElement>) {
     const svg = e.currentTarget.querySelector("svg");
     if (svg === null) return;
     const at = toMap(svg, e.clientX, e.clientY);
-    const patrolEl = (e.target as Element).closest?.("[data-patrol-point], [data-patrol-leg]");
-    if (patrolEl != null && patrol !== null) {
-      const [point, leg] = [patrolEl.getAttribute("data-patrol-point"), patrolEl.getAttribute("data-patrol-leg")];
-      return setTarget({ key: null, at, patrol: point !== null ? { point: Number(point) } : { leg: Number(leg) } });
+    const graphEl = (e.target as Element).closest?.("[data-graph-node], [data-graph-edge]");
+    const nodeAt = graph === null ? null : snapped(w, at);
+    if (graphEl != null && graph !== null) {
+      const id = graphEl.getAttribute("data-graph-node");
+      const node = graph.nodes.find((n) => n.id === id);
+      const near = node === undefined || node.spot !== undefined ? null : spotNear({ x: node.at[0], y: node.at[1] });
+      const edgeAttr = graphEl.getAttribute("data-graph-edge");
+      const edge = edgeAttr === null ? undefined : Number(edgeAttr);
+      return setTarget({ key: null, at, nodeAt, graph: { node, edge, near } });
     }
     const el = (e.target as Element).closest?.("[data-decor], [data-handle]");
     const key = el?.getAttribute("data-decor") ?? el?.getAttribute("data-handle") ?? null;
-    setTarget({ key, at });
+    setTarget({ key, at, nodeAt });
     if (key !== null) onTarget(key);
   }
 
   const def = target?.key == null ? undefined : w.decor.runtime.defByKey[target.key];
-  const onPatrol = target?.patrol !== undefined && patrol !== null ? { ...target.patrol, patrol } : null;
-  const insertAt = onPatrol?.leg === undefined || target === null ? null : snapped(w, target.at);
+  const onGraph = graph === null ? undefined : target?.graph;
+  const { node, edge, near } = onGraph ?? {};
+  /** Where a node would go: on the navmesh where the menu was opened */
+  const nodeAt = target?.nodeAt ?? null;
   const imgs = Object.keys(w.sheets?.decor ?? {});
 
   if (touchDevice) return <div className="flex-1 min-w-0">{children}</div>;
@@ -81,49 +102,102 @@ export function DecorMenu({
       <ContextMenu.Portal>
         <ContextMenu.Positioner className="z-50" sideOffset={2}>
           <ContextMenu.Popup className={popupCls}>
-            {onPatrol !== null && (
+            {graph !== null && onGraph !== undefined && (
               <ContextMenu.Group>
-                <ContextMenu.GroupLabel className={labelCls}>{onPatrol.patrol.key}</ContextMenu.GroupLabel>
-                {onPatrol.leg !== undefined && (
-                  <ContextMenu.Item
-                    className={itemCls}
-                    disabled={insertAt === null}
-                    onClick={() =>
-                      insertAt !== null && onPatrolCommit(inserted(onPatrol.patrol, onPatrol.leg ?? 0, insertAt))
-                    }
-                  >
-                    insert point here
-                  </ContextMenu.Item>
+                <ContextMenu.GroupLabel className={labelCls}>
+                  {graph.key} · {node?.id ?? "edge"}
+                </ContextMenu.GroupLabel>
+                {edge !== undefined && (
+                  <>
+                    <ContextMenu.Item
+                      className={itemCls}
+                      disabled={nodeAt === null}
+                      onClick={() => nodeAt !== null && onGraphCommit(splitEdge(graph, edge, nodeAt))}
+                    >
+                      insert node here
+                    </ContextMenu.Item>
+                    {graph.directed && (
+                      <ContextMenu.Item className={itemCls} onClick={() => onGraphCommit(reversedEdge(graph, edge))}>
+                        reverse
+                      </ContextMenu.Item>
+                    )}
+                  </>
+                )}
+                {node !== undefined && (
+                  <>
+                    <ContextMenu.Item className={itemCls} onClick={() => onGraphConnect(node.id)}>
+                      connect to…
+                    </ContextMenu.Item>
+                    {node.spot !== undefined ? (
+                      <ContextMenu.Item
+                        className={itemCls}
+                        onClick={() => onGraphCommit(movedNodes(graph, { [node.id]: node.at }))}
+                      >
+                        detach from {node.spot}
+                      </ContextMenu.Item>
+                    ) : (
+                      <ContextMenu.Item
+                        className={itemCls}
+                        disabled={near == null}
+                        onClick={() =>
+                          near != null && onGraphCommit(onSpot(graph, node.id, near.spot, [near.at.x, near.at.y]))
+                        }
+                      >
+                        {near == null ? "no spot near" : `attach to ${near.spot}`}
+                      </ContextMenu.Item>
+                    )}
+                  </>
                 )}
                 <ContextMenu.CheckboxItem
                   className={itemCls}
-                  checked={onPatrol.patrol.cycle}
-                  onCheckedChange={(cycle) => onPatrolCommit({ ...onPatrol.patrol, cycle })}
+                  checked={graph.directed}
+                  onCheckedChange={(directed) => onGraphCommit(withDirected(graph, directed))}
                 >
                   <span className="w-3">
                     <ContextMenu.CheckboxItemIndicator>
                       <CheckIcon className="size-3" />
                     </ContextMenu.CheckboxItemIndicator>
                   </span>
-                  cycle
+                  directed
                 </ContextMenu.CheckboxItem>
-                {onPatrol.point !== undefined && (
-                  <>
-                    <ContextMenu.Separator className="my-1 border-t border-zinc-700" />
-                    <ContextMenu.Item
-                      className={cn(itemCls, "text-red-300 data-disabled:opacity-50")}
-                      disabled={onPatrol.patrol.points.length <= minPoints}
-                      onClick={() => onPatrolCommit(removed(onPatrol.patrol, onPatrol.point ?? 0))}
-                    >
-                      <TrashIcon className="size-3.5" />
-                      delete point {onPatrol.point}
-                    </ContextMenu.Item>
-                  </>
+                <ContextMenu.Separator className="my-1 border-t border-zinc-700" />
+                {node !== undefined && (
+                  <ContextMenu.Item
+                    className={cn(itemCls, "text-red-300 data-disabled:opacity-50")}
+                    disabled={graph.nodes.length <= minNodes}
+                    onClick={() => onGraphCommit(removedNode(graph, node.id))}
+                  >
+                    <TrashIcon className="size-3.5" />
+                    delete node {node.id}
+                  </ContextMenu.Item>
+                )}
+                {edge !== undefined && (
+                  <ContextMenu.Item
+                    className={cn(itemCls, "text-red-300")}
+                    onClick={() => onGraphCommit(removedEdge(graph, edge))}
+                  >
+                    <TrashIcon className="size-3.5" />
+                    delete edge
+                  </ContextMenu.Item>
                 )}
               </ContextMenu.Group>
             )}
 
-            {target !== null && onPatrol === null && def === undefined && (
+            {target !== null && onGraph === undefined && def === undefined && graph !== null && (
+              <ContextMenu.Group>
+                <ContextMenu.GroupLabel className={labelCls}>{graph.key}</ContextMenu.GroupLabel>
+                <ContextMenu.Item
+                  className={itemCls}
+                  disabled={nodeAt === null}
+                  onClick={() => nodeAt !== null && onGraphCommit(addedNode(graph, nodeAt))}
+                >
+                  add node here
+                </ContextMenu.Item>
+                <ContextMenu.Separator className="my-1 border-t border-zinc-700" />
+              </ContextMenu.Group>
+            )}
+
+            {target !== null && onGraph === undefined && def === undefined && (
               <ContextMenu.Group>
                 <ContextMenu.GroupLabel className={labelCls}>add here</ContextMenu.GroupLabel>
                 {addTypes.map((type) => {
@@ -328,13 +402,23 @@ type Props = {
   /** `merge` names an edit that repeats, e.g. a spinner's steps: one undo takes back the run */
   onCommit(def: Geomorph.DecorDef, merge?: string): void;
   onRemove(key: string): void;
-  /** The chosen patrol, if it may be edited */
-  patrol: null | PatrolEntry;
-  onPatrolCommit(next: PatrolEntry): void;
+  /** The chosen graph, if it may be edited */
+  graph: null | GraphEntry;
+  onGraphCommit(next: GraphEntry): void;
+  /** Begins an edge from node `from`, ended by a click on another */
+  onGraphConnect(from: string): void;
+  /** The spot nearest `at`, if one is near: its alias and point */
+  spotNear(at: Geom.VectJson): null | { spot: string; at: Geom.VectJson };
 };
 
-/** Where the menu was opened, and on which decor, or which of the patrol's points or legs, if any */
-type Target = { key: string | null; at: Geom.VectJson; patrol?: { point?: number; leg?: number } };
+/** Where the menu was opened, and on which decor, or which of the graph's nodes or edges, if any */
+type Target = {
+  key: string | null;
+  at: Geom.VectJson;
+  /** On the navmesh, where a node would go, if a graph is chosen */
+  nodeAt: null | Pt;
+  graph?: { node?: GraphNode; edge?: number; near: null | { spot: string; at: Geom.VectJson } };
+};
 
 const touchDevice = isTouchDevice();
 const addTypes: DecorType[] = ["point", "rect", "circle", "quad"];

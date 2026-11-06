@@ -1,6 +1,6 @@
 # Spots
 
-A spot is a place an npc might stand, made per geomorph key with what it sees and what is near. Behaviours query them. The Decorator's **spots** layer shows them.
+A spot is a place an npc might stand, made per geomorph key with what it sees and what is near. Behaviours query them. The Decorator's **spots** layer shows them. A press on one shows what it sees, and its region as saved (`rim`) inside its reach.
 
 ## Where
 
@@ -46,6 +46,7 @@ Spots are made in this order, and a later one too near (`mergeGap`) an earlier o
 - **Region sight**, within `radius`, between regions: the floor within `regionRadius` of each spot.
   - `sight`: spots it may see with no door.
   - `always`: spots every line to which is clear.
+  - `rim`: its region's rim samples, metres out from it at `rimSamples` angles from -π (`rimPoints`). `always` holds for anyone inside the hull of the spot and these.
   - `via`: `[doorIds, spotIds]`, those it may see once all those doors are open. One seen by several routes, e.g. through either of two doors, is listed under each: any one open will do.
   - A route's doors come from clear lines between the regions. One seen only past a body's edge is found by a line to that edge.
   - `crouchSafe` (cover only): spots that cannot see it fully crouched.
@@ -63,6 +64,7 @@ An obstacle reaches down from its top (`height`) by `meta.h`, else by `sightConf
 2. Its boundary edges are walked. Each is put down to the wall or obstacle nearest its middle, which gives wall and cover spots.
 3. Fill spots are on a grid, kept only on the navmesh.
 4. Sight is segment tests through a grid of occluders (`SegGrid`).
+5. Sight between regions is judged pair by pair, the slowest part. `gen-spots` judges them across threads (`createSightPool` in `scripts/src/service/sight-pool.ts`), sharing the cores among the geomorphs it makes at once (`--threads`). However judged, they are listed in the same order, so the files do not change (`judgePairs`, `computeSight`).
 
 ## When they are made
 

@@ -11,7 +11,7 @@ export const sightConfig = {
   /** Past `bodyRadius`, how clear of a wall or door a rim sample stays. A body there then never touches it */
   rimClearance: 0.02,
   /** Samples on a region's rim, besides its centre */
-  rimSamples: 4,
+  rimSamples: 8,
   /** Points along a hull door's opening tested from each spot */
   doorSamples: 5,
   /** Obstacles this high block sight stood */
@@ -114,6 +114,14 @@ export function rimSamples(v: Vision) {
   });
 }
 
+/** A region's rim samples from its spot's `rim`: as `rimSamples` made them, at as many angles from -π */
+export function rimPoints(p: Geom.VectJson, rim: number[]) {
+  return rim.map((r, k) => {
+    const a = (2 * Math.PI * k) / rim.length - Math.PI;
+    return { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r };
+  });
+}
+
 /** Metres a rim sample is pulled in at a time, until clear */
 const rimStep = 0.05;
 
@@ -138,16 +146,15 @@ export function visionPolygon(v: Vision, radius: number) {
 /** Radians between points along an arc */
 const arcStep = Math.PI / 36;
 
-/**
- * Which spots' regions may see which, and through which doors: sound, so a spot not listed is unseen
- * from anywhere in one region to anywhere in the other — see `docs/perception.md`
- */
-export function computeSight({ spots, layout, grid, within, lowNear, radius }: SightInput): SightResult {
+/** Each spot's region: its samples, and what each sees with doors shut and open */
+export function createRegions({
+  spots,
+  grid,
+  within,
+  radius,
+}: Pick<SightInput, "spots" | "grid" | "within" | "radius">) {
   const c = sightConfig;
-  const ms = { vision: 0, pairs: 0, do: 0, hull: 0 };
-  let t0 = performance.now();
-
-  const regions = spots.map((spot, i): Region => {
+  return spots.map((spot, i): Region => {
     const p = { x: spot.x, y: spot.y };
     const skip = new Set(within[i]);
     const shutOccs = grid
@@ -158,21 +165,20 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
     const all = [centre, ...rim.map((q) => visionsFrom(q, shutOccs))];
     return { samples: [p, ...rim], skip, shut: all.map((v) => v.shut), open: all.map((v) => v.open) };
   });
-  ms.vision = performance.now() - t0;
-  t0 = performance.now();
+}
 
-  const sight: number[][] = spots.map(() => []);
-  const always: number[][] = spots.map(() => []);
-  /** By spot, by door ids joined, the spots seen through those doors */
-  const via: Map<string, number[]>[] = spots.map(() => new Map());
-  const crouchSafe: number[][] = spots.map(() => []);
+/**
+ * Each pair `(i, j)` with `i` in `rows` and `j > i` whose regions may see each other, in that order.
+ * Pure, so a thread may judge some rows: see `PairsJudge`
+ */
+export function judgePairs(job: PairsJob, grid: SegGrid, rows: number[]): PairOutcome[] {
+  const c = sightConfig;
+  const { spots, regions, lowNear, radius } = job;
   /** Seen from a spot only if within its region's disc, a body wide: one test rejects most pairs */
   const reach = c.regionRadius + c.bodyRadius;
-  /** By `"{roomId},{roomId}"`, lesser first: the doors every seeing pair between them needs */
-  const roomDoors = new Map<string, number[]>();
   const seesAny = (vs: Vision[], at: Geom.VectJson[]) => vs.some((v) => at.some((q) => seesDisc(v, q, c.bodyRadius)));
-
-  for (let i = 0; i < spots.length; i++) {
+  const outcomes: PairOutcome[] = [];
+  for (const i of rows) {
     for (let j = i + 1; j < spots.length; j++) {
       const [u, v] = [spots[i], spots[j]];
       if (Math.hypot(v.x - u.x, v.y - u.y) > radius) continue;
@@ -189,24 +195,59 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       const sets = doorless ? [[]] : doorSets(grid, A.samples, B.samples, skip, -1, c.bodyRadius);
       if (sets === null) continue;
       const clear = doorless && hullClear(grid, [...A.samples, ...B.samples], skip);
-      for (const [k, l] of [
-        [i, j],
-        [j, i],
-      ]) {
-        if (sets[0].length === 0) (clear ? always : sight)[k].push(l);
-        else for (const doors of sets) via[k].get(`${doors}`)?.push(l) ?? via[k].set(`${doors}`, [l]);
-        const [watcher, hider] = [regions[l], regions[k]];
-        if (spots[k].kind === "cover" && crouchHidden(grid, watcher.samples, hider.samples[0], lowNear[k], skip)) {
-          crouchSafe[k].push(l);
-        }
-      }
-      if (u.roomId !== null && v.roomId !== null && u.roomId !== v.roomId) {
-        const key = `${Math.min(u.roomId, v.roomId)},${Math.max(u.roomId, v.roomId)}`;
-        const prev = roomDoors.get(key);
-        /** Those on every route */
-        const doors = sets.reduce((both, set) => both.filter((d) => set.includes(d)));
-        roomDoors.set(key, prev === undefined ? doors : prev.filter((d) => doors.includes(d)));
-      }
+      /** Whether cover spot `k` is hidden, crouched, from all of `l`'s region */
+      const hidden = (k: number, l: number) =>
+        spots[k].kind === "cover" && crouchHidden(grid, regions[l].samples, regions[k].samples[0], lowNear[k], skip);
+      outcomes.push({ i, j, sets, clear, hidden: [hidden(i, j), hidden(j, i)] });
+    }
+  }
+  return outcomes;
+}
+
+/**
+ * Which spots' regions may see which, and through which doors: sound, so a spot not listed is unseen
+ * from anywhere in one region to anywhere in the other — see `docs/perception.md`.
+ * `judge` judges the pairs, e.g. across threads, else here
+ */
+export async function computeSight(
+  { spots, layout, grid, within, lowNear, radius }: SightInput,
+  judge: PairsJudge = async (job) => judgePairs(job, grid, [...spots.keys()]),
+): Promise<SightResult> {
+  const c = sightConfig;
+  const ms = { vision: 0, pairs: 0, do: 0, hull: 0 };
+  let t0 = performance.now();
+
+  const regions = createRegions({ spots, grid, within, radius });
+  ms.vision = performance.now() - t0;
+  t0 = performance.now();
+
+  const sight: number[][] = spots.map(() => []);
+  const always: number[][] = spots.map(() => []);
+  /** By spot, by door ids joined, the spots seen through those doors */
+  const via: Map<string, number[]>[] = spots.map(() => new Map());
+  const crouchSafe: number[][] = spots.map(() => []);
+  /** By `"{roomId},{roomId}"`, lesser first: the doors every seeing pair between them needs */
+  const roomDoors = new Map<string, number[]>();
+
+  // in the order judged here, however judged: each list's order is that order
+  const outcomes = await judge({ spots, occluders: grid.occluders(), regions, lowNear, radius });
+  outcomes.sort((u, v) => u.i - v.i || u.j - v.j);
+  for (const { i, j, sets, clear, hidden } of outcomes) {
+    for (const [k, l, kHidden] of [
+      [i, j, hidden[0]],
+      [j, i, hidden[1]],
+    ] as const) {
+      if (sets[0].length === 0) (clear ? always : sight)[k].push(l);
+      else for (const doors of sets) via[k].get(`${doors}`)?.push(l) ?? via[k].set(`${doors}`, [l]);
+      if (kHidden) crouchSafe[k].push(l);
+    }
+    const [u, v] = [spots[i], spots[j]];
+    if (u.roomId !== null && v.roomId !== null && u.roomId !== v.roomId) {
+      const key = `${Math.min(u.roomId, v.roomId)},${Math.max(u.roomId, v.roomId)}`;
+      const prev = roomDoors.get(key);
+      /** Those on every route */
+      const doors = sets.reduce((both, set) => both.filter((d) => set.includes(d)));
+      roomDoors.set(key, prev === undefined ? doors : prev.filter((d) => doors.includes(d)));
     }
   }
   ms.pairs = performance.now() - t0;
@@ -262,6 +303,10 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
   return {
     sight,
     always,
+    // floored, so a region never grows past what was judged
+    rims: regions.map(({ samples: [p, ...rim] }) =>
+      rim.map((q) => Math.floor(Math.hypot(q.x - p.x, q.y - p.y) * 100) / 100),
+    ),
     via: via.map((byDoors) =>
       [...byDoors].map(([key, ids]): [number[], number[]] => [key.split(",").map(Number), ids]),
     ),
@@ -284,11 +329,19 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
 export function visionsFrom(p: Geom.VectJson, occs: Occluder[]): { shut: Vision; open: Vision } {
   const evs: [angle: number, o: Occluder, start: boolean][] = [];
   for (const o of occs) {
-    const [ax, ay, bx, by] = [o.a.x - p.x, o.a.y - p.y, o.b.x - p.x, o.b.y - p.y];
+    const ax = o.a.x - p.x;
+    const ay = o.a.y - p.y;
+    const bx = o.b.x - p.x;
+    const by = o.b.y - p.y;
     const cross = ax * by - ay * bx;
     if (Math.abs(cross) < 1e-9) continue; // edge on: it hides nothing
-    let [a1, a2] = [Math.atan2(ay, ax), Math.atan2(by, bx)];
-    if (cross < 0) [a1, a2] = [a2, a1];
+    let a1 = Math.atan2(ay, ax);
+    let a2 = Math.atan2(by, bx);
+    if (cross < 0) {
+      const a = a1;
+      a1 = a2;
+      a2 = a;
+    }
     if (a1 <= a2) evs.push([a1, o, true], [a2, o, false]);
     else evs.push([a1, o, true], [Math.PI, o, false], [-Math.PI, o, true], [a2, o, false]);
   }
@@ -304,13 +357,23 @@ export function visionsFrom(p: Geom.VectJson, occs: Occluder[]): { shut: Vision;
     }
     const next = i < evs.length ? Math.min(evs[i][0], Math.PI) : Math.PI;
     const mid = (at + next) / 2;
-    const [cos, sin] = [Math.cos(mid), Math.sin(mid)];
-    let [nearestShut, nearestOpen] = [null as null | Occluder, null as null | Occluder];
-    let [shutDist, openDist] = [Infinity, Infinity];
+    // plain assignments: an array per step is most of a hot loop's garbage
+    const cos = Math.cos(mid);
+    const sin = Math.sin(mid);
+    let nearestShut: null | Occluder = null;
+    let nearestOpen: null | Occluder = null;
+    let shutDist = Infinity;
+    let openDist = Infinity;
     for (const o of active) {
       const d = rayDist(p, cos, sin, o);
-      if (d < shutDist) [nearestShut, shutDist] = [o, d];
-      if (o.kind !== "door" && d < openDist) [nearestOpen, openDist] = [o, d];
+      if (d < shutDist) {
+        nearestShut = o;
+        shutDist = d;
+      }
+      if (o.kind !== "door" && d < openDist) {
+        nearestOpen = o;
+        openDist = d;
+      }
     }
     shut.push(nearestShut, next);
     open.push(nearestOpen, next);
@@ -332,14 +395,17 @@ function createSweep() {
     done(p: Geom.VectJson): Vision {
       const far = new Float32Array(farBins);
       occ.forEach((o, k) => {
-        const [a0, a1] = [angles[k], angles[k + 1]];
+        const a0 = angles[k];
+        const a1 = angles[k + 1];
         const m =
           o === null
             ? Infinity
             : Math.max(rayDist(p, Math.cos(a0), Math.sin(a0), o), rayDist(p, Math.cos(a1), Math.sin(a1), o));
         for (let b = binOf(a0); b <= binOf(a1 - 1e-9); b++) if (m > far[b]) far[b] = m;
       });
-      return { p, angles, occ, far };
+      let farMax = 0;
+      for (let b = 0; b < farBins; b++) if (far[b] > farMax) farMax = far[b];
+      return { p, angles, occ, far, farMax };
     },
   };
 }
@@ -352,9 +418,11 @@ export function distAt(v: Vision, angle: number) {
 
 /** Whether `v` sees some of the disc at `c` of radius `r` */
 export function seesDisc(v: Vision, c: Geom.VectJson, r: number) {
-  const [dx, dy] = [c.x - v.p.x, c.y - v.p.y];
+  const dx = c.x - v.p.x;
+  const dy = c.y - v.p.y;
   const d = Math.hypot(dx, dy);
   if (d <= r) return true;
+  if (d - r > v.farMax) return false; // beyond all it sees: no trigonometry
   const theta = Math.atan2(dy, dx);
   const alpha = Math.asin(r / d);
   if (d - r > farIn(v, theta - alpha, theta + alpha)) return false; // all of it beyond the furthest seen
@@ -468,7 +536,8 @@ function crouchHidden(
 
 /** Metres along the unit ray `(cos, sin)` from `p` to `o`, else `Infinity` */
 function rayDist(p: Geom.VectJson, cos: number, sin: number, o: Occluder) {
-  const [sx, sy] = [o.b.x - o.a.x, o.b.y - o.a.y];
+  const sx = o.b.x - o.a.x;
+  const sy = o.b.y - o.a.y;
   const z = cos * sy - sin * sx;
   if (z === 0) return Infinity;
   const t = ((o.a.x - p.x) * sy - (o.a.y - p.y) * sx) / z;
@@ -513,7 +582,7 @@ function someAngleIn(angles: number[], lo: number, hi: number, fn: (angle: numbe
   return false;
 }
 
-function convexHull(ps: Geom.VectJson[]) {
+export function convexHull(ps: Geom.VectJson[]) {
   const sorted = ps.slice().sort((u, v) => u.x - v.x || u.y - v.y);
   const cross = (o: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) =>
     (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
@@ -528,7 +597,8 @@ function convexHull(ps: Geom.VectJson[]) {
   return [...half(sorted), ...half(sorted.slice().reverse())];
 }
 
-function inConvex(vs: Geom.VectJson[], p: Geom.VectJson) {
+/** Whether `p` is inside or on convex `vs`, anticlockwise as `convexHull` gives them */
+export function inConvex(vs: Geom.VectJson[], p: Geom.VectJson) {
   if (vs.length < 3) return false;
   for (let i = 0; i < vs.length; i++) {
     const [a, b] = [vs[i], vs[(i + 1) % vs.length]];
@@ -559,10 +629,28 @@ export type Vision = {
   occ: (null | Occluder)[];
   /** By 1° bin from -π, the furthest seen in it: rejects a disc beyond it at once */
   far: Float32Array;
+  /** The furthest seen in any bin */
+  farMax: number;
 };
 
 /** A spot's floor as points, and what each sees with doors shut and open */
-type Region = { samples: Geom.VectJson[]; skip: Set<number>; shut: Vision[]; open: Vision[] };
+export type Region = { samples: Geom.VectJson[]; skip: Set<number>; shut: Vision[]; open: Vision[] };
+
+/** What judging pairs needs, as plain data: it may be posted to a thread */
+export type PairsJob = {
+  spots: Spot[];
+  /** The sight grid's, which a thread rebuilds — see `SegGrid.of` */
+  occluders: Occluder[];
+  regions: Region[];
+  lowNear: Occluder[][];
+  radius: number;
+};
+
+/** A pair whose regions may see each other: its door sets (`[[]]` for none), whether always, and who hides crouched */
+export type PairOutcome = { i: number; j: number; sets: number[][]; clear: boolean; hidden: [boolean, boolean] };
+
+/** Judges a job's pairs, in any order, e.g. across threads — see `judgePairs` */
+export type PairsJudge = (job: PairsJob) => Promise<PairOutcome[]>;
 
 type SightInput = {
   spots: Spot[];
@@ -581,6 +669,8 @@ type SightResult = {
   sight: number[][];
   /** By spot, the spots its region always sees: every line between is clear */
   always: number[][];
+  /** By spot, its region's rim samples as metres out — see `rimPoints` */
+  rims: number[][];
   /** By spot, `[doorIds, spotIds]`: those it may see once all those doors are open */
   via: [number[], number[]][][];
   /** By cover spot, those its region cannot see it from, fully crouched */

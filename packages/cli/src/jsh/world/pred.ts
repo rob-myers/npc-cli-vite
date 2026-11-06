@@ -8,8 +8,8 @@ type Predicates = {
   player: null | string;
   /** By npcKey, the boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood them against */
   parked: Map<string, number[]>;
-  /** Those `pad` stood clear of the walls, the parked and each other */
-  padded: Set<string>;
+  /** By npcKey, the room `pad` stood them clear by, of walls and doorways, and of everyone else */
+  padded: Map<string, { walls: number; npcs: number }>;
   // ...
 };
 
@@ -23,7 +23,7 @@ const pred = sharedMapSlot<Predicates>("pred", () => ({
   picked: new Set(),
   player: null,
   parked: new Map(),
-  padded: new Set(),
+  padded: new Map(),
 }));
 
 pred.setHandler(function onWorldEvent(e, w) {
@@ -51,7 +51,7 @@ pred.setHandler(function onWorldEvent(e, w) {
       visualisePredicates(w);
       break;
     }
-    // a respawn unparks — bar `park`'s own, which marks them again once it lands. A first spawn
+    // a respawn unparks, as does a move: `park` and `pad` mark them once they arrive. A first spawn
     // does not: `restoreNpcs` runs off "map-settled", so a restore lands here parked
     case "spawned":
       if (e.spawns > 1) unmark(p, e.npcKey);
@@ -63,7 +63,7 @@ pred.setHandler(function onWorldEvent(e, w) {
       for (const npcKey of e.npcKeys) forget(p, npcKey);
       break;
     case "npcs-restored":
-      for (const npcKey of [...p.everPicked, ...p.picked, ...p.parked.keys(), ...p.padded])
+      for (const npcKey of [...p.everPicked, ...p.picked, ...p.parked.keys(), ...p.padded.keys()])
         if (w.n[npcKey] === undefined) forget(p, npcKey);
       break;
   }
@@ -76,7 +76,7 @@ function restorePred(mapKey: string) {
   const p = pred.restore(mapKey);
   if (p.everPicked instanceof Set === false) p.everPicked = new Set();
   if (p.picked instanceof Set === false) p.picked = new Set();
-  if (p.padded instanceof Set === false) p.padded = new Set();
+  if (p.padded instanceof Map === false) p.padded = new Map();
   if (p.parked instanceof Map === false) p.parked = new Map();
   if (typeof p.lastPicked !== "string") p.lastPicked = null;
   if (typeof p.player !== "string") p.player = null;
@@ -124,10 +124,15 @@ export const parked = {
   },
 };
 export const padded = {
-  get: () => pred.get().padded,
-  mark(npcKey: string) {
+  get() {
+    const p = pred.get();
+    // e.g. a Set from before it held each npc's room, or one edited by hand
+    if (p.padded instanceof Map === false) p.padded = new Map();
+    return p.padded;
+  },
+  mark(npcKey: string, by: { walls: number; npcs: number }) {
     unmark(pred.get(), npcKey);
-    pred.get().padded.add(npcKey);
+    padded.get().set(npcKey, by);
   },
 };
 

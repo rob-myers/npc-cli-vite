@@ -460,7 +460,7 @@ const tmpLook = { x: 0, y: 0 };
 const lookTapMs = 300;
 /** A second press of the same move key within this is a double tap, which runs */
 const doubleTapMs = 300;
-const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
+const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
 const lookTapSlopPx = 20;
 /** On touch, a second finger this long after the first charges a raised phaser, rather than pinching */
 const fireTouchDelayMs = 300;

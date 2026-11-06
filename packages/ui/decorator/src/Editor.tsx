@@ -1,16 +1,19 @@
 import { Menu } from "@base-ui/react/menu";
 import { Switch } from "@base-ui/react/switch";
 import type { WorldState } from "@npc-cli/ui__world";
-import type { PatrolEntry } from "@npc-cli/ui__world/scenario.schema";
+import type { GraphEntry } from "@npc-cli/ui__world/scenario.schema";
 import {
+  deleteScenarioEntry,
+  loadScenarioEntries,
   saveScenarioEntry,
   scenarioShared,
   useScenarioCharacters,
-  useScenarioPatrols,
+  useScenarioGraphs,
   useScenarioShared,
 } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { Vect } from "@npc-cli/util/geom";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
   ArrowUUpLeftIcon,
@@ -22,7 +25,7 @@ import {
   SidebarSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import { CharacterLayer } from "./CharacterLayer";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
@@ -40,13 +43,15 @@ import {
   withCollider,
   withHeight,
 } from "./decor-edit";
+import { GraphLayer } from "./GraphLayer";
+import { GraphSidebar } from "./GraphSidebar";
+import { addedEdge, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
-import { PatrolLayer } from "./PatrolLayer";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
-import type { DecoratorUiMeta, NavMapLayer } from "./schema";
-import { parseSpotPick, type SpotPick, spotWorldPoint, useSpots } from "./use-spots";
+import { type DecoratorUiMeta, type NavMapLayer, sidebarTabs } from "./schema";
+import { nearestSpot, parseSpotPick, type SpotPick, spotPointOf, spotWorldPoint, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
@@ -57,10 +62,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
   const characters = useScenarioCharacters(character);
-  /** This map's patrols, as their files have them */
-  const patrols = useScenarioPatrols(w.mapKey);
+  /** This map's graphs, as their files have them */
+  const graphs = useScenarioGraphs(w.mapKey);
   const { uiStoreApi } = useContext(UiContext);
-  const spots = useSpots(w, meta.show.spots);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
   const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
     state.chooseSpot(pick);
@@ -95,7 +99,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const state = useStateRef(
     (): State => ({
       selected: [],
-      history: new DecorHistory(w),
+      history: new DecorHistory(w, {
+        get: (key) => state.graphOf(key),
+        set: (key, graph) => state.writeGraph(key, graph),
+      }),
       tool: "select",
       spawning: null,
       spawnError: null,
@@ -108,11 +115,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       /** `performance.now()` before which no context menu opens: `Infinity` whilst a press is under way */
       menuBlockedUntil: 0,
       spot: null,
-      sidebarTab: "decor",
       mapEl: null,
-      patrol: null,
-      patrolDraft: null,
-      patrolError: null,
+      graph: null,
+      graphDraft: null,
+      graphError: null,
+      graphTarget: null,
+      graphConnect: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -207,6 +215,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       },
       onMapClick(at) {
         if (state.menuOpen) return; // a long press let go
+        if (state.graphConnect !== null) return state.set({ graphConnect: null });
         if (state.spawning !== null) return void state.spawnNpc(state.spawning, at);
         if (state.tool === "select") return state.select([]);
         state.add(state.tool, at);
@@ -230,7 +239,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       onKeyDown(e) {
         const el = e.target as HTMLElement;
         // the menu is portalled, yet its keys bubble here through React
-        if (["INPUT", "SELECT"].includes(el.tagName) || el.closest('[role="menu"]') !== null) return;
+        if (["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName) || el.closest('[role="menu"]') !== null) return;
         const toolKey = e.metaKey || e.ctrlKey || e.altKey ? undefined : toolByKey[e.key.toLowerCase()];
         if (toolKey !== undefined) return state.set({ tool: toolKey });
         const nudge = e.shiftKey ? 0.5 : 0.1;
@@ -253,7 +262,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           e.preventDefault();
           state.redo();
         } else if (e.key === "Escape") {
-          if (state.spawning !== null) state.set({ spawning: null, spawnError: null });
+          if (state.graphConnect !== null) state.set({ graphConnect: null });
+          else if (state.spawning !== null) state.set({ spawning: null, spawnError: null });
           else state.tool === "select" ? state.select([]) : state.set({ tool: "select" });
         } else if (e.key === "a" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
@@ -261,23 +271,62 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
-      choosePatrol(key) {
-        const points = patrols[key]?.points ?? [];
-        state.set({ patrol: key, patrolError: null, sidebarTab: "patrol" });
-        if (points.length === 0) return;
-        const [x, y] = points.reduce(
-          ([sx, sy], [px, py]) => [sx + px / points.length, sy + py / points.length],
-          [0, 0],
-        );
+      chooseGraph(key) {
+        const nodes = graphs[key]?.nodes ?? [];
+        state.set({ graph: key, graphError: null, graphTarget: null, graphConnect: null });
+        state.setSidebar({ sidebarTab: "graph" });
+        if (nodes.length === 0) return; // e.g. new, so not yet loaded
+        const { x, y } = Vect.average(nodes.map(({ at: [x, y] }) => ({ x, y })));
         map.current?.centreOn(x, y, locateZoom, sidebarOffset());
       },
-      savePatrol(next) {
-        state.set({ patrolDraft: next, patrolError: null });
-        saveScenarioEntry(next).catch((e) => state.set({ patrolDraft: null, patrolError: String(e) }));
+      connectGraph(to) {
+        const [graph, from] = [state.graphOf(state.graph), state.graphConnect];
+        state.set({ graphConnect: null });
+        if (graph !== null && from !== null) state.saveGraph(addedEdge(graph, from, to));
+      },
+      deleteGraph(key) {
+        state.history.markGraph(key);
+        state.writeGraph(key, null);
+      },
+      graphOf(key) {
+        if (key === null) return null;
+        return state.graphDraft?.key === key ? state.graphDraft.graph : (graphs[key] ?? null);
+      },
+      async newGraph() {
+        const view = map.current?.getViewRect();
+        const shownWidth = state.mapEl?.getBoundingClientRect().width;
+        if (view === undefined || shownWidth === undefined) return;
+        // the centre of what the sidebar leaves clear
+        const clear = meta.sidebarOpen ? meta.sidebarWidth / shownWidth : 0;
+        const c = { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
+        const [a, b] = [snapped(w, { x: c.x - 1, y: c.y }), snapped(w, { x: c.x + 1, y: c.y })];
+        if (a === null || b === null) return state.set({ graphError: "no navmesh at the map's centre" });
+        const keys = await loadScenarioEntries();
+        let n = 0;
+        while (`graph/graph-${n}` in keys) n++;
+        const next = newGraph(`graph/graph-${n}`, w.mapKey, a, b);
+        state.chooseGraph(next.key);
+        state.saveGraph(next);
+      },
+      saveGraph(next) {
+        if (next === state.graphOf(next.key)) return; // e.g. an edge already there
+        state.history.markGraph(next.key);
+        state.writeGraph(next.key, next);
+      },
+      writeGraph(key, graph) {
+        const failed = (e: unknown) => state.set({ graphDraft: null, graphError: String(e) });
+        if (graph === null) {
+          state.set({ graphDraft: { key, graph }, graphError: null });
+          if (state.graph === key) state.set({ graph: null, graphTarget: null, graphConnect: null });
+          return void deleteScenarioEntry(key).catch(failed);
+        }
+        // shown, e.g. one an undo brings back
+        state.set({ graph: key, graphDraft: { key, graph }, graphError: null });
+        saveScenarioEntry(graph).catch(failed);
       },
       chooseSpot(pick) {
-        state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
-        if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
+        state.set({ spot: pick });
+        if (pick !== null) state.setSidebar({ sidebarTab: "spot", sidebarOpen: true });
       },
       setNpcKeys(npcKeys) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).npcKeys = npcKeys));
@@ -289,18 +338,26 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, patrols], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, graphs], reset: { history: false } },
   );
 
-  // a reload has the saved patrol, so its draft may go
-  useEffect(() => void (state.patrolDraft = null), [patrols]);
-  /** The chosen patrol, as edited */
-  const patrol =
-    state.patrol === null
-      ? null
-      : state.patrolDraft?.key === state.patrol
-        ? state.patrolDraft
-        : (patrols[state.patrol] ?? null);
+  /** Fetched for the spots layer, and for a chosen graph's nodes on spots */
+  const spots = useSpots(w, meta.show.spots || state.graph !== null);
+  // a reload has the saved graph, so its draft may go
+  useEffect(() => void (state.graphDraft = null), [graphs]);
+  /** The chosen graph, as edited */
+  const graph = state.graphOf(state.graph);
+  /** Each node's point: its spot's once found, else its own */
+  const pointOf = useMemo(
+    () =>
+      new Map(
+        (graph?.nodes ?? []).map((n): [string, Pt] => {
+          const at = n.spot === undefined ? null : spotPointOf(n.spot, w, spots);
+          return [n.id, at === null ? n.at : [at.x, at.y]];
+        }),
+      ),
+    [graph, spots, w],
+  );
 
   /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
@@ -463,11 +520,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                     type="button"
                     className={cn(
                       "flex-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider cursor-pointer",
-                      state.sidebarTab === tab
+                      meta.sidebarTab === tab
                         ? "bg-zinc-950 text-zinc-100 shadow-sm"
                         : "text-zinc-500 hover:text-zinc-300",
                     )}
-                    onClick={() => state.set({ sidebarTab: tab })}
+                    onClick={() => state.setSidebar({ sidebarTab: tab })}
                   >
                     {tab}
                   </button>
@@ -482,7 +539,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                 <XIcon className="size-3.5" />
               </button>
             </div>
-            {state.sidebarTab === "decor" && (
+            {meta.sidebarTab === "decor" && (
               <div className="flex-1 min-h-0 flex">
                 <DecorSidebar
                   key={w.mapKey} // remade per map: its arrangement is that map's
@@ -500,7 +557,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                 />
               </div>
             )}
-            {state.sidebarTab === "spot" &&
+            {meta.sidebarTab === "spot" &&
               (meta.show.spots === false ? (
                 <SidebarHint>
                   <label className="flex cursor-pointer items-center gap-2">
@@ -532,33 +589,19 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
-            {state.sidebarTab === "patrol" && (
-              <div className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
-                {Object.values(patrols).map((x) => (
-                  <button
-                    key={x.key}
-                    type="button"
-                    className={cn(
-                      "w-full flex items-center gap-2 px-2 py-0.5 text-left cursor-pointer hover:bg-zinc-800",
-                      x.key === state.patrol ? "bg-zinc-800 text-zinc-100" : "text-zinc-400",
-                    )}
-                    onClick={() => state.choosePatrol(x.key)}
-                  >
-                    <span className="truncate">{x.name || x.key}</span>
-                    <span className="ml-auto shrink-0 text-zinc-500">
-                      {x.npcKey ?? "guard-0"} · {x.points.length}
-                      {x.cycle ? " ↻" : ""}
-                    </span>
-                  </button>
-                ))}
-                {Object.keys(patrols).length === 0 && (
-                  <div className="px-2 py-1 text-zinc-600">
-                    no patrols on this map: <code>sc save patrol/{"{slug}"} path:$( pick 3 )</code>
-                  </div>
-                )}
-                {patrolsEditable === false && <div className="px-2 py-1 text-zinc-600">read-only outside DEV</div>}
-                {state.patrolError !== null && <div className="px-2 py-1 text-red-300">{state.patrolError}</div>}
-              </div>
+            {meta.sidebarTab === "graph" && (
+              <GraphSidebar
+                graphs={graphs}
+                chosen={graph}
+                target={state.graphTarget}
+                editable={graphsEditable}
+                error={state.graphError}
+                onChoose={state.chooseGraph}
+                onNew={state.newGraph}
+                onDelete={state.deleteGraph}
+                onCommit={state.saveGraph}
+                onTarget={(graphTarget) => state.set({ graphTarget })}
+              />
             )}
           </div>
         )}
@@ -587,8 +630,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onTarget={(key) => state.selected.includes(key) || state.select([key])}
           onCommit={(def, merge) => state.commit([def], merge)}
           onRemove={(key) => state.remove([key])}
-          patrol={patrolsEditable ? patrol : null}
-          onPatrolCommit={state.savePatrol}
+          graph={graphsEditable ? graph : null}
+          onGraphCommit={state.saveGraph}
+          onGraphConnect={(graphConnect) => state.set({ graphConnect })}
+          spotNear={(at) => nearestSpot(w, spots, at, spotNearDist)}
         >
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
@@ -614,12 +659,20 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             }
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
-            {patrol !== null && (
-              <PatrolLayer
+            {graph !== null && (
+              <GraphLayer
                 w={w}
-                patrol={patrol}
-                editable={patrolsEditable}
-                onCommit={state.savePatrol}
+                graph={graph}
+                pointOf={pointOf}
+                editable={graphsEditable}
+                selected={state.graphTarget}
+                connecting={state.graphConnect}
+                onCommit={state.saveGraph}
+                onSelect={(graphTarget) => {
+                  state.set({ graphTarget, graphConnect: null });
+                  state.setSidebar({ sidebarTab: "graph" });
+                }}
+                onConnect={state.connectGraph}
                 onPressing={state.onPressing}
               />
             )}
@@ -767,7 +820,7 @@ type State = {
   rename(key: string, next: string): void;
   undo(): void;
   redo(): void;
-  setSidebar(patch: Partial<Pick<DecoratorUiMeta, "sidebarWidth" | "sidebarOpen">>): void;
+  setSidebar(patch: Partial<Pick<DecoratorUiMeta, "sidebarWidth" | "sidebarOpen" | "sidebarTab">>): void;
   onSidebarResizeStart(e: React.MouseEvent): void;
   onMapClick(at: Geom.VectJson): void;
   add(type: DecorType, at: Geom.VectJson): void;
@@ -781,26 +834,38 @@ type State = {
   spot: null | SpotPick;
   /** The map's own area, under the sidebar */
   mapEl: null | HTMLDivElement;
-  /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
-  sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
-  /** The patrol chosen in the patrol tab, drawn on the map, by key */
-  patrol: null | string;
-  /** The chosen patrol as last edited, until a reload has it saved */
-  patrolDraft: null | PatrolEntry;
-  patrolError: null | string;
-  /** Chooses a patrol, and centres the map on it */
-  choosePatrol(key: string): void;
-  /** DEV: saves it, keeping it as a draft meanwhile */
-  savePatrol(next: PatrolEntry): void;
+  /** The graph chosen in the graph tab, drawn on the map, by key */
+  graph: null | string;
+  /** A graph as last edited, `null` if removed, until a reload has it */
+  graphDraft: null | { key: string; graph: null | GraphEntry };
+  graphError: null | string;
+  /** What of the chosen graph the sidebar's meta is for */
+  graphTarget: GraphTarget;
+  /** The node an edge is being drawn from, until another is clicked */
+  graphConnect: null | string;
+  /** Chooses a graph, and centres the map on it */
+  chooseGraph(key: string): void;
+  /** Ends an edge being drawn, at node `to` */
+  connectGraph(to: string): void;
+  /** DEV */
+  deleteGraph(key: string): void;
+  /** Graph `key` as last edited, else as saved */
+  graphOf(key: null | string): null | GraphEntry;
+  /** DEV: two nodes joined, at the centre of the map shown */
+  newGraph(): Promise<void>;
+  /** DEV: saves it undoably, keeping it as a draft meanwhile */
+  saveGraph(next: GraphEntry): void;
+  /** DEV: saves it, else removes it if `null`, not undoably */
+  writeGraph(key: string, graph: null | GraphEntry): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const sidebarTabs = ["decor", "spot", "patrol"] as const;
-/** Saving reaches a patrol's file in DEV alone */
-const patrolsEditable = import.meta.env.DEV === true;
-type SidebarTab = (typeof sidebarTabs)[number];
+/** Saving reaches a graph's file in DEV alone */
+const graphsEditable = import.meta.env.DEV === true;
+/** Metres: a node attaches to a spot no further */
+const spotNearDist = 0.5;
 
 function SidebarHint({ children }: { children: React.ReactNode }) {
   return <div className="flex-1 border-r border-zinc-800 px-2 py-2 text-xs text-zinc-600">{children}</div>;

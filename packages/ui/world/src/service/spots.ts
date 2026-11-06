@@ -4,7 +4,7 @@ import { ANY_QUERY_FILTER, getPolyWallSegments, type NavMesh } from "navcat";
 import { type Spot, type SpotKind, spotKinds } from "../spot.schema";
 import { generateTiledNavMeshResult } from "../worker/generate-tiled-navmesh";
 import type { Occluder, SegGrid } from "./seg-grid";
-import { computeSight, createSightGrid, sightConfig } from "./spot-sight";
+import { computeSight, createSightGrid, type PairsJudge, sightConfig } from "./spot-sight";
 
 /** Tuning for `computeSpots`. Lengths in metres */
 export const spotConfig = {
@@ -64,7 +64,7 @@ export async function createGmNavMesh(layout: Geomorph.Layout): Promise<NavMesh>
  * Places an npc might stand in `layout`, each with what it sees and what is near, and sight between their regions.
  * Also how long each part took, and the furthest any floor is from a spot — see `docs/spots.md`
  */
-export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
+export async function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh, judge?: PairsJudge) {
   const c = spotConfig;
   let t0 = performance.now();
   const wallSegs = layout.walls.flatMap((poly) => poly.lineSegs);
@@ -169,14 +169,10 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
           .filter((o) => Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach)
           .flatMap((o) => o.segs.map(([a, b]): Occluder => ({ a, b, kind: "obstacle", id: o.obstacleId }))),
   );
-  const { sight, always, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = computeSight({
-    spots,
-    layout,
-    grid,
-    within,
-    lowNear,
-    radius: c.radius,
-  });
+  const { sight, always, rims, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = await computeSight(
+    { spots, layout, grid, within, lowNear, radius: c.radius },
+    judge,
+  );
   /** Whether `t` is on the obstacle's side of cover spot `s`, which faces away from it */
   const behind = (s: Spot, t: Spot) =>
     (t.x - s.x) * Math.cos(s.facing ?? 0) + (t.y - s.y) * Math.sin(s.facing ?? 0) < 0;
@@ -189,6 +185,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     Object.assign(spot, {
       sight: sight[i],
       always: always[i],
+      rim: rims[i],
       via: via[i],
       crouchSafe: crouchSafe[i],
       ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
@@ -246,6 +243,7 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       ...(ref === undefined ? {} : { ref }),
       sight: [],
       always: [],
+      rim: [],
       via: [],
       crouchSafe: [],
       doSight: [],
