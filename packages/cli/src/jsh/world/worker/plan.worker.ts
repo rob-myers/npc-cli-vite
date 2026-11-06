@@ -142,7 +142,7 @@ export const ops: {
   *pad(op, navMesh) {
     const rooms = new Map<null | string, PadCand[]>();
     for (const [index, npc] of op.npcs.entries()) {
-      const cand = { npc, index, spots: findPadSpots(npc, navMesh, op.by) };
+      const cand = { npc, index, spots: findPadSpots(npc, navMesh, op.by.walls) };
       rooms.set(npc.grKey, [...(rooms.get(npc.grKey) ?? []), cand]);
       yield; // a breath between npcs
     }
@@ -153,10 +153,10 @@ export const ops: {
       const others = op.others.flatMap((o) => (o.grKey === grKey && padding.has(o.key) === false ? o.point : []));
       // whoever found no spot goes first next time, keeping the pass with the fewest
       const first = new Set<PadCand>();
-      let best = yield* padRoom(cands, others, op.by, first);
+      let best = yield* padRoom(cands, others, op.by.npcs, first);
       for (let pass = 1; pass < padPasses && best.failed.some((c) => first.has(c) === false); pass++) {
         for (const c of best.failed) first.add(c);
-        const result = yield* padRoom(cands, others, op.by, first);
+        const result = yield* padRoom(cands, others, op.by.npcs, first);
         if (result.failed.length < best.failed.length) best = result;
       }
       for (const [c, at] of best.picks) plans[c.index] = { key: c.npc.key, at };

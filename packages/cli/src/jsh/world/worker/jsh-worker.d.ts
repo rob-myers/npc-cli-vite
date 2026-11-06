@@ -222,8 +222,8 @@ declare namespace WW {
         npcs: NpcQuery[];
         /** Everyone standing in the rooms involved */
         others: { key: string; point: Geom.VectJson; grKey: string }[];
-        /** The room wanted round each */
-        by: number;
+        /** The room wanted round each: from walls and doorways, and from everyone else */
+        by: { walls: number; npcs: number };
       }
     | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson };
 

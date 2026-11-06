@@ -21,6 +21,7 @@ import { patrols } from "./scenario";
  * act rob count:10
  * act park rob kate
  * act pad kate by:1
+ * act pad kate rob walls:0.3 npcs:1
  * act kate nudge:rob
  * act patrol basic-patrol
  * act patrol cycle:$( pick 4 ) guard-0,guard-1 say:""
@@ -49,10 +50,8 @@ export async function act(ct: JshCli.RunArg) {
   const rejectAll = (e: Error) => npcKeys.forEach((key) => ct.w.n[key]?.rejectAll(e));
   const handlers = ct.api.handleStatus({
     cleanup: () => (task.cancel(), rejectAll(Error("killed"))),
-    // paused by more than the World, which holds them itself, they stop, to go on once resumed. A fade finishes
-    onSuspend: () => (
-      ct.api.isHeldOnlyBy("world") === false && fadeVerbs.has(verb) === false && rejectAll(Error("paused")), true
-    ),
+    // paused by more than the World, which holds them itself, they stop, to go on once resumed
+    onSuspend: () => (ct.api.isHeldOnlyBy("world") === false && rejectAll(Error("paused")), true),
   });
   try {
     await task.run(() => found({ ct, npcKey: npcKeys[0] ?? "", npcKeys, task }, ct.api.jsArg(opts) as Opts, opts));
@@ -87,8 +86,6 @@ const shorthands: Record<string, (value: string) => string[]> = {
 const severalVerbs = new Set(["park", "pad"]);
 /** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
 const npclessVerbs = new Set(["patrol"]);
-/** Verbs a pause lets finish, as `rejectAll` would zero their fade */
-const fadeVerbs = new Set(["park", "pad"]);
 
 /** What a verb runs with: its npc (the first of `npcKeys`), and a game-time task a kill cancels */
 type Ctx = { ct: JshCli.RunArg; npcKey: string; npcKeys: string[]; task: Task };
@@ -182,29 +179,43 @@ const verbs: Record<string, Verb> = {
     if (to === null || npc.distanceTo(to) < nudgeMinMove) return; // backed against something
     await goTo(ctx, to);
   },
-  /** `[by:<m>]`: where there is room to walk right round them, `by` metres from walls, doorways and others */
+  /**
+   * `[walls:<m>] [npcs:<m>]`: where there is room to walk right round them, from walls and doorways, and from others.
+   * `by` is `npcs` — see `padBy`
+   */
   async pad(ctx, opts) {
     const { w } = ctx.ct;
-    const npcs = ctx.npcKeys.map((key) => w.npc.get(key));
-    const by = opts.by === undefined ? standConfig.padClearance : Number(opts.by);
+    const by = padBy(opts);
+    // those padded with as much room already stay as they are
+    const npcs = ctx.npcKeys
+      .map((key) => w.npc.get(key))
+      .filter((npc) => {
+        const had = padded.get().get(npc.key);
+        return had === undefined || had.walls < by.walls || had.npcs < by.npcs;
+      });
+    if (npcs.length === 0) return;
     const op = { key: "pad", npcs: npcs.map((npc) => npcQuery(w, npc)), others: roomOthers(w, npcs), by } as const;
     const plans = await settled(ctx, requestDetached(w, op));
     await placeAll(ctx, "padded", npcs, plans, async (npc, { at }) => {
-      if (npc.distanceTo(at) > standConfig.parkMinMove) await npc.fadeSpawn({ at, angle: npc.rotation.y });
-      padded.mark(npc.key);
+      if ((await walkTo(ctx, npc, at)) === false) return false;
+      padded.mark(npc.key, by);
+      return true;
     });
   },
   /** Against a nearby wall, clear of its corners, the room's doorways and others parked — see `pred.ts` */
   async park(ctx) {
     const { w } = ctx.ct;
-    const npcs = ctx.npcKeys.map((key) => w.npc.get(key));
+    // those parked already stay as they are
+    const npcs = ctx.npcKeys.map((key) => w.npc.get(key)).filter((npc) => parked.get().has(npc.key) === false);
+    if (npcs.length === 0) return;
     const op = { key: "park", npcs: npcs.map((npc) => npcQuery(w, npc)), parked: parkedNow(w) } as const;
     const plans = await settled(ctx, requestDetached(w, op));
     await placeAll(ctx, "parked", npcs, plans, async (npc, { at, facing, seg }) => {
-      // hurt, they cannot look: a respawn turns them, and keeps the hurt clip
-      if (npc.distanceTo(at) > standConfig.parkMinMove || npc.anim.hurt !== null) await npc.fadeSpawn({ at, facing });
-      else await npc.look({ at: facing });
+      if ((await walkTo(ctx, npc, at)) === false) return false;
+      // hurt, they cannot look: they stay facing the way they came
+      if (npc.anim.hurt === null) await resumable(ctx, () => npc.look({ at: facing }));
       parked.mark(npc.key, seg);
+      return true;
     });
   },
 };
@@ -384,17 +395,35 @@ const along = (p: Geom.VectJson, angle: number) => ({ x: p.x + Math.cos(angle), 
 
 const noop = () => {};
 
-/** Each npc to their plan at once. Those with none are left where they stand, and named once the rest are done */
+/**
+ * Each npc to their plan at once, `place` saying whether they got there. Those with none stay where they stand.
+ * Once the rest are done, those with none or who fell short are named, e.g. `not parked: kate, rob blocked`
+ */
 async function placeAll<P>(
   ctx: Ctx,
   done: string,
   npcs: JshCli.Npc[],
   plans: (null | P)[],
-  place: (npc: JshCli.Npc, plan: P) => Promise<void>,
+  place: (npc: JshCli.Npc, plan: P) => Promise<boolean>,
 ) {
-  await ctx.task.wait(Promise.all(npcs.map((npc, i) => (plans[i] === null ? undefined : place(npc, plans[i])))));
-  const leftOut = npcs.filter((_, i) => plans[i] === null);
-  if (leftOut.length > 0) throw Error(`not ${done}: ${leftOut.map((npc) => npc.key).join(" ")}`);
+  const reached = await ctx.task.wait(
+    Promise.all(npcs.map((npc, i) => (plans[i] === null ? false : place(npc, plans[i])))),
+  );
+  const missed = npcs.flatMap((npc, i) =>
+    plans[i] === null ? [npc.key] : reached?.[i] === false ? [`${npc.key} blocked`] : [],
+  );
+  if (missed.length > 0) throw Error(`not ${done}: ${missed.join(", ")}`);
+}
+
+/** Walks them to `at` unless they are there already: whether they got there */
+async function walkTo(ctx: Ctx, npc: JshCli.Npc, at: Geom.VectJson) {
+  return npc.distanceTo(at) <= standConfig.parkMinMove || (await goTo({ ...ctx, npcKey: npc.key }, at));
+}
+
+/** `pad`'s room from `walls` and from `npcs`, else `by`: each defaults to `standConfig.padClearance` */
+function padBy(opts: Opts): { walls: number; npcs: number } {
+  const { walls, npcs } = standConfig.padClearance;
+  return { walls: Number(opts.walls ?? walls), npcs: Number(opts.npcs ?? opts.by ?? npcs) };
 }
 
 /** An npc's point, a point, else one `by` metres from them a random way */
@@ -614,8 +643,8 @@ export const standConfig = {
   parkMinMove: 0.02,
   /** How far out `park` looks for a wall to stand against */
   parkQueryRange: 2,
-  /** How much room `pad` wants round them, from walls and from the parked or padded */
-  padClearance: 0.6,
+  /** How much room `pad` wants round them by default, from walls and doorways, and from others */
+  padClearance: { walls: 0.3, npcs: 0.6 },
   /** How far from where they stand `pad` looks for such a spot */
   padQueryRange: 3,
   /** How far clear of a door somebody must stand to be out of the traffic through it */
