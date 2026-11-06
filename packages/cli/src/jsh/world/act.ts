@@ -1,11 +1,11 @@
-import { type PatrolEntry, PatrolEntrySchema } from "@npc-cli/ui__world/scenario.schema";
+import { type GraphEntry, GraphEntrySchema, type GraphNode } from "@npc-cli/ui__world/scenario.schema";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { perceive, spotQuery } from "./perception.main";
+import { graphs } from "./graph";
+import { isSpot, perceive, spotQuery } from "./perception.main";
 import { isPaused, npcQuery, parkedNow, requestDetached, roomOthers } from "./plan.main";
 import { padded, parked } from "./pred";
-import { patrols } from "./scenario";
 
 /**
  * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.
@@ -23,8 +23,8 @@ import { patrols } from "./scenario";
  * act pad kate by:1
  * act pad kate rob walls:0.3 npcs:1
  * act kate nudge:rob
- * act patrol basic-patrol
- * act patrol cycle:$( pick 4 ) guard-0,guard-1 say:""
+ * act patrol test-patrol npc:guard-0 watch:rob
+ * act patrol cycle:$( pick 4 ) npcs:$( [] guard-{0..1} ) say:""
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
@@ -35,8 +35,7 @@ export async function act(ct: JshCli.RunArg) {
     throw Error(`usage: act {${names}} <npc> …, or act <npc> {${names}}:<value> …`);
   }
   // several, as `rob kate` or `rob,kate`: its options are `key:value`
-  const several =
-    severalVerbs.has(verb) || npclessVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
+  const several = severalVerbs.has(verb) ? args.filter((arg) => arg.includes(":") === false) : [];
   const npcKeys = [...(npcKey === undefined ? [] : [npcKey]), ...several].flatMap((key) => key.split(","));
   const opts = args.filter((arg) => several.includes(arg) === false);
   if (npcKeys.length > 1 && !severalVerbs.has(verb) && !npclessVerbs.has(verb)) throw Error(`${verb}: one npc only`);
@@ -84,12 +83,12 @@ const shorthands: Record<string, (value: string) => string[]> = {
 
 /** Verbs taking several npcs, planned together */
 const severalVerbs = new Set(["park", "pad"]);
-/** Verbs whose npcs, if any, follow as `rob,kate`: they add those they act with to `npcKeys` */
+/** Verbs taking no npc first: their args are their own, and they add those they act with to `npcKeys` */
 const npclessVerbs = new Set(["patrol"]);
 
 /** What a verb runs with: its npc (the first of `npcKeys`), and a game-time task a kill cancels */
 type Ctx = { ct: JshCli.RunArg; npcKey: string; npcKeys: string[]; task: Task };
-type Opts = Record<string, undefined | string | number | boolean>;
+type Opts = Record<string, undefined | string | number | boolean | unknown[]>;
 type Verb = (ctx: Ctx, opts: Opts, args: string[]) => Promise<void>;
 
 const verbs: Record<string, Verb> = {
@@ -118,41 +117,33 @@ const verbs: Record<string, Verb> = {
     await resumable(ctx, () => npc.look({ at: point }));
   },
   /**
-   * `<name> [npcs]`, else `path:<points>` or `cycle:<points>` then `[npcs]`: they walk it, stopping at each point to look either side.
-   * Those absent are spawned. Seeing whom they watch, they emit `guard-spotted`, then halt and say `say`, unless it is empty
+   * `<graph> [npc:<key>] [npcs:<keys>] [watch:<keys>]`, else `path:` or `cycle:` points: they walk its closed walk, looking about at each node.
+   * Those absent are spawned. A sighting emits `guard-spotted`, then they halt and say `say`, unless it is empty
    */
-  async patrol(ctx, opts) {
+  async patrol(ctx, opts, args) {
     const { ct } = ctx;
-    const [cycle, path]: unknown[] = [opts.cycle, opts.path];
-    const given = Array.isArray(cycle) ? cycle : Array.isArray(path) ? path : undefined;
-    // its name comes first, before the npcs
-    const name = given === undefined ? ctx.npcKeys.shift() : undefined;
-    if (given === undefined && name === undefined)
-      throw Error("expected a patrol's name, else path:<points> or cycle:<points>");
-    const saved =
-      given === undefined
-        ? await settled(ctx, patrols.find(ct, name))
-        : PatrolEntrySchema.parse({
-            key: "",
-            kind: "patrol",
-            mapKey: ct.w.mapKey,
-            points: await settled(ctx, patrols.toPoints(ct, given)),
-            cycle: Array.isArray(cycle),
-          });
-    const patrol: PatrolEntry = {
-      ...saved,
-      watch: typeof opts.watch === "string" ? opts.watch.split(",") : saved.watch,
-      say: typeof opts.say === "string" ? opts.say : saved.say,
-      stop: {
-        secs: Number(opts.secs ?? saved.stop.secs),
-        lookSecs: Number(opts.lookSecs ?? saved.stop.lookSecs),
-        lookDeg: Number(opts.lookDeg ?? saved.stop.lookDeg),
-      },
+    const [cycle, path] = [opts.cycle, opts.path];
+    const points = Array.isArray(cycle) ? cycle : Array.isArray(path) ? path : undefined;
+    const positional = args.filter((arg) => arg.includes(":") === false);
+    const name = points === undefined ? positional.shift() : undefined;
+    if (points === undefined && name === undefined)
+      throw Error("expected a graph's name, else path:<points> or cycle:<points>");
+    if (positional.length > 0) throw Error(`unexpected ${positional.join(" ")}: npc:<key> or npcs:<keys>`);
+    const graph =
+      points === undefined
+        ? await settled(ctx, graphs.find(ct, name))
+        : await settled(ctx, unsavedGraph(ct, points, Array.isArray(cycle)));
+    ctx.npcKeys.push(...(keysOf(opts.npcs ?? opts.npc) ?? ["guard-0"]));
+    const stop = {
+      secs: Number(opts.secs ?? 2),
+      lookSecs: Number(opts.lookSecs ?? 2),
+      lookDeg: Number(opts.lookDeg ?? 60),
     };
-    if (ctx.npcKeys.length === 0) ctx.npcKeys.push(patrol.npcKey ?? "guard-0");
-    const guards = startsOf(ct.w, patrol, ctx.npcKeys.length).map((start, i) => ({ key: ctx.npcKeys[i], ...start }));
+    const route = await settled(ctx, routeOf(ct, graph, stop));
+    const guards = startsOf(ct.w, route, ctx.npcKeys.length).map((start, i) => ({ key: ctx.npcKeys[i], ...start }));
     await settled(ctx, Promise.all(guards.map((g, i) => postGuard(ctx, g, i))));
-    await walkPatrol(ctx, patrol, guards);
+    const say = typeof opts.say === "string" ? opts.say : "Halt!";
+    await walkPatrol(ctx, { key: graph.key, watch: keysOf(opts.watch) ?? [], say }, route, guards);
   },
   /** As `avoid`, judged by every spot they will be at, their room's doors open: they open one going in, or stand by one */
   hide: (ctx, opts) => hideFrom(ctx, opts, true),
@@ -220,28 +211,73 @@ const verbs: Record<string, Verb> = {
   },
 };
 
-/** Where each of `count` guards starts, spaced evenly round a cycle, else along a path there and back */
-function startsOf(w: JshCli.WorldState, patrol: PatrolEntry, count: number) {
-  const pts = patrol.points.map(([x, y]) => ({ x, y }));
-  // the legs walked in one round: a path's back the same way
-  const order = patrol.cycle ? [...pts.keys(), 0] : [...pts.keys(), ...[...pts.keys()].reverse().slice(1)];
-  const legs = order
-    .slice(1)
-    .map((to, i) => ({ from: order[i], to, len: Vect.distanceBetween(pts[order[i]], pts[to]) }));
-  const total = legs.reduce((sum, leg) => sum + leg.len, 0);
-  return Array.from({ length: count }, (_, k) => {
-    let s = (k * total) / count;
-    const leg = legs.find((leg) => (s -= leg.len) < 0) ?? legs[0];
-    const t = leg.len === 0 ? 0 : 1 + s / leg.len;
-    const [a, b] = [pts[leg.from], pts[leg.to]];
-    const at = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
-    const found = w.npc.getClosestPoly(at, 0.5);
+/** A graph from `path:` or `cycle:` points, unsaved */
+async function unsavedGraph(ct: JshCli.RunArg, points: unknown[], cycle: boolean) {
+  const { nodes, edges } = await graphs.through(ct, points, cycle, false);
+  return GraphEntrySchema.parse({ key: "", kind: "graph", mapKey: ct.w.mapKey, nodes, edges });
+}
+
+type Stop = { secs: number; lookSecs: number; lookDeg: number };
+
+/** The graph's closed walk: each step's node, point and stop, its node's meta over `stop` */
+async function routeOf(ct: JshCli.RunArg, graph: GraphEntry, stop: Stop) {
+  const at = await graphs.resolve(ct, graph);
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const walk = graphs.closedWalk(graph);
+  return walk.map((id, i) => {
+    const { meta } = byId.get(id) as GraphNode;
+    const num = (k: keyof Stop) => (typeof meta[k] === "number" ? (meta[k] as number) : stop[k]);
     return {
-      at: found.success ? { x: found.position[0], y: found.position[2] } : a,
-      next: leg.to,
-      dir: (patrol.cycle || leg.to > leg.from ? 1 : -1) as 1 | -1,
-      heading: Math.atan2(b.y - a.y, b.x - a.x),
+      at: at.get(id) as Geom.VectJson,
+      stop: { secs: num("secs"), lookSecs: num("lookSecs"), lookDeg: num("lookDeg") },
+      /** The walk turns straight back here, so they need not look either side */
+      uTurn: walk[(i + walk.length - 1) % walk.length] === walk[(i + 1) % walk.length],
     };
+  });
+}
+
+type Route = Awaited<ReturnType<typeof routeOf>>;
+
+/**
+ * Each guard's start on the route, as far apart in a straight line as can be: the farthest pair of samples first, then
+ * each sample farthest from those chosen. One guard starts at the route's start
+ */
+function startsOf(w: JshCli.WorldState, route: Route, count: number) {
+  const pts = route.map((step) => step.at);
+  const legs = pts.map((a, i) => ({ a, b: pts[(i + 1) % pts.length], next: (i + 1) % pts.length }));
+  const total = legs.reduce((sum, { a, b }) => sum + Vect.distanceBetween(a, b), 0);
+  const step = Math.max(guardStartStep, total / guardStartSamples);
+  const samples = legs.flatMap(({ a, b, next }) => {
+    const n = Math.max(1, Math.ceil(Vect.distanceBetween(a, b) / step));
+    return Array.from({ length: n }, (_, j) => ({
+      at: { x: a.x + (j / n) * (b.x - a.x), y: a.y + (j / n) * (b.y - a.y) },
+      next,
+      heading: Math.atan2(b.y - a.y, b.x - a.x),
+    }));
+  });
+  const dist = (i: number, j: number) => Vect.distanceBetween(samples[i].at, samples[j].at);
+
+  const chosen = [0];
+  if (count > 1) {
+    let far = -1;
+    for (let i = 0; i < samples.length; i++)
+      for (let j = i + 1; j < samples.length; j++) {
+        const d = dist(i, j);
+        if (d > far) [chosen[0], chosen[1], far] = [i, j, d];
+      }
+  }
+  /** Each sample's distance to the nearest chosen */
+  const nearest = samples.map((_, i) => Math.min(...chosen.map((c) => dist(i, c))));
+  while (chosen.length < count) {
+    const next = nearest.indexOf(Math.max(...nearest));
+    chosen.push(next);
+    for (let i = 0; i < samples.length; i++) nearest[i] = Math.min(nearest[i], dist(i, next));
+  }
+
+  return chosen.map((i) => {
+    const { at, next, heading } = samples[i];
+    const found = w.npc.getClosestPoly(at, 0.5);
+    return { at: found.success ? { x: found.position[0], y: found.position[2] } : at, next, heading };
   });
 }
 
@@ -257,16 +293,18 @@ async function postGuard(ctx: Ctx, g: GuardStart, i: number) {
 }
 
 /**
- * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/scenarios.md`.
+ * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/npc-graphs.md`.
  * One loop for all, so a kill or a pause holds them at once
  */
-async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
+async function walkPatrol(
+  ctx: Ctx,
+  patrol: { key: string; watch: string[]; say: string },
+  route: Route,
+  starts: GuardStart[],
+) {
   const { ct } = ctx;
   const { w } = ct;
-  const pts = patrol.points.map(([x, y]) => ({ x, y }));
-  const { secs, lookSecs, lookDeg } = patrol.stop;
-  const look = (lookDeg * Math.PI) / 180;
-  const isEnd = (i: number) => patrol.cycle === false && (i === 0 || i === pts.length - 1);
+  const pts = route.map((step) => step.at);
   const guards = starts.map((s) => ({
     ...s,
     phase: "walk" as GuardPhase,
@@ -291,12 +329,7 @@ async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
     );
     [g.phase, g.since, g.move] = ["walk", now, move];
   };
-  /** The next point: round a cycle, else turning back at a path's end */
-  const advance = (g: Guard) => {
-    if (patrol.cycle) return void (g.next = (g.next + g.dir + pts.length) % pts.length);
-    if (g.next + g.dir < 0 || g.next + g.dir >= pts.length) g.dir = -g.dir as 1 | -1;
-    g.next += g.dir;
-  };
+  const advance = (g: Guard) => void (g.next = (g.next + 1) % pts.length);
   const face = (g: Guard, angle: number) => w.n[g.key]?.look({ at: along(w.n[g.key].point, angle) }).catch(noop);
 
   const distracted = new Set<string>();
@@ -313,6 +346,8 @@ async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
       for (const g of guards) {
         if (w.n[g.key] === undefined) throw Error(`${g.key}: gone`);
         const done = distracted.delete(g.key);
+        const { stop, uTurn } = route[g.next];
+        const look = (stop.lookDeg * Math.PI) / 180;
         switch (g.phase) {
           case "walk": {
             const move = g.move as GuardMove;
@@ -336,16 +371,17 @@ async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
             break;
           }
           case "stop":
-            if (done || now - g.since >= secs) {
-              if (isEnd(g.next)) advance(g), walk(g, now);
+            if (done || now - g.since >= stop.secs) {
+              if (uTurn) advance(g), walk(g, now);
               else ([g.phase, g.since] = ["left", now]), face(g, g.heading + look);
             }
             break;
           case "left":
-            if (done || now - g.since >= lookSecs) ([g.phase, g.since] = ["right", now]), face(g, g.heading - look);
+            if (done || now - g.since >= stop.lookSecs)
+              ([g.phase, g.since] = ["right", now]), face(g, g.heading - look);
             break;
           case "right":
-            if (done || now - g.since >= lookSecs) advance(g), walk(g, now);
+            if (done || now - g.since >= stop.lookSecs) advance(g), walk(g, now);
             break;
           case "halt": {
             const seenAt = g.sightings.get(g.seen as string) ?? -Infinity;
@@ -370,7 +406,7 @@ async function walkPatrol(ctx: Ctx, patrol: PatrolEntry, starts: GuardStart[]) {
         const g = guards[keys.indexOf(key)];
         const fresh = now - (g.sightings.get(seen) ?? -Infinity) > guardLoseSecs;
         g.sightings.set(seen, now);
-        if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, patrol: patrol.key || null });
+        if (fresh) w.events.next({ key: "guard-spotted", npcKey: key, seen, graph: patrol.key || null });
         if (patrol.say === "") continue;
         if (g.phase !== "halt") {
           [g.phase, g.since, g.seen] = ["halt", now, seen];
@@ -490,8 +526,8 @@ async function hidingSpot(ctx: Ctx, opts: Opts, skip: string[], strict: boolean)
       q: "hide",
       npc: ctx.npcKey,
       from: fromKeys(ctx, opts),
-      rooms: csv(opts.rooms),
-      prefer: csv(opts.prefer),
+      rooms: keysOf(opts.rooms),
+      prefer: keysOf(opts.prefer),
       exclude: [...exclude, ...skip],
       away: opts.away === undefined ? undefined : Number(opts.away),
       ahead: aheadOf(ctx, opts),
@@ -542,8 +578,9 @@ function aheadOf(ctx: Ctx, opts: Opts) {
 
 /** The npcs `from` names, but this one */
 function fromKeys(ctx: Ctx, opts: Opts) {
-  if (typeof opts.from !== "string") throw Error("expected from:<npcs>");
-  return opts.from.split(",").filter((key) => key !== ctx.npcKey && ctx.ct.w.n[key] !== undefined);
+  const from = keysOf(opts.from);
+  if (from === undefined) throw Error("expected from:<npcs>");
+  return from.filter((key) => key !== ctx.npcKey && ctx.ct.w.n[key] !== undefined);
 }
 
 /** Off a seat or bed onto the floor beside it: a move from there would fade them all the way */
@@ -607,12 +644,9 @@ async function facingPoint(ctx: Ctx, at: string): Promise<null | Geom.VectJson> 
   return isSpot(spot) ? { x: spot.x, y: spot.y } : null;
 }
 
-function isSpot(answer: undefined | WW.SpotAnswer): answer is WW.SpotJson {
-  return answer != null && !Array.isArray(answer) && "x" in answer;
-}
-
-/** `a,b,c` as a list, e.g. `rooms:g0r1,g0r2` */
-const csv = (x: Opts[string]) => (typeof x === "string" ? x.split(",") : undefined);
+/** A list from an array or `a,b,c`, e.g. `rooms:g0r1,g0r2`, `npcs:$( [] guard-{0..1} )` */
+const keysOf = (x: Opts[string]) =>
+  Array.isArray(x) ? x.map(String) : typeof x === "string" ? x.split(",") : undefined;
 
 /** How a walk ends besides arriving, by its error: given up on, stopped by a pause, or cut short by a look and walked again */
 const walkEnds: Partial<Record<string, false | "paused" | "again">> = {
@@ -625,6 +659,10 @@ const walkEnds: Partial<Record<string, false | "paused" | "again">> = {
 const nudgeMinMove = 0.05;
 /** Spots `hide` tries, each it is blocked from skipped, before failing */
 const hideTries = 3;
+/** Metres between the points along a route where a guard might start, at least */
+const guardStartStep = 0.25;
+/** At most this many points along a route where a guard might start */
+const guardStartSamples = 400;
 /** Game seconds between a patrol's ticks: their checks for whom they watch */
 const guardTickSecs = 0.25;
 /** Game seconds unseen before a halted guard walks on, and before a sighting is told again */

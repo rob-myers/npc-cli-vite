@@ -1,6 +1,8 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
+export const sidebarTabs = ["decor", "spot", "graph"] as const;
+
 export const DecoratorUiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
   uiKey: z.literal("Decorator"),
@@ -11,6 +13,8 @@ export const DecoratorUiMetaSchema = z.object({
   /** The sidebar: its width, and whether it is out */
   sidebarWidth: z.number().default(208),
   sidebarOpen: z.boolean().default(false),
+  /** What the sidebar shows: the decor list, a spot, or the graphs */
+  sidebarTab: z.enum(sidebarTabs).default("decor"),
   /** Layers of the map */
   show: z
     .object({

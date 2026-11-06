@@ -72,3 +72,31 @@ export function spotWorldPoint(w: WorldState, file: SpotsFile, pick: SpotPick) {
   const { a, b, c, d, e, f } = w.gms[pick.gmId].transform;
   return { x: a * spot.x + c * spot.y + e, y: b * spot.x + d * spot.y + f };
 }
+
+/** A spot's point by its alias or key, if this map has it */
+export function spotPointOf(text: string, w: WorldState, byGmKey: undefined | Record<string, SpotsFile>) {
+  const pick = parseSpotPick(text, w, byGmKey);
+  const file = pick === null ? undefined : byGmKey?.[w.gms[pick.gmId]?.key];
+  return pick === null || file === undefined ? null : spotWorldPoint(w, file, pick);
+}
+
+/** The spot nearest `at` within `within` metres: its alias and point */
+export function nearestSpot(
+  w: WorldState,
+  byGmKey: undefined | Record<string, SpotsFile>,
+  at: Geom.VectJson,
+  within: number,
+): null | { spot: string; at: Geom.VectJson } {
+  let best: null | { spot: string; at: Geom.VectJson; dist: number } = null;
+  for (const [gmId, gm] of w.gms.entries()) {
+    const file = byGmKey?.[gm.key];
+    if (file === undefined) continue;
+    for (const id of file.spots.keys()) {
+      const p = spotWorldPoint(w, file, { gmId, id });
+      const dist = Math.hypot(p.x - at.x, p.y - at.y);
+      if (dist <= within && (best === null || dist < best.dist))
+        best = { spot: spotAlias(file, { gmId, id }), at: p, dist };
+    }
+  }
+  return best === null ? null : { spot: best.spot, at: best.at };
+}

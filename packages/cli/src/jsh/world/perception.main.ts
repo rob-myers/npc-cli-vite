@@ -16,6 +16,22 @@ export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.Spot
   return awaitPausable(ct.api, (signal) => askWorker(ct.w, ct.api.getUid(), spotOp(ct.w, queries), signal));
 }
 
+/** Each spot's point by key or alias, else `null` where none is. No query if `keys` is empty */
+export async function spotPoints(ct: Pick<JshCli.RunArg, "api" | "w">, keys: string[]) {
+  const answers =
+    keys.length === 0
+      ? []
+      : await spotQuery(
+          ct,
+          keys.map((key) => ({ q: "get", key })),
+        );
+  return answers.map((spot) => (isSpot(spot) ? { x: spot.x, y: spot.y } : null));
+}
+
+export function isSpot(answer: undefined | WW.SpotAnswer): answer is WW.SpotJson {
+  return answer != null && !Array.isArray(answer) && "x" in answer;
+}
+
 /** As `spotQuery`, outside any process, e.g. from a keyed tick */
 export function spotQueryDetached(w: JshCli.WorldState, queries: WW.SpotQuery[]) {
   return askWorker(w, detachedUid(), spotOp(w, queries), new AbortController().signal);

@@ -29,7 +29,7 @@ export const scenarios: ScenarioStub[] = [
     npcs: "2 guards, an intruder",
     status: "not started",
     steps: [
-      { title: "Patrol", text: "Each guard walks their patrol, stopping at each point to look either side." },
+      { title: "Patrol", text: "Each guard walks a graph, stopping at each node to look either side." },
       { title: "Slip through", text: "The intruder goes door to door through spots neither guard sees." },
       { title: "Alert", text: "A guard who sees the intruder tells the other, who cuts off the way out." },
       { title: "Standoff", text: "The guards raise their phasers. The intruder hides behind cover, or gives up." },

@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import z from "zod";
 import {
   type CharacterEntry,
-  isPatrolEntry,
+  type GraphEntry,
+  isGraphEntry,
   isScenarioCharacter,
-  type PatrolEntry,
   type ScenarioCharacter,
   type ScenarioEntry,
   ScenarioEntrySchema,
@@ -82,14 +82,14 @@ export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCha
   );
 }
 
-/** The patrols on map `mapKey`, by key */
-export function useScenarioPatrols(mapKey: string): Record<string, PatrolEntry> {
+/** The graphs on map `mapKey`, by key */
+export function useScenarioGraphs(mapKey: string): Record<string, GraphEntry> {
   const entries = useScenarioEntries();
   return useMemo(
     () =>
       Object.fromEntries(
         Object.values(entries)
-          .filter(isPatrolEntry)
+          .filter(isGraphEntry)
           .filter((x) => x.mapKey === mapKey)
           .map((x) => [x.key, x]),
       ),

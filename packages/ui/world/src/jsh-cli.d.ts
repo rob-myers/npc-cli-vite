@@ -96,8 +96,8 @@ declare namespace JshCli {
         key: "guard-spotted";
         npcKey: string;
         seen: string;
-        /** Its key, e.g. `patrol/basic-patrol`, else `null` for an unsaved path */
-        patrol: null | string;
+        /** The graph walked, e.g. `graph/test-patrol`, else `null` for an unsaved path */
+        graph: null | string;
       }
     | {
         /** `by`'s psi acted on them, a placeholder */
