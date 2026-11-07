@@ -262,10 +262,6 @@ export function WorldMenu() {
     return () => observer.disconnect();
   }, []);
 
-  /** Spots greyed out until jsh `spots show`, run by a terminal's profile, fills them */
-  const withSpotsGreyed = <T extends { value: string }>(item: T) =>
-    item.value === "spots" && (w.spots?.drawn.length ?? 0) === 0 ? { ...item, disabled: true } : item;
-
   const isDebugActive = (item: string) => {
     switch (item) {
       case "view pick":
@@ -694,7 +690,7 @@ export function WorldMenu() {
                     />
                   );
                 }
-                const group = item in debugGroups ? debugGroups[item as DebugGroup].map(withSpotsGreyed) : null;
+                const group = item in debugGroups ? debugGroups[item as DebugGroup] : null;
                 const active = group?.map(({ value }) => value).filter(isDebugActive);
                 return group !== null && active !== undefined ? (
                   <MenuMultiSelect

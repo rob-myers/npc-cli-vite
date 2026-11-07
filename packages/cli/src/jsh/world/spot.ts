@@ -5,7 +5,8 @@ import { getSpotsRev } from "./worker.main";
 
 /**
  * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.
- * Answered by the worker — see `docs/spots.md`. `show` (or `shown`) and `hide` the World's overlay of them
+ * Answered by the worker — see `docs/spots.md`. `show` (or `shown`) and `hide` the World's overlay of them.
+ * `auto` shows it once it is turned on, e.g. by the `0` key
  *
  * ```sh
  * spots room:g0r16 kind:cover,corner
@@ -13,11 +14,13 @@ import { getSpotsRev } from "./worker.main";
  * spots of:rob
  * spots show
  * spots hide
+ * spots auto
  * ```
  */
 export async function* spots(ct: JshCli.RunArg) {
   const [first] = ct.args;
   if (first === "show" || first === "shown" || first === "hide") return showSpots(ct.w, first !== "hide");
+  if (first === "auto") return autoSpots(ct.w);
   const opts: { room?: string; kind?: string; near?: string; within?: number; of?: string } = ct.api.jsArg(ct.args);
   const [found] = await spotQuery(ct, [
     opts.of !== undefined
@@ -287,7 +290,16 @@ function showSpots(w: JshCli.WorldState, show: boolean) {
   void sync();
 }
 
+/** `spots auto`: nothing until the overlay is turned on, then `spots show` (idempotent) */
+function autoSpots(w: JshCli.WorldState) {
+  w.e.addKeyedListener(autoKey, (e, w) => {
+    if (e.key === "spots-overlay" && e.shown === true) showSpots(w, true);
+  });
+  if (w.spots.shown === true) showSpots(w, true); // left on
+}
+
 const overlayKey = "spot-overlay";
+const autoKey = "spot-overlay-auto";
 /** Events after which the overlay is coloured afresh. The load's last steps among them, else it waits on a move */
 const redrawOn = new Set<string>(["spots-overlay", "set-player", "door-opening", "map-settled", "npcs-restored"]);
 /** Milliseconds a room takes to fade out, on the wall clock: `ROOM_FADE_OUT_SECS` in `fade-rooms` */
