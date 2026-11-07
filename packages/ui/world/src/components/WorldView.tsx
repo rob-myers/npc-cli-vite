@@ -163,6 +163,8 @@ export function WorldView(props: React.PropsWithChildren) {
         () => w.r3f?.invalidate(),
       ),
       frontierMs: 0,
+      cameraFrameMs: 0,
+      ranUnpaused: false,
       frontierOffset: { x: 0, z: 0 },
       frontierHold: false,
       keysDown: new Set(),
@@ -444,15 +446,20 @@ export function WorldView(props: React.PropsWithChildren) {
       persistCamera() {
         // per frame, so it must cost nothing when nothing moved
         if (cameraDidNotChange(state.persistedCamera, state.controls) === true) return;
-        const { spherical, target } = state.controls;
+        const { spherical, target, maxDistance, minDistance } = state.controls;
         if (!Number.isFinite(spherical.radius + target.x + target.z)) return; // else a reload restores it
         const cameraInitial: PersistedCamera = {
           azimuthal: spherical.theta,
           polar: spherical.phi,
           position: { x: target.x, y: spherical.radius, z: target.z },
+          stops: [maxDistance, minDistance],
         };
         state.persistedCamera = cameraInitial;
         store.patch({ cameraInitial });
+      },
+      restoreStops(controls) {
+        // read as the zoom is seeded: the props' stops reach a new instance after its ref
+        if (controls?._zoomSeeded === false) controls.openStops = store.read().cameraInitial?.stops ?? null;
       },
       onZoomWheel(e) {
         const { controls } = state;
@@ -652,6 +659,11 @@ export function WorldView(props: React.PropsWithChildren) {
         // wherever the camera has got to — a gesture's end fires before its damping has, and a
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
+        // the follow runs here whilst paused, as `World` does not tick then. A paused load keeps its saved view
+        const now = performance.now();
+        if (w.disabled === false) state.ranUnpaused = true;
+        else if (state.ranUnpaused === true) state.followPlayer(Math.min((now - state.cameraFrameMs) / 1000, 0.1));
+        state.cameraFrameMs = now;
 
         // where the w-key heads: held whilst a move key is down, else up the screen, snapped near an axis
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
@@ -829,13 +841,17 @@ export function WorldView(props: React.PropsWithChildren) {
       easeFrontier() {
         const { controls } = state;
         const offset = state.frontierOffset;
+        // following, held until the world has risen and been read. Before then a reading can be far off
+        const unread = w.fold.amount < 1 || state.playerFrontier.ahead(tmpAhead) === false;
+        if ((state.follow || state.frontierHold) && unread) {
+          state.frontierMs = performance.now();
+          return;
+        }
         const [wanted, wantedMin] = state.getFrontierStops();
-        if (state.getFrontierOffset(tmpOffset, wanted, wantedMin) === false) tmpOffset.x = tmpOffset.z = 0;
         if (state.lookAtAnimId !== 0) {
           // a `lookAt` eases these on its own alpha
           state.frontierMs = performance.now();
-          offset.x = tmpOffset.x;
-          offset.z = tmpOffset.z;
+          if (state.getFrontierOffset(offset, wanted, wantedMin) === false) offset.x = offset.z = 0;
           return;
         }
         // measured in time: a demand frameloop's frame gaps vary
@@ -846,20 +862,16 @@ export function WorldView(props: React.PropsWithChildren) {
 
         const remaining = wanted - controls.maxDistance;
         const remainingMin = wantedMin - controls.minDistance;
-        const remainingOffset = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
-        if (Math.max(Math.abs(remaining), Math.abs(remainingMin), remainingOffset) < frontierConfig.settleUntil) {
-          controls.maxDistance = wanted;
-          controls.minDistance = wantedMin;
-          offset.x = tmpOffset.x;
-          offset.z = tmpOffset.z;
-          return;
-        }
-        controls.maxDistance += remaining * alpha;
-        controls.minDistance += remainingMin * alpha;
-        // with the zoom, else the view lunges ahead then pulls back
-        offset.x += (tmpOffset.x - offset.x) * alpha;
-        offset.z += (tmpOffset.z - offset.z) * alpha;
-        w.r3f?.invalidate(); // still on its way
+        const settled = Math.max(Math.abs(remaining), Math.abs(remainingMin)) < frontierConfig.settleUntil;
+        controls.maxDistance = settled ? wanted : controls.maxDistance + remaining * alpha;
+        controls.minDistance = settled ? wantedMin : controls.minDistance + remainingMin * alpha;
+        // fitted to the zoom as it is, not as it will be, so it never lunges ahead of it
+        if (state.getFrontierOffset(tmpOffset, controls.maxDistance, controls.minDistance) === false)
+          tmpOffset.x = tmpOffset.z = 0;
+        const moved = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
+        offset.x = tmpOffset.x;
+        offset.z = tmpOffset.z;
+        if (settled === false || moved >= frontierConfig.settleUntil) w.r3f?.invalidate(); // still on its way
       },
       getFrontierStops() {
         const { controls } = state;
@@ -1759,7 +1771,7 @@ export function WorldView(props: React.PropsWithChildren) {
         />
 
         <CameraControls
-          ref={state.ref("controls")}
+          ref={state.ref("controls", state.restoreStops)}
           fixedPolar={false}
           // whilst following, the target IS the player, so a zoom about it keeps them centred.
           // Aiming at the pointer instead moves the target, which the follow would only undo —
@@ -1917,7 +1929,7 @@ export type State = {
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
-  /** Where `easeFrontier` eases `frontierOffset` towards, `false` with no frontier read */
+  /** Where `easeFrontier` holds `frontierOffset` at stops `max` and `min`, `false` with no frontier read */
   getFrontierOffset(out: { x: number; z: number }, max: number, min: number): boolean;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
@@ -1968,7 +1980,11 @@ export type State = {
   playerFrontier: PlayerFrontier;
   /** When `easeFrontier` last ran, so its ease is measured in time */
   frontierMs: number;
-  /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
+  /** When `onCameraFrame` last ran, timing the follow whilst paused */
+  cameraFrameMs: number;
+  /** Whether the World has run unpaused since mount: only then does a paused follow carry on */
+  ranUnpaused: boolean;
+  /** How far the follow's goal is held towards the frontier, fitted to the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
   frontierHold: boolean;
@@ -2087,6 +2103,8 @@ export type State = {
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */
   persistCamera(): void;
+  /** Opens the controls in the zoom stops the camera was saved in: a follow's are further out than the persisted */
+  restoreStops(controls: null | BaseCameraControls): void;
   /** Per rendered frame — in `embodied` mode drives the polar, the detent and any aimed zoom */
   onCameraFrame(spherical: THREE.Spherical): void;
   /** The crosshair's fade-out, once whatever raised it has arrived */
@@ -2110,7 +2128,7 @@ export type State = {
   setupDom(): () => void;
   setFollow(follow: boolean): void;
   setCameraMode(cameraMode: CameraModeType): void;
-  /** Keeps the player framed whilst following — called every tick from `World` */
+  /** Keeps the player framed whilst following — called every tick from `World`, and whilst paused from `onCameraFrame` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
   /** Whether the "centre on the player" UI is shown */

@@ -177,7 +177,7 @@ export const frontierConfig = {
   /** The same whilst the player is off the mesh or mid fade-spawn, so a facing set twice in quick succession glides */
   calmRate: 0.8,
   /** How fast the zoom stops and the view's offset ease, per second */
-  rate: 2,
+  rate: 4,
   /** Near enough what they ease to, so no further frame is asked for */
   settleUntil: 0.001,
   /** The nearest the inner stop comes, as a share of the travel between the stops. Not `0`: `t` divides by it */

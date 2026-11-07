@@ -1,6 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { error, warn } from "@npc-cli/util/legacy/generic";
+import { deltaAngle } from "maath/misc";
 import { useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
@@ -22,6 +23,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       fireTouch: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
+      lookCap: null,
       lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
@@ -48,14 +50,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           (w.e.handling.has(state.key) || face.turn !== null || (w.gameTime.now() < state.doingUntil && npc.isFading()))
         )
           state.lookYieldUntil = w.gameTime.now() + lookYieldSecs;
-        const held = lookAt !== null || ((rHeld || (state.look && state.isLookYielding() === false)) && free);
+        /** `r` held, else look mode unless it yields */
+        const looking = rHeld || (state.look && state.isLookYielding() === false);
+        const held = lookAt !== null || (looking && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
         /** Strafing, they keep their facing. Never over another's aim e.g. the phaser's */
         const keep = held === false && free && posture === "stand" && state.strafe;
         if (keep === false && face.aim === state.keepAim) face.aim = null;
         else if (keep === true && face.aim === null) face.aim = state.keepAim;
-        if (held === false) return;
+        if (held === false) return state.releaseLookCap(npc);
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
@@ -70,6 +74,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         tmpLook.x = tmpHit.x;
         tmpLook.y = tmpHit.z;
+        const bearing = npc.anim.bearingOf(tmpLook);
+        state.capFrontier(Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z), bearing);
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
           // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
@@ -82,7 +88,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void npc.anim.turnTo(tmpLook);
         }
         // armed, their muzzle's line through it rather than their middle
-        state.pointerAim.at = w.phasers?.bearingFor(state.key, tmpLook) ?? npc.anim.bearingOf(tmpLook);
+        state.pointerAim.at = w.phasers?.bearingFor(state.key, tmpLook) ?? bearing;
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = state.pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
@@ -103,6 +109,26 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         w.events.next({ key: "set-player", playerKey: npcKey });
         if (changed === true && pan === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
+      },
+      capFrontier(reach = doCapMetres, bearing) {
+        const npc = state.get();
+        if (npc === undefined) return;
+        // reused, as a look sets it every tick
+        const cap = (state.lookCap ??= { reach, bearing: null, x: 0, z: 0 });
+        cap.reach = reach;
+        cap.bearing = bearing ?? null;
+        cap.x = npc.position.x;
+        cap.z = npc.position.z;
+      },
+      releaseLookCap(npc) {
+        const cap = state.lookCap;
+        // a fade's cap waits until they are shown: till then their head and place are the old ones
+        if (cap === null || npc.isFading() || npc.anim.fadeState.target !== 1) return;
+        const { x, z } = npc.position;
+        const lookY = npc.lookY;
+        if (cap.bearing === null) return void Object.assign(cap, { bearing: lookY, x, z });
+        const moved = Math.hypot(x - cap.x, z - cap.z) > lookCapMetres;
+        if (moved || Math.abs(deltaAngle(lookY, cap.bearing)) > lookCapRad) state.lookCap = null;
       },
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -474,6 +500,12 @@ const lookYieldSecs = 0.8;
 const lookDeadMetres = 0.3;
 /** Metres off that a tap past the horizon is taken to be */
 const lookFarMetres = 500;
+/** How far they walk before a look's cap on their frontier drops */
+const lookCapMetres = 0.5;
+/** How far they turn off a look's bearing before its cap drops */
+const lookCapRad = Math.PI / 4;
+/** The cap on their frontier as they take or leave a doable, which may face down a corridor */
+const doCapMetres = 2;
 
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
@@ -517,6 +549,15 @@ export type State = {
   syncRun(): void;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
+  /**
+   * How far they last looked, which caps their frontier: from where, along which bearing.
+   * It drops once they walk off or turn away
+   */
+  lookCap: null | { reach: number; bearing: null | number; x: number; z: number };
+  /** Caps their frontier at `reach` along `bearing`, by default their facing once a fade is done, until they walk off or turn away */
+  capFrontier(reach?: number, bearing?: number): void;
+  /** Drops `lookCap` once they walk off or turn away. Each tick they are not looking */
+  releaseLookCap(npc: JshCli.Npc): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
   /** Ends the look hold early, a game-time timer */

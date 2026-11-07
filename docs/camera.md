@@ -97,6 +97,8 @@ The HUD:
 **Zoomed out, the view frames the player and their frontier.**
 - `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
+- A look nearer than it caps it (`w.player.lookCap`): a tap's, `r` held, or look mode's. The cap drops once they walk `lookCapMetres` or turn `lookCapRad` off its bearing.
+- Taking or leaving a doable caps it too, at `doCapMetres` along their facing (`rawSpawn`), which may be down a corridor. Its bearing and position are taken once the fade is done.
 - With the phaser raised it reaches at least as far as the red dot, where a shot at no one would land (`w.npcFocus.reachOf`). The inner stop may then go `frontierConfig.aimOuterScale` past the outer stop, to fit the dot in view.
 - `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
@@ -104,11 +106,14 @@ The HUD:
 - `follow` is on or off (`setFollow`). The button, or `v`, toggles it.
 - `holdFrontier` (MCP's way to show the player) is a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
+- Paused, the World's tick stops, so `onCameraFrame` runs `followPlayer` instead. A pan under way lands rather than waiting for unpause, then rushing.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
 **Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
 - `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
 - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
-- Both go back to persisted when not following (`holdFrontier` only pans), or when there is nothing to read.
+- Both go back to persisted when not following (`holdFrontier` only pans). Following, they and the offset hold until the world has risen (`w.fold`) and the frontier is read, e.g. loading or just respawned: an early reading can be far off.
+- The saved camera keeps its live stops (`PersistedCamera.stops`). The controls seed the zoom in them (`openStops`), so a load whilst following opens where it was, not pulled in to the persisted outer stop.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
+- The follow's offset towards the frontier is not eased itself. Each frame it is refitted to the live stops, so the pan keeps pace with the frontier and never runs ahead of the zoom.
 - On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.

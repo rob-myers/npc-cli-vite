@@ -503,11 +503,13 @@ export default function NPCs() {
           });
         }
 
-        if (typeof opts.doResult?.meta.decorKey === "string") {
+        const wasDoing = typeof state.npcToDoable[opts.npcKey] === "string";
+        const decorKey = opts.doResult?.meta.decorKey;
+        if (typeof decorKey === "string") {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
-          state.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
+          state.setNpcDo(opts.npcKey, decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
@@ -522,6 +524,7 @@ export default function NPCs() {
         npc.anim.face.rate = 0;
         // a spawn is a rest: else a look made on the move turns them where they land e.g. in bed
         if (npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
+        if ((wasDoing || typeof decorKey === "string") && w.player.is(opts.npcKey)) w.player.capFrontier();
 
         return npc;
       },

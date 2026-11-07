@@ -26,6 +26,8 @@ export type PersistedCamera = {
   azimuthal: number;
   polar: number;
   position: { x: number; y: number; z: number };
+  /** The live zoom stops it was in, which a follow draws out past the persisted ones */
+  stops?: [max: number, min: number];
 };
 
 /** `null` means "no preference yet", where the default depends on the device */

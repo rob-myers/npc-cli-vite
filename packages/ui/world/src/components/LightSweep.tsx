@@ -38,6 +38,7 @@ export default function LightSweep() {
         delta,
         calm ? frontierConfig.calmRate : frontierConfig.smoothRate,
         w.npcFocus?.reachOf(player.key) ?? null,
+        w.player.lookCap?.reach ?? null,
       );
     }
   }, -2);
