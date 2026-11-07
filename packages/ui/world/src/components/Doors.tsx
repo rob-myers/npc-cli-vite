@@ -201,7 +201,7 @@ export default function Doors() {
           state.doorMetaArray[instanceId * doorMetaSize + metaOffset] = state.labelToLayer.get(label) ?? LAYER_PLAIN;
         };
 
-        for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
+        for (const { instanceId, connector, hull, gmId, doorId } of Object.values(state.byKey)) {
           const { label, backLabel } = connector.meta as Record<string, undefined | string>;
           // resolve which physical face is which here, so the shader never has to swap
           const swap = state.flipped[instanceId] === 1;
@@ -209,7 +209,10 @@ export default function Doors() {
           applyFace(instanceId, swap ? BACK_LAYER : FRONT_LAYER, typeof label === "string" ? label : undefined);
 
           if (hull) {
-            continue; // the back of a hull door is never seen
+            // its back is its twin's front, which the next geomorph draws. Left undrawn, the two never fight
+            const twinned = w.gmGraph.getAdjacentRoomCtxt(gmId, doorId) !== null;
+            if (twinned) state.doorMetaArray[instanceId * doorMetaSize + (swap ? FRONT_LAYER : BACK_LAYER)] = NO_FACE;
+            continue;
           }
           applyFace(instanceId, swap ? FRONT_LAYER : BACK_LAYER, typeof backLabel === "string" ? backLabel : undefined);
         }
@@ -620,6 +623,7 @@ export default function Doors() {
           ),
         );
         Discard(dissolved);
+        if (mat !== edge) Discard((mat === front ? doorMeta.y : doorMeta.z).lessThan(0)); // a twinned hull door's back
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door) as THREE.Node<"vec4">;
         // a HULL door keeps its coverage, so in `sight` it goes by colour — HERE, past the lighting,
         // which a faded albedo alone still shows through
@@ -819,6 +823,8 @@ const BACK_LAYER = 2;
 const IS_HULL = 3;
 /** Layers of `w.texDoorLabel` which every door shares */
 const LAYER_PLAIN = 0;
+/** A face left undrawn: a twinned hull door's back, which its twin's front covers */
+const NO_FACE = -1;
 const tmpMat = new Mat();
 const tmpV1 = new Vect();
 const tmpV2 = new Vect();
