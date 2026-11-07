@@ -1741,7 +1741,7 @@ export function WorldView(props: React.PropsWithChildren) {
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
         // inherited by the canvas, whose own cursor is set only whilst dragged
-        className={cn(w.player?.look === true && "cursor-crosshair")}
+        className={cn(w.player?.focus === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}

@@ -73,7 +73,9 @@ export default function WorldHud() {
           if (stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
         } else if (w.player.strafe && stood)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
-        if (w.player.look) kept.push({ label: "look", title: "stop looking: r", end: () => w.player.toggleLook() });
+        // focus mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`
+        if (w.player.focus || (w.view?.follow === true && w.view.cameraMode === "embodied"))
+          kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
         if (w.gameTime.scale !== 1)
@@ -142,11 +144,27 @@ export default function WorldHud() {
         el.querySelector("text")?.replaceChildren(letter);
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
-      watchBlocked(el) {
-        const aim = el?.dataset.label === "aim";
+      watchAim(el) {
         return w.e.addFrameCallback(() => {
-          const blocked = aim ? w.phasers?.isDrawnIn(w.player.key) : w.player.isLookYielding();
-          el?.classList.toggle("blocked", blocked === true);
+          el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
+        });
+      },
+      watchLook(el) {
+        const wordEl = el?.querySelector("[data-look-word]");
+        const reachEl = el?.querySelector<HTMLElement>("[data-look-reach]");
+        return w.e.addFrameCallback(() => {
+          const { focus, lookCap } = w.player;
+          const framed = w.view.follow === true && w.view.cameraMode === "embodied";
+          const cap = framed ? lookCap : null;
+          el?.style.setProperty("display", focus || cap !== null ? "" : "none");
+          el?.classList.toggle("blocked", focus && w.player.isFocusYielding());
+          const word = focus ? "focus" : "look"; // focus mode, else a look's cap alone
+          if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
+          const reach = cap === null ? "" : `${Math.min(cap.reach, 99.9).toFixed(1)}m`;
+          if (reachEl && reachEl.textContent !== reach) {
+            reachEl.textContent = reach;
+            reachEl.style.display = reach === "" ? "none" : "";
+          }
         });
       },
     }),
@@ -342,21 +360,27 @@ export default function WorldHud() {
       {/* at the World's top, clear of the bar wherever it is dragged */}
       {(state.notice !== null || kept.length > 0) && (
         <div className={noticesClass}>
-          {/* kept whilst aiming, strafing, looking, following or off time 1, an "x" ending one that may be ended */}
+          {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending one that may be ended */}
           {kept.length > 0 && (
             <div className="flex items-center gap-1">
               {kept.map(({ label, title, end }) => (
                 <div
                   key={label}
-                  data-label={label}
-                  ref={label === "aim" || label === "look" ? state.watchBlocked : undefined}
+                  ref={label === "aim" ? state.watchAim : label === "look" ? state.watchLook : undefined}
                   title={end === undefined ? title : undefined}
                   className={cn(
                     "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
                     end === undefined ? "px-2" : "pr-0.5 pl-2",
                   )}
                 >
-                  <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
+                  {label === "look" ? (
+                    <>
+                      <span data-look-word />
+                      <span data-look-reach className={readoutClass} />
+                    </>
+                  ) : (
+                    <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
+                  )}
                   {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
                   {end !== undefined && (
                     <button
@@ -677,6 +701,9 @@ const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-a
 /** The notices: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
+/** A distance as a device reads it out: a fixed width, so the notice never changes length */
+const readoutClass =
+  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70";
 
 /** Each icon's size, as a fraction of its slot's height (else `--hud-icon-base`): alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
@@ -997,6 +1024,8 @@ export type State = {
   getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
-  /** Greys the "aim" notice whilst the phaser is drawn in, else "look" whilst it yields. A ref, returning its cleanup */
-  watchBlocked(el: null | HTMLDivElement): () => void;
+  /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
+  watchAim(el: null | HTMLDivElement): () => void;
+  /** The "focus" notice of focus mode, else "look" whilst a cap holds, with the cap's reach. Greyed whilst focus mode yields */
+  watchLook(el: null | HTMLDivElement): () => void;
 };

@@ -27,8 +27,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
-      look: false,
-      lookYieldUntil: 0,
+      focus: false,
+      focusYieldUntil: 0,
       strafe: false,
       tapMs: {},
       keepAim: { at: 0, rate: 0, untilRest: false },
@@ -42,16 +42,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
         const rHeld = w.view.keysDown.has("r") === true;
-        /** Look mode alone, which a held `r` overrides */
-        const auto = state.look === true && rHeld === false;
+        /** Focus mode alone, which a held `r` overrides */
+        const auto = state.focus === true && rHeld === false;
         // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat (not off one)
         if (
           auto &&
           (w.e.handling.has(state.key) || face.turn !== null || (w.gameTime.now() < state.doingUntil && npc.isFading()))
         )
-          state.lookYieldUntil = w.gameTime.now() + lookYieldSecs;
-        /** `r` held, else look mode unless it yields */
-        const looking = rHeld || (state.look && state.isLookYielding() === false);
+          state.focusYieldUntil = w.gameTime.now() + focusYieldSecs;
+        /** `r` held, else focus mode unless it yields */
+        const looking = rHeld || (state.focus && state.isFocusYielding() === false);
         const held = lookAt !== null || (looking && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
@@ -63,7 +63,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
-          // look mode keeps their facing whilst the camera is dragged
+          // focus mode keeps their facing whilst the camera is dragged
           if (rHeld === false && (w.view.controls?.pointers.length ?? 0) > 0) return;
           // measured on resize, not here: a rect read each tick may force a layout
           const { raycaster, lastPointer, bounds } = w.view;
@@ -128,7 +128,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const lookY = npc.lookY;
         if (cap.bearing === null) return void Object.assign(cap, { bearing: lookY, x, z });
         const moved = Math.hypot(x - cap.x, z - cap.z) > lookCapMetres;
-        if (moved || Math.abs(deltaAngle(lookY, cap.bearing)) > lookCapRad) state.lookCap = null;
+        if (moved || Math.abs(deltaAngle(lookY, cap.bearing)) > lookCapRad) state.dropFrontierCap();
+      },
+      stopLooking() {
+        if (state.focus === true) state.toggleFocus();
+        state.dropFrontierCap();
+      },
+      dropFrontierCap() {
+        state.lookCap = null;
+        w.r3f?.invalidate(); // the frontier eases back out, and the bar's notice goes
       },
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -153,8 +161,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       setDoing(on) {
         state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
       },
-      isLookYielding() {
-        return w.gameTime.now() < state.lookYieldUntil;
+      isFocusYielding() {
+        return w.gameTime.now() < state.focusYieldUntil;
       },
       isDoubleTap(key, ms) {
         const double = ms - (state.tapMs[key] ?? -Infinity) < doubleTapMs;
@@ -216,8 +224,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return;
         }
         if (e.code === "KeyR") {
-          // held: see `aimAtPointer`. Twice quickly starts look mode, and once ends it
-          if (state.look === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleLook();
+          // held: see `aimAtPointer`. Twice quickly starts focus mode, and once ends it
+          if (state.focus === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleFocus();
           return void w.r3f?.invalidate();
         }
         if (e.code === "KeyQ") state.togglePsi();
@@ -380,11 +388,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
       },
-      toggleLook() {
-        state.look = !state.look;
+      toggleFocus() {
+        state.focus = !state.focus;
         w.hud?.update(); // on, the bar keeps a notice of it
         w.view.update(); // and the cursor is a crosshair
-        if (state.look === false) w.hud?.say("look off");
+        if (state.focus === false) w.hud?.say("focus off");
         w.r3f?.invalidate();
       },
       togglePsi() {
@@ -494,8 +502,8 @@ const fireTouchDelayMs = 300;
 const lookHoldMs = 1200;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
 const doingMaxSecs = 3;
-/** Game seconds look mode waits after they are done with what it yielded to */
-const lookYieldSecs = 0.8;
+/** Game seconds focus mode waits after they are done with what it yielded to */
+const focusYieldSecs = 0.8;
 /** Metres from them within which a tap gives no direction to look */
 const lookDeadMetres = 0.3;
 /** Metres off that a tap past the horizon is taken to be */
@@ -513,18 +521,18 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held, or `look` is on, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
+  /** Whilst `r` is held, or `focus` is on, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
-  /** Look mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
-  look: boolean;
-  /** Game time until which they are about to sit or lie: look mode yields to their fade onto it */
+  /** Focus mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
+  focus: boolean;
+  /** Game time until which they are about to sit or lie: focus mode yields to their fade onto it */
   doingUntil: number;
   /** From `npc-pre-do` until `npc-do`, or `doingMaxSecs` should that never come */
   setDoing(on: boolean): void;
-  /** Game time until which look mode yields to what they do themselves, e.g. putting a box down */
-  lookYieldUntil: number;
-  /** Look mode is yielding: see `lookYieldUntil` */
-  isLookYielding(): boolean;
+  /** Game time until which focus mode yields to what they do themselves, e.g. putting a box down */
+  focusYieldUntil: number;
+  /** Focus mode is yielding: see `focusYieldUntil` */
+  isFocusYielding(): boolean;
   /** Whilst on they keep their facing, so a move strafes, at a walk. A double tap of Shift toggles it */
   strafe: boolean;
   /** When each key last went down, for its double tap */
@@ -547,7 +555,7 @@ export type State = {
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
   syncRun(): void;
-  /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
+  /** The floor point a look (a right click or two-finger tap) is at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   /**
    * How far they last looked, which caps their frontier: from where, along which bearing.
@@ -558,11 +566,15 @@ export type State = {
   capFrontier(reach?: number, bearing?: number): void;
   /** Drops `lookCap` once they walk off or turn away. Each tick they are not looking */
   releaseLookCap(npc: JshCli.Npc): void;
+  /** Their full frontier again: the walk off, or the turn away */
+  dropFrontierCap(): void;
+  /** Focus mode off and the cap dropped: the "x" of the bar's look or focus notice */
+  stopLooking(): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
   /** Ends the look hold early, a game-time timer */
   cancelLook(): void;
-  /** A two-finger tap on the canvas has them look where it lands */
+  /** A two-finger tap on the canvas is a look where it lands */
   onTouch(e: TouchEvent): void;
   /** The player's npc, once they are spawned */
   get(): undefined | JshCli.Npc;
@@ -588,8 +600,8 @@ export type State = {
   cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Look mode on or off, saying so */
-  toggleLook(): void;
+  /** Focus mode on or off, saying so */
+  toggleFocus(): void;
   /** Run or walk — their `anim.hurry` — saying so */
   toggleRun(): void;
   /** Psi off, else on — on needs psi */

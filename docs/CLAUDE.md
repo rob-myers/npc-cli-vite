@@ -115,11 +115,11 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held charges it (the gun brightens and shakes), and let go fires, the beam fuller by the charge. `e` whilst charging cancels into a cooldown, the phaser left raised. On touch, raised, a finger held anywhere, then a second after `fireTouchDelayMs`, charges where they face, and letting it go fires (`onFireTouch`). Space with the phaser lowered raises it. See `docs/engagements.md`.
 - **Closing the page.** Ctrl or cmd with the w-key closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**
-  - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
+  - A **look**: on touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
   - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross, unless a finger drags it whilst following.
-  - On a desktop, a right click that picks something does the same (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
-  - A double tap of `r` starts look mode (`w.player.look`, `toggleLook`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "look" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
-    - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `lookYieldSecs` after. Its notice greys meanwhile.
+  - On a desktop, a look is a right click that picks something (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
+  - A double tap of `r` starts **focus mode** (`w.player.focus`, `toggleFocus`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "focus" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
+    - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `focusYieldSecs` after. Its notice greys meanwhile.
   - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
   - A look nearer than their frontier caps it there (`w.player.lookCap`), until they walk off or turn away. So does taking or leaving a doable. See Following the player in `docs/camera.md`.
 

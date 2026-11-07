@@ -97,8 +97,9 @@ The HUD:
 **Zoomed out, the view frames the player and their frontier.**
 - `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
-- A look nearer than it caps it (`w.player.lookCap`): a tap's, `r` held, or look mode's. The cap drops once they walk `lookCapMetres` or turn `lookCapRad` off its bearing.
+- A look nearer than it caps it (`w.player.lookCap`): a right click or two-finger tap, `r` held, or focus mode. The cap drops once they walk `lookCapMetres` or turn `lookCapRad` off its bearing.
 - Taking or leaving a doable caps it too, at `doCapMetres` along their facing (`rawSpawn`), which may be down a corridor. Its bearing and position are taken once the fade is done.
+- Whilst a cap holds, following embodied, the bar keeps a "look 2m" notice ("focus 2m" in focus mode). Its "x" drops it, and ends focus mode (`w.player.stopLooking`).
 - With the phaser raised it reaches at least as far as the red dot, where a shot at no one would land (`w.npcFocus.reachOf`). The inner stop may then go `frontierConfig.aimOuterScale` past the outer stop, to fit the dot in view.
 - `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
