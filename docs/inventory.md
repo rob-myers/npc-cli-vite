@@ -24,14 +24,14 @@ nor phasers are mirrored.
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
 | phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires, or raises it, see Targeting in `docs/engagements.md` |
-| keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
+| keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
 - **strafe** has no button: a double tap of Shift toggles it. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim", its "x" lowering the phaser, and "strafe" with no "x": a double tap of Shift does nothing then. "aim blocked", in grey, is whilst something in the way draws the phaser in.
 - **time**: whilst the time scale is not `1`, a notice "time 0.8" stays over the bar, its "x" setting it back to `1`. See `docs/time.md`.
-- **follow**: a press turns it on or off, as `v` does.
+- **follow**: a press turns it on or off, as `v` does. Whilst on, a notice "follow" stays over the bar, its "x" turning it off.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 - **options** (`PlayerMenu`, a menu icon), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
 

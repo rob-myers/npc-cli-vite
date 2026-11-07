@@ -657,11 +657,11 @@ export function WorldView(props: React.PropsWithChildren) {
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
         const compassPoint = Math.round(heading / halfPi) & 3;
         const wasdSnapped = Math.abs(deltaAngle(compassPoint * halfPi, heading)) < 1e-6;
-        // in coarse steps, so a turn redraws the bar a few times rather than every frame
+        // in coarse steps, so a turn redraws the compass a few times rather than every frame
         const wasdSkew = Math.round(deltaAngle(heading, spherical.theta) / compassSkewStep) * compassSkewStep;
         if (compassPoint !== state.compassPoint || wasdSnapped !== state.wasdSnapped || wasdSkew !== state.wasdSkew) {
           Object.assign(state, { compassPoint, wasdSnapped, wasdSkew });
-          w.hud?.update(); // its compass names the point, and marks where the w-key heads
+          w.hud?.syncCompass();
         }
 
         const { controls } = state;
