@@ -150,6 +150,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 ## Spawning, parking and padding
 
 - `state.placeNpcAt(npc, at, type)` places or teleports an npc. The `"navigable"` type throws if the position is off the navmesh. `"doable"` silently removes the agent instead.
+- A seat or bed point with `meta.front-only` (e.g. a sofa's) is taken and left only from in front (`w.e.frontOf`). From behind, they walk round to it, or step off forwards, rather than fade. One doable to another is free.
 - **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
   - `act park` records via `parked.mark`. A move, respawn or removal unparks.
 - `padded` beside it is the same for `act pad`: by npcKey, the room they were stood with to walk right round them (`by`, from walls and from others).
