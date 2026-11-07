@@ -280,6 +280,9 @@ export default function Phasers() {
         // it sputters as it drains
         return arm.cool.from * (1 - t) * (0.65 + 0.35 * Math.sin(t * phaserConfig.sputterHz * 2 * Math.PI));
       },
+      gunHeight(npcKey) {
+        return (w.n[npcKey]?.anim.headY ?? 0) - phaserConfig.gunBelowHead;
+      },
       freeEndOf(npc, arm, shot, out) {
         if (shot.at === null || shot.dist === null) return null;
         const aim = state.aimOf(npc.key);
@@ -1005,6 +1008,8 @@ export type State = PhaserResources & {
   ): void;
   /** The bearing that faces `npcKey` at `at`: armed, their muzzle's line through it. `null` without them */
   bearingFor(npcKey: string, at: Geom.VectJson): null | number;
+  /** How high their gun is held, as it is raised whilst stood or crouched */
+  gunHeight(npcKey: string): number;
   /** Ends their charge into a cooldown, the phaser left raised: `false` if not charging */
   cancelCharge(npcKey: string): boolean;
   /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling */

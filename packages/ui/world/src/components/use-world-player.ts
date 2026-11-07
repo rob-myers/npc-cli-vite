@@ -70,7 +70,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           const { width, height } = bounds;
           tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
           raycaster.setFromCamera(tmpNdc, w.r3f.camera);
-          if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
+          // armed, at the gun's height: on someone, the pointer then aims through them, not at the floor beyond
+          aimPlane.constant = w.phasers?.isArmed(state.key) === true ? -w.phasers.gunHeight(state.key) : 0;
+          if (raycaster.ray.intersectPlane(aimPlane, tmpHit) === null) return;
         }
         tmpLook.x = tmpHit.x;
         tmpLook.y = tmpHit.z;
@@ -485,7 +487,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl, state.setupDom]);
 }
 
-const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+/** Where the pointer is taken to point: the floor, or the gun's height whilst armed */
+const aimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
 /** Where they look on the floor, this tick */
