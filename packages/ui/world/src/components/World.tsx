@@ -520,7 +520,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   }, [state.mapKey, state.hash]); // sync drafts when relevant
 
   useBeforeUnloadOrVisibilityChange(() => {
-    state.menu?.persistY();
+    state.menu.persistY?.(); // `{}` until the menu mounts
     state.speech?.persistY();
     state.player?.persist();
     flushWorldStores(state.key, state.mapKey); // else a debounced write could be lost

@@ -145,19 +145,21 @@ export default function WorldHud() {
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
       watchAim(el) {
+        if (el === null || w.r3f == null) return;
         return w.e.addFrameCallback(() => {
-          el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
+          el.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
         });
       },
       watchLook(el) {
-        const wordEl = el?.querySelector("[data-look-word]");
-        const reachEl = el?.querySelector<HTMLElement>("[data-look-reach]");
+        if (el === null || w.r3f == null) return;
+        const wordEl = el.querySelector("[data-look-word]");
+        const reachEl = el.querySelector<HTMLElement>("[data-look-reach]");
         return w.e.addFrameCallback(() => {
           const { focus, lookCap } = w.player;
           const framed = w.view.follow === true && w.view.cameraMode === "embodied";
           const cap = framed ? lookCap : null;
-          el?.style.setProperty("display", focus || cap !== null ? "" : "none");
-          el?.classList.toggle("blocked", focus && w.player.isFocusYielding());
+          el.style.setProperty("display", focus || cap !== null ? "" : "none");
+          el.classList.toggle("blocked", focus && w.player.isFocusYielding());
           const word = focus ? "focus" : "look"; // focus mode, else a look's cap alone
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
           const reach = cap === null ? "" : `${Math.min(cap.reach, 99.9).toFixed(1)}m`;
@@ -277,7 +279,8 @@ export default function WorldHud() {
   const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
-  const kept = state.getKept();
+  /** None before the canvas: their refs watch it each frame */
+  const kept = w.threeReady === true ? state.getKept() : [];
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -1025,7 +1028,7 @@ export type State = {
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
   /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
-  watchAim(el: null | HTMLDivElement): () => void;
+  watchAim(el: null | HTMLDivElement): undefined | (() => void);
   /** The "focus" notice of focus mode, else "look" whilst a cap holds, with the cap's reach. Greyed whilst focus mode yields */
-  watchLook(el: null | HTMLDivElement): () => void;
+  watchLook(el: null | HTMLDivElement): undefined | (() => void);
 };
