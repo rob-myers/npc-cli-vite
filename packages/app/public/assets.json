@@ -1812,6 +1812,7 @@
           "meta": {
             "obstacle": true,
             "sink": true,
+            "surface": true,
             "h": 0.3,
             "symKey": "counter--006",
             "origObstacleId": 0
@@ -16662,6 +16663,7 @@
           "meta": {
             "obstacle": true,
             "sink": true,
+            "surface": true,
             "h": 0.3,
             "symKey": "counter--006",
             "origObstacleId": 0
@@ -35030,6 +35032,7 @@
           "meta": {
             "obstacle": true,
             "sink": true,
+            "surface": true,
             "h": 0.3,
             "symKey": "counter--006",
             "origObstacleId": 0,
@@ -68687,6 +68690,7 @@
             "meta": {
               "obstacle": true,
               "sink": true,
+              "surface": true,
               "h": 0.3,
               "symKey": "counter--006",
               "origObstacleId": 0
@@ -68697,6 +68701,7 @@
           "meta": {
             "obstacle": true,
             "sink": true,
+            "surface": true,
             "h": 0.3,
             "symKey": "counter--006",
             "origObstacleId": 0
@@ -95755,5 +95760,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": 947585451}
+  "hash": {"obstacles": 2045291346}
 }
