@@ -110,6 +110,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.events.next({ key: "set-player", playerKey: npcKey });
         if (changed === true && pan === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
       },
+      cancelCharge() {
+        return w.phasers?.cancelCharge(state.key) === true;
+      },
       capFrontier(reach = doCapMetres, bearing) {
         const npc = state.get();
         if (npc === undefined) return;
@@ -120,19 +123,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         cap.x = npc.position.x;
         cap.z = npc.position.z;
       },
-      releaseLookCap(npc) {
-        const cap = state.lookCap;
-        // a fade's cap waits until they are shown: till then their head and place are the old ones
-        if (cap === null || npc.isFading() || npc.anim.fadeState.target !== 1) return;
-        const { x, z } = npc.position;
-        const lookY = npc.lookY;
-        if (cap.bearing === null) return void Object.assign(cap, { bearing: lookY, x, z });
-        const moved = Math.hypot(x - cap.x, z - cap.z) > lookCapMetres;
-        if (moved || Math.abs(deltaAngle(lookY, cap.bearing)) > lookCapRad) state.dropFrontierCap();
-      },
-      stopLooking() {
-        if (state.focus === true) state.toggleFocus();
-        state.dropFrontierCap();
+      dragLookTowards(clientX, clientY) {
+        state.lookTowards(clientX, clientY);
+        state.lookMarked = false;
       },
       dropFrontierCap() {
         state.lookCap = null;
@@ -149,42 +142,22 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         return restored;
       },
-      get() {
-        return w.n?.[state.key];
-      },
       exists() {
         return w.n?.[state.key] !== undefined;
       },
+      get() {
+        return w.n?.[state.key];
+      },
       is(npcKey) {
         return npcKey === state.key;
-      },
-      setDoing(on) {
-        state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
-      },
-      isFocusYielding() {
-        return w.gameTime.now() < state.focusYieldUntil;
       },
       isDoubleTap(key, ms) {
         const double = ms - (state.tapMs[key] ?? -Infinity) < doubleTapMs;
         state.tapMs[key] = double ? -Infinity : ms; // a third is a fresh first
         return double;
       },
-      dragLookTowards(clientX, clientY) {
-        state.lookTowards(clientX, clientY);
-        state.lookMarked = false;
-      },
-      lookTowards(clientX, clientY) {
-        const npc = state.get();
-        // paused, the look would run out before they could turn
-        if (npc === undefined || w.client === true || w.disabled === true) return;
-        const rect = w.view.canvas.getBoundingClientRect();
-        tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
-        w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
-        const { origin, direction } = w.view.raycaster.ray;
-        // on the floor, not at their own height: sat or lain they are off it. Past the horizon there is none: far off the way the tap looks, then
-        const reach = direction.y < -1e-3 ? -origin.y / direction.y : lookFarMetres;
-        tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
-        state.lookAtPoint(tmpHit.x, tmpHit.z);
+      isFocusYielding() {
+        return w.gameTime.now() < state.focusYieldUntil;
       },
       lookAtPoint(x, z) {
         const npc = state.get();
@@ -199,6 +172,54 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.r3f?.invalidate();
         });
         w.r3f?.invalidate();
+      },
+      lookTowards(clientX, clientY) {
+        const npc = state.get();
+        // paused, the look would run out before they could turn
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        const rect = w.view.canvas.getBoundingClientRect();
+        tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
+        w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
+        const { origin, direction } = w.view.raycaster.ray;
+        // on the floor, not at their own height: sat or lain they are off it. Past the horizon there is none: far off the way the tap looks, then
+        const reach = direction.y < -1e-3 ? -origin.y / direction.y : lookFarMetres;
+        tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
+        state.lookAtPoint(tmpHit.x, tmpHit.z);
+      },
+      onFireTouch(e) {
+        const fire = state.fireTouch;
+        if (e.type === "touchstart" && e.touches.length === 1) {
+          const { identifier, target } = e.touches[0];
+          state.fireTouch =
+            target === w.view.canvas ? { anchorId: identifier, downMs: e.timeStamp, shotId: null } : null;
+          return false; // as yet a press like any other
+        }
+        if (fire === null) return false;
+        if (e.type === "touchstart") {
+          // a pinch, a third finger, or no phaser raised
+          if (
+            e.touches.length !== 2 ||
+            e.timeStamp - fire.downMs < fireTouchDelayMs ||
+            w.phasers?.isArmed(state.key) !== true
+          )
+            return false;
+          fire.shotId = e.changedTouches[0].identifier;
+          state.tap = null; // nor a look tap
+          w.view.controls.holdTouch = true;
+          state.startCharge(); // where they face
+          return true;
+        }
+        const ended = (id: null | number) =>
+          e.type === "touchcancel" || [...e.changedTouches].some((t) => t.identifier === id);
+        const charging = fire.shotId !== null;
+        // the second finger let go fires, even as the first does. The first alone cancels
+        if (charging && e.type === "touchend" && ended(fire.shotId)) state.releaseCharge();
+        else if (ended(fire.anchorId)) state.cancelCharge();
+        else return false;
+        fire.shotId = null;
+        w.view.controls.holdTouch = false;
+        if (ended(fire.anchorId)) state.fireTouch = null;
+        return charging;
       },
       onKeyDown(e) {
         if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
@@ -238,41 +259,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       onKeyUp(e) {
         if (e.code === "Space") state.releaseCharge();
       },
-      onFireTouch(e) {
-        const fire = state.fireTouch;
-        if (e.type === "touchstart" && e.touches.length === 1) {
-          const { identifier, target } = e.touches[0];
-          state.fireTouch =
-            target === w.view.canvas ? { anchorId: identifier, downMs: e.timeStamp, shotId: null } : null;
-          return false; // as yet a press like any other
-        }
-        if (fire === null) return false;
-        if (e.type === "touchstart") {
-          // a pinch, a third finger, or no phaser raised
-          if (
-            e.touches.length !== 2 ||
-            e.timeStamp - fire.downMs < fireTouchDelayMs ||
-            w.phasers?.isArmed(state.key) !== true
-          )
-            return false;
-          fire.shotId = e.changedTouches[0].identifier;
-          state.tap = null; // nor a look tap
-          w.view.controls.holdTouch = true;
-          state.startCharge(); // where they face
-          return true;
-        }
-        const ended = (id: null | number) =>
-          e.type === "touchcancel" || [...e.changedTouches].some((t) => t.identifier === id);
-        const charging = fire.shotId !== null;
-        // the second finger let go fires, even as the first does. The first alone cancels
-        if (charging && e.type === "touchend" && ended(fire.shotId)) state.releaseCharge();
-        else if (ended(fire.anchorId)) state.cancelCharge();
-        else return false;
-        fire.shotId = null;
-        w.view.controls.holdTouch = false;
-        if (ended(fire.anchorId)) state.fireTouch = null;
-        return charging;
-      },
       onTouch(e) {
         if (state.onFireTouch(e) === true) return; // the phaser's, not a look
         if (e.type === "touchstart") {
@@ -310,18 +296,28 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           track: () => state.get()?.point,
         });
       },
-      releaseCharge() {
-        if (w.phasers?.isCharging(state.key) !== true) return;
-        // paused, no shot leaves: it is called off instead
-        if (w.disabled === true) state.cancelCharge();
-        else w.npcFocus?.fire(state.key);
-      },
       persist() {
         w.e.persistNpcs();
         w.e.persistDecor();
       },
       psi(on) {
         w.e.setPsi(on, state.key);
+      },
+      releaseCharge() {
+        if (w.phasers?.isCharging(state.key) !== true) return;
+        // paused, no shot leaves: it is called off instead
+        if (w.disabled === true) state.cancelCharge();
+        else w.npcFocus?.fire(state.key);
+      },
+      releaseLookCap(npc) {
+        const cap = state.lookCap;
+        // a fade's cap waits until they are shown: till then their head and place are the old ones
+        if (cap === null || npc.isFading() || npc.anim.fadeState.target !== 1) return;
+        const { x, z } = npc.position;
+        const lookY = npc.lookY;
+        if (cap.bearing === null) return void Object.assign(cap, { bearing: lookY, x, z });
+        const moved = Math.hypot(x - cap.x, z - cap.z) > lookCapMetres;
+        if (moved || Math.abs(deltaAngle(lookY, cap.bearing)) > lookCapRad) state.dropFrontierCap();
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)
@@ -360,10 +356,20 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y }, angle });
         return true;
       },
-      startCharge() {
-        const raised = w.phasers?.isArmed(state.key) === true;
-        w.npcFocus?.target(state.key); // lowered, it is raised
-        if (raised === true) w.phasers.charge(state.key); // not whilst cooling
+      setDoing(on) {
+        state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
+      },
+      setKey(npcKey) {
+        if (npcKey === state.key || w.n[npcKey] === undefined) {
+          return;
+        }
+        w.e.setNpcLit(w.n[npcKey], false);
+        state.assign(npcKey);
+        state.update();
+        // retargets the dynamic light, snapping it so it shows whilst paused
+        state.persist();
+        // a follow has its own pan, begun by `assign`
+        if (w.view.getFollowedPlayer() === undefined) void state.panTo(); // as on load
       },
       setTapRun(on) {
         const npc = state.get();
@@ -373,12 +379,66 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         npc.anim.setHurry(on);
         w.hud?.update();
       },
+      setupDom() {
+        const el = w.rootEl;
+        const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
+        const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
+        // a key released after focus has gone elsewhere never reaches `onKeyUp`
+        const onBlur = () => state.cancelCharge();
+        const onTouch = (e: TouchEvent) => state.onTouch(e);
+        const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
+        el.addEventListener("keydown", onKeyDown);
+        el.addEventListener("keyup", onKeyUp);
+        el.addEventListener("focusout", onBlur);
+        window.addEventListener("blur", onBlur);
+        // passive: we only watch, so scrolling and the camera never wait on us
+        for (const type of touchTypes) el.addEventListener(type, onTouch, { passive: true });
+        return () => {
+          el.removeEventListener("keydown", onKeyDown);
+          el.removeEventListener("keyup", onKeyUp);
+          el.removeEventListener("focusout", onBlur);
+          window.removeEventListener("blur", onBlur);
+          for (const type of touchTypes) el.removeEventListener(type, onTouch);
+          state.cancelLook();
+        };
+      },
+      async spawnSomewhere() {
+        // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
+        const labelled = Object.values(w.decor.byKey).flatMap((decor) =>
+          w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta] : [],
+        );
+        // a map may label no room at all e.g. a bare playground hull — then any room will do
+        const rooms =
+          labelled.length > 0 ? labelled : w.gms.flatMap((gm, gmId) => gm.rooms.map((_, roomId) => ({ gmId, roomId })));
+        for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
+          const { gmId, roomId } = rooms[Math.floor(Math.random() * rooms.length)] ?? {};
+          const gm = w.gms[gmId as number];
+          const room = gm?.rooms[roomId as number];
+          if (room === undefined) {
+            break; // no such rooms
+          }
+
+          try {
+            await w.npc.spawn({ npcKey: state.key, at: gm.matrix.transformPoint({ ...room.center }) });
+            return true;
+          } catch (e) {
+            error(e); // e.g. "not placable": try another room
+          }
+        }
+        return false;
+      },
+      startCharge() {
+        const raised = w.phasers?.isArmed(state.key) === true;
+        w.npcFocus?.target(state.key); // lowered, it is raised
+        if (raised === true) w.phasers.charge(state.key); // not whilst cooling
+      },
+      stopLooking() {
+        if (state.focus === true) state.toggleFocus();
+        state.dropFrontierCap();
+      },
       syncRun() {
         // none held, or opposites: either way they are no longer going anywhere
         if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
-      },
-      cancelCharge() {
-        return w.phasers?.cancelCharge(state.key) === true;
       },
       toggleArm() {
         if (state.exists() === false || w.phasers === null) return;
@@ -415,66 +475,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.hud?.update(); // its gait button shows it
         if (state.strafe === false) w.hud?.say("strafe off"); // on, the bar keeps a notice of it
         w.r3f?.invalidate();
-      },
-      setupDom() {
-        const el = w.rootEl;
-        const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
-        const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
-        // a key released after focus has gone elsewhere never reaches `onKeyUp`
-        const onBlur = () => state.cancelCharge();
-        const onTouch = (e: TouchEvent) => state.onTouch(e);
-        const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
-        el.addEventListener("keydown", onKeyDown);
-        el.addEventListener("keyup", onKeyUp);
-        el.addEventListener("focusout", onBlur);
-        window.addEventListener("blur", onBlur);
-        // passive: we only watch, so scrolling and the camera never wait on us
-        for (const type of touchTypes) el.addEventListener(type, onTouch, { passive: true });
-        return () => {
-          el.removeEventListener("keydown", onKeyDown);
-          el.removeEventListener("keyup", onKeyUp);
-          el.removeEventListener("focusout", onBlur);
-          window.removeEventListener("blur", onBlur);
-          for (const type of touchTypes) el.removeEventListener(type, onTouch);
-          state.cancelLook();
-        };
-      },
-      setKey(npcKey) {
-        if (npcKey === state.key || w.n[npcKey] === undefined) {
-          return;
-        }
-        w.e.setNpcLit(w.n[npcKey], false);
-        state.assign(npcKey);
-        state.update();
-        // retargets the dynamic light, snapping it so it shows whilst paused
-        state.persist();
-        // a follow has its own pan, begun by `assign`
-        if (w.view.getFollowedPlayer() === undefined) void state.panTo(); // as on load
-      },
-      async spawnSomewhere() {
-        // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
-        const labelled = Object.values(w.decor.byKey).flatMap((decor) =>
-          w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta] : [],
-        );
-        // a map may label no room at all e.g. a bare playground hull — then any room will do
-        const rooms =
-          labelled.length > 0 ? labelled : w.gms.flatMap((gm, gmId) => gm.rooms.map((_, roomId) => ({ gmId, roomId })));
-        for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
-          const { gmId, roomId } = rooms[Math.floor(Math.random() * rooms.length)] ?? {};
-          const gm = w.gms[gmId as number];
-          const room = gm?.rooms[roomId as number];
-          if (room === undefined) {
-            break; // no such rooms
-          }
-
-          try {
-            await w.npc.spawn({ npcKey: state.key, at: gm.matrix.transformPoint({ ...room.center }) });
-            return true;
-          } catch (e) {
-            error(e); // e.g. "not placable": try another room
-          }
-        }
-        return false;
       },
     }),
   );
