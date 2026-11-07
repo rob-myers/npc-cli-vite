@@ -156,7 +156,7 @@ server.registerTool(
       );
       const lines = entries.map((x) => `[${x.seq} ${x.level}] ${x.text}`);
       if (overlay !== null) lines.push(`[vite-error-overlay] ${overlay}`);
-      return `${lines.join("\n")}\n---\n${JSON.stringify({ since: last })}`;
+      return `${lines.join("\n")}\n\n---\n${JSON.stringify({ since: last })}`;
     }),
 );
 
@@ -185,7 +185,7 @@ function formatRead({ entries, done, exitCode, last }: DevMcpRead) {
   );
   let text = lines.join("\n");
   if (text.length > maxChars) text = `…(truncated)\n${text.slice(-maxChars)}`;
-  return `\n\n${text}\n---\n${JSON.stringify({ running: !done, exitCode, since: last })}`;
+  return `\n\n${text}\n\n---\n${JSON.stringify({ running: !done, exitCode, since: last })}`;
 }
 
 async function tryText(run: () => Promise<string>) {
