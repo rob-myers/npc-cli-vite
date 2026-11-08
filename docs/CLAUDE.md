@@ -108,7 +108,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Gait.** `x` held runs, once the key repeats, and a tap ends the run (`w.player.setGait`, `getGait`). A brief hud-toast names each.
-- **Strafing.** A double tap of Shift toggles it (`toggleStrafe`), whatever else is held, but not whilst aiming. Whilst on they keep their facing, so WASD strafes (`w.player.strafe`, `keepAim` in `aimAtPointer`). Standing only, never over another's aim. A raised phaser strafes them whatever is held. See `docs/npc-strafe.md`.
+- **Strafing.** A double tap of Shift toggles it (`toggleStrafe`), whatever else is held, but not whilst aiming. Whilst on they keep their facing, so WASD strafes (`w.player.strafe`, `keepAim` in `aimAtPointer`). Standing only, never over another's aim. A raised phaser strafes them whatever is held. A strafe that ends mid-move (Shift twice, the phaser lowered) goes on until the move keys change, or until they stop once all are let go (`strafeLatch`), rather than turning them to walk off. See `docs/npc-strafe.md`.
 - **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - A double tap of the w, a, s or d key runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).

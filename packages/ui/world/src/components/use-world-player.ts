@@ -24,6 +24,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       snapFlip: false,
+      strafeLatch: null,
       look: { base: null, steer: null, far: null },
       lookMarked: true,
       cancelLook: () => {},
@@ -58,8 +59,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const held = lookAt !== null || (looking && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
+        // a strafe that ends mid-move goes on until the move keys change, else they turn and walk off
+        const keys = [..."wasd"].filter((key) => w.view.keysDown.has(key)).join("");
+        if (w.phasers?.isArmed(state.key) === true || (state.strafe && free && posture === "stand"))
+          state.strafeLatch = keys || null;
+        // let go, it holds only whilst they come to a stop (`""`): any press then ends it, the same key too
+        else if (keys === "" && state.strafeLatch !== null) state.strafeLatch = npc.isMoving() ? "" : null;
+        else if (state.strafeLatch !== keys) state.strafeLatch = null;
         /** Strafing, they keep their facing. Never over another's aim e.g. the phaser's */
-        const keep = held === false && free && posture === "stand" && state.strafe;
+        const keep = held === false && free && posture === "stand" && (state.strafe || state.strafeLatch !== null);
         if (keep === false && face.aim === state.keepAim) face.aim = null;
         else if (keep === true && face.aim === null) face.aim = state.keepAim;
         if (held === false) {
@@ -616,6 +624,11 @@ export type State = {
   isScanning(): boolean;
   /** Whilst on they keep their facing, so a move strafes, at a walk. A double tap of Shift toggles it */
   strafe: boolean;
+  /**
+   * The move keys held whilst strafing, by `strafe` or the phaser. Once it ends they strafe on until those change.
+   * `""` once let go, until they stop
+   */
+  strafeLatch: null | string;
   /** When each key last went down, for its double tap */
   tapMs: Record<string, number>;
   /** When `r` last went down: held a while, its look caps their frontier */

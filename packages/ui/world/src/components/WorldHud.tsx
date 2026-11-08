@@ -75,10 +75,11 @@ export default function WorldHud() {
         if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
         else if (w.player.recon || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
-        // aiming strafes them anyway: shown only if on before, its "x" greyed
+        // aiming strafes them anyway: shown only if on before, its "x" greyed. Off, shown whilst latched: see `watchStrafe`
         if (armed && w.player.strafe && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
         else if (!armed && w.player.strafe && stood)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
+        else if (!armed && stood) kept.push({ label: "strafe", title: "strafing on until the move keys change" });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
         if (w.gameTime.scale !== 1)
@@ -180,6 +181,15 @@ export default function WorldHud() {
           /** Not the tap's distance but a passing one: steered by `r` or recon mode, or a max look */
           const steered = framed && !armed && (far !== null || w.player.look.steer !== null);
           reachEl?.classList.toggle("steer", steered && !out);
+        });
+      },
+      watchStrafe(el) {
+        if (el === null || w.r3f == null) return;
+        return w.e.addFrameCallback(() => {
+          const { strafe, strafeLatch } = w.player;
+          const latched = strafe === false && w.phasers?.isArmed(w.player.key) !== true && !!strafeLatch;
+          el.style.setProperty("display", strafe || latched ? "" : "none");
+          el.classList.toggle("latched", latched);
         });
       },
     }),
@@ -381,9 +391,9 @@ export default function WorldHud() {
           {kept.map(({ label, title, end }) => (
             <div
               key={label}
-              ref={label === "look" ? state.watchLook : undefined}
+              ref={label === "look" ? state.watchLook : label === "strafe" ? state.watchStrafe : undefined}
               title={end === undefined ? title : undefined}
-              className="group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 [&.blocked]:text-neutral-400"
+              className="group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 [&.blocked]:text-neutral-400 [&.latched]:opacity-50"
             >
               {label === "look" ? (
                 <>
@@ -1061,4 +1071,6 @@ export type State = {
   press(index: number): void;
   /** The one hud-toast of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
+  /** The strafe hud-toast: half transparent whilst off but latched, a move key still held, else hidden whilst off */
+  watchStrafe(el: null | HTMLDivElement): undefined | (() => void);
 };
