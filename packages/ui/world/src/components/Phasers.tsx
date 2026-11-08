@@ -740,9 +740,12 @@ export default function Phasers() {
         const waiting = armed === true && goal === phaserConfig.pose && shown === null && arm.casting === true;
         const pose = waiting ? null : via ? byAvoid(goal, shown, settled) : goal;
         if (pose === null) {
-          // raised still, lain, it is stowed: slowly, as from a wall
-          if (isPhaserPose(shown))
-            anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined, byWall: arm.armHit });
+          // raised still, lain, it is stowed slowly. Lowered, always by `sitArmVia`, its arc kept in. Not an arm `setNearWall` drew in
+          if (isPhaserPose(shown) && shown !== anim.armIn)
+            anim.setUpper(null, {
+              fadeSecs: armed ? phaserConfig.stowSecs : undefined,
+              byWall: armed === false || arm.armHit,
+            });
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs =

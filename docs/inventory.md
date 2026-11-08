@@ -221,7 +221,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - Both rays end `leadSecs` of their velocity on, so the arm is in before a strafe takes the gun into a wall.
 - Their left arm is drawn in too, hanging as in `phaser_aim_avoid`, else a run's guard puts that fist into the wall. Not
   whilst it has psi or a reach, nor whilst tucked.
-- Raised or lowered by a wall (`armHit`), the arm goes by way of `sitArmVia`, as sat at a table (`byWall` in
+- Raised by a wall (`armHit`), or lowered at all, the arm goes by way of `sitArmVia`, as sat at a table (`byWall` in
   `setUpper`). Their stance waits until the arm is up. Else either swings the hand out through the wall.
 - Stood or crouched, an obstacle blocks too if the gun is within its span, with `gunClear` to spare. Its top is
   tested against the gun's underside, `gunDrop` below the gun's line, as the hand and the gun's body hang below it.

@@ -49,7 +49,7 @@ Pnpm monorepo. Key packages:
   - What the World builds around an npc, `npcDims`, is in `const.env`.
 - **An npc's body never shows through a wall.** Keep to this when adding a pose or gait.
   - The navmesh stops `wallOutset` (0.25m) short of walls, room enough for an upright body.
-  - What reaches further gives way instead. A strafing run with a wall ahead walks (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
+  - What reaches further gives way instead. A run at a wall square on walks, and any move near one draws the right arm in (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
 
 **Decor**
 - Never scale a decor quad non-uniformly. To reshape one, e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`.
@@ -190,6 +190,8 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - Examples: `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
 **An error ends its process**, as bash's `set -e`, so the statements after it never run. `set +e` lets it run on, `$?` holding the code. Subprocesses inherit it (`process.errexit`).
+
+**`wasd_delta` stays pure.** It only turns held keys into points, with meta, for `move` to act on. Anything done to the npc, e.g. heeding walls, goes in `move`, as functions it calls (`heedWalls` in `core.ts`).
 
 **Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep.ts`.
 

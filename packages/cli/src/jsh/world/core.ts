@@ -791,7 +791,7 @@ async function move_next(
     force?: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { api } = ct;
+  const { api, w } = ct;
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
@@ -804,6 +804,7 @@ async function move_next(
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
+      heedWalls(w, npc, next);
       const movePromise =
         next.meta?.look === true && npc.isStrafing() === false
           ? npc.look({ at: next }).catch(() => {}) // wasd_delta --nav blocked: turn that way instead
@@ -821,6 +822,27 @@ async function move_next(
   } finally {
     processHandled.dispose();
   }
+}
+
+/**
+ * On a held step of `wasd_delta --nav`, `npc` heeds a wall near the way they go, by one ray: strafing, along their facing leant
+ * the way they go, else along the way they go leant right. Else none: at rest, `startIdle` clears it. See `docs/npc-strafe.md`
+ */
+function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli.PointAnyFormat>) {
+  // not in a doorway, whose sides would read as a wall
+  if (next.meta?.preventArrive !== true || npc.nodeRef === null || (w.e.npcToDoors[npc.key]?.inside ?? null) !== null)
+    return npc.anim.setNearWall(false);
+  const { armInNear, armInLean, walkSquare } = npcConfig.dist;
+  const near = armInNear[npc.anim.hurry === true ? "run" : "walk"];
+  const to = w.helper.parseGroundPoint(next);
+  const go = { x: to.x - npc.position.x, y: to.y - npc.position.z };
+  const ry = npc.rotation.y;
+  const [along, heading] =
+    npc.isStrafing() === true
+      ? [{ x: -Math.sin(ry), y: -Math.cos(ry) }, go]
+      : [go, { x: go.x - armInLean * go.y, y: go.y + armInLean * go.x }];
+  const { room, square } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
+  npc.anim.setNearWall(room >= near ? false : square >= walkSquare ? "ahead" : "beside");
 }
 
 /**
@@ -1784,14 +1806,6 @@ export async function* wasd_delta(
     const length = agentConfig.maxSpeed[npc.anim.hurry === true ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
-      /** Their poly whilst strafing on the move. Not in a doorway, whose sides would read as a wall ahead */
-      const strafeRef =
-        npc.isStrafing() === true && direction.length > 0 && (w.e.npcToDoors[npc.key]?.inside ?? null) === null
-          ? npc.nodeRef
-          : null;
-      // strafing near a wall they face, they walk
-      const near = npcConfig.dist.strafeWalkNear;
-      npc.anim.nearWall = strafeRef !== null && npc.roomAhead(npc.point, strafeRef, near, direction) < near;
       // none held, or opposites, or the mesh's edge
       const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
       if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {
