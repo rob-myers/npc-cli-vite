@@ -75,7 +75,8 @@ export default function WorldHud() {
         if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
         else if (w.player.recon || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
-        if (armed && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
+        // aiming strafes them anyway: shown only if on before, its "x" greyed
+        if (armed && w.player.strafe && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
         else if (!armed && w.player.strafe && stood)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
         if (w.view?.follow === true)
@@ -163,9 +164,7 @@ export default function WorldHud() {
           el.style.setProperty("display", armed || recon || reach !== null ? "" : "none");
           el.classList.toggle("blocked", blocked);
           // raised, the red dot's: else recon mode, or a look alone
-          const word = armed
-            ? `aim${blocked ? " blocked" : ""}`
-            : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
+          const word = armed ? "aim" : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
           /** Out through a hull window: no range to read, so the last stays, greyed */
           const out = armed ? w.npcFocus?.endsInNothing(key) === true : far?.out === true;
@@ -377,17 +376,14 @@ export default function WorldHud() {
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
       <div className={noticesClass}>
-        {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending one that may be ended. Then sound, muted or not */}
+        {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
         <div className="flex items-center gap-1">
           {kept.map(({ label, title, end }) => (
             <div
               key={label}
               ref={label === "look" ? state.watchLook : undefined}
               title={end === undefined ? title : undefined}
-              className={cn(
-                "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
-                end === undefined ? "px-2" : "pr-0.5 pl-2",
-              )}
+              className="group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 [&.blocked]:text-neutral-400"
             >
               {label === "look" ? (
                 <>
@@ -397,19 +393,18 @@ export default function WorldHud() {
               ) : (
                 <span>{label}</span>
               )}
-              {end !== undefined && (
-                <button
-                  type="button"
-                  title={title}
-                  className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
-                  onClick={() => {
-                    end();
-                    w.view.focus();
-                  }}
-                >
-                  <XIcon className="size-3" weight="bold" />
-                </button>
-              )}
+              <button
+                type="button"
+                title={end === undefined ? undefined : title}
+                disabled={end === undefined}
+                className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
+                onClick={() => {
+                  end?.();
+                  w.view.focus();
+                }}
+              >
+                <XIcon className="size-3" weight="bold" />
+              </button>
             </div>
           ))}
           <button
@@ -999,7 +994,7 @@ const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
 
-/** A hud-toast kept over the bar, its `end` the "x" */
+/** A hud-toast kept over the bar, its `end` the "x", greyed without one */
 type Kept = { label: string; title: string; end?: () => void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
