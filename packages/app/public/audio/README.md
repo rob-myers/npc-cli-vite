@@ -48,7 +48,7 @@ each pass crossfaded into the next, so their ends need not meet.
 - `psi-2`: "Atlante 4" by Kronek9, https://freesound.org/s/702653/, from 14 s.
 - `psi-3`: "Short eerie chorus" by ThomEvans, https://freesound.org/s/437475/, from 12 s.
 
-Electricity, from Freesound (CC0), from each onset: zaps 1.2 s, shocks and static 0.8 s, sparks 0.35 s, the last
+Electricity, from Freesound (CC0), from each onset: zaps 1.2 s, shocks and static 0.8 s, the last
 third faded.
 
 - `zap-0`: "Electric" by D4XX, https://freesound.org/s/567269/.
@@ -57,9 +57,5 @@ third faded.
 - `zap-3`: "highvoltagearc.wav" by Sclolex, https://freesound.org/s/210878/.
 - `zap-4`: "Zap.ogg" by egomassive, https://freesound.org/s/536741/.
 - `zap-5`: "Synthesised Electricity" by RICHERlandTV, https://freesound.org/s/661677/.
-- `shock-0`: "Shock_One.wav" by Nodgez, https://freesound.org/s/488665/.
-- `shock-1`: "Welding_Electric Sparks.wav" by weaveofkev, https://freesound.org/s/396240/.
-- `shock-2`: "welder 4.wav" by SpeedY, https://freesound.org/s/62925/.
+- `shock-0`: "welder 4.wav" by SpeedY, https://freesound.org/s/62925/.
 - `static-0`: "Electro_Static.mp3" by FireSail_Labs, https://freesound.org/s/108859/.
-- `spark-0`: "Spark.wav" by BMacZero, https://freesound.org/s/94132/.
-- `spark-1`: "Oven Spark" by DaniloSFX, https://freesound.org/s/672753/.

@@ -9,7 +9,7 @@ import { sfxLevel } from "./synth";
 
 /** The sound effects, synthesised over a few recorded layers — see `docs/audio.md` */
 export const sfxKeys = [
-  ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost", "wall"] as const),
+  ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost"] as const),
   ...(["opened", "closed", "lock", "unlock", "hold", "unhold", "denied"] as const),
   ...(["sit", "lie", "stand", "put", "take"] as const),
 ];

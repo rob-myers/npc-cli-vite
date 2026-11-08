@@ -99,10 +99,9 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | `charged` | the charge reaching full | a snap of current |
 | `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`) |
 | `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
-| `hit` | `npc-shot` hit | a recorded electric shock (`shock`, three) |
+| `hit` | `npc-shot` hit, and `phaser-struck` | a recorded electric hum (`shock`, one): a shot striking anyone, or a wall |
 | `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
-| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then `wall` as it strikes beyond |
-| `wall` | `phaser-struck` | a recorded spark (`spark`, two) |
+| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then `hit` as it strikes beyond |
 
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
@@ -220,8 +219,8 @@ doorvoice off            # each door its own again
 - **What `sounds` does.** Each tick it reads the feet and the charge of those `heard`: the player, and the npcs near
   them as above. It plays a step per footfall, and holds a charge whilst they charge (`syncCharge`).
   - It listens too: `phasers` plays `raise` or `lower`, `phaser-fired` plays `fire` by its charge at whoever fired,
-    and `npc-shot` its outcome (`hit`, `ghost`, `armour`) at whoever was shot. `phaser-struck` plays `wall` where a
-    shot at no one struck.
+    and `npc-shot` its outcome (`hit`, `ghost`, `armour`) at whoever was shot. `phaser-struck` plays `hit` where a
+    shot at no one struck, as it would striking anyone.
   - It listens to the doors too: see Door sounds.
   - **Who is heard.** A one-shot plays only if one of its npcs is in reach: the player, and npcs in reach of them
     through open doors within `reachMetres` (20 m). A door is heard if it is a door of the player's room, of a room
