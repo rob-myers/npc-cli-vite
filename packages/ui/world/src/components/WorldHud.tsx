@@ -156,7 +156,7 @@ export default function WorldHud() {
           const reach = framed ? w.player.lookReach() : null;
           const far = framed ? w.player.look.far : null;
           const blocked = armed ? w.phasers.isDrawnIn(key) === true : recon && w.player.isReconYielding();
-          el.style.setProperty("display", armed || recon || reach !== null ? "" : "none");
+          el.classList.toggle("gone", !(armed || recon || reach !== null));
           el.classList.toggle("blocked", blocked);
           // raised, the red dot's: else recon mode, or a look alone
           const word = armed ? "aim" : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
@@ -179,11 +179,14 @@ export default function WorldHud() {
       },
       watchStrafe(el) {
         if (el === null || w.r3f == null) return;
+        /** A latch keeps it up once strafe mode is off, never brings it up: lowering the phaser latches too */
+        let shown = false;
         return w.e.addFrameCallback(() => {
           const { strafe, strafeLatch } = w.player;
           const latched = strafe === false && w.phasers?.isArmed(w.player.key) !== true && !!strafeLatch;
-          el.style.setProperty("display", strafe || latched ? "" : "none");
-          el.classList.toggle("latched", latched);
+          shown = strafe || (latched && shown);
+          el.classList.toggle("gone", !shown);
+          el.classList.toggle("latched", latched && shown);
         });
       },
     }),
@@ -382,36 +385,43 @@ export default function WorldHud() {
       <div className={noticesClass}>
         {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
         <div className="flex items-center gap-1">
-          {kept.map(({ label, title, end }) => (
-            <div
-              key={label}
-              ref={label === "look" ? state.watchLook : label === "strafe" ? state.watchStrafe : undefined}
-              title={end === undefined ? title : undefined}
-              className="group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 [&.blocked]:text-neutral-400 [&.latched]:opacity-50"
-            >
-              {label === "look" ? (
-                <>
-                  <span data-look-word />
-                  <span data-look-reach className={readoutClass} />
-                </>
-              ) : (
-                <span>{label}</span>
-              )}
-              <button
-                type="button"
-                title={end === undefined ? undefined : title}
-                disabled={end === undefined}
-                className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
-                onClick={() => {
-                  end?.();
-                  w.view.focus();
-                }}
-              >
-                <XIcon className="size-3" weight="bold" />
-              </button>
-            </div>
-          ))}
-          <button
+          <AnimatePresence initial={false}>
+            {kept.map(({ label, title, end }) => (
+              <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
+                <div
+                  ref={label === "look" ? state.watchLook : label === "strafe" ? state.watchStrafe : undefined}
+                  title={end === undefined ? title : undefined}
+                  // shown by a frame callback, so from `gone` until its first frame says otherwise
+                  className={cn(keptClass, (label === "look" || label === "strafe") && "gone")}
+                >
+                  <div className={keptInnerClass}>
+                    {label === "look" ? (
+                      <>
+                        <span data-look-word />
+                        <span data-look-reach className={`${readoutClass} gone`} />
+                      </>
+                    ) : (
+                      <span>{label}</span>
+                    )}
+                    <button
+                      type="button"
+                      title={end === undefined ? undefined : title}
+                      disabled={end === undefined}
+                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
+                      onClick={() => {
+                        end?.();
+                        w.view.focus();
+                      }}
+                    >
+                      <XIcon className="size-3" weight="bold" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <motion.button
+            layout
             type="button"
             title={muted ? "unmute sound" : "mute sound"}
             className={cn(
@@ -426,9 +436,15 @@ export default function WorldHud() {
           >
             {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
             <span>{muted ? "muted" : "unmuted"}</span>
-          </button>
+          </motion.button>
         </div>
-        {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
+        <AnimatePresence>
+          {state.notice !== null && (
+            <motion.div key="notice" {...toastMotion} className="rounded bg-neutral-900/90 px-2 py-0.5">
+              {state.notice}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       <div ref={(el) => void (state.barEl = el)} className={outerClass}>
         <motion.div className={column ? columnClass : rowClass} {...dragProps}>
@@ -729,19 +745,38 @@ const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-a
 /** The hud-toasts: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
+/**
+ * A kept hud-toast. `gone`, from a frame callback, fades and shrinks its contents and collapses its width, so the others
+ * slide along. Inside motion's wrapper, which owns its own opacity and scale, and would take the frame callback's ref
+ */
+const keptClass =
+  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-1 [&.gone]:grid-cols-[0fr] [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50";
+const keptInnerClass =
+  "group pointer-events-auto flex min-w-0 items-center gap-1 overflow-hidden rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 transition-[opacity,scale] duration-300";
+/** A hud-toast fades and scales in and out, the others sliding along: no sudden jumps */
+const toastMotion = {
+  layout: true,
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.8 },
+  transition: { duration: 0.3 },
+} as const;
+/** The look's goes slower than it comes, as do its `gone` and its readout's: a quick drop reads as a jump */
+const slowExit = { ...toastMotion.exit, transition: { duration: 0.6 } };
 /** A distance as a device reads it out: a fixed width, so the hud-toast never changes length */
 const readoutClass =
-  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
+  "box-content w-[5ch] overflow-hidden rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 transition-[width,padding,margin,opacity,scale,color,box-shadow] duration-300 [&.gone]:-ml-1 [&.gone]:w-0 [&.gone]:duration-600 [&.gone]:scale-75 [&.gone]:px-0 [&.gone]:opacity-0 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
 
 /** How fast a readout's number eases to the one it reads, per second */
 const readoutRate = 6;
 
 /** Writes `metres` into a readout, hidden without one. Only on a change: it runs each frame */
 function setReadout(el: null | HTMLElement, metres: null | number) {
-  const text = metres === null ? "" : `${Math.min(metres, 99.9).toFixed(1)}m`;
-  if (el === null || el.textContent === text) return;
-  el.textContent = text;
-  el.style.display = text === "" ? "none" : "";
+  if (el === null) return;
+  el.classList.toggle("gone", metres === null);
+  if (metres === null) return; // its last number kept, as it fades and narrows
+  const text = `${Math.min(metres, 99.9).toFixed(1)}m`;
+  if (el.textContent !== text) el.textContent = text;
 }
 
 /** Each icon's size, as a fraction of its slot's height (else `--hud-icon-base`): alike, bar art that fills its square */
@@ -1065,6 +1100,6 @@ export type State = {
   press(index: number): void;
   /** The one hud-toast of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
-  /** The strafe hud-toast: half transparent whilst off but latched, a move key still held, else hidden whilst off */
+  /** The strafe hud-toast: half transparent whilst strafe mode is off but latched, a move key still held, else hidden whilst off */
   watchStrafe(el: null | HTMLDivElement): undefined | (() => void);
 };
