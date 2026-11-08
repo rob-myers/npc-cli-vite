@@ -1857,8 +1857,7 @@ export function WorldView(props: React.PropsWithChildren) {
           <motion.div
             className={cn(
               indicatorClassName,
-              "pointer-events-none top-6 z-70 whitespace-nowrap",
-              import.meta.env.DEV && "left-3 translate-x-0", // clear of npc focus's note at top centre
+              "pointer-events-none top-20 z-70 whitespace-nowrap border border-yellow-200/30 bg-black/60", // below the hud-toasts (`noticesHeight`), dark to stand out
             )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -2261,7 +2260,6 @@ const followTakeoverMs = 1500;
 const softLandingWarp = 0.7;
 /** How long the veil over the canvas takes to fade, either way */
 const veilMs = 250;
-/** How long the offer to centre on the player is up for, fade and all, and how small it starts */
 /** Shared by the paused and busy indicators, which only differ in where they sit */
 const indicatorClassName = cn(
   "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
