@@ -69,15 +69,14 @@ export default function WorldHud() {
         const stood = w.player.get()?.posture === "stand";
         const kept: Kept[] = [];
         const armed = w.phasers?.isArmed(key) === true;
-        if (armed) {
-          kept.push({ label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
-          if (stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
-        } else if (w.player.strafe && stood)
-          kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
-        // recon mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`.
-        // Raised, the red dot is the look instead: see `watchAim`
-        if (!armed && (w.player.recon || (w.view?.follow === true && w.view.cameraMode === "embodied")))
+        const framed = w.view?.follow === true && w.view.cameraMode === "embodied";
+        // one notice for the look and the raised phaser's aim, so its number eases from one to the other: see `watchLook`
+        if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
+        else if (w.player.recon || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
+        if (armed && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
+        else if (!armed && w.player.strafe && stood)
+          kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
         if (w.gameTime.scale !== 1)
@@ -146,27 +145,36 @@ export default function WorldHud() {
         el.querySelector("text")?.replaceChildren(letter);
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
-      watchAim(el) {
-        if (el === null || w.r3f == null) return;
-        const reachEl = el.querySelector<HTMLElement>("[data-aim-reach]");
-        return w.e.addFrameCallback(() => {
-          el.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
-          setReadout(reachEl, w.npcFocus?.reachOf(w.player.key) ?? null); // the red dot's range
-        });
-      },
       watchLook(el) {
         if (el === null || w.r3f == null) return;
         const wordEl = el.querySelector("[data-look-word]");
         const reachEl = el.querySelector<HTMLElement>("[data-look-reach]");
+        /** The number as shown, eased towards the one it reads */
+        let shown: null | number = null;
+        let lastMs = performance.now();
         return w.e.addFrameCallback(() => {
-          const { recon, lookCap } = w.player;
-          const framed = w.view.follow === true && w.view.cameraMode === "embodied";
-          const cap = framed ? lookCap : null;
-          el.style.setProperty("display", recon || cap !== null ? "" : "none");
-          el.classList.toggle("blocked", recon && w.player.isReconYielding());
-          const word = `${recon ? "recon" : "look"}${cap?.far === true ? " max" : ""}`; // recon mode, else a look's cap alone
+          const { key, recon, lookCap } = w.player;
+          const armed = w.phasers?.isArmed(key) === true;
+          const cap = w.view.follow === true && w.view.cameraMode === "embodied" ? lookCap : null;
+          const blocked = armed ? w.phasers.isDrawnIn(key) === true : recon && w.player.isReconYielding();
+          el.style.setProperty("display", armed || recon || cap !== null ? "" : "none");
+          el.classList.toggle("blocked", blocked);
+          // raised, the red dot's: else recon mode, or a look's cap alone
+          const word = armed
+            ? `aim${blocked ? " blocked" : ""}`
+            : `${recon ? "recon" : "look"}${cap?.far ? " max" : ""}`;
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
-          setReadout(reachEl, cap?.reach ?? null);
+          /** Out through a hull window: no range to read, so the last stays, greyed */
+          const out = armed ? w.npcFocus?.endsInNothing(key) === true : cap?.far === true && cap.out;
+          const target = out ? null : armed ? (w.npcFocus?.reachOf(key) ?? null) : (cap?.reach ?? null);
+          const now = performance.now();
+          const alpha = 1 - Math.exp((-readoutRate * (now - lastMs)) / 1000);
+          if (target !== null) shown = shown === null ? target : shown + (target - shown) * alpha;
+          // raised, the dot comes a moment after: until then the look's number stays, to ease from
+          else if (armed === false && out === false) shown = null;
+          lastMs = now;
+          setReadout(reachEl, shown);
+          reachEl?.classList.toggle("out", out);
         });
       },
     }),
@@ -369,7 +377,7 @@ export default function WorldHud() {
               {kept.map(({ label, title, end }) => (
                 <div
                   key={label}
-                  ref={label === "aim" ? state.watchAim : label === "look" ? state.watchLook : undefined}
+                  ref={label === "look" ? state.watchLook : undefined}
                   title={end === undefined ? title : undefined}
                   className={cn(
                     "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
@@ -382,10 +390,8 @@ export default function WorldHud() {
                       <span data-look-reach className={readoutClass} />
                     </>
                   ) : (
-                    <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
+                    <span>{label}</span>
                   )}
-                  {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
-                  {label === "aim" && <span data-aim-reach className={readoutClass} />}
                   {end !== undefined && (
                     <button
                       type="button"
@@ -707,7 +713,10 @@ const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
 /** A distance as a device reads it out: a fixed width, so the notice never changes length */
 const readoutClass =
-  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70";
+  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 [&.out]:text-neutral-500 [&.out]:ring-neutral-700";
+
+/** How fast a readout's number eases to the one it reads, per second */
+const readoutRate = 6;
 
 /** Writes `metres` into a readout, hidden without one. Only on a change: it runs each frame */
 function setReadout(el: null | HTMLElement, metres: null | number) {
@@ -1036,8 +1045,6 @@ export type State = {
   getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
-  /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
-  watchAim(el: null | HTMLDivElement): undefined | (() => void);
-  /** The "recon" notice of recon mode, else "look" whilst a cap holds, with the cap's reach. Greyed whilst recon mode yields */
+  /** The one notice of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
 };

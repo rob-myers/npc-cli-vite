@@ -51,6 +51,10 @@ export default function NpcFocus() {
         state.phasers.delete(by);
         state.update();
       },
+      endsInNothing(by) {
+        const entry = state.phasers.get(by);
+        return entry !== undefined && entry.npcKey === null && entry.end?.what === "nothing";
+      },
       fire(by) {
         const entry = state.phasers.get(by);
         if (entry === undefined) return false;
@@ -510,6 +514,8 @@ export type State = {
   placeOn(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson): void;
   /** Metres along the ground from `by` to their red dot: on whom they target, else where a shot would land. `null` unless aiming */
   reachOf(by: string): null | number;
+  /** `by`'s shot would hit nothing, e.g. out through a hull window: no red dot, and no range */
+  endsInNothing(by: string): boolean;
   /** Casts again along every aim, e.g. a door or shield changed */
   recast(): void;
   /** Forgets entries by or on `npcKeys` */

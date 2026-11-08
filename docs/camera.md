@@ -110,7 +110,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
   - `r` caps only once held `rCapMs`, so a tap shows nothing.
   - The cap stays as they walk and turn, until another look replaces it or the notice's "x" clears it. The light still limits it: the frontier is the nearer of the two.
 - **A far look extends it**: Space held with the phaser lowered (`w.player.setFarLook`).
-  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`). It follows their facing, or the pointer in recon mode or whilst `r` is held.
+  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in recon mode or whilst `r` is held.
   - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
   - It is a cap marked `far`. Letting go of Space brings back the look before it (`beforeFar`), unless another has replaced it.
 - **A raised phaser extends it** to at least the red dot, where a shot at no one would land (`w.npcFocus.reachOf`).

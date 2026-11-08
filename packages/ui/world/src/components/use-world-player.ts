@@ -143,10 +143,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.farCasting = false;
         if (state.lookCap?.far !== true) return; // ended meanwhile
         const hit = cast?.hit ?? null;
-        // as far as a wall or door, else out through a hull window: nothing to see beyond it
-        const reach = Math.min(hit === null ? farLookMetres : Math.hypot(hit.x - x, hit.y - z), cast?.out ?? Infinity);
+        const wall = hit === null ? farLookMetres : Math.hypot(hit.x - x, hit.y - z);
+        /** Where a hull window lets it out of the ship, if first: nothing to see beyond it */
+        const hull = cast?.out ?? Infinity;
+        const [reach, out] = [Math.min(wall, hull), hull < wall];
         const doors = cast === null ? [] : cast.hitDoor === null ? cast.doors : [...cast.doors, cast.hitDoor];
-        state.lookCap = { reach, bearing, x, z, far: true, doors };
+        state.lookCap = { reach, bearing, x, z, far: true, doors, out };
         w.r3f?.invalidate();
       },
       dragLookTowards(clientX, clientY) {
@@ -404,7 +406,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.beforeFar = state.lookCap === null ? null : { ...state.lookCap };
         // its reach as it is until the cast lands
         const { x, z } = npc.position;
-        state.lookCap = { reach: w.view.playerFrontier.reach ?? 0, bearing: npc.lookY, x, z, far: true, doors: [] };
+        state.lookCap = {
+          reach: w.view.playerFrontier.reach ?? 0,
+          bearing: npc.lookY,
+          x,
+          z,
+          far: true,
+          doors: [],
+          out: false,
+        };
         state.castFarLook(npc.lookY);
       },
       setKey(npcKey) {
@@ -614,12 +624,12 @@ export type State = {
   lookAt: null | Geom.VectJson;
   /**
    * How far they last looked, which caps their frontier until another look, or the notice's "x".
-   * A far look extends it instead, re-cast from where it last cast: `bearing`, `x` and `z`. `doors` stopped or let it through
+   * A far look extends it instead, re-cast from where it last cast: `bearing`, `x` and `z`. `doors` stopped or let it through. `out`: it left the ship by a hull window
    */
   lookCap:
     | null
     | { reach: number; far: false }
-    | { reach: number; far: true; bearing: number; x: number; z: number; doors: Geomorph.GmDoorKey[] };
+    | { reach: number; far: true; bearing: number; x: number; z: number; doors: Geomorph.GmDoorKey[]; out: boolean };
   /** The look's cap before Space's far look, restored as it is let go */
   beforeFar: State["lookCap"];
   /** Caps their frontier at `reach`, until another look or the notice's "x" */
