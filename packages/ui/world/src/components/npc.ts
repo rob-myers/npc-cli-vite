@@ -573,7 +573,7 @@ export class Npc {
 
   /**
    * Room from `point` to a wall `along` a way, up to `depth`, by one ray leant out to the hands on `heading`'s side, e.g. at a corner.
-   * `square` is how squarely that wall faces the way: `1` head-on, `0` alongside or none. Heading more back than sideways: `depth`
+   * `square` is how squarely it faces the way: `1` head-on, `0` alongside, a doorway's jamb or none. Heading back: `depth`
    */
   roomAhead(
     point: Geom.VectJson,
@@ -591,6 +591,10 @@ export class Npc {
     const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
     const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
     if (hit.t > 1) return { room: depth, square: 0 };
+    // a doorway's own side is a jamb, passed alongside: never square on
+    const last = hit.path.at(-1);
+    if (last !== undefined && isDoorAreaId(getNodeByRef(this.w.nav.navMesh, last).area))
+      return { room: hit.t * depth, square: 0 };
     const [nx, , nz] = hit.hitNormal;
     return { room: hit.t * depth, square: Math.abs(nx * sx + nz * sz) };
   }

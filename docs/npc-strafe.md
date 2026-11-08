@@ -53,7 +53,7 @@ An npc's body never shows through a wall (see `CLAUDE.md`). Strafing along a wal
   - Else along the way they go, which they turn to face, so a turn towards a wall is seen first. Leant right (`armInLean`), the gun's side.
   - Its lean is fixed, so a wall alongside counts only when close.
 - It is not cast in a doorway (`w.e.npcToDoors[key].inside`), whose sides would read as a wall ahead whilst they pass through sideways.
-- A wall met square on (`roomAhead`'s `square`, from the hit's normal, at least `walkSquare`) has them walk (`anim.nearWall` `"ahead"`, which `anim.fast` heeds), else a run's lean puts the head through. Upright, the navmesh's margin is room enough. Clear of it, they run again.
+- A wall met square on (`roomAhead`'s `square`, from the hit's normal, at least `walkSquare`; never a doorway polygon's own edge, a jamb passed alongside) has them walk (`anim.nearWall` `"ahead"`, which `anim.fast` heeds), else a run's lean puts the head through. Upright, the navmesh's margin is room enough. Clear of it, they run again.
 - Any wall that near, `setNearWall` draws their right arm in. `move` sets it for the one npc it moves (`heedWalls`), and `startIdle` clears it once they stop, e.g. let go, killed or no longer the player: holding a phaser, as `phaser_aim_avoid`, else hanging at their side (`idle`). Only whilst the arm is free, and it lets go only of what it set. The left arm is not yet drawn in.
 - Npcs moving by path are not checked.
 
