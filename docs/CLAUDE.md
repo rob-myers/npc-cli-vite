@@ -122,6 +122,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
     - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `reconYieldSecs` after. Its hud-toast greys meanwhile.
   - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
   - Sat, they look over a shoulder at most: a look more than `sitLookMaxRad` (120°) off their facing is ignored.
+  - `,` and `.` turn them to the next 45° step, their facing swinging to the screen's left or right (`w.player.snapTurn`). Facing the camera that is the other way round, so the way is fixed by a chain's first press. A step is a look held `lookHoldMs`, with no cross and their look's reach kept. Quick presses chain on from the step under way. Raised, the body faces the step exactly, not the muzzle's line.
   - Space held with the phaser lowered looks as far as sight goes along their facing (`setFarLook`), extending their frontier as a raised phaser's dot does, recast as they turn or walk. It overrides any look whilst held. In recon mode, or whilst `r` is held, it casts along the pointer instead, and recon mode stays on. The bar says "look max" ("recon max"). Letting go of Space ends it, giving the look back.
   - A look caps their frontier at its distance (`w.player.look`). A tap or right-click sets it until another, or the hud-toast's x. `r` held a while, or recon mode, steers it only whilst on. See Following the player in `docs/camera.md`.
 

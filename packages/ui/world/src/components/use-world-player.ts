@@ -23,6 +23,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       fireTouch: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
+      snapFlip: false,
       look: { base: null, steer: null, far: null },
       lookMarked: true,
       cancelLook: () => {},
@@ -66,7 +67,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (state.look.far !== null) state.recastFarLook(npc, npc.lookY); // Space held, it follows their facing
           return;
         }
-        if (lookAt !== null) {
+        if (lookAt?.turn !== undefined) {
+          // a snap turn's bearing, wherever they walk
+          const { x, z } = npc.position;
+          tmpHit.set(x - Math.sin(lookAt.turn) * snapTurnMetres, 0, z - Math.cos(lookAt.turn) * snapTurnMetres);
+        } else if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
           // recon mode keeps their facing whilst the camera is dragged
@@ -87,8 +92,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (posture === "sit" && Math.abs(deltaAngle(npc.rotation.y, bearing)) > sitLookMaxRad) return;
         const reach = Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z);
         // a tap's look sets the distance. `r` held a while, or recon mode, steers it only whilst on
-        if (lookAt !== null) [state.look.base, state.look.steer] = [reach, null];
-        else {
+        if (lookAt !== null) {
+          if (lookAt.turn === undefined) [state.look.base, state.look.steer] = [reach, null];
+        } else {
           if (state.recon || performance.now() - state.rDownMs >= rCapMs) state.look.steer = reach;
           state.recastFarLook(npc, bearing); // a max look follows the pointer too
         }
@@ -103,8 +109,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           // sat they do not turn round: their head, and a little of their torso
           return void npc.anim.turnTo(tmpLook);
         }
-        // armed, their muzzle's line through it rather than their middle
-        state.pointerAim.at = w.phasers?.bearingFor(state.key, tmpLook) ?? bearing;
+        // armed, their muzzle's line through it rather than their middle. A snap turn faces it exactly
+        state.pointerAim.at =
+          lookAt?.turn !== undefined ? bearing : (w.phasers?.bearingFor(state.key, tmpLook) ?? bearing);
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = state.pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
@@ -278,6 +285,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (state.recon === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleRecon();
           return void w.r3f?.invalidate();
         }
+        if (e.code === "Comma" || e.code === "Period") return state.snapTurn(e.code === "Comma" ? 1 : -1);
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") {
           if (state.cancelCharge() === false) state.toggleArm(); // charging, it cancels that alone
@@ -470,6 +478,23 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         return false;
       },
+      snapTurn(dir) {
+        const npc = state.get();
+        if (npc === undefined) return;
+        // quick presses chain on from the step under way
+        const chain = state.lookAt?.turn;
+        const from = chain ?? npc.rotation.y;
+        if (chain === undefined) {
+          // facing the camera, the screen's left is clockwise. Kept for the chain, else it swings back past side-on
+          w.r3f.camera.getWorldDirection(tmpHit);
+          state.snapFlip = Math.sin(from) * tmpHit.x + Math.cos(from) * tmpHit.z > 0;
+        }
+        const sign = state.snapFlip ? -dir : dir;
+        const to = sign * (Math.floor((sign * from) / snapTurnRad + snapTurnSlop) + 1) * snapTurnRad;
+        const { x, z } = npc.position;
+        state.lookAtPoint(x - Math.sin(to) * snapTurnMetres, z - Math.cos(to) * snapTurnMetres);
+        if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [to, false];
+      },
       startCharge() {
         const raised = w.phasers?.isArmed(state.key) === true;
         w.npcFocus?.target(state.key); // lowered, it is raised
@@ -543,6 +568,12 @@ const lookTapSlopPx = 20;
 const fireTouchDelayMs = 300;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
+/** `,` and `.` turn them to the next multiple of this */
+const snapTurnRad = Math.PI / 4;
+/** A share of a step within which they count as on it, so a press turns them a whole step */
+const snapTurnSlop = 0.05;
+/** Metres off the point a snap turn looks at: any beyond `lookDeadMetres` */
+const snapTurnMetres = 2;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
 const doingMaxSecs = 3;
 /** Game seconds recon mode waits after they are done with what it yielded to */
@@ -603,12 +634,24 @@ export type State = {
   onFireTouch(e: TouchEvent): boolean;
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
+  /** Turns them to the next multiple of 45°: with `dir` `1` their facing swings to the screen's left */
+  snapTurn(dir: 1 | -1): void;
+  /** A snap turn's chain turns clockwise from above for `,`, as they faced the camera at its start */
+  snapFlip: boolean;
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
   syncRun(): void;
-  /** The floor point a look (a right click or two-finger tap) is at, for `lookHoldMs` — see `LookMark` */
-  lookAt: null | Geom.VectJson;
+  /**
+   * The floor point a look is at, for `lookHoldMs` — see `LookMark`.
+   * `turn` is a snap turn's bearing, faced whilst walking, keeping their look's reach
+   */
+  lookAt:
+    | null
+    | (Geom.VectJson & {
+        /** Snap turn's bearing */
+        turn?: number;
+      });
   /**
    * How far they look, which caps their frontier: `base` a tap's, kept; `steer` only whilst `r` or recon mode is on;
    * `far` only whilst Space is held, which extends it instead. The first of `far`, `steer` and `base` is in force
