@@ -6,12 +6,21 @@
 
 - ✅ pad/park should move rather than fadeSpawn
 
+- ✅ no park-teleport on collapse
+  - ✅ collapse slow-move
+
 - ✅ `act count kate to:5` should fade on final said
 - ✅ act avoid/hide should support pause
 
 ### Animation and Npc
 
 - ✅ npc key thin font flickers
+
+- ❌ consider improve turning animation
+  - now have `pose rob head:kate` though
+- ✅ shade npcs by camera normal
+- ✅ improve run strafe: make more steady
+  - saw raised hand intersect wall
 
 - ✅ refine look-mode
   - ✅ suppress on npc-pre-do not on leave sit/lie
@@ -80,11 +89,19 @@
 - ✅ avoid initial sharp camera motion after change map and unpause
 - ✅ desktop camera framing defaults high
 
+- ✅ combat mode on phaser raised
+  - force top-down with polar detent
+  - detent off during pause
+- ❌ camera framing: continuous fov change
+- ✅ remove aim-mode but keep axes-locked-camera while phaser raised
+
 - ✅ improve follow camera transition when look wrong way in chair then spawn out
 - ✅ debug sliders for fov/minDist/maxDist with natural relationship
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
+
+- ✅ simplify `npc.agent`
 
 - ✅ predicates -> preds
 - ✅ preds -> predicates, kamma -> inventory
@@ -101,6 +118,14 @@
   - otherwise strafe left turns into run left
 - ❌ rmb/2-tap look can be held e.g. for phaser aim
 - ✅ npc context menu close button on right
+
+- ✅ while fully crouched c should totally un-crouch
+- ✅ can run in look-mode
+- ✅ mobile look and fire
+  - ✅ remove large fire thumb press
+  - ❌ follow-mode look via one-touch drag
+  - ✅ raised phaser ui: 1st touch + 300ms + 2nd touch charge + fire/cancel
+- ✅ try 0.2 slower/faster via down/up
 
 - ✅ try look-mode via double-tap r
   - ✅ fix raised phaser aim
@@ -130,6 +155,10 @@
 
 - ✅ follow cam shows closable inventory toast
 - ✅ support `take rob item:phaser`
+
+- ✅ improve keychain icon e.g. lock
+- ✅ inventory toasts -> toasts at top
+- ✅ mobile inventory obscures player with phaser raised
 
 - ✅ no "strafe" message or toggle when aim while sit/lie
 - ✅ "aim blocked" toast and phaser end colour matches inventory
@@ -171,6 +200,8 @@
 
 - ✅ hide external spots in sense-mode
 
+- ✅ `spots --show` -> `spots shown`
+
 - ✅ clean spots in Debug.tsx
 - ✅ held open door has blue/purple lock and is persisted
 
@@ -190,6 +221,10 @@
   - repro on run straight into wall from 1.5m away
 - ✅ avoid psi-arm through wall when next to wall
   - seems fixed by "avoid phaser through wall" at least for wasd_delta-driven npc
+
+- ✅ can hold space for more powerful phaser shot
+- ✅ ensure phaser does not jiggle whilst raised
+- ✅ phaser beam -> electricity
 
 - ✅ fix psi arm while seated look to left
 
@@ -349,6 +384,15 @@
 - ✅ phaser hit uses deep hum fx, also for walls
 - ✅ muted by default with toggle in World
 
+- ✅ sound fx
+  - ✅ phaser raise/lower/charge/charged-fire/cool
+  - ✅ open/close/lock/hold door
+  - ✅ sit/stand/lie
+  - ✅ psi sounds
+  - ✅ change phaser fire
+  - ✅ BUG footsteps in bed
+  - ✅ put-down/pick-up item
+
 - ✅ ui/audio
   - player footsteps track feet
   - nearby npc footsteps
@@ -439,6 +483,14 @@
 - ✅ ask Claude to create some sub-symbols of 101
 
 ## Site and Theme
+
+- ✅ tab selected GlobalMenu should open on enter
+- ✅ option to flush old versions in netlify build
+  - ✅ try ASSET_HISTORY_RETAIN=1 in netlify ui
+  - ✅ verify https://lastredoubt.co/asset-history.json
+  - ✅ set ASSET_HISTORY_RETAIN=10
+- ✅ clarify why saw old decor.0.png on mobile
+  - built sheets.json now has content hashes so can fetch images using `?v={hash}`
 
 - ✅ light-theme wall skirts/trims look worse now
   - change ceiling hull/nonHull style
