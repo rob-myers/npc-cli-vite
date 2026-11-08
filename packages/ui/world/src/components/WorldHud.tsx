@@ -82,12 +82,6 @@ export default function WorldHud() {
         else if (!armed && stood) kept.push({ label: "strafe", title: "strafing on until the move keys change" });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
-        if (w.gameTime.scale !== 1)
-          kept.push({
-            label: `time ${Number(w.gameTime.scale.toFixed(2))}`,
-            title: "back to time 1: [ and ] step it",
-            end: () => w.gameTime.setScale(1),
-          });
         return kept;
       },
       getLayout() {
@@ -386,7 +380,7 @@ export default function WorldHud() {
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
       <div className={noticesClass}>
-        {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
+        {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
         <div className="flex items-center gap-1">
           {kept.map(({ label, title, end }) => (
             <div
