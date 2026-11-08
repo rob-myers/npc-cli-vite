@@ -3,7 +3,7 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
-import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
+import { PlayIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -113,7 +113,6 @@ export function WorldView(props: React.PropsWithChildren) {
       zoomCrossEl: null,
       zoomCrossFadeMs: 0,
       zoomInSlow: false,
-      centreHint: false,
       clickIds: [],
       cameraView: readCameraView(),
       controls: null as any,
@@ -1336,10 +1335,6 @@ export function WorldView(props: React.PropsWithChildren) {
         controls.object.position.z += moveZ;
         w.r3f?.invalidate();
       },
-      showCentreHint() {
-        if (state.initial.onPlayer === true) return; // already on them
-        state.set({ centreHint: true });
-      },
       setFollow(follow) {
         state.frontierHold = false; // superseded either way
         state.follow = follow; // before the look, whose goal is the follow's
@@ -1377,9 +1372,6 @@ export function WorldView(props: React.PropsWithChildren) {
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the follow button
         w.r3f?.invalidate();
-      },
-      hideCentreHint() {
-        state.centreHint === true && state.set({ centreHint: false });
       },
       onPlayerRespawn() {
         state.playerFrontier.reset();
@@ -1821,27 +1813,6 @@ export function WorldView(props: React.PropsWithChildren) {
         <Fragment key="world">{props.children}</Fragment>
       </Canvas>
 
-      {/* initial pan-to-player option */}
-      <AnimatePresence>
-        {state.centreHint === true && (
-          <motion.button
-            type="button"
-            className="cursor-pointer absolute inset-0 m-auto grid size-12 place-items-center rounded-full"
-            initial={{ opacity: 0, scale: centreHintSmall }}
-            animate={{ opacity: [0, 1, 1, 1, 0], scale: [centreHintSmall, 1.08, 1, 1, centreHintSmall] }}
-            transition={{ duration: centreHintSecs, times: [0, 0.12, 0.22, 0.6, 1], ease: "linear" }}
-            onAnimationComplete={state.hideCentreHint}
-            onClick={() => {
-              state.hideCentreHint();
-              void w.player?.panTo();
-            }}
-          >
-            {/* who the offer is about, rather than what pressing it does */}
-            <PersonSimpleCircleIcon className="size-12 text-[#ddf]/40" weight="duotone" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
       {/* sci-fi camera corners */}
       <div className="pointer-events-none absolute inset-0 text-white/30 *:absolute *:size-4">
         <div className="top-1 left-1 border-t border-l border-current" />
@@ -2144,8 +2115,6 @@ export type State = {
   /** Keeps the player framed whilst following — called every tick from `World`, and whilst paused from `onCameraFrame` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
-  /** Whether the "centre on the player" UI is shown */
-  centreHint: boolean;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /**
@@ -2174,10 +2143,6 @@ export type State = {
       softLanding?: boolean;
     },
   ): Promise<void>;
-  /** Takes the centre offer down, whether it was taken or simply ran out */
-  hideCentreHint(): void;
-  /** Puts the centre offer up, for as long as it takes to fade */
-  showCentreHint(): void;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
@@ -2303,8 +2268,6 @@ const indicatorClassName = cn(
   "flex items-center gap-3 bg-black/20 rounded px-5 py-2",
   "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
 );
-const centreHintSecs = 4;
-const centreHintSmall = 0.6;
 /** The least time the busy overlay is shown for, so a quick task does not flicker it */
 const busyMinMs = 1000;
 

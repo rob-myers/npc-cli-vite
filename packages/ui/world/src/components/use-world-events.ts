@@ -504,12 +504,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             await w.view.veilCanvas(false, mapVeilMs);
           }
         }
-
-        if (firstBootstrap === true && playerWasSaved === true) {
-          // on load the view is the one we restored, and is left alone: taking the camera off
-          // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
-          w.view.showCentreHint();
-        }
       },
       onCarriedChange(npcKey) {
         const had = state.carried[npcKey];

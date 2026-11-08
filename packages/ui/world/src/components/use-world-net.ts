@@ -728,7 +728,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           await pause(floorFadeDelayMs);
           void w.floor?.fadeTo(1);
           await rising;
-          w.view.showCentreHint();
         } else {
           void w.floor?.fadeTo(1);
           await w.view.veilCanvas(false, mapVeilMs);
