@@ -339,7 +339,7 @@ export class JShSemantics {
                   await ttyShell.spawn(file, {
                     by: "|",
                     localVar: true,
-                    // e.g. `take 3 | true`:
+                    // e.g. `head 3 | true`:
                     cleanups: i === 0 && isTtyAt(file.meta, 0) ? [() => ttyShell.finishedReading()] : undefined,
                     // 🔔 despite new process group we do not delete ptags.interactive
                   });

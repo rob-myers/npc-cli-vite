@@ -109,6 +109,27 @@ export function* globals() {
 }
 
 /**
+ * Usage
+ * - `poll 1 | while x=$( head 1 ); do echo ${x} ${x}; done`
+ * @param {JshCli.RunArg} ct
+ */
+export async function* head({ api, args, datum }) {
+  try {
+    let remainder = Number(args[0] || Number.POSITIVE_INFINITY);
+    // 🔔 cannot support chunks if want pattern:
+    // seq 5 | while head 1 >foo; do foo; done
+    while (remainder-- > 0 && (datum = await api.read(false)) !== api.eof) {
+      yield datum;
+    }
+    if (remainder >= 0) {
+      throw api.getShError("", 1);
+    }
+  } catch (e) {
+    throw e ?? api.getKillError();
+  }
+}
+
+/**
  * ```sh
  * # initially logs args, then stdin.
  * log $foo bar
@@ -346,11 +367,11 @@ export async function* reduce({ api, args, datum }) {
 }
 
 /**
- * Like `take` but outputs nothing.
+ * Like `head` but outputs nothing.
  * @param {JshCli.RunArg} ct
  */
 export async function sink(ct) {
-  for await (const _ of take(ct));
+  for await (const _ of head(ct));
 }
 
 /**
@@ -400,27 +421,6 @@ export async function* sponge({ api, datum }) {
       outputs.push(datum);
     }
   yield outputs;
-}
-
-/**
- * Usage
- * - `poll 1 | while x=$( take 1 ); do echo ${x} ${x}; done`
- * @param {JshCli.RunArg} ct
- */
-export async function* take({ api, args, datum }) {
-  try {
-    let remainder = Number(args[0] || Number.POSITIVE_INFINITY);
-    // 🔔 cannot support chunks if want pattern:
-    // seq 5 | while take 1 >foo; do foo; done
-    while (remainder-- > 0 && (datum = await api.read(false)) !== api.eof) {
-      yield datum;
-    }
-    if (remainder >= 0) {
-      throw api.getShError("", 1);
-    }
-  } catch (e) {
-    throw e ?? api.getKillError();
-  }
 }
 
 /** @param {JshCli.RunArg} ct */

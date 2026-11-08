@@ -117,7 +117,7 @@ echo foo | map 'x => x'
 # [3,3]
 { echo foo | map length; } | map 'x => [x,x]'
 # `0`, `1`, `2`, `3`, `4`
-seq 10 | take 5
+seq 10 | head 5
 
 # if type foo⏎ then `102`, `111`, `111`
 split | map charCodeAt 0
@@ -130,10 +130,10 @@ echo foo | sleep 10
 sleep 10 | echo foo
 
 # `foo` (pause) `bar` then hangs (can ctrl-c)
-{ echo foo; echo bar; } | while true; do take 1; sleep 2; done
+{ echo foo; echo bar; } | while true; do head 1; sleep 2; done
 
 # hi rob
-echo hi $( echo rob | take 1 )
+echo hi $( echo rob | head 1 )
 
 # `1`
 false; echo ${?}
@@ -147,8 +147,8 @@ echo | false; echo $?
 # `1` `0`
 { false; echo ${?}; } & sleep 1; echo $?
 
-# take 3 terminates immediately
-take 3 | true
+# head 3 terminates immediately
+head 3 | true
 
 # should output `hi`
 echo hi $( echo rob | false )
@@ -162,11 +162,11 @@ while true; do echo | false; echo hello; done
 
 # terminates because first pipe-child killed
 # exit code 130
-run '({ api }) { throw api.getKillError(); }' | take 1
+run '({ api }) { throw api.getKillError(); }' | head 1
 
 # terminates because last pipe-child killed
 # exit code 130
-take 1 | run '({ api }) { throw api.getKillError(); }'
+head 1 | run '({ api }) { throw api.getKillError(); }'
 ```
 
 # misc
