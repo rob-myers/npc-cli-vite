@@ -32,6 +32,8 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
   - The steps and the fx each reach it through their own level. Whilst not playing, `footfall` drops the steps.
 - **Importing it.** Import the subpath `@npc-cli/ui__audio/engine`, never the package root (see `docs/deploys.md`).
 - **The World never imports it.** jsh plays sounds for it.
+- **Muting.** The master level is silent whilst `soundMute` (`@npc-cli/util/sound-mute`) is muted, as it is until first unmuted.
+  The bar's sound hud-toast toggles it, kept in localStorage. Neither the World nor the engine imports the other.
 - **Autoplay.** Browsers start a context only after a press or key. The engine resumes on the next `pointerdown` or
   `keydown`. `warmAudio()` waits for one of those before making the engine, so nothing is refused at page load.
 - **Samples.** All CC0, in named banks (`sampleFiles`), fetched as the engine is made, bar the lazy `psi`: 26 steps (216 KB) and the

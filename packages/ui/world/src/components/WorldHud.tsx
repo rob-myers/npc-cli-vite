@@ -1,7 +1,8 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
-import { ListIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
+import { soundMute } from "@npc-cli/util/sound-mute";
+import { ListIcon, SpeakerHighIcon, SpeakerSlashIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
 import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
@@ -70,7 +71,7 @@ export default function WorldHud() {
         const kept: Kept[] = [];
         const armed = w.phasers?.isArmed(key) === true;
         const framed = w.view?.follow === true && w.view.cameraMode === "embodied";
-        // one notice for the look and the raised phaser's aim, so its number eases from one to the other: see `watchLook`
+        // one hud-toast for the look and the raised phaser's aim, so its number eases from one to the other: see `watchLook`
         if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
         else if (w.player.recon || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
@@ -294,6 +295,7 @@ export default function WorldHud() {
   const armed = w.phasers?.isArmed(playerKey) === true;
   /** None before the canvas: their refs watch it each frame */
   const kept = w.threeReady === true ? state.getKept() : [];
+  const muted = soundMute.get();
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -374,49 +376,61 @@ export default function WorldHud() {
   return (
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
-      {(state.notice !== null || kept.length > 0) && (
-        <div className={noticesClass}>
-          {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending one that may be ended */}
-          {kept.length > 0 && (
-            <div className="flex items-center gap-1">
-              {kept.map(({ label, title, end }) => (
-                <div
-                  key={label}
-                  ref={label === "look" ? state.watchLook : undefined}
-                  title={end === undefined ? title : undefined}
-                  className={cn(
-                    "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
-                    end === undefined ? "px-2" : "pr-0.5 pl-2",
-                  )}
+      <div className={noticesClass}>
+        {/* kept whilst aiming, strafing, looking, following, capped or off time 1, an "x" ending one that may be ended. Then sound, muted or not */}
+        <div className="flex items-center gap-1">
+          {kept.map(({ label, title, end }) => (
+            <div
+              key={label}
+              ref={label === "look" ? state.watchLook : undefined}
+              title={end === undefined ? title : undefined}
+              className={cn(
+                "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
+                end === undefined ? "px-2" : "pr-0.5 pl-2",
+              )}
+            >
+              {label === "look" ? (
+                <>
+                  <span data-look-word />
+                  <span data-look-reach className={readoutClass} />
+                </>
+              ) : (
+                <span>{label}</span>
+              )}
+              {end !== undefined && (
+                <button
+                  type="button"
+                  title={title}
+                  className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
+                  onClick={() => {
+                    end();
+                    w.view.focus();
+                  }}
                 >
-                  {label === "look" ? (
-                    <>
-                      <span data-look-word />
-                      <span data-look-reach className={readoutClass} />
-                    </>
-                  ) : (
-                    <span>{label}</span>
-                  )}
-                  {end !== undefined && (
-                    <button
-                      type="button"
-                      title={title}
-                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
-                      onClick={() => {
-                        end();
-                        w.view.focus();
-                      }}
-                    >
-                      <XIcon className="size-3" weight="bold" />
-                    </button>
-                  )}
-                </div>
-              ))}
+                  <XIcon className="size-3" weight="bold" />
+                </button>
+              )}
             </div>
-          )}
-          {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
+          ))}
+          <button
+            type="button"
+            title={muted ? "unmute sound" : "mute sound"}
+            className={cn(
+              "pointer-events-auto flex cursor-pointer items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 hover:text-sky-200",
+              muted && "text-neutral-400",
+            )}
+            onClick={() => {
+              soundMute.set(!muted);
+              state.update();
+              w.view.focus();
+            }}
+          >
+            {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
+            <span>{muted ? "muted" : "unmuted"}</span>
+          </button>
         </div>
-      )}
+        {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
+      </div>
       <div ref={(el) => void (state.barEl = el)} className={outerClass}>
         <motion.div className={column ? columnClass : rowClass} {...dragProps}>
           {/* what they are, then what they carry, scrolled: the buttons after stay in view */}
@@ -713,10 +727,10 @@ const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scroll
 const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
 const columnClass = "pointer-events-none flex flex-col items-center";
 const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
-/** The notices: top centre, clear of the bar */
+/** The hud-toasts: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
-/** A distance as a device reads it out: a fixed width, so the notice never changes length */
+/** A distance as a device reads it out: a fixed width, so the hud-toast never changes length */
 const readoutClass =
   "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
 
@@ -961,7 +975,7 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
 
 /** The bar's height */
 const hudBarHeight = 110;
-/** How near the World's top the bar may be dragged: below the notices */
+/** How near the World's top the bar may be dragged: below the hud-toasts */
 const noticesHeight = 68;
 /** The space kept between the column and the menu's, and below the column */
 const columnGap = 8;
@@ -980,12 +994,12 @@ const lookingAtPulseMs = 700;
 /** How long the pulse takes to fade once the pan lands */
 const lookingAtFadeMs = 400;
 
-/** How long the bar's notice shows */
+/** How long a brief hud-toast shows */
 const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
 
-/** A notice kept over the bar, its `end` the "x" */
+/** A hud-toast kept over the bar, its `end` the "x" */
 type Kept = { label: string; title: string; end?: () => void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
@@ -1046,10 +1060,10 @@ export type State = {
   syncCompass(): void;
   /** What they carry, in slot order — their phaser has a slot of its own */
   getItems(): Geomorph.DecorDef[];
-  /** The notices kept over the bar. A raised phaser strafes them too, which only lowering it ends */
+  /** The hud-toasts kept over the bar. A raised phaser strafes them too, which only lowering it ends */
   getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
-  /** The one notice of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
+  /** The one hud-toast of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
 };
