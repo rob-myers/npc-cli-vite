@@ -31,6 +31,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       focusYieldUntil: 0,
       strafe: false,
       tapMs: {},
+      rDownMs: 0,
       keepAim: { at: 0, rate: 0, untilRest: false },
       pointerAim: { at: 0, rate: 1, untilRest: false },
 
@@ -77,7 +78,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         tmpLook.x = tmpHit.x;
         tmpLook.y = tmpHit.z;
         const bearing = npc.anim.bearingOf(tmpLook);
-        state.capFrontier(Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z), bearing);
+        // sat, they look over a shoulder at most: further behind them, not at all
+        if (posture === "sit" && Math.abs(deltaAngle(npc.rotation.y, bearing)) > sitLookMaxRad) return;
+        // `r` caps once held a while, so a tap shows nothing
+        if (rHeld === false || state.focus || performance.now() - state.rDownMs >= rCapMs)
+          state.capFrontier(Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z));
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
           // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
@@ -115,13 +120,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       cancelCharge() {
         return w.phasers?.cancelCharge(state.key) === true;
       },
-      capFrontier(reach = doCapMetres, bearing) {
+      capFrontier(reach = doCapMetres) {
         const npc = state.get();
         if (npc === undefined) return;
         // reused, as a look sets it every tick
         const cap = (state.lookCap ??= { reach, bearing: null, x: 0, z: 0 });
         cap.reach = reach;
-        cap.bearing = bearing ?? null;
+        cap.bearing = null; // taken once the look or fade ends: see `releaseLookCap`
         cap.x = npc.position.x;
         cap.z = npc.position.z;
       },
@@ -247,6 +252,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return;
         }
         if (e.code === "KeyR") {
+          state.rDownMs = e.timeStamp;
           // held: see `aimAtPointer`. Twice quickly starts focus mode, and once ends it
           if (state.focus === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleFocus();
           return void w.r3f?.invalidate();
@@ -515,6 +521,10 @@ const lookFarMetres = 500;
 const lookCapMetres = 0.5;
 /** How far they turn off a look's bearing before its cap drops */
 const lookCapRad = Math.PI / 4;
+/** How far off their facing one sat may look, over a shoulder */
+const sitLookMaxRad = (2 * Math.PI) / 3;
+/** How long `r` is held before its look caps their frontier */
+const rCapMs = 300;
 /** The cap on their frontier as they take or leave a doable, which may face down a corridor */
 const doCapMetres = 2;
 
@@ -540,6 +550,8 @@ export type State = {
   strafe: boolean;
   /** When each key last went down, for its double tap */
   tapMs: Record<string, number>;
+  /** When `r` last went down: held a while, its look caps their frontier */
+  rDownMs: number;
   /** Whether a press at `ms` follows one of the same key within `doubleTapMs` */
   isDoubleTap(key: string, ms: number): boolean;
   /** The aim strafing gives the player: at `rate` `0` it turns them not at all. Ours alone to clear, so kept over hmr */
@@ -565,8 +577,8 @@ export type State = {
    * It drops once they walk off or turn away
    */
   lookCap: null | { reach: number; bearing: null | number; x: number; z: number };
-  /** Caps their frontier at `reach` along `bearing`, by default their facing once a fade is done, until they walk off or turn away */
-  capFrontier(reach?: number, bearing?: number): void;
+  /** Caps their frontier at `reach`, along their facing once the look or fade ends, until they walk off or turn away */
+  capFrontier(reach?: number): void;
   /** Drops `lookCap` once they walk off or turn away. Each tick they are not looking */
   releaseLookCap(npc: JshCli.Npc): void;
   /** Their full frontier again: the walk off, or the turn away */

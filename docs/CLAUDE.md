@@ -121,6 +121,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - A double tap of `r` starts **focus mode** (`w.player.focus`, `toggleFocus`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "focus" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
     - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `focusYieldSecs` after. Its notice greys meanwhile.
   - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
+  - Sat, they look over a shoulder at most: a look more than `sitLookMaxRad` (120°) off their facing is ignored.
   - A look nearer than their frontier caps it there (`w.player.lookCap`), until they walk off or turn away. So does taking or leaving a doable. See Following the player in `docs/camera.md`.
 
 ## Navigation and crowd
