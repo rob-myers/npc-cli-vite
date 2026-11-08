@@ -607,7 +607,7 @@ function DeleteButton({ onDelete }: { onDelete(): void }) {
       className={cn(actionClass, "text-red-300", confirming && "ring-1 ring-red-400")}
       onClick={() => (confirming ? onDelete() : setConfirming(true))}
     >
-      {confirming ? "press again to delete" : "delete"}
+      {confirming ? "confirm" : "delete"}
     </Button>
   );
 }
