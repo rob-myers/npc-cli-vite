@@ -146,7 +146,7 @@ does one with a laser.
   hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to
   whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
-  along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered raises it.
+  along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered is a far look instead: see `docs/camera.md`.
 - **Charging.** Raised, Space held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
   it (`w.player.releaseCharge`). The shot takes the charge (`takeCharge`, in `arm` and `fireAlong`): `fireCharge`
   widens and brightens its beam, and `phaser-fired` carries it as `charge`. A tap fires at once, near `0`.

@@ -74,9 +74,9 @@ export default function WorldHud() {
           if (stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
         } else if (w.player.strafe && stood)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
-        // focus mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`.
+        // recon mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`.
         // Raised, the red dot is the look instead: see `watchAim`
-        if (!armed && (w.player.focus || (w.view?.follow === true && w.view.cameraMode === "embodied")))
+        if (!armed && (w.player.recon || (w.view?.follow === true && w.view.cameraMode === "embodied")))
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
@@ -159,12 +159,12 @@ export default function WorldHud() {
         const wordEl = el.querySelector("[data-look-word]");
         const reachEl = el.querySelector<HTMLElement>("[data-look-reach]");
         return w.e.addFrameCallback(() => {
-          const { focus, lookCap } = w.player;
+          const { recon, lookCap } = w.player;
           const framed = w.view.follow === true && w.view.cameraMode === "embodied";
           const cap = framed ? lookCap : null;
-          el.style.setProperty("display", focus || cap !== null ? "" : "none");
-          el.classList.toggle("blocked", focus && w.player.isFocusYielding());
-          const word = focus ? "focus" : "look"; // focus mode, else a look's cap alone
+          el.style.setProperty("display", recon || cap !== null ? "" : "none");
+          el.classList.toggle("blocked", recon && w.player.isReconYielding());
+          const word = `${recon ? "recon" : "look"}${cap?.far === true ? " max" : ""}`; // recon mode, else a look's cap alone
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
           setReadout(reachEl, cap?.reach ?? null);
         });
@@ -1038,6 +1038,6 @@ export type State = {
   press(index: number): void;
   /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
   watchAim(el: null | HTMLDivElement): undefined | (() => void);
-  /** The "focus" notice of focus mode, else "look" whilst a cap holds, with the cap's reach. Greyed whilst focus mode yields */
+  /** The "recon" notice of recon mode, else "look" whilst a cap holds, with the cap's reach. Greyed whilst recon mode yields */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
 };

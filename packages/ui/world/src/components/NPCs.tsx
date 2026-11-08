@@ -503,7 +503,6 @@ export default function NPCs() {
           });
         }
 
-        const wasDoing = typeof state.npcToDoable[opts.npcKey] === "string";
         const decorKey = opts.doResult?.meta.decorKey;
         if (typeof decorKey === "string") {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
@@ -524,7 +523,6 @@ export default function NPCs() {
         npc.anim.face.rate = 0;
         // a spawn is a rest: else a look made on the move turns them where they land e.g. in bed
         if (npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
-        if ((wasDoing || typeof decorKey === "string") && w.player.is(opts.npcKey)) w.player.capFrontier();
 
         return npc;
       },

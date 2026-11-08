@@ -874,10 +874,15 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         controls.maxDistance += remaining * alpha;
         controls.minDistance += remainingMin * alpha;
-        // eased with the zoom as it grows, else the view lunges ahead. At once as it shrinks, keeping pace with the frontier
-        const k = tmpOffset.x ** 2 + tmpOffset.z ** 2 < offset.x ** 2 + offset.z ** 2 ? 1 : alpha;
-        offset.x += (tmpOffset.x - offset.x) * k;
-        offset.z += (tmpOffset.z - offset.z) * k;
+        // eased with the zoom, else the view lunges ahead. Never longer than wanted, keeping pace as the frontier draws in
+        offset.x += (tmpOffset.x - offset.x) * alpha;
+        offset.z += (tmpOffset.z - offset.z) * alpha;
+        const [want, have] = [tmpOffset.x ** 2 + tmpOffset.z ** 2, offset.x ** 2 + offset.z ** 2];
+        if (have > want) {
+          const shrink = Math.sqrt(want / have);
+          offset.x *= shrink;
+          offset.z *= shrink;
+        }
         w.r3f?.invalidate(); // still on its way
       },
       getFrontierStops() {
@@ -898,8 +903,9 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
-          /** The furthest the inner stop goes. A raised phaser's dot may lie past the outer stop */
-          const cap = w.npcFocus?.reachOf(player.key) == null ? outer : outer * frontierConfig.aimOuterScale;
+          /** The furthest the inner stop goes. A raised phaser's dot, or a far look, may lie past the outer stop */
+          const beyond = w.npcFocus?.reachOf(player.key) != null || w.player.lookCap?.far === true;
+          const cap = beyond ? outer * frontierConfig.aimOuterScale : outer;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
           wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
           // zoomed out, further by the persisted stops' own ratio, but no further than without the dot
@@ -1748,7 +1754,7 @@ export function WorldView(props: React.PropsWithChildren) {
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
         // inherited by the canvas, whose own cursor is set only whilst dragged
-        className={cn(w.player?.focus === true && "cursor-crosshair")}
+        className={cn(w.player?.recon === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}

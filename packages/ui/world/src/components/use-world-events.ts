@@ -617,6 +617,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-open":
             state.doorOpen[e.gdKey] = true;
             state.syncFadeRooms();
+            w.player?.refreshFarLook(e.gdKey); // it may see further now
             break;
           case "door-opening": {
             const door = w.d[e.gdKey]; // may be gone: onchange map, or a map edit
@@ -633,6 +634,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.inView.byRoom.clear();
             state.doorOpen[e.gdKey] = false;
             state.syncFadeRooms();
+            w.player?.refreshFarLook(e.gdKey);
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];

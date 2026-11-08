@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires, or raises it, see Targeting in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires (lowered, it is a far look), see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -32,7 +32,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 - **strafe** has no button: a double tap of Shift toggles it. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim" and the red dot's range, e.g. "aim 7.3m", its "x" lowering the phaser, and "strafe" with no "x": a double tap of Shift does nothing then. "aim blocked", in grey, is whilst something in the way draws the phaser in.
 - **time**: whilst the time scale is not `1`, a notice "time 0.8" stays over the bar, its "x" setting it back to `1`. See `docs/time.md`.
 - **follow**: a press turns it on or off, as `v` does. Whilst on, a notice "follow" stays over the bar, its "x" turning it off.
-- **look** and **focus** have no button. Whilst focus mode is on, or a look or a doable caps their frontier whilst following, a notice stays over the bar: "focus" in focus mode, else "look", then the cap's reach, e.g. "look 2m". Its "x" ends focus mode and drops the cap. It greys whilst focus mode yields. Raised, the phaser's "aim" notice takes its place. See Following the player in `docs/camera.md`.
+- **look** and **recon** have no button. Whilst recon mode is on, or a look caps their frontier whilst following, a notice stays over the bar: "recon" in recon mode, else "look", then the cap's reach, e.g. "look 2m", or "look max" ("recon max") for a far look (Space held, lowered). Its "x" ends recon mode and drops the cap. It greys whilst recon mode yields. Raised, the phaser's "aim" notice takes its place. See Following the player in `docs/camera.md`.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 - **options** (`PlayerMenu`, a menu icon), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
 

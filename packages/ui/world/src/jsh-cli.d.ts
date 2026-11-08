@@ -290,6 +290,8 @@ declare namespace JshCli {
     decor: { decorKey: string; top: number; bottom: number; dist: number; leave: number }[];
     /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
     rooms: Geomorph.GmRoomKey[];
+    /** Metres from its start to where a hull window first lets it out of the ship, which stops it not */
+    out: null | number;
   };
 
   type NpcLabelStyle = {

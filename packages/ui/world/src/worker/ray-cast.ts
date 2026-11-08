@@ -114,6 +114,8 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
   /** Where along it a wall or door stopped it */
   let stop = Infinity;
   let hitDoor: null | Geomorph.GmDoorKey = null;
+  /** Where along it a hull window first lets it out of the ship */
+  let out: null | number = null;
   const passed: Geomorph.GmDoorKey[] = [];
   const rooms: Geomorph.GmRoomKey[] = [grKey];
   /** By obstacle index, where it first and last meets it */
@@ -127,6 +129,7 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
       break;
     }
     if (o.kind === "window") {
+      if (statics.windows[o.id].grKeys.includes(null)) out ??= lambda;
       const next = nextRoom(statics.windows[o.id].grKeys, rooms);
       if (next !== null) rooms.push(next);
       continue;
@@ -171,6 +174,7 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
     hitDoor,
     doors: passed,
     rooms,
+    out: out === null || out > stop ? null : out * length,
     shields: shieldsPassed(src, dst, stop),
     obstacles: obstacles.sort((a, b) => a.dist - b.dist),
     decor: decor.sort((a, b) => a.dist - b.dist),

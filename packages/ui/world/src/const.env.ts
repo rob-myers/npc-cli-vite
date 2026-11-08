@@ -176,6 +176,8 @@ export const frontierConfig = {
   smoothRate: 3,
   /** The same whilst the player is off the mesh or mid fade-spawn, so a facing set twice in quick succession glides */
   calmRate: 0.8,
+  /** The same whilst a max look follows the pointer, so a doorway swept past does not jerk the view */
+  scanRate: 1.5,
   /** How fast the zoom stops and the view's offset ease, per second */
   rate: 4,
   /** Near enough what they ease to, so no further frame is asked for */
