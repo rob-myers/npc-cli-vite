@@ -21,6 +21,7 @@ import {
   lieAim,
   lieHeadMaxRad,
   lieRoll,
+  npcConfig,
   npcMaterialConfig,
   npcScale,
   sitArmVia,
@@ -69,6 +70,8 @@ export class NpcAnimation {
   nearWall: false | "ahead" | "beside" = false;
   /** The clip `setNearWall` drew their right arm in with, which it alone lets go */
   armIn: null | AnimationClipKey = null;
+  /** Game time until which `armIn` is held, though the wall is no longer near */
+  armInUntil = 0;
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
@@ -646,6 +649,13 @@ export class NpcAnimation {
    */
   setNearWall(next: false | "ahead" | "beside") {
     this.nearWall = next;
+    const now = this.w.gameTime.now();
+    if (next !== false) this.armInUntil = now + npcConfig.time.armInHold;
+    else if (this.armIn !== null && now < this.armInUntil) {
+      // held a moment, then let go if still clear
+      this.w.e.after(this.armInUntil - now, () => this.nearWall === false && this.setNearWall(false));
+      return;
+    }
     const want = next !== false && this.posture === "stand";
     // let go, or taken over e.g. raised: no longer ours
     if (this.upper.target === 0 || this.upper.key !== this.armIn) this.armIn = null;

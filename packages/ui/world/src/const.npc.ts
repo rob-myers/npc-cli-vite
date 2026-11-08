@@ -106,6 +106,8 @@ export const npcConfig = {
     stuckDuration: 0.8,
     /** Minimum look duration before teleporting onto a nearby doable */
     look: 0.5,
+    /** A wall's draw-in of the right arm holds at least this, else taps at a wall shake it in and out */
+    armInHold: 0.5,
   },
 } as const;
 
