@@ -1,6 +1,6 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
-import { ArrowCounterClockwiseIcon, DotsSixIcon } from "@phosphor-icons/react";
+import { PushPinIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
 import * as THREE from "three/webgpu";
 import { doorHeight } from "../const.env";
@@ -78,15 +78,13 @@ export default function PickMenu() {
         }
         return menuKeys;
       },
-      dragFrom(menuKey, e) {
-        const entry = state.menus.get(menuKey);
-        if (entry?.rect == null) return;
+      dragFrom(entry, e) {
+        if (entry.rect === null) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         entry.drag = { x: e.clientX, y: e.clientY, rect: { ...entry.rect } };
       },
-      dragTo(menuKey, e) {
-        const entry = state.menus.get(menuKey);
-        if (entry?.drag == null || entry.at === null) return;
+      dragTo(entry, e) {
+        if (entry.drag === null || entry.at === null) return;
         const { drag } = entry;
         const rect = { ...drag.rect, x: drag.rect.x + e.clientX - drag.x, y: drag.rect.y + e.clientY - drag.y };
         const meet = nearestOnRect(entry.at, rect);
@@ -94,9 +92,9 @@ export default function PickMenu() {
         // no further than `maxDragM` from its anchor, at its anchor's depth
         const scale = Math.min(1, (pickMenuConfig.maxDragM * state.pxPerMetre(entry)) / (Math.hypot(dx, dy) || 1));
         const wasDragged = entry.dragged !== null;
-        entry.pin = { x: (meet.x - rect.x) / (rect.width || 1), y: (meet.y - rect.y) / (rect.height || 1) };
-        entry.dragged = { x: dx * scale, y: dy * scale };
-        if (wasDragged === false) state.touch(menuKey); // lights its reset
+        const pin = { x: (meet.x - rect.x) / (rect.width || 1), y: (meet.y - rect.y) / (rect.height || 1) };
+        entry.dragged = { x: dx * scale, y: dy * scale, pin };
+        if (wasDragged === false) state.touch(entry.menuKey); // lights its pin
         w.r3f?.invalidate();
       },
       fadeOf(target) {
@@ -121,13 +119,13 @@ export default function PickMenu() {
         return shown;
       },
       measure(entry) {
-        const { el, cancelEl } = entry;
-        if (el === null || cancelEl === null) return;
+        const { el, pivotEl } = entry;
+        if (el === null || pivotEl === null) return;
         entry.size = {
           width: el.offsetWidth,
           height: el.offsetHeight,
-          cx: cancelEl.offsetLeft + cancelEl.offsetWidth / 2,
-          cy: cancelEl.offsetTop + cancelEl.offsetHeight / 2,
+          cx: pivotEl.offsetLeft + pivotEl.offsetWidth / 2,
+          cy: pivotEl.offsetTop + pivotEl.offsetHeight / 2,
         };
       },
       onResize(items) {
@@ -193,11 +191,12 @@ export default function PickMenu() {
           const { width, height, cx, cy } = size;
           let [mx, my] = [0, 0];
           let meet: Geom.VectJson;
-          if (entry.dragged !== null && entry.pin !== null) {
+          if (entry.dragged !== null) {
+            const { dragged } = entry;
             // dragged: its lines keep their lengths, so it may leave the view
-            meet = { x: at.x + entry.dragged.x, y: at.y + entry.dragged.y };
+            meet = { x: at.x + dragged.x, y: at.y + dragged.y };
             // the same share of it, e.g. its middle, however it has resized since
-            [mx, my] = [meet.x - entry.pin.x * width, meet.y - entry.pin.y * height];
+            [mx, my] = [meet.x - dragged.pin.x * width, meet.y - dragged.pin.y * height];
           } else {
             // Cancel under the press that opened it, else beside its anchor. Kept in view
             entry.offset ??= entry.atPointer
@@ -244,7 +243,7 @@ export default function PickMenu() {
         const entry = state.menus.get(menuKey);
         if (entry === undefined) return;
         state.settle(unpin(entry, false)); // beside its anchor
-        state.touch(menuKey); // dims its reset
+        state.touch(menuKey); // dims its pin
         w.r3f?.invalidate();
       },
       setCollapsed(menuKey, next = !collapsedKeys.has(menuKey)) {
@@ -331,6 +330,21 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
   const state = w.pickMenu;
   const { target, menuKey } = entry;
   const touch = () => state.touch(menuKey);
+  /** An npc's Cancel goes last and their label keeps still. Others' Cancel goes first, under the press */
+  const npcMenu = "npcKey" in target;
+  const pinned = entry.dragged !== null;
+  const pivot = (el: HTMLElement | null) => void (entry.pivotEl = el);
+  const endDrag = () => void (entry.drag = null);
+  const close = (
+    <Button
+      ref={npcMenu ? undefined : pivot}
+      title="close"
+      className={cancelClass}
+      onClick={() => state.close(menuKey)}
+    >
+      ✕
+    </Button>
+  );
 
   return (
     <>
@@ -357,10 +371,19 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
         className={cn(
           markClass,
           "flex w-max max-w-72 touch-none flex-col items-start gap-1 rounded font-mono text-[11px] text-white outline-none focus:ring-1 focus:ring-sky-300/60",
+          "pointer-events-auto cursor-grab bg-black/40 p-1 active:cursor-grabbing", // dragged by its background
           // eased into place for a moment, e.g. having collapsed, else it lags whom it follows
           "data-settling:transition-[opacity,transform] data-settling:duration-150",
         )}
-        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          if (onBackground(e)) state.dragFrom(entry, e);
+        }}
+        onPointerMove={(e) => state.dragTo(entry, e)}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onLostPointerCapture={endDrag} // e.g. a pinch took the finger
+        onDoubleClick={(e) => onBackground(e) && state.resetOffset(menuKey)}
         onContextMenu={(e) => e.preventDefault()} // not the browser's
         // the camera still zooms beneath it
         onWheel={(e) => {
@@ -379,14 +402,9 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
         }}
       >
         <div className="flex items-center gap-1 self-stretch">
-          <Button
-            ref={(el) => void (entry.cancelEl = el)}
-            title="close"
-            className={cancelClass}
-            onClick={() => state.close(menuKey)}
-          >
-            ✕
-          </Button>
+          {!npcMenu && close}
+          <ScrollLabel ref={npcMenu ? pivot : undefined} text={labelOf(target)} />
+          <span className="flex-1" />
           <Button
             title={collapsed ? "expand" : "collapse"}
             className={actionClass}
@@ -394,33 +412,18 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
           >
             {collapsed ? "▸" : "▾"}
           </Button>
-          <ScrollLabel text={labelOf(target)} />
           <Button
-            title="drag, double click to reset"
-            className={cn(
-              actionClass,
-              "flex min-w-8 flex-1 cursor-grab touch-none justify-center bg-gray-700/40 active:cursor-grabbing",
-            )}
-            onPointerDown={(e) => state.dragFrom(menuKey, e)}
-            onPointerMove={(e) => state.dragTo(menuKey, e)}
-            onPointerUp={() => void (entry.drag = null)}
-            onPointerCancel={() => void (entry.drag = null)}
-            onLostPointerCapture={() => void (entry.drag = null)} // e.g. a pinch took the finger
-            onDoubleClick={() => state.resetOffset(menuKey)}
-          >
-            <DotsSixIcon className="size-3" weight="bold" />
-          </Button>
-          <Button
-            title="back beside it"
-            className={cn(actionClass, entry.dragged === null && "opacity-40")}
+            title={pinned ? "unpin: back beside it" : "drag it to pin it on screen"}
+            className={cn(actionClass, !pinned && "opacity-40")}
             onClick={() => state.resetOffset(menuKey)}
           >
-            <ArrowCounterClockwiseIcon className="size-3" weight="bold" />
+            <PushPinIcon className="size-3" weight={pinned ? "fill" : "regular"} />
           </Button>
+          {npcMenu && close}
         </div>
         {collapsed === false && (
-          <div className="pointer-events-auto flex flex-col items-start gap-1 rounded bg-black/40 p-1">
-            {"npcKey" in target && <NpcRows npcKey={target.npcKey} touch={touch} />}
+          <div className="flex flex-col items-start gap-1">
+            {npcMenu && <NpcRows npcKey={target.npcKey} touch={touch} />}
             {"decorKey" in target && <DecorRows decorKey={target.decorKey} />}
             {"gdKey" in target && target.gdKey !== undefined && <DoorRows gdKey={target.gdKey} touch={touch} />}
           </div>
@@ -508,18 +511,17 @@ function DecorRows({ decorKey }: { decorKey: string }) {
 
   return (
     <>
-      <div className="flex flex-wrap gap-1">
+      {/* one wrapping row: what it is, then its meta */}
+      <div className="flex max-w-64 flex-wrap gap-1">
         <Info label="type">{d.type}</Info>
         {typeof d.meta.img === "string" && <Info label="img">{d.meta.img}</Info>}
         <Info label="room">{String(d.meta.grKey ?? "none")}</Info>
+        {meta.map(([k, v]) => (
+          <Info key={k} label={k}>
+            {typeof v === "string" ? v : JSON.stringify(v)}
+          </Info>
+        ))}
       </div>
-      {meta.length > 0 && (
-        <div className="grid max-w-full grid-cols-[auto_1fr] gap-x-2 px-1.5 text-white/80">
-          {meta.map(([k, v]) => (
-            <MetaRow key={k} k={k} v={v} />
-          ))}
-        </div>
-      )}
       {def !== undefined && (
         <div className="flex flex-wrap gap-1">
           {def.type !== "quad" && (
@@ -533,16 +535,6 @@ function DecorRows({ decorKey }: { decorKey: string }) {
           <DeleteButton onDelete={() => w.decor.remove(decorKey)} />
         </div>
       )}
-    </>
-  );
-}
-
-/** A meta key and its value, as two cells of the grid */
-function MetaRow({ k, v }: { k: string; v: unknown }) {
-  return (
-    <>
-      <span className="text-white/50">{k}</span>
-      <span className="truncate">{typeof v === "string" ? v : JSON.stringify(v)}</span>
     </>
   );
 }
@@ -621,10 +613,13 @@ function DeleteButton({ onDelete }: { onDelete(): void }) {
 }
 
 /** Its text, at most 10 characters wide: longer, it scrolls sideways and fades at an edge with more beyond */
-function ScrollLabel({ text }: { text: string }) {
+function ScrollLabel({ text, ref }: { text: string; ref?(el: HTMLSpanElement | null): void }) {
   return (
     <span
-      ref={(el) => void (el !== null && fadeEdges(el))}
+      ref={(el) => {
+        ref?.(el);
+        if (el !== null) fadeEdges(el);
+      }}
       data-scroll-x=""
       onScroll={(e) => fadeEdges(e.currentTarget)}
       onWheel={(e) => {
@@ -638,6 +633,10 @@ function ScrollLabel({ text }: { text: string }) {
   );
 }
 
+/** Whether a press is on a menu's background, not on a control */
+const onBackground = (e: React.PointerEvent | React.MouseEvent) =>
+  (e.target as Element).closest("button, input, select, textarea, [role]") === null;
+
 /** Fades each edge of `el` with more of it scrolled beyond */
 function fadeEdges(el: HTMLElement) {
   const before = el.scrollLeft > 0;
@@ -648,6 +647,7 @@ function fadeEdges(el: HTMLElement) {
       : "";
 }
 
+/** A label and its value, cut short if long */
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
     <span className="max-w-full truncate rounded bg-black/40 px-1.5 py-0.5 text-white/80">
@@ -675,21 +675,19 @@ const newEntry = (menuKey: string, target: PickMenuTarget): Entry => ({
   version: 0,
   offset: null,
   dragged: null,
-  pin: null,
   at: null,
   rect: null,
   size: null,
   drag: null,
   el: null,
-  cancelEl: null,
+  pivotEl: null,
   originEl: null,
   settleId: 0,
   wantsFocus: false,
 });
 
 /** Undoes any drag, so it is placed afresh. `atPointer`: its Cancel goes under the last press */
-const unpin = (entry: Entry, atPointer: boolean) =>
-  Object.assign(entry, { atPointer, offset: null, dragged: null, pin: null });
+const unpin = (entry: Entry, atPointer: boolean) => Object.assign(entry, { atPointer, offset: null, dragged: null });
 
 /** The point of `rect` nearest `p`: `p` itself if inside */
 function nearestOnRect(p: Geom.VectJson, rect: Geom.RectJson): Geom.VectJson {
@@ -778,19 +776,21 @@ type Entry = {
   version: number;
   /** Pixels from its anchor its Cancel is, fixed on its first frame. Until dragged */
   offset: null | Geom.VectJson;
-  /** Pixels from its anchor to where its lines meet it, once dragged. Turning the World keeps them */
-  dragged: null | Geom.VectJson;
-  /** Where its lines meet it, as a share of its width and height, once dragged */
-  pin: null | Geom.VectJson;
+  /**
+   * Pixels from its anchor to where its lines meet it, once dragged. Turning the World keeps them.
+   * `pin` is that point on it, as a share of its width and height
+   */
+  dragged: null | (Geom.VectJson & { pin: Geom.VectJson });
   /** Its anchor, and its own box, as last placed in overlay pixels */
   at: null | Geom.VectJson;
   rect: null | Geom.RectJson;
-  /** Its size, and its Cancel's centre within it, as last measured on a resize */
+  /** Its size, and its pivot's centre within it, as last measured on a resize */
   size: null | { width: number; height: number; cx: number; cy: number };
-  /** Where a drag of its grip began, and its box then */
+  /** Where a drag began, and its box then */
   drag: null | { x: number; y: number; rect: Geom.RectJson };
   el: null | HTMLDivElement;
-  cancelEl: null | HTMLButtonElement;
+  /** What keeps still as it resizes: its Cancel, else an npc's label */
+  pivotEl: null | HTMLElement;
   /** Its origin's marks: a dot on its anchor, and the lines to it */
   originEl: null | HTMLDivElement;
   /** Ends its `settle` */
@@ -819,10 +819,10 @@ export type State = {
   closeFocused(): boolean;
   /** The menus `e` may change */
   concernedBy(e: JshCli.Event): string[];
-  /** Starts a drag of its grip */
-  dragFrom(menuKey: string, e: React.PointerEvent<HTMLElement>): void;
+  /** Starts a drag of it by its background */
+  dragFrom(entry: Entry, e: React.PointerEvent<HTMLElement>): void;
   /** Moves it by the drag so far */
-  dragTo(menuKey: string, e: React.PointerEvent<HTMLElement>): void;
+  dragTo(entry: Entry, e: React.PointerEvent<HTMLElement>): void;
   /** How shown `target` is, by its room's fade */
   fadeOf(target: PickMenuTarget): number;
   measure(entry: Entry): void;
