@@ -93,7 +93,7 @@ revives it. No event tells of that, so `crossLines` checks each tick for whoever
 rect, with `lineSlack` (5cm) past the line before it counts, so someone stood on it does not flicker.
 
 - A live shield is a wall to the gun arm. Whilst their arm at full reach would meet its centre line
-  (`w.shields.reaches`, each tick) the phaser is drawn in, `phaser_aim_avoid`, and fires nothing. So it can be
+  (`w.shields.reaches`, polled with the check for someone in the way: 0.1s for the player, 0.3s for npcs) the phaser is drawn in, `phaser_aim_avoid`, and fires nothing. So it can be
   raised, and fired, beside a shield or facing away from one. One tuned to the shield is not drawn in.
   The player is told "phaser suppressed" as theirs is drawn in.
 - Crossing a live line lowers a phaser not tuned to it: none is carried through raised.

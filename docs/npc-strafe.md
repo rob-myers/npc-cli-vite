@@ -173,6 +173,6 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 - `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/use-world-events.ts` — `w.e.move`, `isBackStep`
 - `components/NPCs.tsx` — `turnBeforeMoving`, the tick's facing, `moveClipFadedIn`
-- `components/Phasers.tsx` — `wield`, which sets or withholds an armed npc's aim
+- `components/Phasers.tsx` — `wieldFacing` (in `wield`), which sets or withholds an armed npc's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
 - `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `look --strafe`

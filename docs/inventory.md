@@ -166,6 +166,25 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
   the obstacle. A raise from rest waits for the first cast, a frame or two, to know which way.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`), whilst the gun stays in hand.
 
+### Each tick
+
+`Phasers.wield` runs for everyone holding one, raised or not, in this order:
+
+1. A one-shot is lowered once it is over, and a charge held a moment brings the left hand to steady it, dropping psi.
+2. `wieldReach`: whether whom they are on is within their aim. Lain, they roll to point there.
+3. `recast`: the arm's rays, for walls, obstacles and whom it meets (armed only, and only once something changed).
+4. `wieldBlock`: what draws the arm in (`avoid`), and an obstacle a raise or lower would swing through (`swingHit`).
+   Armed, `wieldPoll` checks for someone in the way and shields, every 0.1s for the player and 0.3s for npcs.
+   `meetObstacles` reads walls and obstacles off the last cast.
+5. `wieldPose`: the right arm's pose, and the left drawn in with it. Then `wieldStance`: the idle they stand in once the arm is up.
+6. `wieldFacing`: their facing, at whom or where they lock on, else held so a move strafes.
+7. `wieldPitch`: the tilt, eased.
+8. `wieldAim`: where the arm points, sat or lain, tilted or after the beam, and the muzzle held on the aim's line.
+9. `wieldBeam`: the gun in hand, and the beam's lock.
+
+Each step from 4 to 8 returns at once when lowered and at rest, with nothing of its own to let go of. So a phaser merely
+carried costs only steps 1, 2, 9 and the checks.
+
 ### Crouched
 
 Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and `crouch_cover`, a full squat at
