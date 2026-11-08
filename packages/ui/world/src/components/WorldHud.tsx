@@ -153,20 +153,22 @@ export default function WorldHud() {
         let shown: null | number = null;
         let lastMs = performance.now();
         return w.e.addFrameCallback(() => {
-          const { key, recon, lookCap } = w.player;
+          const { key, recon } = w.player;
           const armed = w.phasers?.isArmed(key) === true;
-          const cap = w.view.follow === true && w.view.cameraMode === "embodied" ? lookCap : null;
+          const framed = w.view.follow === true && w.view.cameraMode === "embodied";
+          const reach = framed ? w.player.lookReach() : null;
+          const far = framed ? w.player.look.far : null;
           const blocked = armed ? w.phasers.isDrawnIn(key) === true : recon && w.player.isReconYielding();
-          el.style.setProperty("display", armed || recon || cap !== null ? "" : "none");
+          el.style.setProperty("display", armed || recon || reach !== null ? "" : "none");
           el.classList.toggle("blocked", blocked);
-          // raised, the red dot's: else recon mode, or a look's cap alone
+          // raised, the red dot's: else recon mode, or a look alone
           const word = armed
             ? `aim${blocked ? " blocked" : ""}`
-            : `${recon ? "recon" : "look"}${cap?.far ? " max" : ""}`;
+            : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
           /** Out through a hull window: no range to read, so the last stays, greyed */
-          const out = armed ? w.npcFocus?.endsInNothing(key) === true : cap?.far === true && cap.out;
-          const target = out ? null : armed ? (w.npcFocus?.reachOf(key) ?? null) : (cap?.reach ?? null);
+          const out = armed ? w.npcFocus?.endsInNothing(key) === true : far?.out === true;
+          const target = out ? null : armed ? (w.npcFocus?.reachOf(key) ?? null) : reach;
           const now = performance.now();
           const alpha = 1 - Math.exp((-readoutRate * (now - lastMs)) / 1000);
           if (target !== null) shown = shown === null ? target : shown + (target - shown) * alpha;
@@ -175,6 +177,9 @@ export default function WorldHud() {
           lastMs = now;
           setReadout(reachEl, shown);
           reachEl?.classList.toggle("out", out);
+          /** Steered by `r` or recon mode, so only whilst on */
+          const steered = framed && !armed && far === null && w.player.look.steer !== null;
+          reachEl?.classList.toggle("steer", steered);
         });
       },
     }),
@@ -713,7 +718,7 @@ const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
 /** A distance as a device reads it out: a fixed width, so the notice never changes length */
 const readoutClass =
-  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 [&.out]:text-neutral-500 [&.out]:ring-neutral-700";
+  "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
 
 /** How fast a readout's number eases to the one it reads, per second */
 const readoutRate = 6;

@@ -23,8 +23,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       fireTouch: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
-      lookCap: null,
-      beforeFar: null,
+      look: { base: null, steer: null, far: null },
       lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
@@ -63,7 +62,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (keep === false && face.aim === state.keepAim) face.aim = null;
         else if (keep === true && face.aim === null) face.aim = state.keepAim;
         if (held === false) {
-          if (state.lookCap?.far === true) state.recastFarLook(npc, npc.lookY); // Space held, it follows their facing
+          state.look.steer = null;
+          if (state.look.far !== null) state.recastFarLook(npc, npc.lookY); // Space held, it follows their facing
           return;
         }
         if (lookAt !== null) {
@@ -85,12 +85,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const bearing = npc.anim.bearingOf(tmpLook);
         // sat, they look over a shoulder at most: further behind them, not at all
         if (posture === "sit" && Math.abs(deltaAngle(npc.rotation.y, bearing)) > sitLookMaxRad) return;
-        const cap = state.lookCap;
-        // a max look in recon mode, or `r` held, follows the pointer
-        if (cap?.far === true && lookAt === null) state.recastFarLook(npc, bearing);
-        else if (rHeld === false || state.recon || performance.now() - state.rDownMs >= rCapMs)
-          // `r` caps once held a while, so a tap shows nothing
-          state.capFrontier(Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z));
+        const reach = Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z);
+        // a tap's look sets the distance. `r` held a while, or recon mode, steers it only whilst on
+        if (lookAt !== null) [state.look.base, state.look.steer] = [reach, null];
+        else {
+          if (state.recon || performance.now() - state.rDownMs >= rCapMs) state.look.steer = reach;
+          state.recastFarLook(npc, bearing); // a max look follows the pointer too
+        }
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
           // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
@@ -128,11 +129,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       cancelCharge() {
         return w.phasers?.cancelCharge(state.key) === true;
       },
-      capFrontier(reach) {
-        // reused, as a look sets it every tick
-        if (state.lookCap?.far === false) state.lookCap.reach = reach;
-        else state.lookCap = { reach, far: false };
-      },
       async castFarLook(bearing) {
         const npc = state.get();
         if (npc === undefined || state.farCasting === true) return;
@@ -141,23 +137,19 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.farCasting = true;
         const [cast] = await w.e.raycasts([{ src: { x, y: z }, dst }], { offMap: true }).catch(() => [null]);
         state.farCasting = false;
-        if (state.lookCap?.far !== true) return; // ended meanwhile
+        if (state.look.far === null) return; // ended meanwhile
         const hit = cast?.hit ?? null;
         const wall = hit === null ? farLookMetres : Math.hypot(hit.x - x, hit.y - z);
         /** Where a hull window lets it out of the ship, if first: nothing to see beyond it */
         const hull = cast?.out ?? Infinity;
         const [reach, out] = [Math.min(wall, hull), hull < wall];
         const doors = cast === null ? [] : cast.hitDoor === null ? cast.doors : [...cast.doors, cast.hitDoor];
-        state.lookCap = { reach, bearing, x, z, far: true, doors, out };
+        state.look.far = { reach, bearing, x, z, doors, out };
         w.r3f?.invalidate();
       },
       dragLookTowards(clientX, clientY) {
         state.lookTowards(clientX, clientY);
         state.lookMarked = false;
-      },
-      dropFrontierCap() {
-        state.lookCap = null;
-        w.r3f?.invalidate(); // the frontier eases back out, and the bar's notice goes
       },
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -188,7 +180,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         return w.gameTime.now() < state.reconYieldUntil;
       },
       isScanning() {
-        return state.lookCap?.far === true && state.lookAt === null;
+        return state.look.far !== null && state.lookAt === null;
       },
       lookAtPoint(x, z) {
         const npc = state.get();
@@ -203,6 +195,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.r3f?.invalidate();
         });
         w.r3f?.invalidate();
+      },
+      lookReach() {
+        const { base, steer, far } = state.look;
+        return far?.reach ?? steer ?? base;
       },
       lookTowards(clientX, clientY) {
         const npc = state.get();
@@ -339,14 +335,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.e.setPsi(on, state.key);
       },
       recastFarLook(npc, bearing) {
-        const cap = state.lookCap;
-        if (cap?.far !== true) return;
-        const moved = Math.hypot(npc.position.x - cap.x, npc.position.z - cap.z) > farRecastMetres;
-        if (moved || Math.abs(deltaAngle(bearing, cap.bearing)) > farRecastRad) state.castFarLook(bearing);
+        const { far } = state.look;
+        if (far === null) return;
+        const moved = Math.hypot(npc.position.x - far.x, npc.position.z - far.z) > farRecastMetres;
+        if (moved || Math.abs(deltaAngle(bearing, far.bearing)) > farRecastRad) state.castFarLook(bearing);
       },
       refreshFarLook(gdKey) {
-        const cap = state.lookCap;
-        if (cap?.far === true && cap.doors.includes(gdKey)) state.castFarLook(cap.bearing);
+        const { far } = state.look;
+        if (far?.doors.includes(gdKey) === true) state.castFarLook(far.bearing);
       },
       releaseCharge() {
         if (w.phasers?.isCharging(state.key) !== true) return;
@@ -395,26 +391,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
       },
       setFarLook(on) {
-        if (on === false) {
-          // back to the look before it, if another has not replaced it meanwhile
-          if (state.lookCap?.far === true) state.lookCap = state.beforeFar;
-          state.beforeFar = null;
+        const npc = state.get();
+        if (on === false || npc === undefined) {
+          state.look.far = null;
           return void w.r3f?.invalidate();
         }
-        const npc = state.get();
-        if (npc === undefined || state.lookCap?.far === true) return;
-        state.beforeFar = state.lookCap === null ? null : { ...state.lookCap };
+        if (state.look.far !== null) return;
         // its reach as it is until the cast lands
-        const { x, z } = npc.position;
-        state.lookCap = {
-          reach: w.view.playerFrontier.reach ?? 0,
-          bearing: npc.lookY,
-          x,
-          z,
-          far: true,
-          doors: [],
-          out: false,
-        };
+        const reach = state.lookReach() ?? w.view.playerFrontier.reach ?? 0;
+        state.look.far = { reach, bearing: npc.lookY, x: npc.position.x, z: npc.position.z, doors: [], out: false };
         state.castFarLook(npc.lookY);
       },
       setKey(npcKey) {
@@ -492,7 +477,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       stopLooking() {
         if (state.recon === true) state.toggleRecon();
-        state.dropFrontierCap();
+        state.look = { base: null, steer: null, far: null };
+        w.r3f?.invalidate(); // the frontier eases back out, and the bar's notice goes
       },
       syncRun() {
         // none held, or opposites: either way they are no longer going anywhere
@@ -516,7 +502,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.recon = !state.recon;
         w.hud?.update(); // on, the bar keeps a notice of it
         w.view.update(); // and the cursor is a crosshair
-        if (state.recon === false) w.hud?.say("recon off");
         w.r3f?.invalidate();
       },
       toggleRun() {
@@ -576,6 +561,9 @@ const [farRecastRad, farRecastMetres] = [Math.PI / 90, 0.25];
 /** How long `r` is held before its look caps their frontier */
 const rCapMs = 300;
 
+/** A max look: the reach of its cast, from where and along which bearing, and the doors that stopped it or let it through. `out` it left the ship by a hull window */
+type FarLook = { reach: number; bearing: number; x: number; z: number; doors: Geomorph.GmDoorKey[]; out: boolean };
+
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
   key: string;
@@ -623,24 +611,17 @@ export type State = {
   /** The floor point a look (a right click or two-finger tap) is at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   /**
-   * How far they last looked, which caps their frontier until another look, or the notice's "x".
-   * A far look extends it instead, re-cast from where it last cast: `bearing`, `x` and `z`. `doors` stopped or let it through. `out`: it left the ship by a hull window
+   * How far they look, which caps their frontier: `base` a tap's, kept; `steer` only whilst `r` or recon mode is on;
+   * `far` only whilst Space is held, which extends it instead. The first of `far`, `steer` and `base` is in force
    */
-  lookCap:
-    | null
-    | { reach: number; far: false }
-    | { reach: number; far: true; bearing: number; x: number; z: number; doors: Geomorph.GmDoorKey[]; out: boolean };
-  /** The look's cap before Space's far look, restored as it is let go */
-  beforeFar: State["lookCap"];
-  /** Caps their frontier at `reach`, until another look or the notice's "x" */
-  capFrontier(reach: number): void;
+  look: { base: null | number; steer: null | number; far: null | FarLook };
+  /** The distance in force: see `look` */
+  lookReach(): null | number;
   /** Casts the far look again where it last did, if door `gdKey` stopped its cast or let it through */
   refreshFarLook(gdKey: Geomorph.GmDoorKey): void;
   /** Casts the far look again along `bearing` once it swings, or they move, far enough */
   recastFarLook(npc: JshCli.Npc, bearing: number): void;
-  /** Their full frontier again */
-  dropFrontierCap(): void;
-  /** Recon mode off and the cap dropped: the "x" of the bar's look or recon notice */
+  /** Recon mode off and every look dropped: the "x" of the bar's look or recon notice */
   stopLooking(): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
@@ -678,7 +659,7 @@ export type State = {
   castFarLook(bearing: number): Promise<void>;
   /** A far look's cast is under way */
   farCasting: boolean;
-  /** Recon mode on or off, saying so */
+  /** Recon mode on or off: the bar's notice shows it */
   toggleRecon(): void;
   /** Run or walk — their `anim.hurry` — saying so */
   toggleRun(): void;

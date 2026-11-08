@@ -32,17 +32,16 @@ export default function LightSweep() {
     if (player !== undefined && w.view.cameraMode === "embodied") {
       // eased more gently whilst they are off the mesh or mid fade-spawn — see `frontierConfig.calmRate`
       const calm = player.agentId === null || player.isFading() === true;
-      const cap = w.player.lookCap;
       const dot = w.npcFocus?.reachOf(player.key) ?? null;
       /** A far look extends it as a raised phaser's dot does: any other look caps it */
-      const far = cap?.far === true ? cap.reach : null;
+      const far = w.player.look.far?.reach ?? null;
       // the way their head faces, which is not always their body's
       w.view.playerFrontier.update(
         player.lookY,
         delta,
         calm ? frontierConfig.calmRate : w.player.isScanning() ? frontierConfig.scanRate : frontierConfig.smoothRate,
         dot === null && far === null ? null : Math.max(dot ?? 0, far ?? 0),
-        far === null ? (cap?.reach ?? null) : null,
+        far === null ? w.player.lookReach() : null,
       );
     }
   }, -2);

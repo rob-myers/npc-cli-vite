@@ -106,15 +106,15 @@ Whilst following, the view frames the player and their frontier: the furthest po
 - `reach` is the furthest of the fan. `ahead` is the vector to the frontier point, eased at `frontierConfig.smoothRate`.
 
 **What changes it**
-- **A look caps it** (`w.player.lookCap`): a right click or two-finger tap, `r` held, or recon mode.
-  - `r` caps only once held `rCapMs`, so a tap shows nothing.
-  - The cap stays as they walk and turn, until another look replaces it or the notice's "x" clears it. The light still limits it: the frontier is the nearer of the two.
+- **A look caps it** (`w.player.look`, the distance in force `lookReach()`). The light still limits it: the frontier is the nearer of the two.
+  - A right click or two-finger tap sets the distance (`base`). It stays as they walk and turn, until another tap or the notice's "x".
+  - `r` held, or recon mode, steers it to the pointer only whilst on (`steer`), then gives it back. `r` steers only once held `rCapMs`, so a tap of it shows nothing.
 - **A far look extends it**: Space held with the phaser lowered (`w.player.setFarLook`).
   - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in recon mode or whilst `r` is held.
   - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
-  - It is a cap marked `far`. Letting go of Space brings back the look before it (`beforeFar`), unless another has replaced it.
+  - It is the look's `far`, in force over `steer` and `base` whilst Space is held. Letting go gives them back.
 - **A raised phaser extends it** to at least the red dot, where a shot at no one would land (`w.npcFocus.reachOf`).
-- **The notice.** Whilst a cap holds, the bar shows its reach: "look 2m", "recon 2m" in recon mode, "look max" for a far look. Its "x" drops the cap and ends recon mode (`w.player.stopLooking`). With the phaser raised the "aim" notice shows the dot's range instead.
+- **The notice.** Whilst a cap holds, the bar shows its reach: "look 2m", "recon 2m" in recon mode, "look max" for a far look. A distance `r` or recon mode steers reads sky blue, being theirs only whilst on. Its "x" drops the cap and ends recon mode (`w.player.stopLooking`). With the phaser raised the "aim" notice shows the dot's range instead.
 
 **How the view frames it** (`easeFrontier`, in `onCameraFrame`)
 - **The pan.** `followPlayer` holds the target `frontierConfig.panFrac` of the way along `ahead`, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
