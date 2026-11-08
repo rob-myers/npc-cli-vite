@@ -8,7 +8,7 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `ui/world/src/components/use-world-events.ts` | what is carried, `w.e.carried`, and held keys |
 | `ui/world/src/service/storage.ts` | `carried` (per World), `PersistedNpc.access` (per map) |
 | `ui/world/src/const.env.ts` | `inventoryConfig`: kinds, heights, reach, the most carried |
-| `cli/src/jsh/world/core.ts` | `give`, `drop`, `inventory` |
+| `cli/src/jsh/world/core.ts` | `give`, `take`, `drop`, `inventory` |
 | `media/src/decor/{phaser,book,box,box-*,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
@@ -133,6 +133,7 @@ An item is a runtime quad decor (a point, if flat) with `meta.item`, one of `inv
 pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05
 pick 1 | decor type:point img:keycard scale:2 meta:'{ item: "keycard", door: "g0d29" }'
 give rob items:"psi phaser"
+take rob item:phaser # gone outright, as `drop` puts it down
 drop rob items:phaser
 ```
 

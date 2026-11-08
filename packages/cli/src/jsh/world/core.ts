@@ -1612,6 +1612,28 @@ export async function spawn(
 }
 
 /**
+ * The inverse of `give`: `psi`, or items taken away outright, not put down
+ * ```sh
+ * take rob item:phaser
+ * take rob items:"psi phaser"
+ * ```
+ */
+export function take(
+  { api, args, w }: JshCli.RunArg,
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
+) {
+  api.setPausable("world", false);
+
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  opts.items ??= [];
+
+  const npc = w.npc.get(opts.npcKey);
+  for (const name of opts.items) {
+    if (w.e.revokeItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no ${name}`);
+  }
+}
+
+/**
  * Game time per real second, `0` to `2`. Prints it, after setting it if given
  * ```sh
  * timescale
