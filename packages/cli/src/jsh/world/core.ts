@@ -225,19 +225,18 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give rob items:psi
  * give rob items:"psi phaser"
  * give npc:rob items:'["phaser","book","box"]'
+ * give phaser to:rob
  * ```
  */
 export function give(
   { api, args, w }: JshCli.RunArg,
-  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", to: "npcKey", item: "items" }, { array: { items: true } }),
 ) {
   api.setPausable("world", false);
+  const { npcKey, items } = parseCarryOpts(opts);
 
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  opts.items ??= [];
-
-  const npc = w.npc.get(opts.npcKey);
-  for (const name of opts.items) {
+  const npc = w.npc.get(npcKey);
+  for (const name of items) {
     if (name !== "psi" && inventoryConfig.kinds.includes(name as ItemKind) === false)
       throw Error(`unknown item: ${name}`);
     if (w.e.giveItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no room for ${name}`);
@@ -245,6 +244,13 @@ export function give(
 }
 
 type CarryOpts = { npcKey?: string; items?: string[] };
+
+/** Naked args are items, after the npc's unless `to:` or `from:` names them */
+function parseCarryOpts(opts: CarryOpts) {
+  const naked = getUnknownNakeds(opts);
+  const npcKey = opts.npcKey ?? (naked.shift() as string);
+  return { npcKey, items: [...(opts.items ?? []), ...naked] };
+}
 
 /**
  * ```sh
@@ -1616,19 +1622,18 @@ export async function spawn(
  * ```sh
  * take rob item:phaser
  * take rob items:"psi phaser"
+ * take phaser from:rob
  * ```
  */
 export function take(
   { api, args, w }: JshCli.RunArg,
-  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", from: "npcKey", item: "items" }, { array: { items: true } }),
 ) {
   api.setPausable("world", false);
+  const { npcKey, items } = parseCarryOpts(opts);
 
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  opts.items ??= [];
-
-  const npc = w.npc.get(opts.npcKey);
-  for (const name of opts.items) {
+  const npc = w.npc.get(npcKey);
+  for (const name of items) {
     if (w.e.revokeItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no ${name}`);
   }
 }
@@ -1874,6 +1879,13 @@ function getFirstUnknownNaked(opts: Record<string, any>) {
  */
 function getLastUnknownNaked(opts: Record<string, any>) {
   return keys(opts).findLast(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
+}
+
+/** Naked args (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`, in order */
+function getUnknownNakeds(opts: Record<string, any>) {
+  return keys(opts).filter(
     (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
   );
 }

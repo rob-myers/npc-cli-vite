@@ -133,7 +133,9 @@ An item is a runtime quad decor (a point, if flat) with `meta.item`, one of `inv
 pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05
 pick 1 | decor type:point img:keycard scale:2 meta:'{ item: "keycard", door: "g0d29" }'
 give rob items:"psi phaser"
+give phaser to:rob
 take rob item:phaser # gone outright, as `drop` puts it down
+take phaser from:rob
 drop rob items:phaser
 ```
 
