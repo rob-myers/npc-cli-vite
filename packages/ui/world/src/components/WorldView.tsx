@@ -848,10 +848,12 @@ export function WorldView(props: React.PropsWithChildren) {
           return;
         }
         const [wanted, wantedMin] = state.getFrontierStops();
+        if (state.getFrontierOffset(tmpOffset, wanted, wantedMin) === false) tmpOffset.x = tmpOffset.z = 0;
         if (state.lookAtAnimId !== 0) {
           // a `lookAt` eases these on its own alpha
           state.frontierMs = performance.now();
-          if (state.getFrontierOffset(offset, wanted, wantedMin) === false) offset.x = offset.z = 0;
+          offset.x = tmpOffset.x;
+          offset.z = tmpOffset.z;
           return;
         }
         // measured in time: a demand frameloop's frame gaps vary
@@ -862,16 +864,21 @@ export function WorldView(props: React.PropsWithChildren) {
 
         const remaining = wanted - controls.maxDistance;
         const remainingMin = wantedMin - controls.minDistance;
-        const settled = Math.max(Math.abs(remaining), Math.abs(remainingMin)) < frontierConfig.settleUntil;
-        controls.maxDistance = settled ? wanted : controls.maxDistance + remaining * alpha;
-        controls.minDistance = settled ? wantedMin : controls.minDistance + remainingMin * alpha;
-        // fitted to the zoom as it is, not as it will be, so it never lunges ahead of it
-        if (state.getFrontierOffset(tmpOffset, controls.maxDistance, controls.minDistance) === false)
-          tmpOffset.x = tmpOffset.z = 0;
-        const moved = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
-        offset.x = tmpOffset.x;
-        offset.z = tmpOffset.z;
-        if (settled === false || moved >= frontierConfig.settleUntil) w.r3f?.invalidate(); // still on its way
+        const remainingOffset = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
+        if (Math.max(Math.abs(remaining), Math.abs(remainingMin), remainingOffset) < frontierConfig.settleUntil) {
+          controls.maxDistance = wanted;
+          controls.minDistance = wantedMin;
+          offset.x = tmpOffset.x;
+          offset.z = tmpOffset.z;
+          return;
+        }
+        controls.maxDistance += remaining * alpha;
+        controls.minDistance += remainingMin * alpha;
+        // eased with the zoom as it grows, else the view lunges ahead. At once as it shrinks, keeping pace with the frontier
+        const k = tmpOffset.x ** 2 + tmpOffset.z ** 2 < offset.x ** 2 + offset.z ** 2 ? 1 : alpha;
+        offset.x += (tmpOffset.x - offset.x) * k;
+        offset.z += (tmpOffset.z - offset.z) * k;
+        w.r3f?.invalidate(); // still on its way
       },
       getFrontierStops() {
         const { controls } = state;
@@ -1929,7 +1936,7 @@ export type State = {
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
-  /** Where `easeFrontier` holds `frontierOffset` at stops `max` and `min`, `false` with no frontier read */
+  /** Where `easeFrontier` eases `frontierOffset` towards, `false` with no frontier read */
   getFrontierOffset(out: { x: number; z: number }, max: number, min: number): boolean;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
@@ -1984,7 +1991,7 @@ export type State = {
   cameraFrameMs: number;
   /** Whether the World has run unpaused since mount: only then does a paused follow carry on */
   ranUnpaused: boolean;
-  /** How far the follow's goal is held towards the frontier, fitted to the zoom — see `easeFrontier` */
+  /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
   frontierHold: boolean;

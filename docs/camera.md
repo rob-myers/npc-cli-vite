@@ -116,5 +116,5 @@ The HUD:
 - Both go back to persisted when not following (`holdFrontier` only pans). Following, they and the offset hold until the world has risen (`w.fold`) and the frontier is read, e.g. loading or just respawned: an early reading can be far off.
 - The saved camera keeps its live stops (`PersistedCamera.stops`). The controls seed the zoom in them (`openStops`), so a load whilst following opens where it was, not pulled in to the persisted outer stop.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
-- The follow's offset towards the frontier is not eased itself. Each frame it is refitted to the live stops, so the pan keeps pace with the frontier and never runs ahead of the zoom.
+- The follow's offset eases with the zoom as it grows, else the view lunges ahead then pulls back, e.g. as the phaser is raised. As it shrinks it keeps pace with the frontier.
 - On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
