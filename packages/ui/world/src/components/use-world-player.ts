@@ -515,8 +515,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // aiming strafes them regardless, and sat or lain they never do
         if (w.phasers?.isArmed(state.key) === true || state.get()?.posture !== "stand") return;
         state.strafe = !state.strafe;
-        w.hud?.update(); // its gait button shows it
-        if (state.strafe === false) w.hud?.say("strafe off"); // on, the bar keeps a notice of it
+        w.hud?.update(); // its hud-toast shows it
         w.r3f?.invalidate();
       },
     }),
