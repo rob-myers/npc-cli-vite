@@ -169,6 +169,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   _zoomAimed = false;
   /** Whether `zoomProgress` has been read off the camera it started at — see `update` */
   _zoomSeeded = false;
+  /** The stops the zoom is seeded in, in place of those given as props, e.g. a follow's saved ones */
+  openStops: null | [max: number, min: number] = null;
   /** Whether `u.rotatePivot` holds a point this drag aimed at — see `setRotateAbout` */
   _rotateAimed = false;
 
@@ -1045,6 +1047,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // to a stop where the zoom settles onto one anyway; a free zoom rests anywhere between them,
     // and snapping it would throw the restored distance away
     if (this._zoomSeeded === false && Number.isFinite(this.maxDistance) === true) {
+      if (this.openStops !== null) [this.maxDistance, this.minDistance] = this.openStops;
       this.setZoomFromRadius(this.spherical.radius, this.freeZoom === false);
       this._zoomSeeded = true;
     }

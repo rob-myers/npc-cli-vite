@@ -8,7 +8,7 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `ui/world/src/components/use-world-events.ts` | what is carried, `w.e.carried`, and held keys |
 | `ui/world/src/service/storage.ts` | `carried` (per World), `PersistedNpc.access` (per map) |
 | `ui/world/src/const.env.ts` | `inventoryConfig`: kinds, heights, reach, the most carried |
-| `cli/src/jsh/world/core.ts` | `give`, `drop`, `inventory` |
+| `cli/src/jsh/world/core.ts` | `give`, `take`, `drop`, `inventory` |
 | `media/src/decor/{phaser,book,box,box-*,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
@@ -23,15 +23,16 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires, or raises it, see Targeting in `docs/engagements.md` |
-| keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires (lowered, it is a far look), see Targeting in `docs/engagements.md` |
+| keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
-- **strafe** has no button: a double tap of Shift toggles it. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim", its "x" lowering the phaser, and "strafe" with no "x": a double tap of Shift does nothing then. "aim blocked", in grey, is whilst something in the way draws the phaser in.
-- **time**: whilst the time scale is not `1`, a notice "time 0.8" stays over the bar, its "x" setting it back to `1`. See `docs/time.md`.
-- **follow**: a press turns it on or off, as `v` does.
+- **strafe** has no button: a double tap of Shift toggles it. Whilst on, a hud-toast "strafe" stays over the bar, its "x" turning it off. Turned off mid-move it stays, half transparent with its "x" greyed, whilst the latched move keys are held (`strafeLatch`) A latch from lowering the phaser shows none. With the phaser raised it says "aim" and the red dot's range, e.g. "aim 7.3m", its "x" lowering the phaser, and "strafe" only if it was on, its "x" greyed: a double tap of Shift does nothing then. "aim" greys whilst something in the way draws the phaser in.
+- **follow**: a press turns it on or off, as `v` does. Whilst on, a hud-toast "follow" stays over the bar, its "x" turning it off.
+- **look** and **recon** have no button. Whilst recon mode is on, or a look caps their frontier whilst following, a hud-toast stays over the bar: "recon" in recon mode, else "look", then the cap's reach, e.g. "look 2m", or "look max" ("recon max") for a far look (Space held, lowered). Its "x" ends recon mode and drops the cap. It greys whilst recon mode yields. Raised, the same hud-toast says "aim", its number easing from the look's to the red dot's range. Out through a hull window either greys, keeping its last number: there is no range. See Following the player in `docs/camera.md`.
+- **sound**: a hud-toast always over the bar, "muted" or "unmuted" with a speaker icon. A press toggles it. It starts muted, and is kept across visits (`soundMute`, `@npc-cli/util/sound-mute`). See `docs/audio.md`.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 - **options** (`PlayerMenu`, a menu icon), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
 
@@ -131,6 +132,9 @@ An item is a runtime quad decor (a point, if flat) with `meta.item`, one of `inv
 pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05
 pick 1 | decor type:point img:keycard scale:2 meta:'{ item: "keycard", door: "g0d29" }'
 give rob items:"psi phaser"
+give phaser to:rob
+take rob item:phaser # gone outright, as `drop` puts it down
+take phaser from:rob
 drop rob items:phaser
 ```
 
@@ -160,6 +164,25 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
   kept in. Raising, the `phaser_aim` stance waits for the arm to be up, else its own arm swings the gun forward through
   the obstacle. A raise from rest waits for the first cast, a frame or two, to know which way.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`), whilst the gun stays in hand.
+
+### Each tick
+
+`Phasers.wield` runs for everyone holding one, raised or not, in this order:
+
+1. A one-shot is lowered once it is over, and a charge held a moment brings the left hand to steady it, dropping psi.
+2. `wieldReach`: whether whom they are on is within their aim. Lain, they roll to point there.
+3. `recast`: the arm's rays, for walls, obstacles and whom it meets (armed only, and only once something changed).
+4. `wieldBlock`: what draws the arm in (`avoid`), and an obstacle a raise or lower would swing through (`swingHit`).
+   Armed, `wieldPoll` checks for someone in the way and shields, every 0.1s for the player and 0.3s for npcs.
+   `meetObstacles` reads walls and obstacles off the last cast.
+5. `wieldPose`: the right arm's pose, and the left drawn in with it. Then `wieldStance`: the idle they stand in once the arm is up.
+6. `wieldFacing`: their facing, at whom or where they lock on, else held so a move strafes.
+7. `wieldPitch`: the tilt, eased.
+8. `wieldAim`: where the arm points, sat or lain, tilted or after the beam, and the muzzle held on the aim's line.
+9. `wieldBeam`: the gun in hand, and the beam's lock.
+
+Each step from 4 to 8 returns at once when lowered and at rest, with nothing of its own to let go of. So a phaser merely
+carried costs only steps 1, 2, 9 and the checks.
 
 ### Crouched
 
@@ -216,7 +239,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - Both rays end `leadSecs` of their velocity on, so the arm is in before a strafe takes the gun into a wall.
 - Their left arm is drawn in too, hanging as in `phaser_aim_avoid`, else a run's guard puts that fist into the wall. Not
   whilst it has psi or a reach, nor whilst tucked.
-- Raised or lowered by a wall (`armHit`), the arm goes by way of `sitArmVia`, as sat at a table (`byWall` in
+- Raised by a wall (`armHit`), or lowered stood still, the arm goes by way of `sitArmVia`, as sat at a table (`byWall` in
   `setUpper`). Their stance waits until the arm is up. Else either swings the hand out through the wall.
 - Stood or crouched, an obstacle blocks too if the gun is within its span, with `gunClear` to spare. Its top is
   tested against the gun's underside, `gunDrop` below the gun's line, as the hand and the gun's body hang below it.

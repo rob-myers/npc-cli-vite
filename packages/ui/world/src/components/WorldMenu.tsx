@@ -262,10 +262,6 @@ export function WorldMenu() {
     return () => observer.disconnect();
   }, []);
 
-  /** Spots greyed out until jsh `spots show`, run by a terminal's profile, fills them */
-  const withSpotsGreyed = <T extends { value: string }>(item: T) =>
-    item.value === "spots" && (w.spots?.drawn.length ?? 0) === 0 ? { ...item, disabled: true } : item;
-
   const isDebugActive = (item: string) => {
     switch (item) {
       case "view pick":
@@ -694,7 +690,7 @@ export function WorldMenu() {
                     />
                   );
                 }
-                const group = item in debugGroups ? debugGroups[item as DebugGroup].map(withSpotsGreyed) : null;
+                const group = item in debugGroups ? debugGroups[item as DebugGroup] : null;
                 const active = group?.map(({ value }) => value).filter(isDebugActive);
                 return group !== null && active !== undefined ? (
                   <MenuMultiSelect
@@ -946,10 +942,14 @@ export function WorldMenu() {
                 </Slider.Control>
               </Slider.Root>
             )}
+            {/* highlighted whilst not 1, as a reminder: a double click sets it back */}
             <button
               type="button"
-              title={state.timeSliderOpen ? "hide time scale" : "show time scale"}
-              className="cursor-pointer text-[10px] tabular-nums text-neutral-300 hover:text-white"
+              title={`${state.timeSliderOpen ? "hide" : "show"} time scale: [ and ] step it, double click for 1`}
+              className={cn(
+                "cursor-pointer rounded px-1 py-1.5 text-[10px] tabular-nums text-neutral-300 hover:text-white",
+                w.gameTime.scale !== 1 && "bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/50",
+              )}
               onClick={state.toggleTimeSlider}
             >
               {w.gameTime.scale.toFixed(2)}

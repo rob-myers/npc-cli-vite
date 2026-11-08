@@ -48,9 +48,13 @@ Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's t
 ## Walls
 
 An npc's body never shows through a wall (see `CLAUDE.md`). Strafing along a wall they face, the run's forward lean takes their head and hands past the navmesh's margin from walls (`wallOutset`).
-- So with such a wall within `strafeWalkNear`, `wasd_delta --nav` has a strafing player walk (`anim.nearWall`, which `anim.fast` heeds). Upright, the navmesh's margin is room enough. Clear of it, they run again.
-- `npc.roomAhead` casts one navmesh ray ahead, `strafeWalkNear` deep, leant out towards the side they move by up to `strafeWallSpan`, to their hands. So a corner they run into is seen. Backing up, they lean back, so none is cast.
+- `move` casts one navmesh ray (`npc.roomAhead`, by `heedWalls` in `core.ts`) on each held step of `wasd_delta --nav`, `armInNear` deep (`walk` or `run`): far enough on that the arm is in, or they walk, by the wall. A swing ahead reaches furthest, a held gun's muzzle 0.8m running.
+  - Strafing, it goes along their facing, leant out towards the side they move by up to `strafeWallSpan`, to their hands. So a corner they run into is seen. Backing up, they lean back, so none is cast.
+  - Else along the way they go, which they turn to face, so a turn towards a wall is seen first. Leant right (`armInLean`), the gun's side.
+  - Its lean is fixed, so a wall alongside counts only when close.
 - It is not cast in a doorway (`w.e.npcToDoors[key].inside`), whose sides would read as a wall ahead whilst they pass through sideways.
+- A wall met square on (`roomAhead`'s `square`, from the hit's normal, at least `walkSquare`; never a doorway polygon's own edge, a jamb passed alongside) has them walk (`anim.nearWall` `"ahead"`, which `anim.fast` heeds), else a run's lean puts the head through. Upright, the navmesh's margin is room enough. Clear of it, they run again.
+- Any wall that near, `setNearWall` draws their right arm in. `move` sets it for the one npc it moves (`heedWalls`), and `startIdle` clears it once they stop, e.g. let go, killed or no longer the player: holding a phaser, as `phaser_aim_avoid`, else hanging at their side (`idle`). Only whilst the arm is free, and it lets go only of what it set. The left arm is not yet drawn in.
 - Npcs moving by path are not checked.
 
 ## The blend
@@ -169,6 +173,6 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 - `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/use-world-events.ts` — `w.e.move`, `isBackStep`
 - `components/NPCs.tsx` — `turnBeforeMoving`, the tick's facing, `moveClipFadedIn`
-- `components/Phasers.tsx` — `wield`, which sets or withholds an armed npc's aim
+- `components/Phasers.tsx` — `wieldFacing` (in `wield`), which sets or withholds an armed npc's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
 - `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `look --strafe`

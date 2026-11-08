@@ -33,7 +33,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       eased = null;
       epoch++;
     },
-    update(rotationY, deltaSecs, rate, aimReach) {
+    update(rotationY, deltaSecs, rate, aimReach, lookReach) {
       const lookAngle = -rotationY - Math.PI / 2; // three's rotation-Y to an angle in world XZ
       const sweeps = getLight().getSweeps();
       if (sweeps === 0) {
@@ -60,8 +60,9 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
               for (let i = -halfCount; i <= halfCount; i++) {
                 furthest = Math.max(furthest, table[(centre + i + lightAngles) % lightAngles]);
               }
+              // a frame only for news, else a slow read's frame would ask for the next forever
+              if (furthest !== frontier.reach) onRead();
               frontier.reach = furthest;
-              onRead();
             },
             (error) => {
               pending = false;
@@ -72,7 +73,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       }
 
       if (frontier.reach === null) return;
-      const reach = Math.max(frontier.reach, aimReach ?? 0);
+      const reach = Math.max(Math.min(frontier.reach, lookReach ?? Infinity), aimReach ?? 0);
       const x = Math.cos(lookAngle) * reach;
       const z = Math.sin(lookAngle) * reach;
       if (eased === null) {
@@ -97,7 +98,7 @@ export type PlayerFrontier = {
   reset(): void;
   /**
    * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second.
-   * A raised phaser's `aimReach` extends it. Call once per frame, after the sweep
+   * A look nearer than it, `lookReach`, caps it. A raised phaser's `aimReach` extends it. Call once per frame, after the sweep
    */
-  update(rotationY: number, deltaSecs: number, rate: number, aimReach: null | number): void;
+  update(rotationY: number, deltaSecs: number, rate: number, aimReach: null | number, lookReach: null | number): void;
 };

@@ -1,3 +1,4 @@
+import { soundMute } from "@npc-cli/util/sound-mute";
 import { isPsiVoice, type PsiVoice } from "./choir";
 import type { DoorVoice } from "./doors";
 import { gain, limiter, room } from "./nodes";
@@ -86,7 +87,10 @@ function createEngine() {
   const config: AudioConfig = { ...audioDefaults, ...toAudioConfig(kept ?? {}) };
   const now = () => ctx.currentTime;
 
-  const master = gain(ctx, config.master);
+  /** The master level, silent whilst muted */
+  const masterLevel = () => (soundMute.get() ? 0 : config.master);
+  const master = gain(ctx, masterLevel());
+  const muteSub = soundMute.subscribe(() => master.gain.setTargetAtTime(masterLevel(), now(), 0.05));
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 4096;
   master.connect(limiter(ctx)).connect(analyser).connect(ctx.destination);
@@ -171,6 +175,7 @@ function createEngine() {
       held.clear();
       window.clearInterval(leaseTimer);
       master.disconnect();
+      muteSub();
       window.clearInterval(sleeper);
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
@@ -220,7 +225,7 @@ function createEngine() {
     set(partial: Partial<Record<string, unknown>>) {
       Object.assign(config, toAudioConfig(partial));
       const ease = (param: AudioParam, value: number) => param.setTargetAtTime(value, now(), 0.05);
-      ease(master.gain, config.master);
+      ease(master.gain, masterLevel());
       ease(steps.gain, config.steps);
       ease(fx.gain, config.fx);
       ease(world.gain, config.world);

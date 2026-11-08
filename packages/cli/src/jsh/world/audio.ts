@@ -410,7 +410,7 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
       break;
     case "phaser-struck":
-      e.what !== "nothing" && heard(e.by) && getAudio().sfx("wall", heardAt(w, e.at));
+      e.what !== "nothing" && heard(e.by) && getAudio().sfx("hit", heardAt(w, e.at)); // as a shot striking anyone
       break;
     case "door-open":
     case "door-closed": {

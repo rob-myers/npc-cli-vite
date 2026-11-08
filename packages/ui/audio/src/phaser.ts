@@ -65,7 +65,7 @@ export const phaserSfx = {
     }
     noise(ctx, at, secs * 0.8, out, 0.25 * a, "bandpass", between(pulse.air, a) * 0.7, 0.01);
   },
-  /** An electric shock, recorded */
+  /** An electric hum, recorded: a shot striking anyone, or a wall */
   hit({ ctx, at, pitch, sample }, out) {
     layer(ctx, sample("shock"), at, out, 0.8, pitch);
   },
@@ -86,11 +86,7 @@ export const phaserSfx = {
     layer(ctx, sample("static"), at, out, 0.7, pitch);
     const beyond = gain(ctx, 0.7);
     beyond.connect(out);
-    phaserSfx.wall({ ...c, at: at + ghostBeyondSecs }, beyond);
-  },
-  /** A shot striking a wall: a spark, recorded */
-  wall({ ctx, at, pitch, sample }, out) {
-    layer(ctx, sample("spark"), at, out, 0.7, pitch);
+    phaserSfx.hit({ ...c, at: at + ghostBeyondSecs }, beyond);
   },
 } satisfies Record<string, SfxBuilder>;
 

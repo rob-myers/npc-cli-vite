@@ -3,7 +3,7 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
-import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
+import { PlayIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -113,7 +113,6 @@ export function WorldView(props: React.PropsWithChildren) {
       zoomCrossEl: null,
       zoomCrossFadeMs: 0,
       zoomInSlow: false,
-      centreHint: false,
       clickIds: [],
       cameraView: readCameraView(),
       controls: null as any,
@@ -163,6 +162,8 @@ export function WorldView(props: React.PropsWithChildren) {
         () => w.r3f?.invalidate(),
       ),
       frontierMs: 0,
+      cameraFrameMs: 0,
+      ranUnpaused: false,
       frontierOffset: { x: 0, z: 0 },
       frontierHold: false,
       keysDown: new Set(),
@@ -444,15 +445,20 @@ export function WorldView(props: React.PropsWithChildren) {
       persistCamera() {
         // per frame, so it must cost nothing when nothing moved
         if (cameraDidNotChange(state.persistedCamera, state.controls) === true) return;
-        const { spherical, target } = state.controls;
+        const { spherical, target, maxDistance, minDistance } = state.controls;
         if (!Number.isFinite(spherical.radius + target.x + target.z)) return; // else a reload restores it
         const cameraInitial: PersistedCamera = {
           azimuthal: spherical.theta,
           polar: spherical.phi,
           position: { x: target.x, y: spherical.radius, z: target.z },
+          stops: [maxDistance, minDistance],
         };
         state.persistedCamera = cameraInitial;
         store.patch({ cameraInitial });
+      },
+      restoreStops(controls) {
+        // read as the zoom is seeded: the props' stops reach a new instance after its ref
+        if (controls?._zoomSeeded === false) controls.openStops = store.read().cameraInitial?.stops ?? null;
       },
       onZoomWheel(e) {
         const { controls } = state;
@@ -652,16 +658,21 @@ export function WorldView(props: React.PropsWithChildren) {
         // wherever the camera has got to — a gesture's end fires before its damping has, and a
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
+        // the follow runs here whilst paused, as `World` does not tick then. A paused load keeps its saved view
+        const now = performance.now();
+        if (w.disabled === false) state.ranUnpaused = true;
+        else if (state.ranUnpaused === true) state.followPlayer(Math.min((now - state.cameraFrameMs) / 1000, 0.1));
+        state.cameraFrameMs = now;
 
         // where the w-key heads: held whilst a move key is down, else up the screen, snapped near an axis
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
         const compassPoint = Math.round(heading / halfPi) & 3;
         const wasdSnapped = Math.abs(deltaAngle(compassPoint * halfPi, heading)) < 1e-6;
-        // in coarse steps, so a turn redraws the bar a few times rather than every frame
+        // in coarse steps, so a turn redraws the compass a few times rather than every frame
         const wasdSkew = Math.round(deltaAngle(heading, spherical.theta) / compassSkewStep) * compassSkewStep;
         if (compassPoint !== state.compassPoint || wasdSnapped !== state.wasdSnapped || wasdSkew !== state.wasdSkew) {
           Object.assign(state, { compassPoint, wasdSnapped, wasdSkew });
-          w.hud?.update(); // its compass names the point, and marks where the w-key heads
+          w.hud?.syncCompass();
         }
 
         const { controls } = state;
@@ -829,6 +840,12 @@ export function WorldView(props: React.PropsWithChildren) {
       easeFrontier() {
         const { controls } = state;
         const offset = state.frontierOffset;
+        // following, held until the world has risen and been read. Before then a reading can be far off
+        const unread = w.fold.amount < 1 || state.playerFrontier.ahead(tmpAhead) === false;
+        if ((state.follow || state.frontierHold) && unread) {
+          state.frontierMs = performance.now();
+          return;
+        }
         const [wanted, wantedMin] = state.getFrontierStops();
         if (state.getFrontierOffset(tmpOffset, wanted, wantedMin) === false) tmpOffset.x = tmpOffset.z = 0;
         if (state.lookAtAnimId !== 0) {
@@ -856,9 +873,15 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         controls.maxDistance += remaining * alpha;
         controls.minDistance += remainingMin * alpha;
-        // with the zoom, else the view lunges ahead then pulls back
+        // eased with the zoom, else the view lunges ahead. Never longer than wanted, keeping pace as the frontier draws in
         offset.x += (tmpOffset.x - offset.x) * alpha;
         offset.z += (tmpOffset.z - offset.z) * alpha;
+        const [want, have] = [tmpOffset.x ** 2 + tmpOffset.z ** 2, offset.x ** 2 + offset.z ** 2];
+        if (have > want) {
+          const shrink = Math.sqrt(want / have);
+          offset.x *= shrink;
+          offset.z *= shrink;
+        }
         w.r3f?.invalidate(); // still on its way
       },
       getFrontierStops() {
@@ -879,8 +902,9 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
-          /** The furthest the inner stop goes. A raised phaser's dot may lie past the outer stop */
-          const cap = w.npcFocus?.reachOf(player.key) == null ? outer : outer * frontierConfig.aimOuterScale;
+          /** The furthest the inner stop goes. A raised phaser's dot, or a far look, may lie past the outer stop */
+          const beyond = w.npcFocus?.reachOf(player.key) != null || w.player.look.far !== null;
+          const cap = beyond ? outer * frontierConfig.aimOuterScale : outer;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
           wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
           // zoomed out, further by the persisted stops' own ratio, but no further than without the dot
@@ -1311,10 +1335,6 @@ export function WorldView(props: React.PropsWithChildren) {
         controls.object.position.z += moveZ;
         w.r3f?.invalidate();
       },
-      showCentreHint() {
-        if (state.initial.onPlayer === true) return; // already on them
-        state.set({ centreHint: true });
-      },
       setFollow(follow) {
         state.frontierHold = false; // superseded either way
         state.follow = follow; // before the look, whose goal is the follow's
@@ -1352,9 +1372,6 @@ export function WorldView(props: React.PropsWithChildren) {
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the follow button
         w.r3f?.invalidate();
-      },
-      hideCentreHint() {
-        state.centreHint === true && state.set({ centreHint: false });
       },
       onPlayerRespawn() {
         state.playerFrontier.reset();
@@ -1729,7 +1746,7 @@ export function WorldView(props: React.PropsWithChildren) {
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
         // inherited by the canvas, whose own cursor is set only whilst dragged
-        className={cn(w.player?.look === true && "cursor-crosshair")}
+        className={cn(w.player?.recon === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
@@ -1759,7 +1776,7 @@ export function WorldView(props: React.PropsWithChildren) {
         />
 
         <CameraControls
-          ref={state.ref("controls")}
+          ref={state.ref("controls", state.restoreStops)}
           fixedPolar={false}
           // whilst following, the target IS the player, so a zoom about it keeps them centred.
           // Aiming at the pointer instead moves the target, which the follow would only undo —
@@ -1795,27 +1812,6 @@ export function WorldView(props: React.PropsWithChildren) {
         {/* keyed, so a sibling added or removed above never remounts the World's children */}
         <Fragment key="world">{props.children}</Fragment>
       </Canvas>
-
-      {/* initial pan-to-player option */}
-      <AnimatePresence>
-        {state.centreHint === true && (
-          <motion.button
-            type="button"
-            className="cursor-pointer absolute inset-0 m-auto grid size-12 place-items-center rounded-full"
-            initial={{ opacity: 0, scale: centreHintSmall }}
-            animate={{ opacity: [0, 1, 1, 1, 0], scale: [centreHintSmall, 1.08, 1, 1, centreHintSmall] }}
-            transition={{ duration: centreHintSecs, times: [0, 0.12, 0.22, 0.6, 1], ease: "linear" }}
-            onAnimationComplete={state.hideCentreHint}
-            onClick={() => {
-              state.hideCentreHint();
-              void w.player?.panTo();
-            }}
-          >
-            {/* who the offer is about, rather than what pressing it does */}
-            <PersonSimpleCircleIcon className="size-12 text-[#ddf]/40" weight="duotone" />
-          </motion.button>
-        )}
-      </AnimatePresence>
 
       {/* sci-fi camera corners */}
       <div className="pointer-events-none absolute inset-0 text-white/30 *:absolute *:size-4">
@@ -1968,6 +1964,10 @@ export type State = {
   playerFrontier: PlayerFrontier;
   /** When `easeFrontier` last ran, so its ease is measured in time */
   frontierMs: number;
+  /** When `onCameraFrame` last ran, timing the follow whilst paused */
+  cameraFrameMs: number;
+  /** Whether the World has run unpaused since mount: only then does a paused follow carry on */
+  ranUnpaused: boolean;
   /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
@@ -2087,6 +2087,8 @@ export type State = {
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */
   persistCamera(): void;
+  /** Opens the controls in the zoom stops the camera was saved in: a follow's are further out than the persisted */
+  restoreStops(controls: null | BaseCameraControls): void;
   /** Per rendered frame — in `embodied` mode drives the polar, the detent and any aimed zoom */
   onCameraFrame(spherical: THREE.Spherical): void;
   /** The crosshair's fade-out, once whatever raised it has arrived */
@@ -2110,11 +2112,9 @@ export type State = {
   setupDom(): () => void;
   setFollow(follow: boolean): void;
   setCameraMode(cameraMode: CameraModeType): void;
-  /** Keeps the player framed whilst following — called every tick from `World` */
+  /** Keeps the player framed whilst following — called every tick from `World`, and whilst paused from `onCameraFrame` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
-  /** Whether the "centre on the player" UI is shown */
-  centreHint: boolean;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /**
@@ -2143,10 +2143,6 @@ export type State = {
       softLanding?: boolean;
     },
   ): Promise<void>;
-  /** Takes the centre offer down, whether it was taken or simply ran out */
-  hideCentreHint(): void;
-  /** Puts the centre offer up, for as long as it takes to fade */
-  showCentreHint(): void;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
@@ -2272,8 +2268,6 @@ const indicatorClassName = cn(
   "flex items-center gap-3 bg-black/20 rounded px-5 py-2",
   "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
 );
-const centreHintSecs = 4;
-const centreHintSmall = 0.6;
 /** The least time the busy overlay is shown for, so a quick task does not flicker it */
 const busyMinMs = 1000;
 

@@ -18,7 +18,7 @@
     },
     {
       "id": "a94252cc-7d74-4fb8-bf02-f36b5beb3bfb",
-      "name": "obstacle sink h=0.3",
+      "name": "obstacle sink surface h=0.3",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},

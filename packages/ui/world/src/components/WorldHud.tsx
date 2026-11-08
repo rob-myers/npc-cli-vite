@@ -1,9 +1,10 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
-import { ListIcon, LockIcon, LockOpenIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
+import { soundMute } from "@npc-cli/util/sound-mute";
+import { ListIcon, SpeakerHighIcon, SpeakerSlashIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
 import "./world-hud.css";
-import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
+import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
 import { getWorldStore, type HudLayout } from "../service/storage";
@@ -22,6 +23,7 @@ export default function WorldHud() {
     (): State => ({
       barEl: null,
       colEl: null,
+      compassEl: null,
       dragged: false,
       itemsEl: null,
       menu: null,
@@ -31,7 +33,7 @@ export default function WorldHud() {
       noticeTimer: 0,
 
       selected: null,
-      touches: new Map(),
+      y: null as any,
 
       drop(name) {
         if (w.client === true) return;
@@ -62,20 +64,25 @@ export default function WorldHud() {
       getItems() {
         return (w.e.carried[w.player.key]?.items ?? []).filter((def) => def.meta?.item !== "phaser");
       },
-      getKeyDoor() {
+      getKept() {
         const { key } = w.player;
-        const [held, doors, npc] = [w.e.npcToAccess[key] ?? {}, w.e.npcToDoors[key], w.n?.[key]];
-        if (doors === undefined || npc === undefined) return null;
-        if (doors.inside !== null && held[doors.inside] === true) return w.d[doors.inside] ?? null;
-        let nearest: null | Geomorph.DoorState = null;
-        let nearestDist = Infinity;
-        for (const gdKey of doors.nearby) {
-          const door = w.d[gdKey];
-          if (held[gdKey] !== true || door === undefined || door.sealed === true) continue;
-          const dist = npc.distanceTo({ x: (door.src.x + door.dst.x) / 2, y: (door.src.y + door.dst.y) / 2 });
-          if (dist < nearestDist) [nearest, nearestDist] = [door, dist];
-        }
-        return nearest;
+        /** Sat or lain they never strafe, aiming or not */
+        const stood = w.player.get()?.posture === "stand";
+        const kept: Kept[] = [];
+        const armed = w.phasers?.isArmed(key) === true;
+        const framed = w.view?.follow === true && w.view.cameraMode === "embodied";
+        // one hud-toast for the look and the raised phaser's aim, so its number eases from one to the other: see `watchLook`
+        if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
+        else if (w.player.recon || framed)
+          kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
+        // aiming strafes them anyway: shown only if on before, its "x" greyed. Off, shown whilst latched: see `watchStrafe`
+        if (armed && w.player.strafe && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
+        else if (!armed && w.player.strafe && stood)
+          kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
+        else if (!armed && stood) kept.push({ label: "strafe", title: "strafing on until the move keys change" });
+        if (w.view?.follow === true)
+          kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
+        return kept;
       },
       getLayout() {
         return w.debug?.hudLayout ?? store.read().hudLayout;
@@ -92,7 +99,7 @@ export default function WorldHud() {
         const { colEl: menuEl, colY: menuY, minY } = w.menu;
         const rootH = w.rootEl?.clientHeight ?? 0;
         if (state.getLayout() !== "left" || state.colEl === null || !menuEl || rootH === 0) return;
-        const hud = { y, h: state.colEl.offsetHeight };
+        const hud = { y: state.y, h: state.colEl.offsetHeight };
         const menu = { y: menuY, h: menuEl.offsetHeight };
         const [a, b] = moved === "hud" ? [hud, menu] : [menu, hud];
         const [at, bt] = [a.y.get(), b.y.get()];
@@ -105,34 +112,14 @@ export default function WorldHud() {
         if (fitsBelow && (bt + b.h / 2 >= at + a.h / 2 || fitsAbove === false)) b.y.set(below);
         else if (fitsAbove) b.y.set(above);
       },
-      onBarPointerDown(e) {
-        const { controls } = w.view;
-        if (e.pointerType !== "touch" || controls === null) return;
-        state.touches.set(e.pointerId, e);
-        if (state.touches.size + controls.pointers.length < 2) return;
-        // a second finger: no slot press nor drag of the bar
-        window.clearTimeout(state.pressTimer);
-        dragControls.cancel();
-        for (const t of state.touches.values()) if (controls.pointerIndex(t) === -1) controls.onPointerDown(t);
-      },
-      onBarWheel(e) {
-        // a sideways scroll is the row's own, unless it is a trackpad pinch
-        if (e.ctrlKey === true || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) w.view.controls?.onMouseWheel(e);
-      },
-      onTouchEnd(e) {
-        state.touches.delete(e.pointerId);
-      },
       persistY() {
-        store.patch(state.isColumn() ? { hudColumnY: y.get() } : { hudY: y.get() });
+        store.patch(state.isColumn() ? { hudColumnY: state.y.get() } : { hudY: state.y.get() });
       },
       press(index) {
         if (w.client === true) return;
         if (index === 0) w.player.togglePsi();
         else if (index === 1) w.player.toggleArm();
-        else if (index === 2) {
-          const door = state.getKeyDoor();
-          if (door !== null) w.e.toggleLock(door.gdKey, { access: true });
-        } else {
+        else if (index > 2) {
           const def = state.getItems()[index - 3];
           if (def === undefined) return;
           state.selected = state.selected === def.key ? null : def.key;
@@ -145,14 +132,61 @@ export default function WorldHud() {
         state.noticeTimer = window.setTimeout(() => state.set({ notice: null }), noticeMs);
         state.set({ notice });
       },
-      watchAim(el) {
-        return w.e.addFrameCallback(() => {
-          el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
-        });
+      syncCompass() {
+        const { compassEl: el } = state;
+        if (el === null || w.view === undefined) return;
+        const { compassPoint, wasdSkew, wasdSnapped } = w.view;
+        const letter = compassLetters[compassPoint];
+        el.toggleAttribute("data-snapped", wasdSnapped);
+        el.querySelector("title")?.replaceChildren(`w heads ${wasdSnapped ? "" : "near "}${letter}`);
+        el.querySelector("text")?.replaceChildren(letter);
+        el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
       watchLook(el) {
+        if (el === null || w.r3f == null) return;
+        const wordEl = el.querySelector("[data-look-word]");
+        const reachEl = el.querySelector<HTMLElement>("[data-look-reach]");
+        /** The number as shown, eased towards the one it reads */
+        let shown: null | number = null;
+        let lastMs = performance.now();
         return w.e.addFrameCallback(() => {
-          el?.classList.toggle("blocked", w.player.isLookYielding() === true);
+          const { key, recon } = w.player;
+          const armed = w.phasers?.isArmed(key) === true;
+          const framed = w.view.follow === true && w.view.cameraMode === "embodied";
+          const reach = framed ? w.player.lookReach() : null;
+          const far = framed ? w.player.look.far : null;
+          const blocked = armed ? w.phasers.isDrawnIn(key) === true : recon && w.player.isReconYielding();
+          el.classList.toggle("gone", !(armed || recon || reach !== null));
+          el.classList.toggle("blocked", blocked);
+          // raised, the red dot's: else recon mode, or a look alone
+          const word = armed ? "aim" : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
+          if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
+          /** Out through a hull window: no range to read, so the last stays, greyed */
+          const out = armed ? w.npcFocus?.endsInNothing(key) === true : far?.out === true;
+          const target = out ? null : armed ? (w.npcFocus?.reachOf(key) ?? null) : reach;
+          const now = performance.now();
+          const alpha = 1 - Math.exp((-readoutRate * (now - lastMs)) / 1000);
+          if (target !== null) shown = shown === null ? target : shown + (target - shown) * alpha;
+          // raised, the dot comes a moment after: until then the look's number stays, to ease from
+          else if (armed === false && out === false) shown = null;
+          lastMs = now;
+          setReadout(reachEl, shown);
+          reachEl?.classList.toggle("out", out);
+          /** Not the tap's distance but a passing one: steered by `r` or recon mode, or a max look */
+          const steered = framed && !armed && (far !== null || w.player.look.steer !== null);
+          reachEl?.classList.toggle("steer", steered && !out);
+        });
+      },
+      watchStrafe(el) {
+        if (el === null || w.r3f == null) return;
+        /** A latch keeps it up once strafe mode is off, never brings it up: lowering the phaser latches too */
+        let shown = false;
+        return w.e.addFrameCallback(() => {
+          const { strafe, strafeLatch } = w.player;
+          const latched = strafe === false && w.phasers?.isArmed(w.player.key) !== true && !!strafeLatch;
+          shown = strafe || (latched && shown);
+          el.classList.toggle("gone", !shown);
+          el.classList.toggle("latched", latched && shown);
         });
       },
     }),
@@ -165,11 +199,11 @@ export default function WorldHud() {
   const column = layout !== "bar";
   const outerClass = column ? cn(columnBarClass, layout === "left" ? "left-0" : "right-0") : barClass;
 
-  const y = useMotionValue(state.getSavedY());
+  state.y = useMotionValue(state.getSavedY());
   /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
   const dragProps = {
     ref: (el: null | HTMLDivElement) => void (state.colEl = el),
-    style: { y },
+    style: { y: state.y },
     drag: "y",
     dragListener: false,
     dragControls,
@@ -181,7 +215,7 @@ export default function WorldHud() {
       if (state.itemsEl?.style.touchAction === "pan-y" && state.itemsEl.contains(e.target as Node)) return;
       dragControls.start(e);
     },
-    onDrag: layout === "left" ? () => state.makeWay("hud") : undefined,
+    onDrag: () => state.makeWay("hud"),
     onDragStart: () => void (state.dragged = true),
     onDragEnd() {
       state.persistY();
@@ -190,6 +224,7 @@ export default function WorldHud() {
     },
   } as const;
 
+  /** Rerenders on the player's events. The camera zooms by a wheel or pinch over the bar, as over the World */
   useEffect(() => {
     const sub = w.events.subscribe({
       next(e) {
@@ -198,23 +233,44 @@ export default function WorldHud() {
         state.update();
       },
     });
-    return () => sub.unsubscribe();
-  }, []);
-
-  /** The camera zooms by a wheel or pinch over the bar, as over the World */
-  useEffect(() => {
+    /** Fingers down on the bar, handed to the camera once they pinch */
+    const touches = new Map<number, PointerEvent>();
+    const onTouchEnd = (e: PointerEvent) => void touches.delete(e.pointerId);
     const ctrl = new AbortController();
     const { signal } = ctrl;
-    state.barEl?.addEventListener("wheel", state.onBarWheel, { passive: false, signal });
-    state.barEl?.addEventListener("pointerdown", state.onBarPointerDown, { signal });
-    document.addEventListener("pointerup", state.onTouchEnd, { signal });
-    document.addEventListener("pointercancel", state.onTouchEnd, { signal });
-    return () => ctrl.abort();
+    state.barEl?.addEventListener(
+      "wheel",
+      (e) => {
+        // a sideways scroll is the row's own, unless it is a trackpad pinch
+        if (e.ctrlKey === true || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) w.view.controls?.onMouseWheel(e);
+      },
+      { passive: false, signal },
+    );
+    state.barEl?.addEventListener(
+      "pointerdown",
+      (e) => {
+        const { controls } = w.view;
+        if (e.pointerType !== "touch" || controls === null) return;
+        touches.set(e.pointerId, e);
+        if (touches.size + controls.pointers.length < 2) return;
+        // a second finger: no slot press nor drag of the bar
+        window.clearTimeout(state.pressTimer);
+        dragControls.cancel();
+        for (const t of touches.values()) if (controls.pointerIndex(t) === -1) controls.onPointerDown(t);
+      },
+      { signal },
+    );
+    document.addEventListener("pointerup", onTouchEnd, { signal });
+    document.addEventListener("pointercancel", onTouchEnd, { signal });
+    return () => {
+      sub.unsubscribe();
+      ctrl.abort();
+    };
   }, []);
 
   /** The column makes way for the menu's as either grows */
   useEffect(() => {
-    y.set(state.getSavedY());
+    state.y.set(state.getSavedY());
     if (column === false) {
       state.itemsEl?.style.removeProperty("max-height");
       state.itemsEl?.style.removeProperty("touch-action");
@@ -236,31 +292,16 @@ export default function WorldHud() {
     );
 
   const { key: playerKey } = w.player;
-  /** Sat or lain they never strafe, aiming or not */
-  const stood = w.player.get()?.posture === "stand";
-  const strafing = w.player.strafe && stood;
   const big = w.touchDevice;
 
   const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
   const keyCount = heldDoors.length;
-  const keyDoor = state.getKeyDoor();
-  const KeyLock = keyDoor?.locked === true ? LockIcon : LockOpenIcon;
   const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
-  /** The notices kept over the bar. A raised phaser strafes them too, which only lowering it ends */
-  const kept: { label: string; title: string; end?: () => void }[] = [];
-  if (armed) kept.push({ label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) });
-  if (armed && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
-  else if (strafing)
-    kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
-  if (w.player.look) kept.push({ label: "look", title: "stop looking: r", end: () => w.player.toggleLook() });
-  if (w.gameTime.scale !== 1)
-    kept.push({
-      label: `time ${Number(w.gameTime.scale.toFixed(2))}`,
-      title: "back to time 1: [ and ] step it",
-      end: () => w.gameTime.setScale(1),
-    });
+  /** None before the canvas: their refs watch it each frame */
+  const kept = w.threeReady === true ? state.getKept() : [];
+  const muted = soundMute.get();
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -341,43 +382,70 @@ export default function WorldHud() {
   return (
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
-      {(state.notice !== null || kept.length > 0) && (
-        <div className={noticesClass}>
-          {/* kept whilst aiming, strafing, looking or off time 1, an "x" ending one that may be ended */}
-          {kept.length > 0 && (
-            <div className="flex items-center gap-1">
-              {kept.map(({ label, title, end }) => (
+      <div className={noticesClass}>
+        {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
+        <div className="flex items-center gap-1">
+          <AnimatePresence initial={false}>
+            {kept.map(({ label, title, end }) => (
+              <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
                 <div
-                  key={label}
-                  ref={label === "aim" ? state.watchAim : label === "look" ? state.watchLook : undefined}
+                  ref={label === "look" ? state.watchLook : label === "strafe" ? state.watchStrafe : undefined}
                   title={end === undefined ? title : undefined}
-                  className={cn(
-                    "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
-                    end === undefined ? "px-2" : "pr-0.5 pl-2",
-                  )}
+                  // shown by a frame callback, so from `gone` until its first frame says otherwise
+                  className={cn(keptClass, (label === "look" || label === "strafe") && "gone")}
                 >
-                  <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
-                  {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
-                  {end !== undefined && (
+                  <div className={keptInnerClass}>
+                    {label === "look" ? (
+                      <>
+                        <span data-look-word />
+                        <span data-look-reach className={`${readoutClass} gone`} />
+                      </>
+                    ) : (
+                      <span>{label}</span>
+                    )}
                     <button
                       type="button"
-                      title={title}
-                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
+                      title={end === undefined ? undefined : title}
+                      disabled={end === undefined}
+                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
                       onClick={() => {
-                        end();
+                        end?.();
                         w.view.focus();
                       }}
                     >
                       <XIcon className="size-3" weight="bold" />
                     </button>
-                  )}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-          {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <motion.button
+            layout
+            type="button"
+            title={muted ? "unmute sound" : "mute sound"}
+            className={cn(
+              "pointer-events-auto flex cursor-pointer items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 hover:text-sky-200",
+              muted && "text-neutral-400",
+            )}
+            onClick={() => {
+              soundMute.set(!muted);
+              state.update();
+              w.view.focus();
+            }}
+          >
+            {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
+            <span>{muted ? "muted" : "unmuted"}</span>
+          </motion.button>
         </div>
-      )}
+        <AnimatePresence>
+          {state.notice !== null && (
+            <motion.div key="notice" {...toastMotion} className="rounded bg-neutral-900/90 px-2 py-0.5">
+              {state.notice}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <div ref={(el) => void (state.barEl = el)} className={outerClass}>
         <motion.div className={column ? columnClass : rowClass} {...dragProps}>
           {/* what they are, then what they carry, scrolled: the buttons after stay in view */}
@@ -424,9 +492,9 @@ export default function WorldHud() {
               {slot(
                 2,
                 {
-                  title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
+                  title: "keys",
                   had: keyCount > 0,
-                  active: keyDoor !== null,
+                  active: false,
                   plain: true,
                   menu: heldDoors.map((gdKey) => ({
                     label: `split ${gdKey}`,
@@ -440,9 +508,6 @@ export default function WorldHud() {
                       {keyCount}
                     </span>
                   )}
-                  {/* {keyDoor !== null && (
-                <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />
-              )} */}
                 </>,
               )}
             </div>
@@ -519,9 +584,6 @@ function PlayerButtons({ column }: { column: boolean }) {
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",
     big ? "size-12" : "size-9",
   );
-  /** White whilst what an icon stands for is on, else grey */
-  const iconColor = (on: boolean) => (on ? "text-white" : "text-neutral-500");
-  const buttonIcon = (on: boolean) => cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", iconColor(on));
 
   return (
     <div
@@ -563,13 +625,7 @@ function PlayerButtons({ column }: { column: boolean }) {
         <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
       </div>
       {/* desktop only: touch has no `wasd` */}
-      {big === false && (
-        <CompassRose
-          point={w.view?.compassPoint ?? 0}
-          snapped={w.view?.wasdSnapped !== false}
-          skew={w.view?.wasdSkew ?? 0}
-        />
-      )}
+      {big === false && <CompassRose />}
       {/* last: right-most in the bar, bottom-most in a column */}
       <PlayerMenu buttonClass={buttonClass} iconClass={cn(buttonIcon(true), "size-5")} column={column} />
     </div>
@@ -579,8 +635,9 @@ function PlayerButtons({ column }: { column: boolean }) {
 /** The bar's options, each saved and highlighted whilst on: toggled in place, so the menu stays open */
 function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; iconClass: string; column: boolean }) {
   const w = useContext(WorldContext);
-  const [labels, setLabels] = useState(() => getWorldStore(w.key).read().roomLabelsShown);
-  const side = column === false ? "top" : getWorldStore(w.key).read().hudLayout === "left" ? "right" : "left";
+  const saved = getWorldStore(w.key).read();
+  const [labels, setLabels] = useState(saved.roomLabelsShown);
+  const side = column === false ? "top" : saved.hudLayout === "left" ? "right" : "left";
   /** Its button whilst open: opened by a click, so a drag of the bar begun on it opens nothing */
   const [anchor, setAnchor] = useState<null | HTMLDivElement>(null);
   return (
@@ -625,28 +682,42 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
   );
 }
 
-/** Desktop's compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen */
-function CompassRose({ point, snapped, skew }: { point: number; snapped: boolean; skew: number }) {
+/** A player button's icon: white whilst what it stands for is on, else grey */
+const buttonIcon = (on: boolean) =>
+  cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", on ? "text-white" : "text-neutral-500");
+
+/**
+ * Desktop's compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen.
+ * Drawn once. A camera turn redraws it through `w.hud.syncCompass`, never a render
+ */
+const CompassRose = memo(function CompassRose() {
+  const w = useContext(WorldContext);
+  const { compassPoint = 0, wasdSkew = 0, wasdSnapped = true } = w.view ?? {};
   return (
-    <svg viewBox="-18 -18 36 36" className="pointer-events-auto size-9 shrink-0 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]">
-      <title>{`w heads ${snapped ? "" : "near "}${compassLetters[point]}`}</title>
+    <svg
+      ref={(el) => void (w.hud.compassEl = el)}
+      viewBox="-18 -18 36 36"
+      className="group/compass pointer-events-auto size-9 shrink-0 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]"
+      data-snapped={wasdSnapped || undefined}
+    >
+      <title>{`w heads ${wasdSnapped ? "" : "near "}${compassLetters[compassPoint]}`}</title>
       <circle r={13} fill="none" strokeWidth={0.8} className="stroke-neutral-500/70" />
       <text
         textAnchor="middle"
         dominantBaseline="central"
-        className={cn("font-sans font-semibold text-[13px]", snapped ? "fill-white" : "fill-neutral-400")}
+        className="fill-neutral-400 font-sans font-semibold text-[13px] group-data-snapped/compass:fill-white"
       >
-        {compassLetters[point]}
+        {compassLetters[compassPoint]}
       </text>
       {/* amber whilst snapped onto the axis, else pale and straight up */}
       <path
         d="M0 -17.5L3.5 -11.5L-3.5 -11.5Z"
-        transform={`rotate(${(skew * 180) / Math.PI})`}
-        className={snapped ? "fill-amber-300" : "fill-neutral-200"}
+        transform={`rotate(${(wasdSkew * 180) / Math.PI})`}
+        className="fill-neutral-200 group-data-snapped/compass:fill-amber-300"
       />
     </svg>
   );
-}
+});
 
 /** How many times `value` has changed since mount — `0` until the first, so nothing flashes on load */
 function useChangeCount(value: unknown): number {
@@ -671,9 +742,42 @@ const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scroll
 const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
 const columnClass = "pointer-events-none flex flex-col items-center";
 const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
-/** The notices: top centre, clear of the bar */
+/** The hud-toasts: top centre, clear of the bar */
 const noticesClass =
   "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
+/**
+ * A kept hud-toast. `gone`, from a frame callback, fades and shrinks its contents and collapses its width, so the others
+ * slide along. Inside motion's wrapper, which owns its own opacity and scale, and would take the frame callback's ref
+ */
+const keptClass =
+  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-1 [&.gone]:grid-cols-[0fr] [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50";
+const keptInnerClass =
+  "group pointer-events-auto flex min-w-0 items-center gap-1 overflow-hidden rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 transition-[opacity,scale] duration-300";
+/** A hud-toast fades and scales in and out, the others sliding along: no sudden jumps */
+const toastMotion = {
+  layout: true,
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.8 },
+  transition: { duration: 0.3 },
+} as const;
+/** The look's goes slower than it comes, as do its `gone` and its readout's: a quick drop reads as a jump */
+const slowExit = { ...toastMotion.exit, transition: { duration: 0.6 } };
+/** A distance as a device reads it out: a fixed width, so the hud-toast never changes length */
+const readoutClass =
+  "box-content w-[5ch] overflow-hidden rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 transition-[width,padding,margin,opacity,scale,color,box-shadow] duration-300 [&.gone]:-ml-1 [&.gone]:w-0 [&.gone]:duration-600 [&.gone]:scale-75 [&.gone]:px-0 [&.gone]:opacity-0 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
+
+/** How fast a readout's number eases to the one it reads, per second */
+const readoutRate = 6;
+
+/** Writes `metres` into a readout, hidden without one. Only on a change: it runs each frame */
+function setReadout(el: null | HTMLElement, metres: null | number) {
+  if (el === null) return;
+  el.classList.toggle("gone", metres === null);
+  if (metres === null) return; // its last number kept, as it fades and narrows
+  const text = `${Math.min(metres, 99.9).toFixed(1)}m`;
+  if (el.textContent !== text) el.textContent = text;
+}
 
 /** Each icon's size, as a fraction of its slot's height (else `--hud-icon-base`): alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
@@ -901,15 +1005,11 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
   "removed-npcs",
   "npcs-restored",
   "net-changed",
-  "enter-collider",
-  "exit-collider",
-  "door-locked",
-  "door-unlocked",
 ]);
 
 /** The bar's height */
 const hudBarHeight = 110;
-/** How near the World's top the bar may be dragged: below the notices */
+/** How near the World's top the bar may be dragged: below the hud-toasts */
 const noticesHeight = 68;
 /** The space kept between the column and the menu's, and below the column */
 const columnGap = 8;
@@ -928,10 +1028,13 @@ const lookingAtPulseMs = 700;
 /** How long the pulse takes to fade once the pan lands */
 const lookingAtFadeMs = 400;
 
-/** How long the bar's notice shows */
+/** How long a brief hud-toast shows */
 const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
+
+/** A hud-toast kept over the bar, its `end` the "x", greyed without one */
+type Kept = { label: string; title: string; end?: () => void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
 const shotCycle: JshCli.ShotOutcome[] = ["hit", "ghost", "armour"];
@@ -954,6 +1057,7 @@ export type State = {
   barEl: null | HTMLDivElement;
   /** What is dragged: the row, or the column */
   colEl: null | HTMLDivElement;
+  compassEl: null | SVGSVGElement;
   /** The bar is being dragged, so what ends on it is no press */
   dragged: boolean;
   /** The slots, scrolled once they outgrow the bar */
@@ -978,25 +1082,24 @@ export type State = {
   longPressed: boolean;
   /** The key of the carried item a press chose, a second press letting it go */
   selected: null | string;
-  /** Fingers down on the bar, handed to the camera once they pinch */
-  touches: Map<number, PointerEvent>;
+  /** Its drag offset */
+  y: MotionValue<number>;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
   /** What the bar says above itself, a moment: something of theirs was refused */
   notice: null | string;
   noticeTimer: number;
   say(notice: string): void;
+  /** Redraws the compass from `w.view`, as the camera turns */
+  syncCompass(): void;
   /** What they carry, in slot order — their phaser has a slot of its own */
   getItems(): Geomorph.DecorDef[];
-  /** The door at hand that the player holds the key to */
-  getKeyDoor(): null | Geomorph.DoorState;
-  onBarPointerDown(e: PointerEvent): void;
-  onBarWheel(e: WheelEvent): void;
-  onTouchEnd(e: PointerEvent): void;
+  /** The hud-toasts kept over the bar. A raised phaser strafes them too, which only lowering it ends */
+  getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
-  /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
-  watchAim(el: null | HTMLDivElement): () => void;
-  /** Greys the "look" notice whilst look mode yields to what they do themselves */
-  watchLook(el: null | HTMLDivElement): () => void;
+  /** The one hud-toast of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
+  watchLook(el: null | HTMLDivElement): undefined | (() => void);
+  /** The strafe hud-toast: half transparent whilst strafe mode is off but latched, a move key still held, else hidden whilst off */
+  watchStrafe(el: null | HTMLDivElement): undefined | (() => void);
 };

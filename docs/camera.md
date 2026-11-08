@@ -18,7 +18,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 - Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.
 - So a new fov keeps the floor seen at each stop, as a dolly zoom: only the perspective changes.
 - The menu's **framing** row, beneath **camera**, has the presets, a reset, and a pop-up with a vertical slider for each. Only its button opens or closes it, so it stays open beside the menu, and goes with it.
-- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the default's, and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. `mid` is not `reset`, the device's own defaults.
+- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the device's base (`cameraFov` and its default stops), and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. The default, and so `reset`, is `high` (`getDefaultCameraView`).
 - Saved site-wide (`getSiteStore`, key `site`), as the light slider is. `ctrlOpts`, reset on hmr, reads it back.
 
 **Keys**
@@ -94,21 +94,42 @@ The HUD:
 
 ## Following the player
 
-**Zoomed out, the view frames the player and their frontier.**
-- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
-- It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
-- With the phaser raised it reaches at least as far as the red dot, where a shot at no one would land (`w.npcFocus.reachOf`). The inner stop may then go `frontierConfig.aimOuterScale` past the outer stop, to fit the dot in view.
-- `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
+Whilst following, the view frames the player and their frontier: the furthest point ahead that they can see.
 
-**Follow**
+**Turning it on**
 - `follow` is on or off (`setFollow`). The button, or `v`, toggles it.
-- `holdFrontier` (MCP's way to show the player) is a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
-- A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
-- A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
+- `holdFrontier` (MCP's way to show the player) frames them the same way without the follow. It is a `lookAt` tracking the goal, and `frontierHold` keeps it running until the camera is next touched (`onCameraStart`).
 
-**Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
-- `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
-- `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
-- Both go back to persisted when not following (`holdFrontier` only pans), or when there is nothing to read.
-- `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
-- On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
+**The frontier**
+- `service/player-frontier` reads it off the light sweep. A fan of the sweep's polar table, either side of where their head faces, is read back off the GPU (`playerLight.readTable`) into one kept `ReadbackBuffer`.
+- One read is in flight at a time, at most one per `frontierConfig.readMinMs`. A read asks for a frame only when the reach changes.
+- `reach` is the furthest of the fan. `ahead` is the vector to the frontier point, eased at `frontierConfig.smoothRate`.
+
+**What changes it**
+- **A look caps it** (`w.player.look`, the distance in force `lookReach()`). The light still limits it: the frontier is the nearer of the two.
+  - A right click or two-finger tap sets the distance (`base`). It stays as they walk and turn, until another tap or the hud-toast's "x".
+  - `r` held, or recon mode, steers it to the pointer only whilst on (`steer`), then gives it back. `r` steers only once held `rCapMs`, so a tap of it shows nothing.
+- **A far look extends it**: Space held with the phaser lowered (`w.player.setFarLook`).
+  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in recon mode or whilst `r` is held.
+  - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
+  - It is the look's `far`, in force over `steer` and `base` whilst Space is held. Letting go gives them back.
+- **A raised phaser extends it** to at least the red dot, where a shot at no one would land (`w.npcFocus.reachOf`).
+- **The hud-toast.** Whilst a cap holds, the bar shows its reach: "look 2m", "recon 2m" in recon mode, "look max" for a far look. A passing distance reads sky blue, steered by `r` or recon mode, or a max look: only the tap's is lime. Its "x" drops the cap and ends recon mode (`w.player.stopLooking`). With the phaser raised the "aim" hud-toast shows the dot's range instead.
+
+**How the view frames it** (`easeFrontier`, in `onCameraFrame`)
+- **The pan.** `followPlayer` holds the target `frontierConfig.panFrac` of the way along `ahead`, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
+- **The offset eases with the zoom**, else the view lunges ahead then pulls back, e.g. as the phaser is raised. It is never longer than wanted, so keeps pace as the frontier draws in. Its direction always eases, so a sweep never snaps it round.
+- **The stops sit further out**, as the 30° fov is narrow.
+  - `controls.minDistance` eases to the nearest radius that fits the player and their frontier, with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted outer stop. So zoomed in, a follow is as far out as a free look zoomed out.
+  - A raised phaser's dot, or a far look, lets it go `frontierConfig.aimOuterScale` past the outer stop.
+  - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
+  - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
+  - Not following, both ease back to the persisted stops (`holdFrontier` only pans).
+- A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
+- **On touch** the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
+
+**Load, pause and respawn**
+- **Until the world has risen** (`w.fold`) and the frontier is read, the stops and offset hold where they are. An early reading can be far off.
+- **The saved camera keeps its live stops** (`PersistedCamera.stops`). The controls seed the zoom in them (`openStops`), so a load whilst following opens where it was.
+- **Paused**, the World's tick stops, so `onCameraFrame` runs `followPlayer` instead, once the World has run unpaused. A pan under way lands rather than rushing on unpause.
+- **A respawn or a switch of player** (`spawned`, `set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.

@@ -503,11 +503,12 @@ export default function NPCs() {
           });
         }
 
-        if (typeof opts.doResult?.meta.decorKey === "string") {
+        const decorKey = opts.doResult?.meta.decorKey;
+        if (typeof decorKey === "string") {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
-          state.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
+          state.setNpcDo(opts.npcKey, decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;

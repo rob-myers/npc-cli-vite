@@ -86,8 +86,15 @@ export const npcConfig = {
     stuckEpsilon: 0.002,
     /** How far `roomAhead`'s ray leans out towards the side they move: to their hands */
     strafeWallSpan: 0.25,
-    /** Strafing with a wall this near ahead, past the navmesh, they walk: a run's lean would reach it */
-    strafeWalkNear: 0.2,
+    /**
+     * With a wall this near, their right arm is drawn in: a run's swing reaches 0.8m with a gun.
+     * Far enough on that the arm is in, or they walk, by the time they get there
+     */
+    armInNear: { walk: 1, run: 2.3 },
+    /** A wall at least this square on (`roomAhead`'s `square`) has them walk too: a run's lean would put their head through */
+    walkSquare: 0.7,
+    /** Not strafing, `roomAhead`'s ray leans this share of `strafeWallSpan` right of the way they go, the gun's side */
+    armInLean: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
     circling: 0.6,
   },
@@ -99,6 +106,8 @@ export const npcConfig = {
     stuckDuration: 0.8,
     /** Minimum look duration before teleporting onto a nearby doable */
     look: 0.5,
+    /** A wall's draw-in of the right arm holds at least this, else taps at a wall shake it in and out */
+    armInHold: 0.5,
   },
 } as const;
 

@@ -225,19 +225,18 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give rob items:psi
  * give rob items:"psi phaser"
  * give npc:rob items:'["phaser","book","box"]'
+ * give phaser to:rob
  * ```
  */
 export function give(
   { api, args, w }: JshCli.RunArg,
-  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", to: "npcKey", item: "items" }, { array: { items: true } }),
 ) {
   api.setPausable("world", false);
+  const { npcKey, items } = parseCarryOpts(opts);
 
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  opts.items ??= [];
-
-  const npc = w.npc.get(opts.npcKey);
-  for (const name of opts.items) {
+  const npc = w.npc.get(npcKey);
+  for (const name of items) {
     if (name !== "psi" && inventoryConfig.kinds.includes(name as ItemKind) === false)
       throw Error(`unknown item: ${name}`);
     if (w.e.giveItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no room for ${name}`);
@@ -245,6 +244,13 @@ export function give(
 }
 
 type CarryOpts = { npcKey?: string; items?: string[] };
+
+/** Naked args are items, after the npc's unless `to:` or `from:` names them */
+function parseCarryOpts(opts: CarryOpts) {
+  const naked = getUnknownNakeds(opts);
+  const npcKey = opts.npcKey ?? (naked.shift() as string);
+  return { npcKey, items: [...(opts.items ?? []), ...naked] };
+}
 
 /**
  * ```sh
@@ -785,7 +791,7 @@ async function move_next(
     force?: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { api } = ct;
+  const { api, w } = ct;
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
@@ -798,6 +804,7 @@ async function move_next(
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
+      heedWalls(w, npc, next);
       const movePromise =
         next.meta?.look === true && npc.isStrafing() === false
           ? npc.look({ at: next }).catch(() => {}) // wasd_delta --nav blocked: turn that way instead
@@ -815,6 +822,27 @@ async function move_next(
   } finally {
     processHandled.dispose();
   }
+}
+
+/**
+ * On a held step of `wasd_delta --nav`, `npc` heeds a wall near the way they go, by one ray: strafing, along their facing leant
+ * the way they go, else along the way they go leant right. Else none: at rest, `startIdle` clears it. See `docs/npc-strafe.md`
+ */
+function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli.PointAnyFormat>) {
+  // not in a doorway, whose sides would read as a wall
+  if (next.meta?.preventArrive !== true || npc.nodeRef === null || (w.e.npcToDoors[npc.key]?.inside ?? null) !== null)
+    return npc.anim.setNearWall(false);
+  const { armInNear, armInLean, walkSquare } = npcConfig.dist;
+  const near = armInNear[npc.anim.hurry === true ? "run" : "walk"];
+  const to = w.helper.parseGroundPoint(next);
+  const go = { x: to.x - npc.position.x, y: to.y - npc.position.z };
+  const ry = npc.rotation.y;
+  const [along, heading] =
+    npc.isStrafing() === true
+      ? [{ x: -Math.sin(ry), y: -Math.cos(ry) }, go]
+      : [go, { x: go.x - armInLean * go.y, y: go.y + armInLean * go.x }];
+  const { room, square } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
+  npc.anim.setNearWall(room >= near ? false : square >= walkSquare ? "ahead" : "beside");
 }
 
 /**
@@ -1612,6 +1640,27 @@ export async function spawn(
 }
 
 /**
+ * The inverse of `give`: `psi`, or items taken away outright, not put down
+ * ```sh
+ * take rob item:phaser
+ * take rob items:"psi phaser"
+ * take phaser from:rob
+ * ```
+ */
+export function take(
+  { api, args, w }: JshCli.RunArg,
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", from: "npcKey", item: "items" }, { array: { items: true } }),
+) {
+  api.setPausable("world", false);
+  const { npcKey, items } = parseCarryOpts(opts);
+
+  const npc = w.npc.get(npcKey);
+  for (const name of items) {
+    if (w.e.revokeItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no ${name}`);
+  }
+}
+
+/**
  * Game time per real second, `0` to `2`. Prints it, after setting it if given
  * ```sh
  * timescale
@@ -1757,14 +1806,6 @@ export async function* wasd_delta(
     const length = agentConfig.maxSpeed[npc.anim.hurry === true ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
-      /** Their poly whilst strafing on the move. Not in a doorway, whose sides would read as a wall ahead */
-      const strafeRef =
-        npc.isStrafing() === true && direction.length > 0 && (w.e.npcToDoors[npc.key]?.inside ?? null) === null
-          ? npc.nodeRef
-          : null;
-      // strafing near a wall they face, they walk
-      const near = npcConfig.dist.strafeWalkNear;
-      npc.anim.nearWall = strafeRef !== null && npc.roomAhead(npc.point, strafeRef, near, direction) < near;
       // none held, or opposites, or the mesh's edge
       const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
       if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {
@@ -1852,6 +1893,13 @@ function getFirstUnknownNaked(opts: Record<string, any>) {
  */
 function getLastUnknownNaked(opts: Record<string, any>) {
   return keys(opts).findLast(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
+}
+
+/** Naked args (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`, in order */
+function getUnknownNakeds(opts: Record<string, any>) {
+  return keys(opts).filter(
     (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
   );
 }

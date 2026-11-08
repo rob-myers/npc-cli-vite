@@ -735,7 +735,6 @@ const sfxLabels: Record<SfxKey, string> = {
   hit: "hit",
   armour: "armour",
   ghost: "ghost",
-  wall: "wall",
   opened: "opened",
   closed: "closed",
   lock: "lock",
