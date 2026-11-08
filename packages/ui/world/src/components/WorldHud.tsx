@@ -177,9 +177,9 @@ export default function WorldHud() {
           lastMs = now;
           setReadout(reachEl, shown);
           reachEl?.classList.toggle("out", out);
-          /** Steered by `r` or recon mode, so only whilst on */
-          const steered = framed && !armed && far === null && w.player.look.steer !== null;
-          reachEl?.classList.toggle("steer", steered);
+          /** Not the tap's distance but a passing one: steered by `r` or recon mode, or a max look */
+          const steered = framed && !armed && (far !== null || w.player.look.steer !== null);
+          reachEl?.classList.toggle("steer", steered && !out);
         });
       },
     }),

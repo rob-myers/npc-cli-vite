@@ -114,7 +114,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
   - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
   - It is the look's `far`, in force over `steer` and `base` whilst Space is held. Letting go gives them back.
 - **A raised phaser extends it** to at least the red dot, where a shot at no one would land (`w.npcFocus.reachOf`).
-- **The notice.** Whilst a cap holds, the bar shows its reach: "look 2m", "recon 2m" in recon mode, "look max" for a far look. A distance `r` or recon mode steers reads sky blue, being theirs only whilst on. Its "x" drops the cap and ends recon mode (`w.player.stopLooking`). With the phaser raised the "aim" notice shows the dot's range instead.
+- **The notice.** Whilst a cap holds, the bar shows its reach: "look 2m", "recon 2m" in recon mode, "look max" for a far look. A passing distance reads sky blue, steered by `r` or recon mode, or a max look: only the tap's is lime. Its "x" drops the cap and ends recon mode (`w.player.stopLooking`). With the phaser raised the "aim" notice shows the dot's range instead.
 
 **How the view frames it** (`easeFrontier`, in `onCameraFrame`)
 - **The pan.** `followPlayer` holds the target `frontierConfig.panFrac` of the way along `ahead`, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
