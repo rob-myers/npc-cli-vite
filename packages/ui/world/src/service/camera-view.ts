@@ -18,8 +18,13 @@ export function getZoomStops(view: CameraView) {
   return { minDistance: distanceOfView(view.nearView, view.fov), maxDistance: distanceOfView(view.farView, view.fov) };
 }
 
-/** `cameraFov`, and the floor the device's default zoom stops show at it */
+/** The default framing, which `reset` and an unsaved site take: `high` */
 export function getDefaultCameraView(): CameraView {
+  return getPresetCameraView("high");
+}
+
+/** `cameraFov`, and the floor the device's default zoom stops show at it: what the presets scale */
+function getBaseCameraView(): CameraView {
   return {
     fov: cameraFov,
     nearView: viewOfDistance(defaultCameraMinDistance, cameraFov),
@@ -54,7 +59,7 @@ export function stepCameraPreset(view: CameraView, step: -1 | 1): keyof typeof c
 /** A preset's framing on this device: its fov, and the default views scaled */
 export function getPresetCameraView(name: keyof typeof cameraPresets): CameraView {
   const { fov, near, far } = cameraPresets[name];
-  const { nearView, farView } = getDefaultCameraView();
+  const { nearView, farView } = getBaseCameraView();
   const presetNear = near === null ? minNearView : nearView * near;
   return { fov, nearView: presetNear, farView: Math.max(farView * far, presetNear) };
 }

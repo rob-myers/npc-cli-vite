@@ -18,7 +18,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 - Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.
 - So a new fov keeps the floor seen at each stop, as a dolly zoom: only the perspective changes.
 - The menu's **framing** row, beneath **camera**, has the presets, a reset, and a pop-up with a vertical slider for each. Only its button opens or closes it, so it stays open beside the menu, and goes with it.
-- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the default's, and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. `mid` is not `reset`, the device's own defaults.
+- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the device's base (`cameraFov` and its default stops), and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. The default, and so `reset`, is `high` (`getDefaultCameraView`).
 - Saved site-wide (`getSiteStore`, key `site`), as the light slider is. `ctrlOpts`, reset on hmr, reads it back.
 
 **Keys**
