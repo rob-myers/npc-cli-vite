@@ -103,7 +103,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
 **The frontier**
 - `service/player-frontier` reads it off the light sweep. A fan of the sweep's polar table, either side of where their head faces, is read back off the GPU (`playerLight.readTable`) into one kept `ReadbackBuffer`.
 - One read is in flight at a time, at most one per `frontierConfig.readMinMs`. A read asks for a frame only when the reach changes.
-- `reach` is the furthest of the fan. `ahead` is the vector to the frontier point, eased at `frontierConfig.smoothRate`.
+- `reach` is the furthest of the fan. `ahead` is the vector to the frontier point, not eased: `easeFrontier` eases the zoom and pan towards it once, at `frontierConfig.smoothRate` (`calmRate` off the mesh, `scanRate` during a max look), so they land together.
 
 **What changes it**
 - **A look caps it** (`w.player.look`, the distance in force `lookReach()`). The light still limits it: the frontier is the nearer of the two.

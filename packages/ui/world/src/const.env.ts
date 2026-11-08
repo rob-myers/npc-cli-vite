@@ -178,8 +178,8 @@ export const frontierConfig = {
   calmRate: 0.8,
   /** The same whilst a max look follows the pointer, so a doorway swept past does not jerk the view */
   scanRate: 1.5,
-  /** How fast the zoom stops and the view's offset ease, per second */
-  rate: 4,
+  /** The same whilst drawing back in, e.g. a phaser lowered or Space or `r` let go */
+  backRate: 1.2,
   /** Near enough what they ease to, so no further frame is asked for */
   settleUntil: 0.001,
   /** The nearest the inner stop comes, as a share of the travel between the stops. Not `0`: `t` divides by it */

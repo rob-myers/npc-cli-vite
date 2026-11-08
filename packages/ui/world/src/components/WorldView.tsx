@@ -859,8 +859,6 @@ export function WorldView(props: React.PropsWithChildren) {
         const now = performance.now();
         const deltaSecs = Math.min((now - state.frontierMs) / 1000, 0.1);
         state.frontierMs = now;
-        const alpha = 1 - Math.exp(-frontierConfig.rate * deltaSecs);
-
         const remaining = wanted - controls.maxDistance;
         const remainingMin = wantedMin - controls.minDistance;
         const remainingOffset = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
@@ -871,17 +869,22 @@ export function WorldView(props: React.PropsWithChildren) {
           offset.z = tmpOffset.z;
           return;
         }
+        const player = w.player?.get();
+        /** The frontier's only ease, else the zoom and pan creep on. Gentler off the mesh, drawing back in, or scanning */
+        const rate =
+          player?.agentId === null || player?.isFading() === true
+            ? frontierConfig.calmRate
+            : remaining < 0
+              ? frontierConfig.backRate
+              : w.player?.isScanning() === true
+                ? frontierConfig.scanRate
+                : frontierConfig.smoothRate;
+        const alpha = 1 - Math.exp(-rate * deltaSecs);
         controls.maxDistance += remaining * alpha;
         controls.minDistance += remainingMin * alpha;
-        // eased with the zoom, else the view lunges ahead. Never longer than wanted, keeping pace as the frontier draws in
+        // eased with the zoom, on the same alpha, so the two keep step either way
         offset.x += (tmpOffset.x - offset.x) * alpha;
         offset.z += (tmpOffset.z - offset.z) * alpha;
-        const [want, have] = [tmpOffset.x ** 2 + tmpOffset.z ** 2, offset.x ** 2 + offset.z ** 2];
-        if (have > want) {
-          const shrink = Math.sqrt(want / have);
-          offset.x *= shrink;
-          offset.z *= shrink;
-        }
         w.r3f?.invalidate(); // still on its way
       },
       getFrontierStops() {

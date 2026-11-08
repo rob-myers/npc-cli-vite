@@ -7,13 +7,14 @@ import { lightAngles, type PlayerLight } from "./player-light";
  * facing, since one ray flickers as they turn past a jamb. Read only after a fresh sweep, and at
  * most once per `frontierConfig.readMinMs`; the read is asynchronous, so the answer is a frame or so
  * behind, which the eased camera never notices — provided a frame follows, hence `onRead`, since
- * under a demand frameloop the frames may have stopped. See `WorldView`'s `easeFrontier`
+ * under a demand frameloop the frames may have stopped. Not eased here: `WorldView`'s `easeFrontier`
+ * eases the zoom and pan towards it, once only, so they land together
  */
 export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => void): PlayerFrontier {
   const halfCount = Math.round((lightAngles * frontierConfig.halfDeg) / 360);
   const table = new Float32Array(lightAngles);
-  /** The frontier vector, eased: the reading leaps, and a turn swings it. `null` until first read */
-  let eased: null | { x: number; z: number } = null;
+  /** The frontier vector as it stands now. `null` until first read */
+  let ahead: null | { x: number; z: number } = null;
   let pending = false;
   let readSweep = 0;
   let lastReadMs = 0;
@@ -23,22 +24,22 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
   const frontier: PlayerFrontier = {
     reach: null,
     ahead(out) {
-      if (eased === null) return false;
-      out.x = eased.x;
-      out.z = eased.z;
+      if (ahead === null) return false;
+      out.x = ahead.x;
+      out.z = ahead.z;
       return true;
     },
     reset() {
       frontier.reach = null;
-      eased = null;
+      ahead = null;
       epoch++;
     },
-    update(rotationY, deltaSecs, rate, aimReach, lookReach) {
+    update(rotationY, aimReach, lookReach) {
       const lookAngle = -rotationY - Math.PI / 2; // three's rotation-Y to an angle in world XZ
       const sweeps = getLight().getSweeps();
       if (sweeps === 0) {
         frontier.reach = null;
-        eased = null;
+        ahead = null;
         return;
       }
 
@@ -74,16 +75,9 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
 
       if (frontier.reach === null) return;
       const reach = Math.max(Math.min(frontier.reach, lookReach ?? Infinity), aimReach ?? 0);
-      const x = Math.cos(lookAngle) * reach;
-      const z = Math.sin(lookAngle) * reach;
-      if (eased === null) {
-        eased = { x, z };
-      } else {
-        // exponential approach, so it is frame-rate independent and has no end to overshoot
-        const alpha = 1 - Math.exp(-rate * deltaSecs);
-        eased.x += (x - eased.x) * alpha;
-        eased.z += (z - eased.z) * alpha;
-      }
+      ahead ??= { x: 0, z: 0 };
+      ahead.x = Math.cos(lookAngle) * reach;
+      ahead.z = Math.sin(lookAngle) * reach;
     },
   };
   return frontier;
@@ -92,13 +86,13 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
 export type PlayerFrontier = {
   /** Metres ahead the player can see, up to `lightRadius` — `null` whilst the light is off or unread */
   reach: null | number;
-  /** The eased vector from the player to their frontier, into `out` — `false`, and untouched, whilst unread */
+  /** The vector from the player to their frontier now, into `out` — `false`, and untouched, whilst unread */
   ahead(out: { x: number; z: number }): boolean;
-  /** Forgets the reading, e.g. on a teleport: eased, it would carry the view past them */
+  /** Forgets the reading, e.g. on a teleport: the camera, easing to it, would carry the view past them */
   reset(): void;
   /**
-   * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second.
+   * Reads the sweep when there is a fresh one.
    * A look nearer than it, `lookReach`, caps it. A raised phaser's `aimReach` extends it. Call once per frame, after the sweep
    */
-  update(rotationY: number, deltaSecs: number, rate: number, aimReach: null | number, lookReach: null | number): void;
+  update(rotationY: number, aimReach: null | number, lookReach: null | number): void;
 };
