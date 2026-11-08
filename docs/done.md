@@ -4,10 +4,14 @@
 
 ### Act
 
+- ✅ pad/park should move rather than fadeSpawn
+
 - ✅ `act count kate to:5` should fade on final said
 - ✅ act avoid/hide should support pause
 
 ### Animation and Npc
+
+- ✅ npc key thin font flickers
 
 - ✅ refine look-mode
   - ✅ suppress on npc-pre-do not on leave sit/lie
@@ -67,6 +71,15 @@
 
 ### Camera
 
+- ✅ zoomed in rgb-shift is too large
+- ✅ support restricting look frontier via look
+  - for quick-look and recon-mode
+- ✅ fix sharp camera motion post unpause
+  - followPlayer continues during pause (prev frontier did, pan didn't)
+- ✅ embodied camera should continue on pause
+- ✅ avoid initial sharp camera motion after change map and unpause
+- ✅ desktop camera framing defaults high
+
 - ✅ improve follow camera transition when look wrong way in chair then spawn out
 - ✅ debug sliders for fov/minDist/maxDist with natural relationship
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
@@ -78,6 +91,17 @@
 
 ### Controls
 
+- ✅ non-unital timeScale always shown in toast with reset
+- ✅ arrow keys mirror wasd, [/] for timeScale
+- ✅ toast `time 0.2` more prominent
+- ✅ holding r shows looking inventory toast
+  - double-r look -> focus
+- ✅ snap rotation controls ,/. e.g. for phaser
+- ✅ latch strafe when disable mid-strafe: lower weapon or disable strafe mode
+  - otherwise strafe left turns into run left
+- ❌ rmb/2-tap look can be held e.g. for phaser aim
+- ✅ npc context menu close button on right
+
 - ✅ try look-mode via double-tap r
   - ✅ fix raised phaser aim
   - ✅ pad look overrides e.g. put down box
@@ -85,6 +109,9 @@
 - ✅ wasd look towards wall should be suppressed while strafe
 
 ### Decor
+
+- ✅ chairs can specify forbidden exit direction e.g. back of sofa
+  - decor point do=sit supports meta.front-only
 
 - ✅ simplify npc/decor contextmenu: use psi dialog style
   - static decor has contextmenu too
@@ -100,6 +127,9 @@
 - ✅ on cancel npc focus re-focus world
 
 ### Inventory
+
+- ✅ follow cam shows closable inventory toast
+- ✅ support `take rob item:phaser`
 
 - ✅ no "strafe" message or toggle when aim while sit/lie
 - ✅ "aim blocked" toast and phaser end colour matches inventory
@@ -139,6 +169,8 @@
 
 ### Perception and Spots
 
+- ✅ hide external spots in sense-mode
+
 - ✅ clean spots in Debug.tsx
 - ✅ held open door has blue/purple lock and is persisted
 
@@ -151,6 +183,13 @@
 - ✅ some cover spots don't provide cover
 
 ### Phaser and Psi
+
+- ✅ laser dot look direction tracks npc surface
+- ❌ armour integrity indicator
+- ✅ avoid phaser through wall when walk into wall
+  - repro on run straight into wall from 1.5m away
+- ✅ avoid psi-arm through wall when next to wall
+  - seems fixed by "avoid phaser through wall" at least for wasd_delta-driven npc
 
 - ✅ fix psi arm while seated look to left
 
@@ -307,6 +346,9 @@
 
 ## Audio
 
+- ✅ phaser hit uses deep hum fx, also for walls
+- ✅ muted by default with toggle in World
+
 - ✅ ui/audio
   - player footsteps track feet
   - nearby npc footsteps
@@ -360,6 +402,8 @@
 - ✅ inventory bar: psi, phaser, keys, carried items
 
 ## Jsh and Jobs
+
+- ✅ jsh `take` -> `head`
 
 - ✅ saw `move: npc not found: /shared/pred/player` when I changed to map 102-only while you were building 102 hull symbol.
 

@@ -57,33 +57,34 @@
     - `act kate count:3 down` or `act count kate from:3`
     - `act kate avoid:rob`
   - ✅ hide-and-seek sketch
-    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by room
+    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by rob
     - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
     - can `act kate count:3 down`
     - can `act count kate from:3 to:0`
   - 🚧 guard-and-intruder sketch
-    - 🚧 `act guard room:{grKey}`
-    - 🚧 try provide structure via dfas with synchronising words
+    - ✅ `act guard room:{grKey}`
+    - ❌ try provide structure via dfas with synchronising words
+    - ✅ `sc save patrol/patrol-route path:[[17.5,10.4],[17.5,11.4],[16.5,10.4]] npc:guard-0`
+    - `act patrol test-patrol`
+    - `act patrol path:[[17.5,10.4],[17.5,11.4],[16.5,10.2]] g1,g2 watch:nobody`
+    - ✅ patrols -> graphs
+      - `sc save graph/test ...`
+  - meeting-in-secret sketch
+  - breach-and-clear sketch
 
-- muted by default
-- narrator
-- simplify JobsLibrary
+- JobsLibrary -> Scenarios
+  - Scenarios include low-level behaviours e.g. npc-inventory?
+    - can `give rob item:book` but `take` ...
   - tldr only contains most common
-  - better layout for others
+  - label only (code viewable by running)
+  - individual persisted params with history
 - clarify Blog component
-- npc context menu close button on right
-- npc key thin font flickers
+- narrator ui
 
-- rmb/2-tap look can be held e.g. for phaser aim
-- hide external spots in sense-mode
-- BUG world connected to a hidden tab
-  - should probably always pause client when server paused
-  - could show toast in client too
-  - ensure World pauses on hide tab
-- armour integrity indicator
-- avoid initial sharp camera motion after change map and unpause
-- avoid phaser through wall when walk into wall
-- avoid psi-arm through wall when next to wall
+- sidestep now too sensitive (own PR)
+  - multiple sidestep strategies
+- fix long corridor aim issue i.e. large difference between nearby npc and wall
+
 
 ## World
 
@@ -140,6 +141,13 @@
 ### Inventory
 
 ### Navigation
+
+### Net
+
+- BUG when world connected to a hidden tab
+  - should probably always pause client when server paused
+  - could show toast in client too
+  - ensure World pauses on hide tab
 
 ### Performance
 
