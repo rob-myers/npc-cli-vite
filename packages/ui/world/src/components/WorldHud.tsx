@@ -68,13 +68,15 @@ export default function WorldHud() {
         /** Sat or lain they never strafe, aiming or not */
         const stood = w.player.get()?.posture === "stand";
         const kept: Kept[] = [];
-        if (w.phasers?.isArmed(key) === true) {
+        const armed = w.phasers?.isArmed(key) === true;
+        if (armed) {
           kept.push({ label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
           if (stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
         } else if (w.player.strafe && stood)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
-        // focus mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`
-        if (w.player.focus || (w.view?.follow === true && w.view.cameraMode === "embodied"))
+        // focus mode, or a cap on their frontier whilst the follow frames them. Shown and labelled by `watchLook`.
+        // Raised, the red dot is the look instead: see `watchAim`
+        if (!armed && (w.player.focus || (w.view?.follow === true && w.view.cameraMode === "embodied")))
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
         if (w.view?.follow === true)
           kept.push({ label: "follow", title: "stop following: v", end: () => w.view.setFollow(false) });
@@ -146,8 +148,10 @@ export default function WorldHud() {
       },
       watchAim(el) {
         if (el === null || w.r3f == null) return;
+        const reachEl = el.querySelector<HTMLElement>("[data-aim-reach]");
         return w.e.addFrameCallback(() => {
           el.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
+          setReadout(reachEl, w.npcFocus?.reachOf(w.player.key) ?? null); // the red dot's range
         });
       },
       watchLook(el) {
@@ -162,11 +166,7 @@ export default function WorldHud() {
           el.classList.toggle("blocked", focus && w.player.isFocusYielding());
           const word = focus ? "focus" : "look"; // focus mode, else a look's cap alone
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
-          const reach = cap === null ? "" : `${Math.min(cap.reach, 99.9).toFixed(1)}m`;
-          if (reachEl && reachEl.textContent !== reach) {
-            reachEl.textContent = reach;
-            reachEl.style.display = reach === "" ? "none" : "";
-          }
+          setReadout(reachEl, cap?.reach ?? null);
         });
       },
     }),
@@ -385,6 +385,7 @@ export default function WorldHud() {
                     <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
                   )}
                   {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
+                  {label === "aim" && <span data-aim-reach className={readoutClass} />}
                   {end !== undefined && (
                     <button
                       type="button"
@@ -707,6 +708,14 @@ const noticesClass =
 /** A distance as a device reads it out: a fixed width, so the notice never changes length */
 const readoutClass =
   "box-content w-[5ch] rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70";
+
+/** Writes `metres` into a readout, hidden without one. Only on a change: it runs each frame */
+function setReadout(el: null | HTMLElement, metres: null | number) {
+  const text = metres === null ? "" : `${Math.min(metres, 99.9).toFixed(1)}m`;
+  if (el === null || el.textContent === text) return;
+  el.textContent = text;
+  el.style.display = text === "" ? "none" : "";
+}
 
 /** Each icon's size, as a fraction of its slot's height (else `--hud-icon-base`): alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
