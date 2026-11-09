@@ -28,6 +28,8 @@ export type PersistedCamera = {
   position: { x: number; y: number; z: number };
   /** The live zoom stops it was in, which a follow draws out past the persisted ones */
   stops?: [max: number, min: number];
+  /** The follow's offset towards the frontier, so a follow before the World has risen heads where it was */
+  offset?: { x: number; z: number };
 };
 
 /** `null` means "no preference yet", where the default depends on the device */
@@ -86,6 +88,8 @@ export type WorldSettings = {
   speechHeight: null | number;
   /** By npcKey, so it goes with them from map to map — see `w.e.carried` */
   carried: Record<string, Carried>;
+  /** The look distance a tap set, kept over a reload so the view frames as it did — see `w.player.look` */
+  lookBase: null | number;
   /**
    * The server world we were a client of — drives auto-reconnect on load. `remote` scopes the
    * search: a same-page parent never resolves to another tab's world of the same key, nor
@@ -130,6 +134,7 @@ const defaultWorldSettings: WorldSettings = {
   speechHeight: null,
   // the player sets out with psi and a phaser
   carried: { [defaultPlayerKey]: { items: [createItemDef("phaser", "phaser-0")], psi: true } },
+  lookBase: null,
   netParent: null,
 };
 

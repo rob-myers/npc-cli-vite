@@ -164,7 +164,7 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierMs: 0,
       cameraFrameMs: 0,
       ranUnpaused: false,
-      frontierOffset: { x: 0, z: 0 },
+      frontierOffset: { x: 0, z: 0, ...store.read().cameraInitial?.offset },
       frontierHold: false,
       keysDown: new Set(),
       lastKeyMs: 0,
@@ -452,6 +452,7 @@ export function WorldView(props: React.PropsWithChildren) {
           polar: spherical.phi,
           position: { x: target.x, y: spherical.radius, z: target.z },
           stops: [maxDistance, minDistance],
+          offset: { ...state.frontierOffset },
         };
         state.persistedCamera = cameraInitial;
         store.patch({ cameraInitial });

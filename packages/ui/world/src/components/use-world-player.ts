@@ -5,7 +5,7 @@ import { deltaAngle } from "maath/misc";
 import { useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
-import { getWorldMapStore } from "../service/storage";
+import { getWorldMapStore, getWorldStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
 /**
@@ -25,7 +25,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookAt: null,
       snapFlip: false,
       strafeLatch: null,
-      look: { base: null, steer: null, far: null },
+      look: { base: getWorldStore(w.key).read().lookBase, steer: null, far: null },
       lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
@@ -207,6 +207,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.cancelLook();
         state.cancelLook = w.e.after(lookHoldMs / 1000, () => {
           state.lookAt = null;
+          state.persistLook(); // the distance it set
           w.r3f?.invalidate();
         });
         w.r3f?.invalidate();
@@ -346,6 +347,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       persist() {
         w.e.persistNpcs();
         w.e.persistDecor();
+      },
+      persistLook() {
+        getWorldStore(w.key).patch({ lookBase: state.look.base });
       },
       psi(on) {
         w.e.setPsi(on, state.key);
@@ -511,6 +515,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       stopLooking() {
         if (state.recon === true) state.toggleRecon();
         state.look = { base: null, steer: null, far: null };
+        state.persistLook();
         w.r3f?.invalidate(); // the frontier eases back out, and the bar's notice goes
       },
       syncRun() {
@@ -726,6 +731,8 @@ export type State = {
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
+  /** Saves the look's base distance for the next load */
+  persistLook(): void;
   /** Psi on or off, granted or not. See `Psi` */
   psi(on: boolean): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
