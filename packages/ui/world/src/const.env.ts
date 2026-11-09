@@ -180,6 +180,8 @@ export const frontierConfig = {
   scanRate: 1.5,
   /** The same whilst drawing back in, e.g. a phaser lowered or Space or `r` let go */
   backRate: 1.2,
+  /** Seconds the zoom and pan take to ease back up to speed after a pause, which holds them */
+  resumeSecs: 0.6,
   /** Near enough what they ease to, so no further frame is asked for */
   settleUntil: 0.001,
   /** The nearest the inner stop comes, as a share of the travel between the stops. Not `0`: `t` divides by it */
@@ -188,7 +190,7 @@ export const frontierConfig = {
   margin: 1.3,
   /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
   panFrac: 0.5,
-  /** How far past the outer stop a follow may zoom out to show a raised phaser's dot, as a factor */
+  /** How far past the outer stop a follow may zoom out to show the dot whilst aiming, or a far look, as a factor */
   aimOuterScale: 3,
 } as const;
 

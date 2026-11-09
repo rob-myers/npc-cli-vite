@@ -242,6 +242,7 @@ export default function Phasers() {
             shielded: false,
             shot: null,
             sight: { across: [], from: { x: 0, y: 0 }, inSight: false, shields: [] },
+            steady: false,
             struck: null,
             target: null,
             toward: null,
@@ -307,6 +308,19 @@ export default function Phasers() {
       },
       isCharging(npcKey) {
         return state.arms.get(npcKey)?.charge != null;
+      },
+      isSteadied(npcKey) {
+        const arm = state.arms.get(npcKey);
+        return arm?.armed === true && arm.steady === true;
+      },
+      steady(npcKey, on) {
+        const arm = state.arms.get(npcKey);
+        // the cursor a crosshair whilst aiming, written direct: a render of the view would cost more
+        if (npcKey === w.player.key) w.view.canvas?.toggleAttribute("data-aiming", on && arm?.armed === true);
+        if (arm === undefined || arm.steady === on) return;
+        arm.steady = on;
+        w.hud?.fireHint?.update(); // the hint that a click fires
+        w.r3f?.invalidate();
       },
       isCooling(npcKey) {
         const cool = state.arms.get(npcKey)?.cool;
@@ -653,7 +667,7 @@ export default function Phasers() {
         }
         const { support } = npc.anim; // undefined on an instance from before hmr
         // a hand to steady it, once held a moment: a tap fires before it gets there
-        const steadied = arm.charge != null && secs - arm.charge.since >= phaserConfig.supportAfterSecs;
+        const steadied = state.isSteadied(npc.key);
         if (support !== undefined) support.on = arm.armed === true && steadied;
         if (steadied && arm.armed === true && w.e.isPsiRaised(npc.key)) {
           w.e.setPsi(false, npc.key); // the left hand leaves their temple for the gun
@@ -1096,6 +1110,10 @@ export type State = PhaserResources & {
   isAimed(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
   isCharging(npcKey: string): boolean;
+  /** Raised and aimed in earnest (Space held): the left hand steadies it, the view extends to the dot, and a click fires */
+  isSteadied(npcKey: string): boolean;
+  /** Aims in earnest, or not: see `isSteadied` */
+  steady(npcKey: string, on: boolean): void;
   /** Draining after a cancelled charge: none charges until it ends */
   isCooling(npcKey: string): boolean;
   /** Raised, and nothing in its way as they stand now: not drawn in, nor about to be */
@@ -1196,6 +1214,8 @@ type ArmEntry = {
   /** Where the arm points sat or lain, ahead of any beam — see `armAimAt` */
   armAt: THREE.Vector3;
   armed: boolean;
+  /** Aimed in earnest, Space held: see `isSteadied` */
+  steady: boolean;
   /** Charging since game `since` — see `charge` */
   charge: null | { since: number };
   /** Cancelled at `from`, draining since game `since` */
@@ -1619,8 +1639,8 @@ const phaserConfig = {
   supportAfterSecs: 0.3,
   coolSecs: 1,
   /** Charged full, the gun shakes this many metres and radians, this many times a second: draining, it sputters */
-  shakeM: 0.005,
-  shakeRad: 0.05,
+  shakeM: 0.0025,
+  shakeRad: 0.025,
   shakeHz: 13,
   sputterHz: 6,
 } as const;
@@ -1649,6 +1669,7 @@ function lower(arm: ArmEntry) {
     pitchAt: null,
     charge: null,
     cool: null,
+    steady: false,
   });
   return raised;
 }

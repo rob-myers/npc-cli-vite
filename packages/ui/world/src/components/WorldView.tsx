@@ -145,6 +145,7 @@ export function WorldView(props: React.PropsWithChildren) {
         rightPress: false,
         multi: false,
         pick: null,
+        firing: false,
       },
       pickedAt: null,
       lookMark: null,
@@ -162,8 +163,8 @@ export function WorldView(props: React.PropsWithChildren) {
         () => w.r3f?.invalidate(),
       ),
       frontierMs: 0,
-      cameraFrameMs: 0,
-      ranUnpaused: false,
+      frontierResumeMs: 0,
+      followMs: 0,
       frontierOffset: { x: 0, z: 0, ...store.read().cameraInitial?.offset },
       frontierHold: false,
       keysDown: new Set(),
@@ -659,11 +660,6 @@ export function WorldView(props: React.PropsWithChildren) {
         // wherever the camera has got to — a gesture's end fires before its damping has, and a
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
-        // the follow runs here whilst paused, as `World` does not tick then. A paused load keeps its saved view
-        const now = performance.now();
-        if (w.disabled === false) state.ranUnpaused = true;
-        else if (state.ranUnpaused === true) state.followPlayer(Math.min((now - state.cameraFrameMs) / 1000, 0.1));
-        state.cameraFrameMs = now;
 
         // where the w-key heads: held whilst a move key is down, else up the screen, snapped near an axis
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
@@ -858,6 +854,11 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         // measured in time: a demand frameloop's frame gaps vary
         const now = performance.now();
+        if (w.disabled === true) {
+          // paused, held where it is: a look running out stops with the World
+          state.frontierMs = state.frontierResumeMs = now;
+          return;
+        }
         const deltaSecs = Math.min((now - state.frontierMs) / 1000, 0.1);
         state.frontierMs = now;
         const remaining = wanted - controls.maxDistance;
@@ -880,7 +881,8 @@ export function WorldView(props: React.PropsWithChildren) {
               : w.player?.isScanning() === true
                 ? frontierConfig.scanRate
                 : frontierConfig.smoothRate;
-        const alpha = 1 - Math.exp(-rate * deltaSecs);
+        // unpaused, back up to speed: an ease is fastest as it sets off
+        const alpha = 1 - Math.exp(-rate * resumeOf(state.frontierResumeMs, now) * deltaSecs);
         controls.maxDistance += remaining * alpha;
         controls.minDistance += remainingMin * alpha;
         // eased with the zoom, on the same alpha, so the two keep step either way
@@ -906,8 +908,8 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
-          /** The furthest the inner stop goes. A raised phaser's dot, or a far look, may lie past the outer stop */
-          const beyond = w.npcFocus?.reachOf(player.key) != null || w.player.look.far !== null;
+          /** The furthest the inner stop goes. The dot whilst aiming, or a far look, may lie past the outer stop */
+          const beyond = w.phasers?.isSteadied(player.key) === true || w.player.look.far !== null;
           const cap = beyond ? outer * frontierConfig.aimOuterScale : outer;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
           wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
@@ -1069,6 +1071,11 @@ export function WorldView(props: React.PropsWithChildren) {
         if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
+        last.firing = last.rightPress === false && w.phasers?.isSteadied(w.player.key) === true;
+        if (last.firing === true) {
+          state.canvas.style.cursor = ""; // the crosshair stays
+          return void w.player.startCharge();
+        }
         last.pick = state.pickAt(e.nativeEvent);
 
         last.longPressTimer = window.setTimeout(() => {
@@ -1093,6 +1100,10 @@ export function WorldView(props: React.PropsWithChildren) {
         last.longPressTimer = 0;
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
+        if (last.firing === true) {
+          last.firing = false;
+          return void w.player.releaseCharge();
+        }
 
         // another finger still down, or this one was never the gesture's first — the camera's, not
         // a pick. A pinch usually lifts one finger before the other, and the first of those ups
@@ -1318,6 +1329,10 @@ export function WorldView(props: React.PropsWithChildren) {
        */
       followPlayer(deltaSecs) {
         const { controls } = state;
+        // only the World's tick runs it, so paused the pan holds with the zoom. A gap in its ticks was a pause
+        const now = performance.now();
+        if (now - state.followMs > followGapMs) state.frontierResumeMs = now;
+        state.followMs = now;
         // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
         // writing it would fight, and the pan would never arrive
         if (controls === null || state.lookAtAnimId !== 0) return;
@@ -1330,7 +1345,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (Math.hypot(dx, dz) < followUntil) return;
 
         // exponential approach, so it is frame-rate independent and has no end to overshoot
-        const alpha = 1 - Math.exp(-followRate * deltaSecs);
+        const alpha = 1 - Math.exp(-followRate * resumeOf(state.frontierResumeMs, now) * deltaSecs);
         const moveX = dx * alpha;
         const moveZ = dz * alpha;
         target.x += moveX;
@@ -1749,8 +1764,8 @@ export function WorldView(props: React.PropsWithChildren) {
     <div className="size-full" ref={ref}>
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
-        // inherited by the canvas, whose own cursor is set only whilst dragged
-        className={cn(w.player?.recon === true && "cursor-crosshair")}
+        // inherited by the canvas, whose own cursor is set only whilst dragged. Aiming, a click fires
+        className={cn("[&_canvas[data-aiming]]:cursor-crosshair", w.player?.gaze === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
@@ -1948,6 +1963,8 @@ export type State = {
     multi: boolean;
     /** What was under the press as it went down: a moving npc has gone on by its release */
     pick: null | Promise<null | PickFound>;
+    /** Aiming (Space held, raised), the press charges a shot, fired on its release: no pick */
+    firing: boolean;
   };
   /** Where the last pick landed — see `LookMark` */
   pickedAt: null | THREE.Vector3;
@@ -1967,10 +1984,10 @@ export type State = {
   playerFrontier: PlayerFrontier;
   /** When `easeFrontier` last ran, so its ease is measured in time */
   frontierMs: number;
-  /** When `onCameraFrame` last ran, timing the follow whilst paused */
-  cameraFrameMs: number;
-  /** Whether the World has run unpaused since mount: only then does a paused follow carry on */
-  ranUnpaused: boolean;
+  /** When the World was last paused, as `easeFrontier` saw it: it eases back up to speed after */
+  frontierResumeMs: number;
+  /** When `followPlayer` last ran, so a gap in the World's ticks, i.e. a pause, is seen */
+  followMs: number;
   /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
@@ -2239,6 +2256,10 @@ function getPixelRatio(bounds: Geom.RectJson) {
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
 const followUntil = 0.01;
+/** Milliseconds without a follow that count as a pause: the World ticks every frame unpaused */
+const followGapMs = 250;
+/** `0` to `1`: the share of full speed the zoom and pan ease at, `since` a pause ended */
+const resumeOf = (since: number, now: number) => Math.min(1, (now - since) / 1000 / frontierConfig.resumeSecs);
 
 /**
  * An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped — and scaled down

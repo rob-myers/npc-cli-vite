@@ -1,8 +1,16 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
-import { ListIcon, SpeakerHighIcon, SpeakerSlashIcon, UserFocusIcon, XIcon } from "@phosphor-icons/react";
+import {
+  FingerprintIcon,
+  ListIcon,
+  MouseLeftClickIcon,
+  SpeakerHighIcon,
+  SpeakerSlashIcon,
+  UserFocusIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
@@ -25,6 +33,7 @@ export default function WorldHud() {
       colEl: null,
       compassEl: null,
       dragged: false,
+      fireHint: null,
       itemsEl: null,
       menu: null,
       pressTimer: 0,
@@ -73,7 +82,7 @@ export default function WorldHud() {
         const framed = w.view?.follow === true && w.view.cameraMode === "embodied";
         // one hud-toast for the look and the raised phaser's aim, so its number eases from one to the other: see `watchLook`
         if (armed) kept.push({ label: "look", title: "lower phaser: e", end: () => w.phasers?.disarm(key) });
-        else if (w.player.recon || framed)
+        else if (w.player.gaze || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
         // aiming strafes them anyway: shown only if on before, its "x" greyed. Off, shown whilst latched: see `watchStrafe`
         if (armed && w.player.strafe && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
@@ -142,6 +151,15 @@ export default function WorldHud() {
         el.querySelector("text")?.replaceChildren(letter);
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
+      watchFollow(el) {
+        if (el === null || w.r3f == null) return;
+        const wordEl = el.querySelector("[data-follow-word]");
+        return w.e.addFrameCallback(() => {
+          // the view follows them, and they the pointer
+          const word = w.player.gaze || w.player.look.steer !== null ? "tethered" : "followed";
+          if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
+        });
+      },
       watchLook(el) {
         if (el === null || w.r3f == null) return;
         const wordEl = el.querySelector("[data-look-word]");
@@ -150,16 +168,20 @@ export default function WorldHud() {
         let shown: null | number = null;
         let lastMs = performance.now();
         return w.e.addFrameCallback(() => {
-          const { key, recon } = w.player;
+          const { key, gaze } = w.player;
           const armed = w.phasers?.isArmed(key) === true;
           const framed = w.view.follow === true && w.view.cameraMode === "embodied";
           const reach = framed ? w.player.lookReach() : null;
           const far = framed ? w.player.look.far : null;
-          const blocked = armed ? w.phasers.isDrawnIn(key) === true : recon && w.player.isReconYielding();
-          el.classList.toggle("gone", !(armed || recon || reach !== null));
+          const blocked = armed ? w.phasers.isDrawnIn(key) === true : gaze && w.player.isGazeYielding();
+          el.classList.toggle("gone", !(armed || gaze || reach !== null));
           el.classList.toggle("blocked", blocked);
-          // raised, the red dot's: else recon mode, or a look alone
-          const word = armed ? "aim" : `${recon ? "recon" : "look"}${far !== null ? " max" : ""}`;
+          // raised: "aim" whilst Space is held, else "drawn". Lowered: "gaze" following the pointer, else the focal distance
+          const word = armed
+            ? w.phasers.isSteadied(key) === true
+              ? "aim"
+              : "drawn"
+            : `${gaze ? "gaze" : "focal"}${far !== null ? " max" : ""}`;
           if (wordEl && wordEl.textContent !== word) wordEl.textContent = word;
           /** Out through a hull window: no range to read, so the last stays, greyed */
           const out = armed ? w.npcFocus?.endsInNothing(key) === true : far?.out === true;
@@ -172,7 +194,7 @@ export default function WorldHud() {
           lastMs = now;
           setReadout(reachEl, shown);
           reachEl?.classList.toggle("out", out);
-          /** Not the tap's distance but a passing one: steered by `r` or recon mode, or a max look */
+          /** Not the tap's distance but a passing one: steered by `r` or gaze mode, or a max look */
           const steered = framed && !armed && (far !== null || w.player.look.steer !== null);
           reachEl?.classList.toggle("steer", steered && !out);
         });
@@ -292,6 +314,12 @@ export default function WorldHud() {
     );
 
   const { key: playerKey } = w.player;
+  /** The kept hud-toasts a frame callback words or shows: see each `watch…` */
+  const watchOf: Partial<Record<string, (el: null | HTMLDivElement) => undefined | (() => void)>> = {
+    follow: state.watchFollow,
+    look: state.watchLook,
+    strafe: state.watchStrafe,
+  };
   const big = w.touchDevice;
 
   const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
@@ -307,6 +335,27 @@ export default function WorldHud() {
   /** By slot, what a right-click on it offers */
   const menus: Record<number, undefined | SlotMenuItem[]> = {};
 
+  /** Debug: how every shot ends, cycled by a press. Over the phaser's slot in a bar, below it in a column, where slots stack tight */
+  const forceShot = w.debug?.hudDebug === true && (
+    <button
+      type="button"
+      tabIndex={-1}
+      title="debug: how every shot ends"
+      className={cn(
+        "cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!",
+        column ? "pointer-events-auto -mt-2 mb-1 self-center" : "absolute bottom-0.5 left-1/2 -translate-x-1/2",
+      )}
+      onClick={(e) => {
+        e.stopPropagation();
+        const at = shotCycle.indexOf(w.debug.forceShot);
+        w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+        state.update();
+        w.view.focus();
+      }}
+    >
+      {w.debug.forceShot}
+    </button>
+  );
   const slot = (index: number, opts: SlotOpts, children: React.ReactNode) => {
     menus[index] = opts.menu;
     return (
@@ -389,7 +438,7 @@ export default function WorldHud() {
             {kept.map(({ label, title, end }) => (
               <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
                 <div
-                  ref={label === "look" ? state.watchLook : label === "strafe" ? state.watchStrafe : undefined}
+                  ref={watchOf[label]}
                   title={end === undefined ? title : undefined}
                   // shown by a frame callback, so from `gone` until its first frame says otherwise
                   className={cn(keptClass, (label === "look" || label === "strafe") && "gone")}
@@ -401,7 +450,9 @@ export default function WorldHud() {
                         <span data-look-reach className={`${readoutClass} gone`} />
                       </>
                     ) : (
-                      <span>{label}</span>
+                      <span data-follow-word={label === "follow" ? "" : undefined}>
+                        {label === "follow" ? "followed" : label}
+                      </span>
                     )}
                     <button
                       type="button"
@@ -470,25 +521,10 @@ export default function WorldHud() {
                 },
                 <>
                   <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
-                  {w.debug?.hudDebug === true && (
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      title="debug: how every shot ends"
-                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const at = shotCycle.indexOf(w.debug.forceShot);
-                        w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
-                        state.update();
-                        w.view.focus();
-                      }}
-                    >
-                      {w.debug.forceShot}
-                    </button>
-                  )}
+                  {column === false && forceShot}
                 </>,
               )}
+              {column === true && forceShot}
               {slot(
                 2,
                 {
@@ -539,6 +575,7 @@ export default function WorldHud() {
             )}
           </div>
           <PlayerButtons column={column} />
+          <FireHint armed={armed} column={column} layout={layout} />
         </motion.div>
 
         <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
@@ -631,6 +668,93 @@ function PlayerButtons({ column }: { column: boolean }) {
     </div>
   );
 }
+
+/**
+ * How to fire, beside the bar: aiming in earnest (Space held, raised), a click. On touch, raised, it is the fire button.
+ * Re-rendered alone as they aim, charge or fire (`w.hud.fireHint`), never the whole bar
+ */
+const FireHint = memo(function FireHint({
+  armed,
+  column,
+  layout,
+}: {
+  armed: boolean;
+  column: boolean;
+  layout: HudLayout;
+}) {
+  const w = useContext(WorldContext);
+  const hint = useStateRef(
+    (): FireHintState => ({
+      fireId: 0,
+      fired() {
+        hint.fireId++; // remounts the icon, which recoils
+        hint.update();
+      },
+    }),
+  );
+  w.hud.fireHint = hint;
+  const shown = armed && (w.touchDevice || w.phasers?.isSteadied(w.player.key) === true);
+  const charging = w.phasers?.isCharging(w.player.key) === true;
+  return (
+    <AnimatePresence>
+      {shown && (
+        <motion.div
+          key="click-fires"
+          {...toastMotion}
+          layout={false}
+          title={w.touchDevice ? "fire: hold to charge" : "click fires"}
+          // on touch it is the fire button: held, it charges, and let go, fires. A desktop click fires on the World
+          {...(w.touchDevice && {
+            role: "button",
+            onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
+              e.stopPropagation(); // not a press on the World
+              e.currentTarget.setPointerCapture(e.pointerId);
+              w.player.startCharge();
+            },
+            onPointerUp: () => w.player.releaseCharge(),
+            onPointerCancel: () => void w.player.cancelCharge(),
+          })}
+          className={cn(
+            clickFiresClass,
+            w.touchDevice && "pointer-events-auto touch-none cursor-pointer",
+            !column
+              ? "top-1/2 left-full ml-2 -translate-y-1/2"
+              : layout === "right"
+                ? "top-full right-0 mt-2"
+                : "top-full left-0 mt-2",
+            charging && "bg-red-950/70 ring-2 ring-red-400 shadow-[0_0_18px_rgb(248_113_113/0.6)]",
+          )}
+        >
+          {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
+          <motion.span
+            key={hint.fireId}
+            className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
+            initial={hint.fireId === 0 ? false : { scale: 1.45 }}
+            animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
+            transition={
+              charging
+                ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
+                : { type: "spring", stiffness: 520, damping: 11 }
+            }
+          >
+            {w.touchDevice ? (
+              <FingerprintIcon className="size-12" weight="fill" />
+            ) : (
+              <MouseLeftClickIcon className="size-12" weight="fill" />
+            )}
+          </motion.span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+});
+
+type FireHintState = {
+  /** Bumped by each shot the player fires: see `fired` */
+  fireId: number;
+  /** A shot has left: the icon recoils */
+  fired(): void;
+};
 
 /** The bar's options, each saved and highlighted whilst on: toggled in place, so the menu stays open */
 function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; iconClass: string; column: boolean }) {
@@ -735,16 +859,19 @@ function useChangeCount(value: unknown): number {
 
 const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
 /** Only its slots and buttons take the pointer, so a press between them reaches the World */
-const rowClass = "pointer-events-none mx-auto flex max-w-full";
+const rowClass = "pointer-events-none relative mx-auto flex max-w-full";
 /** Its slots, scrolled sideways once they outgrow a narrow World; padded, else the scroll clips a slot's ring */
 const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scrollbar-width:none]";
 /** The bar as a column on either side */
 const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
-const columnClass = "pointer-events-none flex flex-col items-center";
+const columnClass = "pointer-events-none relative flex flex-col items-center";
 const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
-/** The hud-toasts: top centre, clear of the bar */
+/** The hint that a click fires whilst aiming: right of the bar, or below it as a column */
+const clickFiresClass =
+  "pointer-events-none absolute z-10 grid place-items-center rounded-lg bg-black/50 p-2 ring-1 ring-red-400/40";
+/** The hud-toasts: top centre, clear of the bar. Across the whole width, else a narrow World squeezes them */
 const noticesClass =
-  "pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
+  "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
 /**
  * A kept hud-toast. `gone`, from a frame callback, fades and shrinks its contents and collapses its width, so the others
  * slide along. Inside motion's wrapper, which owns its own opacity and scale, and would take the frame callback's ref
@@ -1086,6 +1213,8 @@ export type State = {
   y: MotionValue<number>;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
+  /** How to fire, beside the bar, which re-renders alone: see `FireHint` */
+  fireHint: null | UseStateRef<FireHintState>;
   /** What the bar says above itself, a moment: something of theirs was refused */
   notice: null | string;
   noticeTimer: number;
@@ -1098,7 +1227,9 @@ export type State = {
   getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
-  /** The one hud-toast of looking: "aim" and the red dot's range whilst raised, else "recon" or "look" and the cap's reach. Its number eases between them */
+  /** The follow's hud-toast: "tethered" whilst gaze mode or a long `r` hold steers them to the pointer, else "followed" */
+  watchFollow(el: null | HTMLDivElement): undefined | (() => void);
+  /** The one hud-toast of looking: "drawn" (or "aim") and the red dot's range whilst raised, else "gaze" or "focal" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
   /** The strafe hud-toast: half transparent whilst strafe mode is off but latched, a move key still held, else hidden whilst off */
   watchStrafe(el: null | HTMLDivElement): undefined | (() => void);

@@ -103,7 +103,7 @@ export type HudLayout = "bar" | "left" | "right";
 const defaultWorldSettings: WorldSettings = {
   cameraMode: "embodied",
   cameraInitial: null,
-  follow: isTouchDevice(),
+  follow: true,
   postProcessing: true,
   rgbShift: true,
   extraFxEnabled: false,
@@ -134,7 +134,7 @@ const defaultWorldSettings: WorldSettings = {
   speechHeight: null,
   // the player sets out with psi and a phaser
   carried: { [defaultPlayerKey]: { items: [createItemDef("phaser", "phaser-0")], psi: true } },
-  lookBase: null,
+  lookBase: 1.5, // a first visit frames near the player
   netParent: null,
 };
 

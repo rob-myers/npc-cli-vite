@@ -138,21 +138,23 @@ does one with a laser.
   nothing is tested, else only bones within reach of the ray's heights across them.
 - With no one met, a small red dot marks where a shot at no one would land (`placeEnd`), drawn along the
   live aim. The player's alone. None is drawn where nothing stops it (`what: "nothing"`), e.g. out of a hull window.
-- Space fires (`fire`): locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
+- **Aiming.** Raised, Space held aims in earnest (`w.phasers.steady`, `isSteadied`): the left hand steadies the gun,
+  the view extends to the dot, and only then may it fire. Raised alone, the view keeps the look's own framing.
+- A left press whilst aiming fires (`fire`, from `WorldView`'s `onPointerDown`, which then picks nothing): locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
   is. That point is held in the part's bone frame (the target's `local`, read by `targetPoint`), so it moves with
   them.
 - As it locks on (`shoot`, `meetPart`), the line from the muzzle tip through the dot is tested against each hit
   region's bone, by the box round what it moves most (`partOnRay` in `phaser-beam.ts`). The nearest met is the part
   hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to
   whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
-- With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
+- With no one met, it fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered is a far look instead: see `docs/camera.md`.
-- **Charging.** Raised, Space held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
+- **Charging.** Whilst aiming, a left press held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
   it (`w.player.releaseCharge`). The shot takes the charge (`takeCharge`, in `arm` and `fireAlong`): `fireCharge`
   widens and brightens its beam, and `phaser-fired` carries it as `charge`. A tap fires at once, near `0`.
   - Charging, the gun brightens with the beam's colour and shakes (`glowOf`, the `phaserCharge` attribute).
   - `e` whilst charging cancels it (`cancelCharge`): it sputters out over `coolSecs`, the phaser left raised, and
-    none charges meanwhile. Focus leaving the World cancels too, as Space's release never comes.
+    none charges meanwhile. Letting go of Space cancels too, as only whilst aiming may it fire, and so does focus leaving the World.
   - On touch, raised, hold a finger anywhere, then put a second down at least `fireTouchDelayMs` later: it charges
     where they face, without turning them, and letting it go fires. Letting go of the first cancels (`onFireTouch`). The camera ignores both
     meanwhile, and a long press opens no menu whilst armed.

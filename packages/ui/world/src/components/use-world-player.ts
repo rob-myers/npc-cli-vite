@@ -29,8 +29,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookMarked: true,
       cancelLook: () => {},
       doingUntil: 0,
-      recon: false,
-      reconYieldUntil: 0,
+      gaze: false,
+      gazeYieldUntil: 0,
       strafe: false,
       tapMs: {},
       rDownMs: 0,
@@ -46,16 +46,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
         const rHeld = w.view.keysDown.has("r") === true;
-        /** Recon mode alone, which a held `r` overrides */
-        const auto = state.recon === true && rHeld === false;
+        /** Gaze mode alone, which a held `r` overrides */
+        const auto = state.gaze === true && rHeld === false;
         // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat (not off one)
         if (
           auto &&
           (w.e.handling.has(state.key) || face.turn !== null || (w.gameTime.now() < state.doingUntil && npc.isFading()))
         )
-          state.reconYieldUntil = w.gameTime.now() + reconYieldSecs;
-        /** `r` held, else recon mode unless it yields */
-        const looking = rHeld || (state.recon && state.isReconYielding() === false);
+          state.gazeYieldUntil = w.gameTime.now() + gazeYieldSecs;
+        /** `r` held, else gaze mode unless it yields */
+        const looking = rHeld || (state.gaze && state.isGazeYielding() === false);
         const held = lookAt !== null || (looking && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
@@ -82,7 +82,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         } else if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
-          // recon mode keeps their facing whilst the camera is dragged
+          // gaze mode keeps their facing whilst the camera is dragged
           if (rHeld === false && (w.view.controls?.pointers.length ?? 0) > 0) return;
           // measured on resize, not here: a rect read each tick may force a layout
           const { raycaster, lastPointer, bounds } = w.view;
@@ -99,11 +99,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // sat, they look over a shoulder at most: further behind them, not at all
         if (posture === "sit" && Math.abs(deltaAngle(npc.rotation.y, bearing)) > sitLookMaxRad) return;
         const reach = Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z);
-        // a tap's look sets the distance. `r` held a while, or recon mode, steers it only whilst on
+        // a tap's look sets the distance. `r` held a while, or gaze mode, steers it only whilst on
         if (lookAt !== null) {
           if (lookAt.turn === undefined) [state.look.base, state.look.steer] = [reach, null];
         } else {
-          if (state.recon || performance.now() - state.rDownMs >= rCapMs) state.look.steer = reach;
+          if (state.gaze || performance.now() - state.rDownMs >= rCapMs) state.look.steer = reach;
           state.recastFarLook(npc, bearing); // a max look follows the pointer too
         }
         w.r3f.invalidate(); // a held key draws nothing of itself
@@ -142,7 +142,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (changed === true && pan === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
       },
       cancelCharge() {
-        return w.phasers?.cancelCharge(state.key) === true;
+        const cancelled = w.phasers?.cancelCharge(state.key) === true;
+        if (cancelled) w.hud?.fireHint?.update(); // the fire hint stops pulsing
+        return cancelled;
       },
       async castFarLook(bearing) {
         const npc = state.get();
@@ -191,8 +193,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.tapMs[key] = double ? -Infinity : ms; // a third is a fresh first
         return double;
       },
-      isReconYielding() {
-        return w.gameTime.now() < state.reconYieldUntil;
+      isGazeYielding() {
+        return w.gameTime.now() < state.gazeYieldUntil;
       },
       isScanning() {
         return state.look.far !== null && state.lookAt === null;
@@ -271,8 +273,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.code === "Space") {
           e.preventDefault();
-          // raised, charges a shot fired on release (`onKeyUp`). Lowered, a far look
-          return w.phasers?.isArmed(state.key) === true ? state.startCharge() : state.setFarLook(true);
+          // raised, aims in earnest, whilst a click fires (`WorldView`'s `onPointerDown`). Lowered, a far look
+          return w.phasers?.isArmed(state.key) === true ? w.phasers.steady(state.key, true) : state.setFarLook(true);
         }
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
@@ -290,11 +292,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         if (e.code === "KeyR") {
           state.rDownMs = e.timeStamp;
-          // held: see `aimAtPointer`. Twice quickly starts recon mode, and once ends it
-          if (state.recon === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleRecon();
+          // held: see `aimAtPointer`. Twice quickly starts gaze mode, and once ends it
+          if (state.gaze === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleGaze();
           return void w.r3f?.invalidate();
         }
-        if (e.code === "Comma" || e.code === "Period") return state.snapTurn(e.code === "Comma" ? 1 : -1);
+        // `,` and `.` a step either way, `/` the nearest right angle
+        if (e.code === "Comma" || e.code === "Period" || e.code === "Slash")
+          return state.snapTurn(e.code === "Comma" ? 1 : e.code === "Period" ? -1 : 0);
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") {
           if (state.cancelCharge() === false) state.toggleArm(); // charging, it cancels that alone
@@ -304,7 +308,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       onKeyUp(e) {
         if (e.code !== "Space") return;
-        state.releaseCharge();
+        w.phasers?.steady(state.key, false);
+        state.cancelCharge(); // only whilst aiming may it fire
         state.setFarLook(false);
       },
       onTouch(e) {
@@ -368,7 +373,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (w.phasers?.isCharging(state.key) !== true) return;
         // paused, no shot leaves: it is called off instead
         if (w.disabled === true) state.cancelCharge();
-        else w.npcFocus?.fire(state.key);
+        else {
+          w.npcFocus?.fire(state.key);
+          w.hud?.fireHint?.fired(); // the fire hint recoils
+        }
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)
@@ -447,7 +455,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
         const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
         // a key released after focus has gone elsewhere never reaches `onKeyUp`
-        const onBlur = () => (state.cancelCharge(), state.setFarLook(false));
+        const onBlur = () => (state.cancelCharge(), state.setFarLook(false), w.phasers?.steady(state.key, false));
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
@@ -502,7 +510,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           state.snapFlip = Math.sin(from) * tmpHit.x + Math.cos(from) * tmpHit.z > 0;
         }
         const sign = state.snapFlip ? -dir : dir;
-        const to = sign * (Math.floor((sign * from) / snapTurnRad + snapTurnSlop) + 1) * snapTurnRad;
+        const to =
+          dir === 0
+            ? Math.round(from / snapSquareRad) * snapSquareRad
+            : sign * (Math.floor((sign * from) / snapTurnRad + snapTurnSlop) + 1) * snapTurnRad;
         const { x, z } = npc.position;
         state.lookAtPoint(x - Math.sin(to) * snapTurnMetres, z - Math.cos(to) * snapTurnMetres);
         if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [to, false];
@@ -510,10 +521,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       startCharge() {
         const raised = w.phasers?.isArmed(state.key) === true;
         w.npcFocus?.target(state.key); // lowered, it is raised
-        if (raised === true) w.phasers.charge(state.key); // not whilst cooling
+        if (raised === true && w.phasers.charge(state.key)) w.hud?.fireHint?.update(); // not whilst cooling. The fire hint pulses
       },
       stopLooking() {
-        if (state.recon === true) state.toggleRecon();
+        if (state.gaze === true) state.toggleGaze();
         state.look = { base: null, steer: null, far: null };
         state.persistLook();
         w.r3f?.invalidate(); // the frontier eases back out, and the bar's notice goes
@@ -536,8 +547,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (on === false && w.e.hasItem(state.key, "psi") === false) return;
         w.e.setPsi(!on, state.key);
       },
-      toggleRecon() {
-        state.recon = !state.recon;
+      toggleGaze() {
+        state.gaze = !state.gaze;
         w.hud?.update(); // on, the bar keeps a notice of it
         w.view.update(); // and the cursor is a crosshair
         w.r3f?.invalidate();
@@ -583,14 +594,16 @@ const fireTouchDelayMs = 300;
 const lookHoldMs = 1200;
 /** `,` and `.` turn them to the next multiple of this */
 const snapTurnRad = Math.PI / 4;
+/** `/` turns them to the nearest multiple of this */
+const snapSquareRad = Math.PI / 2;
 /** A share of a step within which they count as on it, so a press turns them a whole step */
 const snapTurnSlop = 0.05;
 /** Metres off the point a snap turn looks at: any beyond `lookDeadMetres` */
 const snapTurnMetres = 2;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
 const doingMaxSecs = 3;
-/** Game seconds recon mode waits after they are done with what it yielded to */
-const reconYieldSecs = 0.8;
+/** Game seconds gaze mode waits after they are done with what it yielded to */
+const gazeYieldSecs = 0.8;
 /** Metres from them within which a tap gives no direction to look */
 const lookDeadMetres = 0.3;
 /** Metres off that a tap past the horizon is taken to be */
@@ -613,18 +626,18 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held, or `recon` is on, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
+  /** Whilst `r` is held, or `gaze` is on, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
-  /** Recon mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
-  recon: boolean;
-  /** Game time until which they are about to sit or lie: recon mode yields to their fade onto it */
+  /** Gaze mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
+  gaze: boolean;
+  /** Game time until which they are about to sit or lie: gaze mode yields to their fade onto it */
   doingUntil: number;
   /** From `npc-pre-do` until `npc-do`, or `doingMaxSecs` should that never come */
   setDoing(on: boolean): void;
-  /** Game time until which recon mode yields to what they do themselves, e.g. putting a box down */
-  reconYieldUntil: number;
-  /** Recon mode is yielding: see `reconYieldUntil` */
-  isReconYielding(): boolean;
+  /** Game time until which gaze mode yields to what they do themselves, e.g. putting a box down */
+  gazeYieldUntil: number;
+  /** Gaze mode is yielding: see `gazeYieldUntil` */
+  isGazeYielding(): boolean;
   /** A max look, Space held: the frontier eases gentler then */
   isScanning(): boolean;
   /** Whilst on they keep their facing, so a move strafes, at a walk. A double tap of Shift toggles it */
@@ -652,8 +665,8 @@ export type State = {
   onFireTouch(e: TouchEvent): boolean;
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
-  /** Turns them to the next multiple of 45°: with `dir` `1` their facing swings to the screen's left */
-  snapTurn(dir: 1 | -1): void;
+  /** Turns them to the next multiple of 45°: with `dir` `1` their facing swings to the screen's left. `0` the nearest 90° */
+  snapTurn(dir: -1 | 0 | 1): void;
   /** A snap turn's chain turns clockwise from above for `,`, as they faced the camera at its start */
   snapFlip: boolean;
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
@@ -671,7 +684,7 @@ export type State = {
         turn?: number;
       });
   /**
-   * How far they look, which caps their frontier: `base` a tap's, kept; `steer` only whilst `r` or recon mode is on;
+   * How far they look, which caps their frontier: `base` a tap's, kept; `steer` only whilst `r` or gaze mode is on;
    * `far` only whilst Space is held, which extends it instead. The first of `far`, `steer` and `base` is in force
    */
   look: { base: null | number; steer: null | number; far: null | FarLook };
@@ -681,7 +694,7 @@ export type State = {
   refreshFarLook(gdKey: Geomorph.GmDoorKey): void;
   /** Casts the far look again along `bearing` once it swings, or they move, far enough */
   recastFarLook(npc: JshCli.Npc, bearing: number): void;
-  /** Recon mode off and every look dropped: the "x" of the bar's look or recon notice */
+  /** Gaze mode off and every look dropped: the "x" of the bar's look or gaze notice */
   stopLooking(): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
@@ -705,7 +718,7 @@ export type State = {
   onKeyDown(e: KeyboardEvent): void;
   /** Space let go fires a charged shot */
   onKeyUp(e: KeyboardEvent): void;
-  /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it: the bar's fire button, or Space raised */
+  /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it: the bar's fire button, or a press whilst aiming */
   startCharge(): void;
   /** Fires the shot charging: at whom its line crosses, else along it. Paused, cancels it */
   releaseCharge(): void;
@@ -713,14 +726,14 @@ export type State = {
   cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Space held whilst lowered: a look as far as sight goes along their facing, which extends their frontier as a raised phaser's dot does. In recon mode, along the pointer */
+  /** Space held whilst lowered: a look as far as sight goes along their facing, which extends their frontier as aiming a raised phaser does. In gaze mode, along the pointer */
   setFarLook(on: boolean): void;
   /** Casts the far look along `bearing`, one cast at a time */
   castFarLook(bearing: number): Promise<void>;
   /** A far look's cast is under way */
   farCasting: boolean;
-  /** Recon mode on or off: the bar's notice shows it */
-  toggleRecon(): void;
+  /** Gaze mode on or off: the bar's notice shows it */
+  toggleGaze(): void;
   /** Run or walk — their `anim.hurry` — saying so */
   toggleRun(): void;
   /** Psi off, else on — on needs psi */
