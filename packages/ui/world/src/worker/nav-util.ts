@@ -236,3 +236,44 @@ type NpcDims = typeof import("../const.both")["npcDims"];
 const agentRadius: NpcDims["agentRadius"] = 0.2;
 const shutDoorKeepOut: NpcDims["shutDoorKeepOut"] = 0.05;
 const doorAreaOutsetAmount = agentRadius + shutDoorKeepOut;
+
+/** Square metres under which a navmesh island is reported: an npc put there cannot walk out */
+const smallIslandArea = 2;
+
+/** Each navmesh island smaller than `smallIslandArea`, by its area and centre */
+export function findSmallIslands(navMesh: NavMesh): WW.NavIsland[] {
+  const seen = new Set<number>();
+  const small: WW.NavIsland[] = [];
+
+  for (const start of navMesh.nodes) {
+    if (start.allocated === false || !(start.tileId in navMesh.tiles) || seen.has(start.index)) continue;
+    seen.add(start.index);
+    const stack = [start];
+    let [area, cx, cy] = [0, 0, 0];
+    for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
+      const tile = navMesh.tiles[node.tileId];
+      const vs = tile.polys[node.polyIndex].vertices.map((i) => ({
+        x: tile.vertices[3 * i],
+        y: tile.vertices[3 * i + 2],
+      }));
+      const polyArea =
+        Math.abs(vs.reduce((sum, p, i) => sum + p.x * vs[(i + 1) % vs.length].y - vs[(i + 1) % vs.length].x * p.y, 0)) /
+        2;
+      area += polyArea;
+      cx += (polyArea * vs.reduce((sum, p) => sum + p.x, 0)) / vs.length;
+      cy += (polyArea * vs.reduce((sum, p) => sum + p.y, 0)) / vs.length;
+      for (const linkIndex of node.links) {
+        const next = navMesh.nodes[navMesh.links[linkIndex].toNodeIndex];
+        if (next !== undefined && seen.has(next.index) === false) {
+          seen.add(next.index);
+          stack.push(next);
+        }
+      }
+    }
+    if (area > 0 && area < smallIslandArea) {
+      const round = (n: number) => Math.round(100 * n) / 100;
+      small.push({ area: round(area), at: { x: round(cx / area), y: round(cy / area) } });
+    }
+  }
+  return small;
+}

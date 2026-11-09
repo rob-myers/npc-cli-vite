@@ -71,6 +71,8 @@ export type WorldSettings = {
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
   timeSliderOpen: boolean;
+  /** Whether the menu's DEV warnings are shown, else only their count */
+  warningsOpen: boolean;
   /** Whether rooms' names show, from the player's bar's menu — see `RoomLabels` */
   roomLabelsShown: boolean;
   /** What the player's bubble set of their breathing, over its defaults */
@@ -121,6 +123,7 @@ const defaultWorldSettings: WorldSettings = {
   hudLayout: isTouchDevice() ? "right" : "bar",
   timeScale: 1,
   timeSliderOpen: false,
+  warningsOpen: false,
   roomLabelsShown: true,
   breathTune: {},
   gmGraphsFilter: "room",

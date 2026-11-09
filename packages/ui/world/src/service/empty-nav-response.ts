@@ -82,4 +82,5 @@ export const emptyTiledNavmeshResponse: WW.TiledNavMeshResponse = {
     polyMeshDetail: [],
   },
   toNavTris: [],
+  smallIslands: [],
 };
