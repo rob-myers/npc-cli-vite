@@ -42,24 +42,24 @@
           "name": "table--009 optional seats",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 64.9, "f": 65.1},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 65.9, "f": 65.1},
           "type": "symbol",
           "srcKey": "table--009",
           "baseRect": {"width": 50, "height": 50},
           "offset": {"x": -0.5, "y": -0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 64.4, 64.6)"
+          "cssTransform": "matrix(1, 0, 0, 1, 65.4, 64.6)"
         },
         {
           "id": "b1ebc566-da83-555b-5c4d-30398adc7154",
           "name": "table--009 optional seats",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 124.9, "f": 65.1},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 125.9, "f": 65.1},
           "type": "symbol",
           "srcKey": "table--009",
           "baseRect": {"width": 50, "height": 50},
           "offset": {"x": -0.5, "y": -0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 124.4, 64.6)"
+          "cssTransform": "matrix(1, 0, 0, 1, 125.4, 64.6)"
         }
       ]
     },
