@@ -572,8 +572,8 @@ export default function WorldHud() {
               ),
             )}
           </div>
-          <PlayerButtons column={column} />
-          <FireHint armed={armed} column={column} />
+          <PlayerButtons column={column}>{column === false && <FireHint armed={armed} column={false} />}</PlayerButtons>
+          {column && <FireHint armed={armed} column />}
         </motion.div>
 
         <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
@@ -610,80 +610,77 @@ export default function WorldHud() {
 }
 
 /** The player themself, after the slots or atop a column: where the camera stands by them, and how they go */
-function PlayerButtons({ column }: { column: boolean }) {
+function PlayerButtons({ column, children }: { column: boolean; children?: React.ReactNode }) {
   const w = useContext(WorldContext);
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const farLook = w.player?.look.far != null;
   const big = w.touchDevice;
   const buttonClass = cn(
-    "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden border border-neutral-400/25 bg-neutral-900/60 hover:ring-1 hover:ring-yellow-200/25",
+    playerButtonClass(big),
     // rounded only at the ends: the first here, the menu's at the other
     column ? "first-of-type:rounded-t-md" : "first-of-type:rounded-l-md",
-    // as big as the psi icon: the group's padding is a slot's
-    big ? "size-10.5" : "size-12.5",
   );
-  const iconSize = big ? "size-5" : "size-6";
+  const iconSize = playerIconSize(big);
 
   return (
     <div
-      className={cn(
-        "pointer-events-auto flex self-center rounded-md border border-neutral-400/10",
-        // a narrow bar scrolls them after the carried items, never the fire button
-        column ? "order-first mb-2 shrink-0 flex-col" : "ml-4 min-w-0 overflow-x-auto [scrollbar-width:none]",
-        buttonsPadClass(big, column),
-      )}
+      className={cn(playerGroupClass(big, column), column ? "order-first mb-2 shrink-0 flex-col" : "ml-4 min-w-0")}
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
-      {/* follow on (white) or off, as `v` */}
-      <div
-        className={buttonClass}
-        title={`follow ${follow ? "on" : "off"}: v`}
-        onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}
-      >
-        <AnimatePresence>
-          {w.view?.lookingAt === true && (
-            // pulses whilst a pan is under way, which a black screen or a paused world would hide
-            <motion.div
-              className="pointer-events-none absolute inset-0 bg-white/60"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
-              transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
-            />
-          )}
-        </AnimatePresence>
-        {followFlash > 0 && (
-          // keyed by the count, so each toggle replays the fade
-          <motion.div
-            key={followFlash}
-            className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
-            initial={{ opacity: 0.55 }}
-            animate={{ opacity: 0 }}
-            transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
-          />
-        )}
-        <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
-      </div>
-      {/* touch has no `wasd`, so no compass: nor Space, so a far look's toggle in its place */}
-      {big === false ? (
-        <CompassRose />
-      ) : (
+      {/* a narrow bar scrolls these after the carried items, never what follows, the fire button */}
+      <div className={cn("flex min-w-0", column ? "flex-col" : "overflow-x-auto [scrollbar-width:none]")}>
+        {/* follow on (white) or off, as `v` */}
         <div
           className={buttonClass}
-          title={`max look ${farLook ? "on" : "off"}`}
-          onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}
+          title={`follow ${follow ? "on" : "off"}: v`}
+          onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}
         >
-          <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
+          <AnimatePresence>
+            {w.view?.lookingAt === true && (
+              // pulses whilst a pan is under way, which a black screen or a paused world would hide
+              <motion.div
+                className="pointer-events-none absolute inset-0 bg-white/60"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
+                transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+              />
+            )}
+          </AnimatePresence>
+          {followFlash > 0 && (
+            // keyed by the count, so each toggle replays the fade
+            <motion.div
+              key={followFlash}
+              className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
+              initial={{ opacity: 0.55 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
+            />
+          )}
+          <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
         </div>
-      )}
-      {/* last: right-most in the bar, bottom-most in a column */}
-      <PlayerMenu
-        buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
-        iconClass={cn(buttonIcon(true), iconSize)}
-        column={column}
-      />
+        {/* touch has no `wasd`, so no compass: nor Space, so a far look's toggle in its place */}
+        {big === false ? (
+          <CompassRose />
+        ) : (
+          <div
+            className={buttonClass}
+            title={`max look ${farLook ? "on" : "off"}`}
+            onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}
+          >
+            <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
+          </div>
+        )}
+        {/* last: right-most in the bar, bottom-most in a column */}
+        <PlayerMenu
+          buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
+          iconClass={cn(buttonIcon(true), iconSize)}
+          column={column}
+        />
+      </div>
+      {children}
     </div>
   );
 }
@@ -705,47 +702,58 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
   );
   w.hud.fireHint = hint;
   const charging = w.phasers?.isCharging(w.player.key) === true;
+  const big = w.touchDevice;
+  const iconSize = playerIconSize(big);
   return (
+    // in a bar, set apart in the player's buttons' group, else a group of its own at a column's foot.
+    // Lowered, hidden but kept in place: nothing shifts as it is raised
     <div
-      role="button"
       aria-hidden={!armed}
-      title="fire: f, held to charge"
-      onPointerDown={(e) => {
-        e.stopPropagation(); // not a press on the World, nor a drag of the bar
-        if (!armed) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        w.player.startCharge();
-      }}
-      onPointerUp={() => w.player.releaseCharge()}
-      onPointerCancel={() => void w.player.cancelCharge()}
       className={cn(
-        fireHintClass,
-        column ? "mt-2" : "ml-2 self-center",
-        // lowered, hidden but kept in place: nothing shifts as it is raised
+        "flex shrink-0 transition-[opacity,visibility] duration-300",
+        column ? cn(playerGroupClass(big, column), "mt-2") : "ml-2",
         !armed && "invisible opacity-0",
-        charging && "bg-red-950/70 ring-2 ring-red-400 shadow-[0_0_18px_rgb(248_113_113/0.6)]",
       )}
     >
-      {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
-      <motion.span
-        key={hint.fireId}
-        className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
-        initial={hint.fireId === 0 ? false : { scale: 1.45 }}
-        animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
-        transition={
-          charging
-            ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
-            : { type: "spring", stiffness: 520, damping: 11 }
-        }
+      <div
+        role="button"
+        title="fire: f, held to charge"
+        onPointerDown={(e) => {
+          e.stopPropagation(); // not a press on the World, nor a drag of the bar
+          if (!armed) return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          w.player.startCharge();
+        }}
+        onPointerUp={() => w.player.releaseCharge()}
+        onPointerCancel={() => void w.player.cancelCharge()}
+        className={cn(playerButtonClass(big), "rounded-md", charging && "bg-red-950/70 ring-2 ring-red-400 ring-inset")}
       >
-        {w.touchDevice ? (
-          <FingerprintIcon className="size-12" weight="fill" />
-        ) : (
-          <span className="grid size-12 place-items-center rounded-md border-2 border-current font-bold text-2xl">
-            F
-          </span>
-        )}
-      </motion.span>
+        {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
+        <motion.span
+          key={hint.fireId}
+          className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
+          initial={hint.fireId === 0 ? false : { scale: 1.45 }}
+          animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
+          transition={
+            charging
+              ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
+              : { type: "spring", stiffness: 520, damping: 11 }
+          }
+        >
+          {big ? (
+            <FingerprintIcon className={iconSize} weight="fill" />
+          ) : (
+            <span
+              className={cn(
+                "grid place-items-center rounded border-[1.5px] border-current font-bold text-sm",
+                iconSize,
+              )}
+            >
+              F
+            </span>
+          )}
+        </motion.span>
+      </div>
     </div>
   );
 });
@@ -807,10 +815,21 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
   );
 }
 
-/** The fire button: after the player's buttons, or at a column's foot. In flow beside the slots, so never scrolled off with them */
-const fireHintClass = tw(
-  "pointer-events-auto grid shrink-0 cursor-pointer touch-none place-items-center rounded-lg bg-black/50 p-2 transition-[opacity,visibility] duration-300",
-);
+/** A player button, the fire button too: as big as the psi icon */
+const playerButtonClass = (big: boolean) =>
+  cn(
+    "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden border border-neutral-400/25 bg-neutral-900/60 hover:ring-1 hover:ring-yellow-200/25",
+    big ? "size-10.5" : "size-12.5",
+  );
+/** The player's buttons' group, and the fire button's own in a column: a faint border, padded as tall as a slot */
+const playerGroupClass = (big: boolean, column: boolean) =>
+  cn(
+    "pointer-events-auto flex self-center rounded-md border border-neutral-400/10",
+    // a slot's size less a button's, halved
+    big ? (column ? "px-1 py-[3px]" : "px-1 py-[9px]") : column ? "p-[5px]" : "px-[5px] py-[11px]",
+  );
+/** A player button's icon size */
+const playerIconSize = (big: boolean) => (big ? "size-5" : "size-6");
 /** A slot's size. A column's are shorter, its icons as big as the bar's, 2px apart */
 const slotSizeClass = (big: boolean, column: boolean) =>
   big
@@ -820,9 +839,6 @@ const slotSizeClass = (big: boolean, column: boolean) =>
     : column
       ? "h-13 w-15 [--hud-icon-base:72px]"
       : "h-18 w-15";
-/** The player's buttons' padding: a slot's size less a button's, halved, so the group is as tall as the slots */
-const buttonsPadClass = (big: boolean, column: boolean) =>
-  big ? (column ? "px-1 py-[3px]" : "px-1 py-[9px]") : column ? "p-[5px]" : "px-[5px] py-[11px]";
 
 /** A player button's icon: white whilst what it stands for is on, else grey */
 const buttonIcon = (on: boolean) =>
