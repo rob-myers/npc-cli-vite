@@ -115,15 +115,36 @@ let endBusy: null | (() => void) = null;
 
 /** Runs a call with "mcp testing" in the World's busy overlay, up until Claude's turn ends */
 async function driving<T>(call: () => Promise<T>): Promise<T> {
+  const view = getView();
   if (endBusy === null) {
     userInput.length = 0;
     const ended = new Promise<void>((resolve) => (endBusy = () => resolve()));
-    const w = queryClientApi.get(["world-0"]) as
-      | undefined
-      | { view?: { runBusy(text: string, task: () => Promise<void>): Promise<void> } };
-    void w?.view?.runBusy(mcpBusyText, () => ended);
+    void view?.runBusy(mcpBusyText, () => ended);
+  } else if (view !== undefined && view.busy !== mcpBusyText) {
+    relabelBusy(mcpBusyText); // back from compacting
   }
   return call();
+}
+
+function getView() {
+  const w = queryClientApi.get(["world-0"]) as
+    | undefined
+    | {
+        view?: {
+          busy: null | string;
+          runBusy(text: string, task: () => Promise<void>): Promise<void>;
+          update(): void;
+        };
+      };
+  return w?.view;
+}
+
+/** Changes the text of "mcp testing", whilst it is up */
+function relabelBusy(text: string) {
+  const view = getView();
+  if (endBusy === null || view === undefined || view.busy === null) return;
+  view.busy = text;
+  view.update();
 }
 
 function stopBusy() {
@@ -263,11 +284,14 @@ const ignoredKeys = new Set([
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 const maxEntries = 2000;
 const mcpBusyText = "mcp testing";
+const mcpCompactingText = "mcp compacting";
 
 (window as unknown as { __devMcp: typeof devMcp }).__devMcp = devMcp;
 
 // sent on by `vite-plugin-dev-mcp` from Claude Code's `Stop` hook
 import.meta.hot?.on("dev-mcp:turn-end", stopBusy);
+// from the `PreCompact` hook
+import.meta.hot?.on("dev-mcp:compact", () => relabelBusy(mcpCompactingText));
 
 // re-run in place on an edit, rather than reloading the page
 import.meta.hot?.accept();
