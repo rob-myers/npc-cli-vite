@@ -242,30 +242,38 @@ const smallIslandArea = 2;
 
 /** Each navmesh island smaller than `smallIslandArea`, by its area and centre */
 export function findSmallIslands(navMesh: NavMesh): WW.NavIsland[] {
-  const seen = new Set<number>();
+  const { nodes, links, tiles } = navMesh;
+  const seen = new Uint8Array(nodes.length);
   const small: WW.NavIsland[] = [];
+  const stack: number[] = [];
 
-  for (const start of navMesh.nodes) {
-    if (start.allocated === false || !(start.tileId in navMesh.tiles) || seen.has(start.index)) continue;
-    seen.add(start.index);
-    const stack = [start];
+  for (const start of nodes) {
+    if (start.allocated === false || !(start.tileId in tiles) || seen[start.index] === 1) continue;
+    seen[start.index] = 1;
+    stack.push(start.index);
     let [area, cx, cy] = [0, 0, 0];
-    for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
-      const tile = navMesh.tiles[node.tileId];
-      const vs = tile.polys[node.polyIndex].vertices.map((i) => ({
-        x: tile.vertices[3 * i],
-        y: tile.vertices[3 * i + 2],
-      }));
-      const polyArea =
-        Math.abs(vs.reduce((sum, p, i) => sum + p.x * vs[(i + 1) % vs.length].y - vs[(i + 1) % vs.length].x * p.y, 0)) /
-        2;
-      area += polyArea;
-      cx += (polyArea * vs.reduce((sum, p) => sum + p.x, 0)) / vs.length;
-      cy += (polyArea * vs.reduce((sum, p) => sum + p.y, 0)) / vs.length;
+    for (let index = stack.pop(); index !== undefined; index = stack.pop()) {
+      const node = nodes[index];
+      if (area < smallIslandArea) {
+        // shoelace area, and the mean of its vertices weighted by it
+        const { vertices: vs, polys } = tiles[node.tileId];
+        const ids = polys[node.polyIndex].vertices;
+        let [twice, sx, sy] = [0, 0, 0];
+        for (let i = 0; i < ids.length; i++) {
+          const [a, b] = [3 * ids[i], 3 * ids[(i + 1) % ids.length]];
+          twice += vs[a] * vs[b + 2] - vs[b] * vs[a + 2];
+          sx += vs[a];
+          sy += vs[a + 2];
+        }
+        const polyArea = Math.abs(twice) / 2;
+        area += polyArea;
+        cx += (polyArea * sx) / ids.length;
+        cy += (polyArea * sy) / ids.length;
+      }
       for (const linkIndex of node.links) {
-        const next = navMesh.nodes[navMesh.links[linkIndex].toNodeIndex];
-        if (next !== undefined && seen.has(next.index) === false) {
-          seen.add(next.index);
+        const next = links[linkIndex].toNodeIndex;
+        if (seen[next] === 0) {
+          seen[next] = 1;
           stack.push(next);
         }
       }
