@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import {
   ArrowCounterClockwiseIcon,
@@ -779,13 +779,15 @@ const faderTicks = "repeating-linear-gradient(to bottom, #ffffff2e 0 1px, transp
 const deskTexture = "repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px)";
 
 /** A fader takes what height its strip has left, between a stub and a full throw */
-const faderClass = "min-h-20 max-h-60 flex-1 basis-40 [@container_(height<40rem)]:min-h-16";
+const faderClass = tw("min-h-20 max-h-60 flex-1 basis-40 [@container_(height<40rem)]:min-h-16");
 
-const helpButtonClass =
-  "grid size-6 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
+const helpButtonClass = tw(
+  "grid size-6 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-300 hover:bg-zinc-700",
+);
 
-const viewButtonClass =
-  "grid size-7 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-400 hover:bg-zinc-700";
+const viewButtonClass = tw(
+  "grid size-7 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-400 hover:bg-zinc-700",
+);
 
 const buttonClass = cn(
   "grid size-8 cursor-pointer place-items-center rounded-sm border border-black text-zinc-300",

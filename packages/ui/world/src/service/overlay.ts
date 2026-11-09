@@ -1,3 +1,4 @@
+import { tw } from "@npc-cli/util";
 import type * as THREE from "three/webgpu";
 
 /** Fades a mark in or out. Out, it is left where it was, and takes no presses */
@@ -67,12 +68,14 @@ export class OverlayBounds {
   }
 }
 
-export const markClass = "absolute top-0 left-0 transition-opacity duration-150 data-off:opacity-0";
+export const markClass = tw("absolute top-0 left-0 transition-opacity duration-150 data-off:opacity-0");
 
 /** A menu's row, e.g. a psi action */
-export const actionClass =
-  "pointer-events-auto cursor-pointer rounded bg-black/60 px-1.5 py-0.5 text-left font-mono text-[11px] text-white opacity-80 hover:opacity-100";
+export const actionClass = tw(
+  "pointer-events-auto cursor-pointer rounded bg-black/60 px-1.5 py-0.5 text-left font-mono text-[11px] text-white opacity-80 hover:opacity-100",
+);
 
 /** A menu's Cancel, opened under the press */
-export const cancelClass =
-  "pointer-events-auto cursor-pointer rounded border border-red-500/50 bg-blue-950/40 px-1.5 py-0.5 text-left font-mono text-[11px] text-white hover:bg-red-900/50";
+export const cancelClass = tw(
+  "pointer-events-auto cursor-pointer rounded border border-red-500/50 bg-blue-950/40 px-1.5 py-0.5 text-left font-mono text-[11px] text-white hover:bg-red-900/50",
+);

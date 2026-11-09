@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
-import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
 import {
   FingerprintIcon,
@@ -857,29 +857,33 @@ function useChangeCount(value: unknown): number {
   return count;
 }
 
-const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
+const barClass = tw("pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2");
 /** Only its slots and buttons take the pointer, so a press between them reaches the World */
-const rowClass = "pointer-events-none relative mx-auto flex max-w-full";
+const rowClass = tw("pointer-events-none relative mx-auto flex max-w-full");
 /** Its slots, scrolled sideways once they outgrow a narrow World; padded, else the scroll clips a slot's ring */
-const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scrollbar-width:none]";
+const itemsClass = tw("pointer-events-none flex min-w-0 overflow-x-auto p-1 [scrollbar-width:none]");
 /** The bar as a column on either side */
-const columnBarClass = "pointer-events-none absolute top-0 z-10 select-none";
-const columnClass = "pointer-events-none relative flex flex-col items-center";
-const columnItemsClass = "pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]";
+const columnBarClass = tw("pointer-events-none absolute top-0 z-10 select-none");
+const columnClass = tw("pointer-events-none relative flex flex-col items-center");
+const columnItemsClass = tw("pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]");
 /** The hint that a click fires whilst aiming: right of the bar, or below it as a column */
-const clickFiresClass =
-  "pointer-events-none absolute z-10 grid place-items-center rounded-lg bg-black/50 p-2 ring-1 ring-red-400/40";
+const clickFiresClass = tw(
+  "pointer-events-none absolute z-10 grid place-items-center rounded-lg bg-black/50 p-2 ring-1 ring-red-400/40",
+);
 /** The hud-toasts: top centre, clear of the bar. Across the whole width, else a narrow World squeezes them */
-const noticesClass =
-  "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200";
+const noticesClass = tw(
+  "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200",
+);
 /**
  * A kept hud-toast. `gone`, from a frame callback, fades and shrinks its contents and collapses its width, so the others
  * slide along. Inside motion's wrapper, which owns its own opacity and scale, and would take the frame callback's ref
  */
-const keptClass =
-  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-1 [&.gone]:grid-cols-[0fr] [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50";
-const keptInnerClass =
-  "group pointer-events-auto flex min-w-0 items-center gap-1 overflow-hidden rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 transition-[opacity,scale] duration-300";
+const keptClass = tw(
+  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-1 [&.gone]:grid-cols-[0fr] [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50",
+);
+const keptInnerClass = tw(
+  "group pointer-events-auto flex min-w-0 items-center gap-1 overflow-hidden rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 transition-[opacity,scale] duration-300",
+);
 /** A hud-toast fades and scales in and out, the others sliding along: no sudden jumps */
 const toastMotion = {
   layout: true,
@@ -891,8 +895,9 @@ const toastMotion = {
 /** The look's goes slower than it comes, as do its `gone` and its readout's: a quick drop reads as a jump */
 const slowExit = { ...toastMotion.exit, transition: { duration: 0.6 } };
 /** A distance as a device reads it out: a fixed width, so the hud-toast never changes length */
-const readoutClass =
-  "box-content w-[5ch] overflow-hidden rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 transition-[width,padding,margin,opacity,scale,color,box-shadow] duration-300 [&.gone]:-ml-1 [&.gone]:w-0 [&.gone]:duration-600 [&.gone]:scale-75 [&.gone]:px-0 [&.gone]:opacity-0 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70";
+const readoutClass = tw(
+  "box-content w-[5ch] overflow-hidden rounded-sm bg-black px-1 text-right font-mono text-[11px] text-lime-300 tabular-nums shadow-[inset_0_0_3px_rgb(0_0_0)] ring-1 ring-lime-900/70 transition-[width,padding,margin,opacity,scale,color,box-shadow] duration-300 [&.gone]:-ml-1 [&.gone]:w-0 [&.gone]:duration-600 [&.gone]:scale-75 [&.gone]:px-0 [&.gone]:opacity-0 [&.out]:text-neutral-500 [&.out]:ring-neutral-700 [&.steer]:text-sky-300 [&.steer]:ring-sky-900/70",
+);
 
 /** How fast a readout's number eases to the one it reads, per second */
 const readoutRate = 6;

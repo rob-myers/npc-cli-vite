@@ -34,6 +34,7 @@ Pnpm monorepo. Key packages:
 
 **Code**
 - TSX/TS for almost everything. `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
+- A class-string constant is wrapped in `tw` (`@npc-cli/util`), e.g. `const barClass = tw("…")`, so Tailwind IntelliSense reads it. `tw` returns it as is: `cn` is for combining.
 - A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
 - A modal opened from a ui panel stays inside that panel, never over the whole page. Portal it into the panel's root (base-ui `Dialog.Portal container`) and position it `absolute`, not `fixed`.
 - `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.

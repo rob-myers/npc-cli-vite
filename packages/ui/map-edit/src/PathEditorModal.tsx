@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import { MinusCircleIcon, PlusCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
@@ -791,8 +791,8 @@ const popupClass = cn(
   "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
   "max-w-4xl w-[90vw] max-h-[90vh] flex flex-col",
 );
-const inputClass = "bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200 w-full";
-const disabledClass = "opacity-50 pointer-events-none";
+const inputClass = tw("bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200 w-full");
+const disabledClass = tw("opacity-50 pointer-events-none");
 const storageKey = "path-editor-draft";
 
 export type ProvidedPath = { d: string; title: string; transform: string };
