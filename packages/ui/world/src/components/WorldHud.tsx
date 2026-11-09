@@ -572,8 +572,9 @@ export default function WorldHud() {
               ),
             )}
           </div>
-          <PlayerButtons column={column}>{column === false && <FireHint armed={armed} column={false} />}</PlayerButtons>
-          {column && <FireHint armed={armed} column />}
+          {/* desktop's bar sets it in the player's buttons' group, else it stands alone */}
+          <PlayerButtons column={column}>{!column && !big && <FireHint armed={armed} column={false} />}</PlayerButtons>
+          {(column || big) && <FireHint armed={armed} column={column} />}
         </motion.div>
 
         <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
@@ -703,15 +704,15 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
   w.hud.fireHint = hint;
   const charging = w.phasers?.isCharging(w.player.key) === true;
   const big = w.touchDevice;
-  const iconSize = playerIconSize(big);
   return (
-    // in a bar, set apart in the player's buttons' group, else a group of its own at a column's foot.
+    // desktop's, a group of its own at a column's foot. Touch's, a big fingerprint, unframed.
     // Lowered, hidden but kept in place: nothing shifts as it is raised
     <div
       aria-hidden={!armed}
       className={cn(
-        "flex shrink-0 transition-[opacity,visibility] duration-300",
-        column ? cn(playerGroupClass(big, column), "mt-2") : "ml-2",
+        "flex shrink-0 self-center transition-[opacity,visibility] duration-300",
+        column ? "mt-2" : "ml-2",
+        column && !big && playerGroupClass(big, column),
         !armed && "invisible opacity-0",
       )}
     >
@@ -726,7 +727,12 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
         }}
         onPointerUp={() => w.player.releaseCharge()}
         onPointerCancel={() => void w.player.cancelCharge()}
-        className={cn(playerButtonClass(big), "rounded-md", charging && "bg-red-950/70 ring-2 ring-red-400 ring-inset")}
+        className={cn(
+          big
+            ? "grid cursor-pointer touch-none place-items-center rounded-lg bg-black/50 p-1"
+            : cn(playerButtonClass(big), "rounded-md"),
+          charging && "bg-red-950/70 ring-2 ring-red-400 ring-inset",
+        )}
       >
         {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
         <motion.span
@@ -741,12 +747,12 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
           }
         >
           {big ? (
-            <FingerprintIcon className={iconSize} weight="fill" />
+            <FingerprintIcon className="size-12" weight="fill" />
           ) : (
             <span
               className={cn(
                 "grid place-items-center rounded border-[1.5px] border-current font-bold text-sm",
-                iconSize,
+                playerIconSize(big),
               )}
             >
               F
