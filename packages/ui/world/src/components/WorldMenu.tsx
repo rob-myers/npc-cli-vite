@@ -84,6 +84,7 @@ export function WorldMenu() {
       themeEditorOpen: false,
       themeEditorRef: null as any,
       timeSliderOpen: saved.timeSliderOpen === true,
+      warningsOpen: saved.warningsOpen === true,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
 
@@ -226,6 +227,10 @@ export function WorldMenu() {
       toggleTimeSlider() {
         state.set({ timeSliderOpen: !state.timeSliderOpen });
         store.patch({ timeSliderOpen: state.timeSliderOpen });
+      },
+      toggleWarnings() {
+        state.set({ warningsOpen: !state.warningsOpen });
+        store.patch({ warningsOpen: state.warningsOpen });
       },
       persistMenuSize() {
         store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight, menuY: state.getClampedY(y.get()) });
@@ -757,6 +762,37 @@ export function WorldMenu() {
                   className={cn(sectionHeaderClass(touch), "flex w-full cursor-pointer items-center gap-1 text-left")}
                   onClick={(e) => {
                     e.stopPropagation();
+                    state.toggleWarnings();
+                  }}
+                >
+                  <CaretRightIcon className={cn("size-3", state.warningsOpen && "rotate-90")} />
+                  <span>
+                    warnings [
+                    <span className={cn(w.nav.smallIslands.length > 0 && "text-amber-400")}>
+                      {w.nav.smallIslands.length}
+                    </span>
+                    ]
+                  </span>
+                </button>
+                <div
+                  className={cn(
+                    "px-2 pb-1 text-xs text-amber-400",
+                    touch && "px-3 text-sm",
+                    !state.warningsOpen && "hidden",
+                  )}
+                >
+                  {w.nav.smallIslands.length === 0 && <div className="text-neutral-400">no navmesh issues</div>}
+                  {w.nav.smallIslands.map(({ area, at }) => (
+                    <div key={`${at.x},${at.y}`} title="an npc put here cannot walk out">
+                      navmesh island {area}m² at ({at.x}, {at.y})
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={cn(sectionHeaderClass(touch), "flex w-full cursor-pointer items-center gap-1 text-left")}
+                  onClick={(e) => {
+                    e.stopPropagation();
                     state.set({ themeEditorOpen: !state.themeEditorOpen });
                   }}
                 >
@@ -935,8 +971,8 @@ export function WorldMenu() {
                 {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
                 <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
                   <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
-                    <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
-                      <HourglassMediumIcon className="size-4.5" weight="bold" />
+                    <Slider.Thumb className="grid size-5 place-items-center rounded-full bg-white text-neutral-800 outline-none">
+                      <HourglassMediumIcon className="size-3.5" weight="bold" />
                     </Slider.Thumb>
                   </Slider.Track>
                 </Slider.Control>
@@ -1505,6 +1541,9 @@ export type State = {
   timeSliderOpen: boolean;
   /** Shows or hides the time scale slider, keeping its number */
   toggleTimeSlider(): void;
+  warningsOpen: boolean;
+  /** Shows or hides the DEV warnings, keeping their count */
+  toggleWarnings(): void;
   /** Controlled, so picking an extra fx keeps the popup open */
   extraFxSelectOpen: boolean;
   /** `true` if this click confirms `value`; otherwise `value` becomes the unconfirmed one */

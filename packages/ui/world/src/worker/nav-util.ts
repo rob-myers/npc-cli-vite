@@ -236,3 +236,52 @@ type NpcDims = typeof import("../const.both")["npcDims"];
 const agentRadius: NpcDims["agentRadius"] = 0.2;
 const shutDoorKeepOut: NpcDims["shutDoorKeepOut"] = 0.05;
 const doorAreaOutsetAmount = agentRadius + shutDoorKeepOut;
+
+/** Square metres under which a navmesh island is reported: an npc put there cannot walk out */
+const smallIslandArea = 2;
+
+/** Each navmesh island smaller than `smallIslandArea`, by its area and centre */
+export function findSmallIslands(navMesh: NavMesh): WW.NavIsland[] {
+  const { nodes, links, tiles } = navMesh;
+  const seen = new Uint8Array(nodes.length);
+  const small: WW.NavIsland[] = [];
+  const stack: number[] = [];
+
+  for (const start of nodes) {
+    if (start.allocated === false || !(start.tileId in tiles) || seen[start.index] === 1) continue;
+    seen[start.index] = 1;
+    stack.push(start.index);
+    let [area, cx, cy] = [0, 0, 0];
+    for (let index = stack.pop(); index !== undefined; index = stack.pop()) {
+      const node = nodes[index];
+      if (area < smallIslandArea) {
+        // shoelace area, and the mean of its vertices weighted by it
+        const { vertices: vs, polys } = tiles[node.tileId];
+        const ids = polys[node.polyIndex].vertices;
+        let [twice, sx, sy] = [0, 0, 0];
+        for (let i = 0; i < ids.length; i++) {
+          const [a, b] = [3 * ids[i], 3 * ids[(i + 1) % ids.length]];
+          twice += vs[a] * vs[b + 2] - vs[b] * vs[a + 2];
+          sx += vs[a];
+          sy += vs[a + 2];
+        }
+        const polyArea = Math.abs(twice) / 2;
+        area += polyArea;
+        cx += (polyArea * sx) / ids.length;
+        cy += (polyArea * sy) / ids.length;
+      }
+      for (const linkIndex of node.links) {
+        const next = links[linkIndex].toNodeIndex;
+        if (seen[next] === 0) {
+          seen[next] = 1;
+          stack.push(next);
+        }
+      }
+    }
+    if (area > 0 && area < smallIslandArea) {
+      const round = (n: number) => Math.round(100 * n) / 100;
+      small.push({ area: round(area), at: { x: round(cx / area), y: round(cy / area) } });
+    }
+  }
+  return small;
+}

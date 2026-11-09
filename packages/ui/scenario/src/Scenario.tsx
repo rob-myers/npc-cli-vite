@@ -18,7 +18,7 @@ import {
 } from "@npc-cli/ui__world/scenario-shared";
 import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import {
   FloppyDiskIcon,
   MagnifyingGlassMinusIcon,
@@ -589,10 +589,10 @@ function KeyBox(props: {
 /** Prefix a scenario's or a conversation's key in `meta.entryKey`, where a character's is `character/{slug}` */
 const scenarioPrefix = "scenario/";
 const talkPrefix = "talk/";
-const sectionClass = "text-zinc-500 uppercase text-[10px]";
+const sectionClass = tw("text-zinc-500 uppercase text-[10px]");
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
-const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
+const bareButtonClass = tw("shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100");
 /** After the last edit, how long until it saves itself */
 const autosaveMs = 800;
 /** In px at 100% text: narrower, the columns stack */

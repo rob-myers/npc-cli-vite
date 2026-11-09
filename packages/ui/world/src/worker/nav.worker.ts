@@ -2,7 +2,7 @@ import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh } from "navcat";
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
-import { navForFloorDraw } from "./nav-util";
+import { findSmallIslands, navForFloorDraw } from "./nav-util";
 import {
   sendRaycastResult,
   sendRaycastResults,
@@ -58,6 +58,7 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
         gmsHash: msg.gmsHash,
         ...tiledNavMeshResult,
         toNavTris: navForFloorDraw(msg.gmGeoms, tiledNavMeshResult.navMesh),
+        smallIslands: import.meta.env.DEV ? findSmallIslands(tiledNavMeshResult.navMesh) : [],
       } satisfies WW.MsgFromNavWorker);
       break;
     }

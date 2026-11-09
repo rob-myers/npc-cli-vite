@@ -180,6 +180,8 @@ declare namespace WW {
         /** The layout it was made for */
         gmsHash: number;
         toNavTris: import("./worker/nav-util").GmFloorNavTris;
+        /** DEV only, else empty */
+        smallIslands: NavIsland[];
       } & import("navcat/blocks").TiledNavMeshResult)
     | {
         type: "unreachable-result";
@@ -208,6 +210,8 @@ declare namespace WW {
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromNavWorker, { type: "tiled-navmesh-response" }>;
+  /** A navmesh island no npc can walk out of, by its area in m² and its centre */
+  type NavIsland = { area: number; at: Geom.VectJson };
   /** Which copy of the nav worker: `bulk` makes the navmesh and runs long ops, `fast` answers rays and quick queries */
   type NavRole = "bulk" | "fast";
   /** Another entry's request, answered by a `NavWorkerReply` with the same `uid` — see `NavWorker`'s `request` */

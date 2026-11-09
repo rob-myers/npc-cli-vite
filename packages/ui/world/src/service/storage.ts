@@ -28,6 +28,8 @@ export type PersistedCamera = {
   position: { x: number; y: number; z: number };
   /** The live zoom stops it was in, which a follow draws out past the persisted ones */
   stops?: [max: number, min: number];
+  /** The follow's offset towards the frontier, so a follow before the World has risen heads where it was */
+  offset?: { x: number; z: number };
 };
 
 /** `null` means "no preference yet", where the default depends on the device */
@@ -69,6 +71,8 @@ export type WorldSettings = {
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
   timeSliderOpen: boolean;
+  /** Whether the menu's DEV warnings are shown, else only their count */
+  warningsOpen: boolean;
   /** Whether rooms' names show, from the player's bar's menu — see `RoomLabels` */
   roomLabelsShown: boolean;
   /** What the player's bubble set of their breathing, over its defaults */
@@ -86,6 +90,8 @@ export type WorldSettings = {
   speechHeight: null | number;
   /** By npcKey, so it goes with them from map to map — see `w.e.carried` */
   carried: Record<string, Carried>;
+  /** The look distance a tap set, kept over a reload so the view frames as it did — see `w.player.look` */
+  lookBase: null | number;
   /**
    * The server world we were a client of — drives auto-reconnect on load. `remote` scopes the
    * search: a same-page parent never resolves to another tab's world of the same key, nor
@@ -99,7 +105,7 @@ export type HudLayout = "bar" | "left" | "right";
 const defaultWorldSettings: WorldSettings = {
   cameraMode: "embodied",
   cameraInitial: null,
-  follow: isTouchDevice(),
+  follow: true,
   postProcessing: true,
   rgbShift: true,
   extraFxEnabled: false,
@@ -117,6 +123,7 @@ const defaultWorldSettings: WorldSettings = {
   hudLayout: isTouchDevice() ? "right" : "bar",
   timeScale: 1,
   timeSliderOpen: false,
+  warningsOpen: false,
   roomLabelsShown: true,
   breathTune: {},
   gmGraphsFilter: "room",
@@ -130,6 +137,7 @@ const defaultWorldSettings: WorldSettings = {
   speechHeight: null,
   // the player sets out with psi and a phaser
   carried: { [defaultPlayerKey]: { items: [createItemDef("phaser", "phaser-0")], psi: true } },
+  lookBase: 1.5, // a first visit frames near the player
   netParent: null,
 };
 

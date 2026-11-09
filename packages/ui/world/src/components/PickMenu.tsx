@@ -1,4 +1,4 @@
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { PushPinIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
@@ -607,7 +607,7 @@ function DeleteButton({ onDelete }: { onDelete(): void }) {
       className={cn(actionClass, "text-red-300", confirming && "ring-1 ring-red-400")}
       onClick={() => (confirming ? onDelete() : setConfirming(true))}
     >
-      {confirming ? "press again to delete" : "delete"}
+      {confirming ? "confirm" : "delete"}
     </Button>
   );
 }
@@ -698,8 +698,9 @@ function nearestOnRect(p: Geom.VectJson, rect: Geom.RectJson): Geom.VectJson {
 }
 
 /** A mark of where a menu is pinned, eased with it whilst it settles */
-const originClass =
-  "absolute top-0 left-0 group-data-settling/origin:transition-[transform,width,height] group-data-settling/origin:duration-150";
+const originClass = tw(
+  "absolute top-0 left-0 group-data-settling/origin:transition-[transform,width,height] group-data-settling/origin:duration-150",
+);
 
 /** Writes `el.style[prop]`, unless that is what was last written */
 function setStyle(el: HTMLElement, prop: "transform" | "opacity" | "width" | "height", value: string) {

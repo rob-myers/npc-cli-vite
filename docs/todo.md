@@ -1,89 +1,38 @@
 # TODO
 
-- ✅ `spots --show` -> `spots shown`
-- ✅ can hold space for more powerful phaser shot
-- ✅ while fully crouched c should totally un-crouch
-- ✅ improve keychain icon e.g. lock
-- ✅ tab selected GlobalMenu should open on enter
-- ❌ consider improve turning animation
-  - now have `pose rob head:kate` though
-- ✅ shade npcs by camera normal
-- ✅ option to flush old versions in netlify build
-  - ✅ try ASSET_HISTORY_RETAIN=1 in netlify ui
-  - ✅ verify https://lastredoubt.co/asset-history.json
-  - ✅ set ASSET_HISTORY_RETAIN=10
-
-- ✅ no park-teleport on collapse
-  - ✅ collapse slow-move
-- ✅ simplify `npc.agent`
-
-- ✅ can run in look-mode
-- ✅ ensure phaser does not jiggle whilst raised
-
-- ✅ combat mode on phaser raised
-  - force top-down with polar detent
-  - detent off during pause
-
-- ✅ mobile look and fire
-  - ✅ remove large fire thumb press
-  - ❌ follow-mode look via one-touch drag
-  - ✅ raised phaser ui: 1st touch + 300ms + 2nd touch charge + fire/cancel
-- ✅ clarify why saw old decor.0.png on mobile
-  - built sheets.json now has content hashes so can fetch images using `?v={hash}`
-- ❌ camera framing: continuous fov change
-
-- ✅ remove aim-mode but keep axes-locked-camera while phaser raised
-- ✅ try 0.2 slower/faster via down/up
-
-- ✅ improve run strafe: make more steady
-  - saw raised hand intersect wall
-
-- ✅ sound fx
-  - ✅ phaser raise/lower/charge/charged-fire/cool
-  - ✅ open/close/lock/hold door
-  - ✅ sit/stand/lie
-  - ✅ psi sounds
-  - ✅ change phaser fire
-  - ✅ BUG footsteps in bed
-  - ✅ put-down/pick-up item
-
-- ✅ phaser beam -> electricity
-
-- ✅ inventory toasts -> toasts at top
-- ✅ mobile inventory obscures player with phaser raised
-
 - 🚧 return to Scenario and start acting them out
   - ✅ support `act {npcKey}` format
     - `act kate count:3 down` or `act count kate from:3`
     - `act kate avoid:rob`
   - ✅ hide-and-seek sketch
-    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by room
+    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by rob
     - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
     - can `act kate count:3 down`
     - can `act count kate from:3 to:0`
   - 🚧 guard-and-intruder sketch
-    - 🚧 `act guard room:{grKey}`
-    - 🚧 try provide structure via dfas with synchronising words
+    - ✅ `act guard room:{grKey}`
+    - ❌ try provide structure via dfas with synchronising words
+    - ✅ `sc save patrol/patrol-route path:[[17.5,10.4],[17.5,11.4],[16.5,10.4]] npc:guard-0`
+    - `act patrol test-patrol`
+    - `act patrol path:[[17.5,10.4],[17.5,11.4],[16.5,10.2]] g1,g2 watch:nobody`
+    - ✅ patrols -> graphs
+      - `sc save graph/test ...`
+  - meeting-in-secret sketch
+  - breach-and-clear sketch
 
-- muted by default
-- narrator
-- simplify JobsLibrary
+- JobsLibrary -> Scenarios
+  - Scenarios include low-level behaviours e.g. npc-inventory?
+    - can `give rob item:book` but `take` ...
   - tldr only contains most common
-  - better layout for others
+  - label only (code viewable by running)
+  - individual persisted params with history
 - clarify Blog component
-- npc context menu close button on right
-- npc key thin font flickers
+- narrator ui
 
-- rmb/2-tap look can be held e.g. for phaser aim
-- hide external spots in sense-mode
-- BUG world connected to a hidden tab
-  - should probably always pause client when server paused
-  - could show toast in client too
-  - ensure World pauses on hide tab
-- armour integrity indicator
-- avoid initial sharp camera motion after change map and unpause
-- avoid phaser through wall when walk into wall
-- avoid psi-arm through wall when next to wall
+- sidestep now too sensitive (own PR)
+  - multiple sidestep strategies
+- fix long corridor aim issue i.e. large difference between nearby npc and wall
+
 
 ## World
 
@@ -140,6 +89,13 @@
 ### Inventory
 
 ### Navigation
+
+### Net
+
+- BUG when world connected to a hidden tab
+  - should probably always pause client when server paused
+  - could show toast in client too
+  - ensure World pauses on hide tab
 
 ### Performance
 

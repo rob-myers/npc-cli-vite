@@ -178,8 +178,10 @@ export const frontierConfig = {
   calmRate: 0.8,
   /** The same whilst a max look follows the pointer, so a doorway swept past does not jerk the view */
   scanRate: 1.5,
-  /** How fast the zoom stops and the view's offset ease, per second */
-  rate: 4,
+  /** The same whilst drawing back in, e.g. a phaser lowered or Space or `r` let go */
+  backRate: 1.2,
+  /** Seconds the zoom and pan take to ease back up to speed after a pause, which holds them */
+  resumeSecs: 0.6,
   /** Near enough what they ease to, so no further frame is asked for */
   settleUntil: 0.001,
   /** The nearest the inner stop comes, as a share of the travel between the stops. Not `0`: `t` divides by it */
@@ -188,8 +190,10 @@ export const frontierConfig = {
   margin: 1.3,
   /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
   panFrac: 0.5,
-  /** How far past the outer stop a follow may zoom out to show a raised phaser's dot, as a factor */
-  aimOuterScale: 3,
+  /** How far past the outer stop a far look, aiming too, may zoom out to fit, e.g. across a narrow canvas, as a factor */
+  farOuterScale: 6,
+  /** Metres a far look, aiming too, reaches past its wall, so the wall and the red dot keep clear of the canvas edge */
+  farPadMetres: 1,
 } as const;
 
 /** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */

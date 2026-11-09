@@ -391,7 +391,10 @@ function TabHeaderItem({
               <div className="flex items-center gap-2 px-2 py-1">
                 <button
                   type="button"
-                  className="cursor-pointer text-white/80 hover:text-white text-sm"
+                  className={cn(
+                    "cursor-pointer text-sm",
+                    state.confirmClose ? "text-red-400 hover:text-red-300" : "text-white/80 hover:text-white",
+                  )}
                   onPointerDown={() => {
                     if (state.confirmClose) {
                       state.set({ confirmClose: false });

@@ -132,6 +132,8 @@ The World's busy overlay says "mcp testing" from Claude's first call in a turn u
 - Every call starts it, except `console`, `shot` and a `click` at client coordinates.
 - A `Stop` hook in `.claude/settings.local.json` ends it. The hook posts to `/api/dev-mcp/turn-end`, and
   `vite-plugin-dev-mcp` passes that to the page as the HMR event `dev-mcp:turn-end`.
+- A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the overlay says "mcp compacting" until
+  Claude's next call or the turn's end.
 
 ### The user's own input
 
