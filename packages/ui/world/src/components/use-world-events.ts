@@ -62,29 +62,32 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.timers.add(timer);
         return () => void state.timers.delete(timer);
       },
-      besideDoable(at, toward, grKey, front = null) {
+      async besideDoable(at, toward, grKey, front = null) {
         const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
-        let best = { p: null as null | Geom.VectJson, cost: Infinity };
+        /** Along each way, the first point in their room */
+        const tried: { p: Geom.VectJson; cost: number }[] = [];
         for (let k = 0; k < besideRays; k++) {
           const turn = (2 * Math.PI * Math.min(k, besideRays - k)) / besideRays;
           const angle = ahead + (2 * Math.PI * k) / besideRays;
-          // along this way, the first point in their room: none past the best so far
-          for (
-            let s = besideStep;
-            s <= w.npc.config.dist.doableLook && s + besideTurnCost * turn < best.cost;
-            s += besideStep
-          ) {
+          for (let s = besideStep; s <= w.npc.config.dist.doableLook; s += besideStep) {
             const p = state.navNear({ x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
             if (
               p !== null &&
               (front === null || inFront(p, at, front)) &&
               w.findRoomContaining(p, true)?.grKey === grKey
             ) {
-              best = { p, cost: s + besideTurnCost * turn };
+              tried.push({ p, cost: s + besideTurnCost * turn });
               break;
             }
           }
         }
+        // the cheapest with no wall or shut door between it and the doable
+        const casts = await state.raycasts(tried.map(({ p }) => ({ src: p, dst: at })));
+        let best = { p: null as null | Geom.VectJson, cost: Infinity };
+        tried.forEach(({ p, cost }, i) => {
+          const cast = casts[i];
+          if (cost < best.cost && (cast === null || (cast.hit === null && cast.hitDoor === null))) best = { p, cost };
+        });
         return best.p;
       },
       canAutoCloseDoor(door) {
@@ -109,6 +112,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
+      },
+      async canFade(npc, dst, groundPoint, doResult, far) {
+        if (state.frontAllows(npc, dst, doResult) === false) return false;
+        if (far === true) return true;
+        if (npc.distanceTo(groundPoint) > w.npc.config.dist.doableLook) return false;
+        // only a fade onto or off a doable heeds walls
+        if (doResult.type === "use-current" || (doResult.type === "none" && npc.agentId !== null)) return true;
+        const { hit, hitDoor } = await state.raycast(npc.point, groundPoint);
+        return hit === null && hitDoor === null;
       },
       chainKey(npcKey, itemKey) {
         const had = state.carried[npcKey];
@@ -353,10 +365,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // so can resume doable or nav
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
         npc.rejectAll(new Error("move again"));
-        /** Near enough to fade onto or off a doable, and from its front if it needs, else they walk the rest */
-        const fades =
-          state.frontAllows(npc, dst, doResult) &&
-          (far === true || npc.distanceTo(groundPoint) <= w.npc.config.dist.doableLook);
+        const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
+        if (npc.last.dst !== dst) return; // another move took them over
 
         // doable overrides navigable
         if (doResult.type !== "none") {
@@ -386,7 +396,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         const { dist, time } = w.npc.config;
         const grKey = helper.maybeGmRoomId(doResult.meta)?.grKey;
-        const beside = fades ? null : state.besideDoable(dst, npc.point, grKey, state.frontOf(doResult.meta.decorKey));
+        const beside = fades
+          ? null
+          : await state.besideDoable(dst, npc.point, grKey, state.frontOf(doResult.meta.decorKey));
+        if (npc.last.dst !== dst) return;
         if (beside !== null) {
           if (npc.agentId === null) await state.stepOff(npc, beside); // off their own first, so they walk
           if (npc.last.dst !== dst) return;
@@ -1426,7 +1439,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       async stepOff(npc, toward) {
         const front = state.frontOf(w.npc.npcToDoable[npc.key]);
-        const beside = state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey, front);
+        const beside = await state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey, front);
         if (beside === null) throw Error("not navigable");
         await npc.fadeSpawn({ at: beside, facing: toward });
       },
@@ -1863,6 +1876,14 @@ export type State = {
   /** Runs `tick` after every npc tick, e.g. from jsh. Can use `key` to avoid duplication */
   addKeyedTick(key: string, tick: (w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
+  /** Whether near enough to fade onto or off a doable, from its front if it needs, with no wall or shut door between. Else they walk the rest */
+  canFade(
+    npc: Npc,
+    dst: Geom.VectJson,
+    groundPoint: Geom.VectJson,
+    doResult: JshCli.FindDoMetaResult,
+    far?: boolean,
+  ): Promise<boolean>;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(
     srcGrKey: Geomorph.GmRoomKey,
@@ -1882,13 +1903,13 @@ export type State = {
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   move(opts: JshCli.MoveOpts): Promise<void>;
-  /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward` */
+  /** A navigable point of room `grKey` beside the doable at `at`, with no wall between, the nearest by `besideTurnCost` metres per radian off the way to `toward` */
   besideDoable(
     at: Geom.VectJson,
     toward: Geom.VectJson,
     grKey?: string,
     front?: null | Geom.VectJson,
-  ): null | Geom.VectJson;
+  ): Promise<null | Geom.VectJson>;
   /**
    * Whether a fade to `dst` keeps to the front of a `meta.front-only` doable it leaves or takes.
    * Else they step off or walk round first. Doable to doable is free
