@@ -139,7 +139,7 @@ does one with a laser.
 - With no one met, a small red dot marks where a shot at no one would land (`placeEnd`), drawn along the
   live aim. The player's alone. None is drawn where nothing stops it (`what: "nothing"`), e.g. out of a hull window.
 - **Aiming.** Raised, Space held aims in earnest (`w.phasers.steady`, `isSteadied`): the left hand steadies the gun,
-  the view extends to the dot, and only then may it fire. Raised alone, the view keeps the look's own framing.
+  the view extends along its line to the first wall or door (a far look), and only then may it fire. Raised alone, the view keeps the look's own framing.
 - A left press whilst aiming fires (`fire`, from `WorldView`'s `onPointerDown`, which then picks nothing): locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
   is. That point is held in the part's bone frame (the target's `local`, read by `targetPoint`), so it moves with
   them.

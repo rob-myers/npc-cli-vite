@@ -908,8 +908,8 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
-          /** The furthest the inner stop goes. The dot whilst aiming, or a far look, may lie past the outer stop */
-          const beyond = w.phasers?.isSteadied(player.key) === true || w.player.look.far !== null;
+          /** The furthest the inner stop goes. A far look, aiming too, may lie past the outer stop */
+          const beyond = w.player.look.far !== null;
           const cap = beyond ? outer * frontierConfig.aimOuterScale : outer;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
           wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));

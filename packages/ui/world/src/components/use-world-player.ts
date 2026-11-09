@@ -182,6 +182,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       exists() {
         return w.n?.[state.key] !== undefined;
       },
+      farBearing(bearing) {
+        return w.phasers?.aimOf(state.key)?.bearing ?? bearing;
+      },
       get() {
         return w.n?.[state.key];
       },
@@ -273,8 +276,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.code === "Space") {
           e.preventDefault();
-          // raised, aims in earnest, whilst a click fires (`WorldView`'s `onPointerDown`). Lowered, a far look
-          return w.phasers?.isArmed(state.key) === true ? w.phasers.steady(state.key, true) : state.setFarLook(true);
+          // raised, aims in earnest, whilst a click fires (`WorldView`'s `onPointerDown`). Either way a far look
+          if (w.phasers?.isArmed(state.key) === true) w.phasers.steady(state.key, true);
+          return state.setFarLook(true);
         }
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
@@ -363,7 +367,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const { far } = state.look;
         if (far === null) return;
         const moved = Math.hypot(npc.position.x - far.x, npc.position.z - far.z) > farRecastMetres;
-        if (moved || Math.abs(deltaAngle(bearing, far.bearing)) > farRecastRad) state.castFarLook(bearing);
+        const along = state.farBearing(bearing);
+        if (moved || Math.abs(deltaAngle(along, far.bearing)) > farRecastRad) state.castFarLook(along);
       },
       refreshFarLook(gdKey) {
         const { far } = state.look;
@@ -427,8 +432,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (state.look.far !== null) return;
         // its reach as it is until the cast lands
         const reach = state.lookReach() ?? w.view.playerFrontier.reach ?? 0;
-        state.look.far = { reach, bearing: npc.lookY, x: npc.position.x, z: npc.position.z, doors: [], out: false };
-        state.castFarLook(npc.lookY);
+        const bearing = state.farBearing(npc.lookY);
+        state.look.far = { reach, bearing, x: npc.position.x, z: npc.position.z, doors: [], out: false };
+        state.castFarLook(bearing);
       },
       setKey(npcKey) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
@@ -726,8 +732,10 @@ export type State = {
   cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Space held whilst lowered: a look as far as sight goes along their facing, which extends their frontier as aiming a raised phaser does. In gaze mode, along the pointer */
+  /** Space held: a look as far as sight goes along their facing, which extends their frontier. In gaze mode along the pointer, raised along the muzzle's line */
   setFarLook(on: boolean): void;
+  /** The bearing a far look casts along: raised, the muzzle's line, else `bearing` */
+  farBearing(bearing: number): number;
   /** Casts the far look along `bearing`, one cast at a time */
   castFarLook(bearing: number): Promise<void>;
   /** A far look's cast is under way */

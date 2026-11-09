@@ -29,16 +29,10 @@ export default function LightSweep() {
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
     if (player !== undefined && w.view.cameraMode === "embodied") {
-      /** Raised, the dot only whilst aiming (Space held): just missing someone would leap the view out */
-      const dot = w.phasers?.isSteadied(player.key) === true ? (w.npcFocus?.reachOf(player.key) ?? null) : null;
-      /** A far look extends it as aiming does: any other look caps it */
+      /** A far look, aiming too, extends it to the first wall. Any other look caps it */
       const far = w.player.look.far?.reach ?? null;
       // the way their head faces, which is not always their body's
-      w.view.playerFrontier.update(
-        player.lookY,
-        dot === null && far === null ? null : Math.max(dot ?? 0, far ?? 0),
-        far === null ? w.player.lookReach() : null,
-      );
+      w.view.playerFrontier.update(player.lookY, far, far === null ? w.player.lookReach() : null);
     }
   }, -2);
 
