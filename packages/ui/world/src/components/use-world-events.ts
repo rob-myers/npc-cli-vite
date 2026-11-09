@@ -113,14 +113,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
       },
-      async canFade(npc, dst, groundPoint, doResult, far) {
+      canFade(npc, dst, groundPoint, doResult, far) {
         if (state.frontAllows(npc, dst, doResult) === false) return false;
         if (far === true) return true;
         if (npc.distanceTo(groundPoint) > w.npc.config.dist.doableLook) return false;
         // only a fade onto or off a doable heeds walls
         if (doResult.type === "use-current" || (doResult.type === "none" && npc.agentId !== null)) return true;
-        const { hit, hitDoor } = await state.raycast(npc.point, groundPoint);
-        return hit === null && hitDoor === null;
+        return state.raycast(npc.point, groundPoint).then(({ hit, hitDoor }) => hit === null && hitDoor === null);
       },
       chainKey(npcKey, itemKey) {
         const had = state.carried[npcKey];
@@ -365,7 +364,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // so can resume doable or nav
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
         npc.rejectAll(new Error("move again"));
-        const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
+        const canFade = state.canFade(npc, dst, groundPoint, doResult, far);
+        // awaited only for a ray: a walk beside a doable, which `moveOntoDoable` re-targets at once, must not yield
+        const fades = canFade instanceof Promise ? await canFade : canFade;
         if (npc.last.dst !== dst) return; // another move took them over
 
         // doable overrides navigable
@@ -1876,14 +1877,17 @@ export type State = {
   /** Runs `tick` after every npc tick, e.g. from jsh. Can use `key` to avoid duplication */
   addKeyedTick(key: string, tick: (w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
-  /** Whether near enough to fade onto or off a doable, from its front if it needs, with no wall or shut door between. Else they walk the rest */
+  /**
+   * Whether near enough to fade onto or off a doable, from its front if it needs, with no wall or shut door between.
+   * Else they walk the rest. A promise only when it casts a ray
+   */
   canFade(
     npc: Npc,
     dst: Geom.VectJson,
     groundPoint: Geom.VectJson,
     doResult: JshCli.FindDoMetaResult,
     far?: boolean,
-  ): Promise<boolean>;
+  ): boolean | Promise<boolean>;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(
     srcGrKey: Geomorph.GmRoomKey,
