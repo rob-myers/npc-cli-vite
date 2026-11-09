@@ -110,7 +110,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
   - A right click or two-finger tap sets the distance (`base`). It stays as they walk and turn, until another tap or the hud-toast's "x".
   - `r` held, or gaze mode, steers it to the pointer only whilst on (`steer`), then gives it back. `r` steers only once held `rCapMs`, so a tap of it shows nothing.
 - **A far look extends it**: Space held (`w.player.setFarLook`). Raised, it casts along the muzzle's line (`farBearing`).
-  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in gaze mode or whilst `r` is held.
+  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. The view reaches `frontierConfig.farPadMetres` beyond it, so the wall, and the red dot whilst aiming, keep clear of the canvas edge. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in gaze mode or whilst `r` is held.
   - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
   - It is the look's `far`, in force over `steer` and `base` whilst Space is held. Letting go gives them back.
 - **Aiming frames the line, not the dot.** The dot stops at whoever the line meets, so sweeping past someone would leap the view. The far look along the muzzle reaches the first wall or door, past anyone, so it changes only as the walls do.
@@ -121,7 +121,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
 - **The offset eases with the zoom**, else the view lunges ahead then pulls back, e.g. as the phaser is raised. It is never longer than wanted, so keeps pace as the frontier draws in. Its direction always eases, so a sweep never snaps it round.
 - **The stops sit further out**, as the 30° fov is narrow.
   - `controls.minDistance` eases to the nearest radius that fits the player and their frontier, with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted outer stop. So zoomed in, a follow is as far out as a free look zoomed out.
-  - A far look, aiming too, lets it go `frontierConfig.aimOuterScale` past the outer stop. Raised alone, the view keeps the look's own framing.
+  - A far look, aiming too, lets it go `frontierConfig.farOuterScale` past the outer stop, e.g. so the wall fits across a narrow canvas. The red dot, on the way to the wall, fits too. Raised alone, the view keeps the look's own framing. Not on touch, where the zoom is the pinch's alone, except during a far look (the binoculars).
   - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
   - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
   - Not following, both ease back to the persisted stops (`holdFrontier` only pans).

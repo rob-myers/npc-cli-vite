@@ -101,7 +101,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const reach = Math.hypot(tmpLook.x - npc.position.x, tmpLook.y - npc.position.z);
         // a tap's look sets the distance. `r` held a while, or gaze mode, steers it only whilst on
         if (lookAt !== null) {
-          if (lookAt.turn === undefined) [state.look.base, state.look.steer] = [reach, null];
+          // a max look follows it instead, the focal distance kept for after
+          if (state.look.far !== null) state.recastFarLook(npc, bearing);
+          else if (lookAt.turn === undefined) [state.look.base, state.look.steer] = [reach, null];
         } else {
           if (state.gaze || performance.now() - state.rDownMs >= rCapMs) state.look.steer = reach;
           state.recastFarLook(npc, bearing); // a max look follows the pointer too
@@ -276,10 +278,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.code === "Space") {
           e.preventDefault();
-          // raised, aims in earnest, whilst a click fires (`WorldView`'s `onPointerDown`). Either way a far look
-          if (w.phasers?.isArmed(state.key) === true) w.phasers.steady(state.key, true);
-          return state.setFarLook(true);
+          return state.setFarLook(true); // raised, it aims too
         }
+        // raised, `f` held charges a shot, and let go fires it
+        if (e.code === "KeyF") return void (w.phasers?.isArmed(state.key) === true && state.startCharge());
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
           // the same one twice, quickly, runs
@@ -311,10 +313,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       onKeyUp(e) {
-        if (e.code !== "Space") return;
-        w.phasers?.steady(state.key, false);
-        state.cancelCharge(); // only whilst aiming may it fire
-        state.setFarLook(false);
+        if (e.code === "KeyF") return state.releaseCharge();
+        if (e.code === "Space") state.setFarLook(false);
       },
       onTouch(e) {
         if (state.onFireTouch(e) === true) return; // the phaser's, not a look
@@ -424,6 +424,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
       },
       setFarLook(on) {
+        w.phasers?.steady(state.key, on && w.phasers.isArmed(state.key));
         const npc = state.get();
         if (on === false || npc === undefined) {
           state.look.far = null;
@@ -461,7 +462,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
         const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
         // a key released after focus has gone elsewhere never reaches `onKeyUp`
-        const onBlur = () => (state.cancelCharge(), state.setFarLook(false), w.phasers?.steady(state.key, false));
+        const onBlur = () => (state.cancelCharge(), state.setFarLook(false), w.hud?.update());
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
@@ -518,7 +519,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const sign = state.snapFlip ? -dir : dir;
         const to =
           dir === 0
-            ? Math.round(from / snapSquareRad) * snapSquareRad
+            ? Math.round(from / snapTurnRad) * snapTurnRad
             : sign * (Math.floor((sign * from) / snapTurnRad + snapTurnSlop) + 1) * snapTurnRad;
         const { x, z } = npc.position;
         state.lookAtPoint(x - Math.sin(to) * snapTurnMetres, z - Math.cos(to) * snapTurnMetres);
@@ -546,6 +547,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (w.phasers.isLocked(state.key))
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
+      },
+      toggleFarLook() {
+        state.setFarLook(state.look.far === null);
+        w.hud?.update(); // the button whites
       },
       togglePsi() {
         if (state.exists() === false) return;
@@ -598,10 +603,8 @@ const lookTapSlopPx = 20;
 const fireTouchDelayMs = 300;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
-/** `,` and `.` turn them to the next multiple of this */
-const snapTurnRad = Math.PI / 4;
-/** `/` turns them to the nearest multiple of this */
-const snapSquareRad = Math.PI / 2;
+/** `,` and `.` turn them to the next multiple of this, `/` to the nearest */
+const snapTurnRad = Math.PI / 2;
 /** A share of a step within which they count as on it, so a press turns them a whole step */
 const snapTurnSlop = 0.05;
 /** Metres off the point a snap turn looks at: any beyond `lookDeadMetres` */
@@ -671,7 +674,7 @@ export type State = {
   onFireTouch(e: TouchEvent): boolean;
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
-  /** Turns them to the next multiple of 45°: with `dir` `1` their facing swings to the screen's left. `0` the nearest 90° */
+  /** Turns them to the next multiple of 90°: with `dir` `1` their facing swings to the screen's left. `0` the nearest */
   snapTurn(dir: -1 | 0 | 1): void;
   /** A snap turn's chain turns clockwise from above for `,`, as they faced the camera at its start */
   snapFlip: boolean;
@@ -722,9 +725,9 @@ export type State = {
 
   /** The player's controls: `q` psi, `e` held their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** Space let go fires a charged shot */
+  /** `f` let go fires a charged shot. Space let go ends the aim and the far look */
   onKeyUp(e: KeyboardEvent): void;
-  /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it: the bar's fire button, or a press whilst aiming */
+  /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it instead, e.g. from the bar's fire button */
   startCharge(): void;
   /** Fires the shot charging: at whom its line crosses, else along it. Paused, cancels it */
   releaseCharge(): void;
@@ -732,7 +735,9 @@ export type State = {
   cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Space held: a look as far as sight goes along their facing, which extends their frontier. In gaze mode along the pointer, raised along the muzzle's line */
+  /** Touch's Space: starts or ends a far look, and raised, aims too. The binoculars button */
+  toggleFarLook(): void;
+  /** Space held: a look as far as sight goes along their facing, which extends their frontier. In gaze mode along the pointer. Raised, it aims too (`steady`), along the muzzle's line */
   setFarLook(on: boolean): void;
   /** The bearing a far look casts along: raised, the muzzle's line, else `bearing` */
   farBearing(bearing: number): number;

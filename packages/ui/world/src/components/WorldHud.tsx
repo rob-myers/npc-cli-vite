@@ -3,9 +3,9 @@ import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
 import {
+  BinocularsIcon,
   FingerprintIcon,
-  ListIcon,
-  MouseLeftClickIcon,
+  GearSixIcon,
   SpeakerHighIcon,
   SpeakerSlashIcon,
   UserFocusIcon,
@@ -366,14 +366,7 @@ export default function WorldHud() {
           "group pointer-events-auto relative grid shrink-0 cursor-pointer place-items-center rounded-md",
           column === false && "touch-pan-x",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          // a column's slots are shorter, its icons as big as the bar's
-          big
-            ? column
-              ? "h-12 w-12.5 [--hud-icon-base:60px]"
-              : "h-15 w-12.5"
-            : column
-              ? "h-15 w-15 [--hud-icon-base:72px]"
-              : "h-18 w-15",
+          slotSizeClass(big, column),
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
           opts.had === false && "*:opacity-25",
         )}
@@ -461,6 +454,7 @@ export default function WorldHud() {
                       className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
                       onClick={() => {
                         end?.();
+                        state.update(); // e.g. the binoculars grey
                         w.view.focus();
                       }}
                     >
@@ -500,7 +494,11 @@ export default function WorldHud() {
       <div ref={(el) => void (state.barEl = el)} className={outerClass}>
         <motion.div className={column ? columnClass : rowClass} {...dragProps}>
           {/* what they are, then what they carry, scrolled: the buttons after stay in view */}
-          <div ref={(el) => void (state.itemsEl = el)} className={column ? columnItemsClass : itemsClass}>
+          <div
+            ref={(el) => void (state.itemsEl = el)}
+            // in a bar, it narrows first, but never so far that psi and the phaser scroll away
+            className={column ? columnItemsClass : cn(itemsClass, "shrink-[100]", big ? "min-w-27" : "min-w-32")}
+          >
             <div className={cn("flex shrink-0", column && "flex-col")}>
               {slot(
                 0,
@@ -575,7 +573,7 @@ export default function WorldHud() {
             )}
           </div>
           <PlayerButtons column={column} />
-          <FireHint armed={armed} column={column} layout={layout} />
+          <FireHint armed={armed} column={column} />
         </motion.div>
 
         <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
@@ -616,17 +614,24 @@ function PlayerButtons({ column }: { column: boolean }) {
   const w = useContext(WorldContext);
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
+  const farLook = w.player?.look.far != null;
   const big = w.touchDevice;
   const buttonClass = cn(
-    "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",
-    big ? "size-12" : "size-9",
+    "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden border border-neutral-400/25 bg-neutral-900/60 hover:ring-1 hover:ring-yellow-200/25",
+    // rounded only at the ends: the first here, the menu's at the other
+    column ? "first-of-type:rounded-t-md" : "first-of-type:rounded-l-md",
+    // as big as the psi icon: the group's padding is a slot's
+    big ? "size-10.5" : "size-12.5",
   );
+  const iconSize = big ? "size-5" : "size-6";
 
   return (
     <div
       className={cn(
-        "pointer-events-auto flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60",
-        column ? "order-first mb-2 flex-col" : "ml-4",
+        "pointer-events-auto flex self-center rounded-md border border-neutral-400/10",
+        // a narrow bar scrolls them after the carried items, never the fire button
+        column ? "order-first mb-2 shrink-0 flex-col" : "ml-4 min-w-0 overflow-x-auto [scrollbar-width:none]",
+        buttonsPadClass(big, column),
       )}
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
@@ -659,29 +664,35 @@ function PlayerButtons({ column }: { column: boolean }) {
             transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
           />
         )}
-        <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
+        <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
       </div>
-      {/* desktop only: touch has no `wasd` */}
-      {big === false && <CompassRose />}
+      {/* touch has no `wasd`, so no compass: nor Space, so a far look's toggle in its place */}
+      {big === false ? (
+        <CompassRose />
+      ) : (
+        <div
+          className={buttonClass}
+          title={`max look ${farLook ? "on" : "off"}`}
+          onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}
+        >
+          <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
+        </div>
+      )}
       {/* last: right-most in the bar, bottom-most in a column */}
-      <PlayerMenu buttonClass={buttonClass} iconClass={cn(buttonIcon(true), "size-5")} column={column} />
+      <PlayerMenu
+        buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
+        iconClass={cn(buttonIcon(true), iconSize)}
+        column={column}
+      />
     </div>
   );
 }
 
 /**
- * How to fire, beside the bar: aiming in earnest (Space held, raised), a click. On touch, raised, it is the fire button.
- * Re-rendered alone as they aim, charge or fire (`w.hud.fireHint`), never the whole bar
+ * The fire button, hidden whilst lowered but keeping its place. Held, it charges, and let go, fires. Or `f`.
+ * Re-rendered alone as they charge or fire (`w.hud.fireHint`), never the whole bar
  */
-const FireHint = memo(function FireHint({
-  armed,
-  column,
-  layout,
-}: {
-  armed: boolean;
-  column: boolean;
-  layout: HudLayout;
-}) {
+const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; column: boolean }) {
   const w = useContext(WorldContext);
   const hint = useStateRef(
     (): FireHintState => ({
@@ -693,59 +704,49 @@ const FireHint = memo(function FireHint({
     }),
   );
   w.hud.fireHint = hint;
-  const shown = armed && (w.touchDevice || w.phasers?.isSteadied(w.player.key) === true);
   const charging = w.phasers?.isCharging(w.player.key) === true;
   return (
-    <AnimatePresence>
-      {shown && (
-        <motion.div
-          key="click-fires"
-          {...toastMotion}
-          layout={false}
-          title={w.touchDevice ? "fire: hold to charge" : "click fires"}
-          // on touch it is the fire button: held, it charges, and let go, fires. A desktop click fires on the World
-          {...(w.touchDevice && {
-            role: "button",
-            onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => {
-              e.stopPropagation(); // not a press on the World
-              e.currentTarget.setPointerCapture(e.pointerId);
-              w.player.startCharge();
-            },
-            onPointerUp: () => w.player.releaseCharge(),
-            onPointerCancel: () => void w.player.cancelCharge(),
-          })}
-          className={cn(
-            clickFiresClass,
-            w.touchDevice && "pointer-events-auto touch-none cursor-pointer",
-            !column
-              ? "top-1/2 left-full ml-2 -translate-y-1/2"
-              : layout === "right"
-                ? "top-full right-0 mt-2"
-                : "top-full left-0 mt-2",
-            charging && "bg-red-950/70 ring-2 ring-red-400 shadow-[0_0_18px_rgb(248_113_113/0.6)]",
-          )}
-        >
-          {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
-          <motion.span
-            key={hint.fireId}
-            className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
-            initial={hint.fireId === 0 ? false : { scale: 1.45 }}
-            animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
-            transition={
-              charging
-                ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
-                : { type: "spring", stiffness: 520, damping: 11 }
-            }
-          >
-            {w.touchDevice ? (
-              <FingerprintIcon className="size-12" weight="fill" />
-            ) : (
-              <MouseLeftClickIcon className="size-12" weight="fill" />
-            )}
-          </motion.span>
-        </motion.div>
+    <div
+      role="button"
+      aria-hidden={!armed}
+      title="fire: f, held to charge"
+      onPointerDown={(e) => {
+        e.stopPropagation(); // not a press on the World, nor a drag of the bar
+        if (!armed) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        w.player.startCharge();
+      }}
+      onPointerUp={() => w.player.releaseCharge()}
+      onPointerCancel={() => void w.player.cancelCharge()}
+      className={cn(
+        fireHintClass,
+        column ? "mt-2" : "ml-2 self-center",
+        // lowered, hidden but kept in place: nothing shifts as it is raised
+        !armed && "invisible opacity-0",
+        charging && "bg-red-950/70 ring-2 ring-red-400 shadow-[0_0_18px_rgb(248_113_113/0.6)]",
       )}
-    </AnimatePresence>
+    >
+      {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
+      <motion.span
+        key={hint.fireId}
+        className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
+        initial={hint.fireId === 0 ? false : { scale: 1.45 }}
+        animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
+        transition={
+          charging
+            ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
+            : { type: "spring", stiffness: 520, damping: 11 }
+        }
+      >
+        {w.touchDevice ? (
+          <FingerprintIcon className="size-12" weight="fill" />
+        ) : (
+          <span className="grid size-12 place-items-center rounded-md border-2 border-current font-bold text-2xl">
+            F
+          </span>
+        )}
+      </motion.span>
+    </div>
   );
 });
 
@@ -771,7 +772,7 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
         title="options"
         onClick={(e) => w.hud?.dragged !== true && setAnchor(anchor === null ? e.currentTarget : null)}
       >
-        <ListIcon className={iconClass} weight="light" />
+        <GearSixIcon className={iconClass} weight="light" />
       </div>
       <Menu.Root
         open={anchor !== null}
@@ -806,6 +807,23 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
   );
 }
 
+/** The fire button: after the player's buttons, or at a column's foot. In flow beside the slots, so never scrolled off with them */
+const fireHintClass = tw(
+  "pointer-events-auto grid shrink-0 cursor-pointer touch-none place-items-center rounded-lg bg-black/50 p-2 transition-[opacity,visibility] duration-300",
+);
+/** A slot's size. A column's are shorter, its icons as big as the bar's, 2px apart */
+const slotSizeClass = (big: boolean, column: boolean) =>
+  big
+    ? column
+      ? "h-11 w-12.5 [--hud-icon-base:60px]"
+      : "h-15 w-12.5"
+    : column
+      ? "h-13 w-15 [--hud-icon-base:72px]"
+      : "h-18 w-15";
+/** The player's buttons' padding: a slot's size less a button's, halved, so the group is as tall as the slots */
+const buttonsPadClass = (big: boolean, column: boolean) =>
+  big ? (column ? "px-1 py-[3px]" : "px-1 py-[9px]") : column ? "p-[5px]" : "px-[5px] py-[11px]";
+
 /** A player button's icon: white whilst what it stands for is on, else grey */
 const buttonIcon = (on: boolean) =>
   cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", on ? "text-white" : "text-neutral-500");
@@ -820,8 +838,8 @@ const CompassRose = memo(function CompassRose() {
   return (
     <svg
       ref={(el) => void (w.hud.compassEl = el)}
-      viewBox="-18 -18 36 36"
-      className="group/compass pointer-events-auto size-9 shrink-0 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]"
+      viewBox="-21 -21 42 42"
+      className="group/compass pointer-events-auto size-12.5 shrink-0 border border-neutral-400/25 bg-neutral-900/60 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]"
       data-snapped={wasdSnapped || undefined}
     >
       <title>{`w heads ${wasdSnapped ? "" : "near "}${compassLetters[compassPoint]}`}</title>
@@ -866,10 +884,6 @@ const itemsClass = tw("pointer-events-none flex min-w-0 overflow-x-auto p-1 [scr
 const columnBarClass = tw("pointer-events-none absolute top-0 z-10 select-none");
 const columnClass = tw("pointer-events-none relative flex flex-col items-center");
 const columnItemsClass = tw("pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]");
-/** The hint that a click fires whilst aiming: right of the bar, or below it as a column */
-const clickFiresClass = tw(
-  "pointer-events-none absolute z-10 grid place-items-center rounded-lg bg-black/50 p-2 ring-1 ring-red-400/40",
-);
 /** The hud-toasts: top centre, clear of the bar. Across the whole width, else a narrow World squeezes them */
 const noticesClass = tw(
   "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200",
@@ -1218,7 +1232,7 @@ export type State = {
   y: MotionValue<number>;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
-  /** How to fire, beside the bar, which re-renders alone: see `FireHint` */
+  /** The fire button, which re-renders alone: see `FireHint` */
   fireHint: null | UseStateRef<FireHintState>;
   /** What the bar says above itself, a moment: something of theirs was refused */
   notice: null | string;

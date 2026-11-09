@@ -190,8 +190,10 @@ export const frontierConfig = {
   margin: 1.3,
   /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
   panFrac: 0.5,
-  /** How far past the outer stop a follow may zoom out to show the dot whilst aiming, or a far look, as a factor */
-  aimOuterScale: 3,
+  /** How far past the outer stop a far look, aiming too, may zoom out to fit, e.g. across a narrow canvas, as a factor */
+  farOuterScale: 6,
+  /** Metres a far look, aiming too, reaches past its wall, so the wall and the red dot keep clear of the canvas edge */
+  farPadMetres: 1,
 } as const;
 
 /** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */

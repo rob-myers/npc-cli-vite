@@ -513,6 +513,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
   }
 
+  /** Whether a one-finger look is being dragged — see `touchLook` */
+  isDraggingLook(): boolean {
+    return this.state === this.STATE.TOUCH_LOOK && this.touchLookFrom.dragged;
+  }
+
   /** Whether a drag is turning the camera — the mouse's rotate, or a touch's */
   isRotating(): boolean {
     return (

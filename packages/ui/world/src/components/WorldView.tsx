@@ -145,7 +145,6 @@ export function WorldView(props: React.PropsWithChildren) {
         rightPress: false,
         multi: false,
         pick: null,
-        firing: false,
       },
       pickedAt: null,
       lookMark: null,
@@ -854,8 +853,9 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         // measured in time: a demand frameloop's frame gaps vary
         const now = performance.now();
-        if (w.disabled === true) {
-          // paused, held where it is: a look running out stops with the World
+        // paused, held where it is: a look running out stops with the World. Also whilst a finger steers a far
+        // look, else the view swims under it. Either way it eases on again once let go
+        if (w.disabled === true || (w.player?.look.far != null && controls.isDraggingLook())) {
           state.frontierMs = state.frontierResumeMs = now;
           return;
         }
@@ -893,8 +893,9 @@ export function WorldView(props: React.PropsWithChildren) {
       getFrontierStops() {
         const { controls } = state;
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
-        // `holdFrontier` only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
-        const player = state.follow === true && w.touchDevice === false ? w.player?.get() : undefined;
+        // `holdFrontier` only pans. Nor on touch, where the zoom is the pinch's alone, but for a far look's
+        const framed = w.touchDevice === false || w.player?.look.far != null;
+        const player = state.follow === true && framed ? w.player?.get() : undefined;
         let wanted = outer;
         let wantedMin = min;
         if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
@@ -909,8 +910,7 @@ export function WorldView(props: React.PropsWithChildren) {
           const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
           /** The furthest the inner stop goes. A far look, aiming too, may lie past the outer stop */
-          const beyond = w.player.look.far !== null;
-          const cap = beyond ? outer * frontierConfig.aimOuterScale : outer;
+          const cap = w.player.look.far !== null ? outer * frontierConfig.farOuterScale : outer;
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
           wantedMin = Math.min(cap, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
           // zoomed out, further by the persisted stops' own ratio, but no further than without the dot
@@ -1071,11 +1071,6 @@ export function WorldView(props: React.PropsWithChildren) {
         if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
-        last.firing = last.rightPress === false && w.phasers?.isSteadied(w.player.key) === true;
-        if (last.firing === true) {
-          state.canvas.style.cursor = ""; // the crosshair stays
-          return void w.player.startCharge();
-        }
         last.pick = state.pickAt(e.nativeEvent);
 
         last.longPressTimer = window.setTimeout(() => {
@@ -1100,10 +1095,6 @@ export function WorldView(props: React.PropsWithChildren) {
         last.longPressTimer = 0;
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
-        if (last.firing === true) {
-          last.firing = false;
-          return void w.player.releaseCharge();
-        }
 
         // another finger still down, or this one was never the gesture's first — the camera's, not
         // a pick. A pinch usually lifts one finger before the other, and the first of those ups
@@ -1963,8 +1954,6 @@ export type State = {
     multi: boolean;
     /** What was under the press as it went down: a moving npc has gone on by its release */
     pick: null | Promise<null | PickFound>;
-    /** Aiming (Space held, raised), the press charges a shot, fired on its release: no pick */
-    firing: boolean;
   };
   /** Where the last pick landed — see `LookMark` */
   pickedAt: null | THREE.Vector3;

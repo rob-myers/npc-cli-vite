@@ -1,6 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
 import type * as THREE from "three/webgpu";
+import { frontierConfig } from "../const.env";
 import { WorldContext } from "./world-context";
 
 /**
@@ -29,10 +30,14 @@ export default function LightSweep() {
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
     if (player !== undefined && w.view.cameraMode === "embodied") {
-      /** A far look, aiming too, extends it to the first wall. Any other look caps it */
-      const far = w.player.look.far?.reach ?? null;
+      /** A far look, aiming too, extends it a little past the first wall. Any other look caps it */
+      const { far } = w.player.look;
       // the way their head faces, which is not always their body's
-      w.view.playerFrontier.update(player.lookY, far, far === null ? w.player.lookReach() : null);
+      w.view.playerFrontier.update(
+        player.lookY,
+        far && far.reach + frontierConfig.farPadMetres,
+        far ? null : w.player.lookReach(),
+      );
     }
   }, -2);
 

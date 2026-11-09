@@ -319,7 +319,6 @@ export default function Phasers() {
         if (npcKey === w.player.key) w.view.canvas?.toggleAttribute("data-aiming", on && arm?.armed === true);
         if (arm === undefined || arm.steady === on) return;
         arm.steady = on;
-        w.hud?.fireHint?.update(); // the hint that a click fires
         w.r3f?.invalidate();
       },
       isCooling(npcKey) {
