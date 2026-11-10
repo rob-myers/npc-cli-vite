@@ -660,6 +660,8 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  * move rob --fast to:$( pick 1 )
  * # fade onto or off a doable however far, rather than walking up to it
  * move rob --far to:$( pick 1 )
+ * # shuffle however far: a short move from rest does anyway, unless `shuffle:false`
+ * move rob --shuffle to:$( pick 1 )
  * ```
  */
 export async function move(
@@ -678,6 +680,7 @@ export async function move(
     "--strafe": "strafe",
     "--backstep": "backstep",
     "--far": "far",
+    "--shuffle": "shuffle",
   }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
@@ -1867,8 +1870,8 @@ const wasdConfig = {
 } as const;
 
 /** How each move is made, as the command line gave it */
-function moveFlags({ fast, backwards, backstep, strafe, near, far }: Omit<JshCli.MoveOpts, "to">) {
-  return { fast, backwards, backstep, strafe, near, far };
+function moveFlags({ fast, backwards, backstep, strafe, near, far, shuffle }: Omit<JshCli.MoveOpts, "to">) {
+  return { fast, backwards, backstep, strafe, near, far, shuffle };
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
@@ -1924,6 +1927,7 @@ const booleanJsOptSomewhere = {
   near: true,
   point: true,
   raise: true,
+  shuffle: true,
   strafe: true,
   target: true,
 };

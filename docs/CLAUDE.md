@@ -133,6 +133,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
 - **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
+- **A short move shuffles.** From rest, stood, a move within `dist.shuffleTarget` (0.25m, Manhattan) shuffles rather than walks: the four `shuffle_step` clips, blended by heading as a strafe's are (`docs/npc-strafe.md`), not the turn's `shuffle`, keeping their facing. It lands within `arriveMin`, where a walk stops short (`canShuffle`, `shuffleTo` in `use-world-events`). A move's `shuffle: true` (jsh `move --shuffle`) shuffles however far, `false` never.
 - **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
 
 **Workers** (see `docs/workers.md`):

@@ -150,6 +150,22 @@ and the clip's (`--name --length --swing --upper --axis`). It prints the keyfram
 - It keeps the torso and arms, unless `--upper` names a clip to take them from. Then the guard arms must be keyed
   again: each arm bone's rotation, a fixed pose plus the hips' bob, by hand in Blockbench's console.
 
+**The shuffle set** is a short move's subtle steps (see "A short move shuffles" in CLAUDE.md): `shuffle_step`,
+`shuffle_step_right`, `shuffle_step_back` and `shuffle_step_left`. `syncStrafe` blends them by heading as it does the
+strafes, paced by their actual speed, which the crowd eases to nothing. `startShuffle` weighs them by the target's
+heading from the first step.
+
+- Small steps (`0.12` m a cycle), a low lift, little bob, each `0.8` s. They key the legs and `skeleton-root` alone.
+- Their pace is `maxSpeed.shuffle` (`0.25` m/s). Within twice their radius of the target the crowd scales speed by
+  the distance, which `shuffleSpeed` undoes to its root, so they ease in yet arrive. A shuffle is still for stuck
+  detection only below `maxSpeed.shuffleStill` a second, as easing in it is slower than `stuckEpsilon` a frame at 120fps.
+- Above the hips, the clip they rest in plays on (`restUpper`: that clip's upper tracks, `upperOf`), from where it was.
+  The shuffle ends in step with it, so the arms never jump, whatever they rest in: `breathe`, `idle`, `pacified`...
+- `shuffle_step_back` is solved with `--axis back`, the right foot lifting at `0.1`. Duty `0.7`, so reversed it puts the
+  same foot in the air half a cycle on, as `syncStrafe` plays the backward clip.
+- `shuffle_step` is `shuffle_step_back` reversed in time.
+- `shuffle_step_left` is solved with `--axis side`, the right foot lifting at `0.6`, and `shuffle_step_right` is its mirror.
+
 Then export `current.gltf`.
 ```sh
 node scripts/src/bins/gen-strafe-keys.ts --stride 0.6 --harmonics 2 --blockbench | pbcopy
@@ -157,6 +173,10 @@ node scripts/src/bins/gen-strafe-keys.ts --name run_strafe_left --length 0.75188
   --duty 0.2917 --stride 1.0 --lift 0.2 --tangent 0.3 --bob 0.5 --blockbench | pbcopy
 node scripts/src/bins/gen-strafe-keys.ts --axis back --name run_backwards --length 0.75188 --swing 0.3458 \
   --stride 1.25 --duty 0.45 --lift 0.12 --tangent 0.5 --bob 0.3 --blockbench | pbcopy
+node scripts/src/bins/gen-strafe-keys.ts --axis back --name shuffle_step_back --length 0.8 --swing 0.1 \
+  --stride 0.15 --duty 0.7 --lift 0.04 --tangent 0.5 --bob 0.3 --soft 0.999 --blockbench | pbcopy
+node scripts/src/bins/gen-strafe-keys.ts --axis side --name shuffle_step_left --length 0.8 --swing 0.6 \
+  --stride 0.15 --duty 0.7 --lift 0.04 --tangent 0.5 --bob 0.3 --soft 0.999 --blockbench | pbcopy
 ```
 
 ## `backstep`

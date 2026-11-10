@@ -266,6 +266,8 @@ declare namespace JshCli {
     shove?: boolean;
     /** Fade onto or off a doable however far. Else only within `doableLook`, walking the rest */
     far?: boolean;
+    /** Shuffle however far, walking or not: else only a short move from rest does. `false` never — see `w.e.canShuffle` */
+    shuffle?: boolean;
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {

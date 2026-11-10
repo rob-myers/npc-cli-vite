@@ -381,7 +381,9 @@ export default function NPCs() {
             moveClipFadedIn(npc) === true &&
             (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true ||
               // ...or settled close by: past the grace, else a short move starts arrived
+              // a shuffle, slowed by the crowd all the way, arrives on the spot or not at all
               (arriving === true &&
+                npc.anim.shuffling === false &&
                 speed < agentConfig.settleSpeed &&
                 worldSeconds - npc.last.moveTime > npcConfig.time.stuckGrace))
           ) {
@@ -966,6 +968,7 @@ export type State = {
 /** Capped by the initial distance, so a short move need not start arrived */
 function getArriveDistance(npc: Npc) {
   const { arrive, glide, arriveMin, arriveFraction } = npcConfig.dist;
+  if (npc.anim.shuffling === true) return arriveMin; // a shuffle is short, and settles them on the spot
   const base = npc.anim.arrive ? arrive : glide[npc.running ? "run" : "walk"];
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
@@ -985,7 +988,9 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
   }
 
   const dist = Math.hypot(position.x - last.point.x, position.z - last.point.y);
-  last.stuckAccum += dist < stuckEpsilon ? delta : 0;
+  // a shuffle eases in slowly: still only below a speed, as frames vary
+  const still = npc.anim.shuffling ? dist < agentConfig.maxSpeed.shuffleStill * delta : dist < stuckEpsilon;
+  last.stuckAccum += still ? delta : 0;
   last.point.x = position.x;
   last.point.y = position.z;
   if (last.stuckAccum > stuckDuration) return "still";
@@ -1039,6 +1044,11 @@ function moveClipFadedIn(npc: Npc) {
     "run_backwards",
     "run_strafe_left",
     "run_strafe_right",
+    // a short move's, blended by heading: see `NpcAnimation.startShuffle`
+    "shuffle_step",
+    "shuffle_step_right",
+    "shuffle_step_back",
+    "shuffle_step_left",
   ] as const;
   return (
     gaits.reduce((sum, key) => sum + (npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0), 0) >=
