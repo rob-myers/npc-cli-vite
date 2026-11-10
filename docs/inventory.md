@@ -269,7 +269,9 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - What can meet someone is their gun at full aim (`gunLine`). Stood, it is a fixed segment in their aim's frame
   (`phaserConfig.gun`, measured off `phaser_aim`): from the elbow to the muzzle, beside their right shoulder. Sat or
   lain, it is a line `reach` long from their right shoulder bone, the way the arm points (`armBearingOf`).
-- A body is in the way within `bodyRadius + armWidth` of it, or `agentRadius + armWidth` for one sat or lain.
+- A body stood is in the way within `bodyRadius + armWidth` of the line between their shoulder joints, read off the
+  bones as last drawn: blocky shoulders stand ~0.2m out. One sat or lain is within `agentRadius + armWidth` of
+  their middle.
 - An arm is in the way when the two guns come within `2 * armWidth` (`segsApart`), but only an arm up now, not
   drawn in. So of two that would meet, whoever raised first keeps it and only the other draws in.
 - The player gives way to no npc's arm, only to bodies.

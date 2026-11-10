@@ -1344,7 +1344,7 @@ function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.V
   );
 }
 
-/** Does their gun at full aim meet someone in their room: their body, or their arm whilst raised? */
+/** Does their gun at full aim meet someone in their room: their body or shoulders, or their arm whilst raised? */
 function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: number) {
   const ours = gunLine(npc, arm);
   const [mx, mz] = [(ours[0] + ours[2]) / 2, (ours[1] + ours[3]) / 2];
@@ -1364,14 +1364,24 @@ function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: 
   return others.some((other) => {
     const p = other.position;
     if (Math.abs(p.x - mx) > far || Math.abs(p.z - mz) > far) return false;
-    const body = (other.anim.posture === "stand" ? bodyRadius : npcDims.agentRadius) + armWidth;
-    if (toSeg(p.x, p.z, ours) < body) return true;
+    const stood = other.anim.posture === "stand";
+    // stood, a capsule round the line between their shoulders, which stand wider than their middle
+    const shoulders = stood ? shouldersOf(other) : null;
+    const apart = shoulders === null ? toSeg(p.x, p.z, ours) : segsApart(ours, shoulders);
+    if (apart < (stood ? bodyRadius : npcDims.agentRadius) + armWidth) return true;
     if (player === true) return false;
     const theirs = w.phasers.arms.get(other.key);
     // only an arm up now: of two that would meet, whoever raised first keeps it
     if (theirs === undefined || theirs.armed === false || theirs.holdUntil > secs) return false;
     return segsApart(ours, gunLine(other, theirs)) < 2 * armWidth;
   });
+}
+
+/** The line between their shoulder joints on the ground, as last drawn: else `null` without both bones */
+function shouldersOf(npc: Npc): null | Seg {
+  const l = npc.anim.upperOf("left").bones[0]?.bone.matrixWorld.elements;
+  const r = npc.anim.upperOf("right").bones[0]?.bone.matrixWorld.elements;
+  return l === undefined || r === undefined ? null : [l[12], l[14], r[12], r[14]];
 }
 
 /**
@@ -1576,7 +1586,7 @@ const phaserConfig = {
   restBelowGun: 0.5,
   /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
   armWidth: 0.1,
-  /** Metres of a standing body's half-width, which the arm must miss: less than their crowd agent's radius */
+  /** Metres round the line between a standing body's shoulder joints, which the arm must miss */
   bodyRadius: 0.15,
   /** Metres of a body part before its middle, in which nothing hides it: e.g. a thigh on its seat */
   partDepth: 0.12,
