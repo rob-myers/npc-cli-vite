@@ -687,7 +687,7 @@ function PlayerButtons({ column, children }: { column: boolean; children?: React
 }
 
 /**
- * The fire button, hidden whilst lowered but keeping its place. Held, it charges, and let go, fires. Or `f`.
+ * The fire button, hidden whilst lowered but keeping its place. Held, it charges, and let go, fires. Or `m`.
  * Re-rendered alone as they charge or fire (`w.hud.fireHint`), never the whole bar
  */
 const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; column: boolean }) {
@@ -718,7 +718,7 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
     >
       <div
         role="button"
-        title="fire: f, held to charge"
+        title="fire: m, held to charge"
         onPointerDown={(e) => {
           e.stopPropagation(); // not a press on the World, nor a drag of the bar
           if (!armed) return;
@@ -755,7 +755,7 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
                 playerIconSize(big),
               )}
             >
-              F
+              M
             </span>
           )}
         </motion.span>

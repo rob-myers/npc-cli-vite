@@ -280,8 +280,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           e.preventDefault();
           return state.setFarLook(true); // raised, it aims too
         }
-        // raised, `f` held charges a shot, and let go fires it
-        if (e.code === "KeyF") return void (w.phasers?.isArmed(state.key) === true && state.startCharge());
+        // raised, `m` held charges a shot, and let go fires it
+        if (e.code === "KeyM") return void (w.phasers?.isArmed(state.key) === true && state.startCharge());
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
           // the same one twice, quickly, runs
@@ -313,7 +313,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       onKeyUp(e) {
-        if (e.code === "KeyF") return state.releaseCharge();
+        if (e.code === "KeyM") return state.releaseCharge();
         if (e.code === "Space") state.setFarLook(false);
       },
       onTouch(e) {
@@ -725,7 +725,7 @@ export type State = {
 
   /** The player's controls: `q` psi, `e` held their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** `f` let go fires a charged shot. Space let go ends the aim and the far look */
+  /** `m` let go fires a charged shot. Space let go ends the aim and the far look */
   onKeyUp(e: KeyboardEvent): void;
   /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it instead, e.g. from the bar's fire button */
   startCharge(): void;

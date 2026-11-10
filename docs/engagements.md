@@ -140,7 +140,7 @@ does one with a laser.
   live aim. The player's alone. None is drawn where nothing stops it (`what: "nothing"`), e.g. out of a hull window.
 - **Aiming.** Raised, Space held aims in earnest (`w.phasers.steady`, `isSteadied`): the left hand steadies the gun,
   and the view extends along its line to the first wall or door (a far look). Raised alone, the view keeps the look's own framing.
-- `f` fires whilst raised, aiming or not (`fire`, from `w.player.releaseCharge`), so a click still picks: locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
+- `m` fires whilst raised, aiming or not (`fire`, from `w.player.releaseCharge`), so a click still picks: locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
   is. That point is held in the part's bone frame (the target's `local`, read by `targetPoint`), so it moves with
   them.
 - As it locks on (`shoot`, `meetPart`), the line from the muzzle tip through the dot is tested against each hit
@@ -149,7 +149,7 @@ does one with a laser.
   whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, it fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered is a far look instead: see `docs/camera.md`.
-- **Charging.** Raised, `f` held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
+- **Charging.** Raised, `m` held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
   it (`w.player.releaseCharge`). The shot takes the charge (`takeCharge`, in `arm` and `fireAlong`): `fireCharge`
   widens and brightens its beam, and `phaser-fired` carries it as `charge`. A tap fires at once, near `0`.
   - Charging, the gun brightens with the beam's colour and shakes (`glowOf`, the `phaserCharge` attribute).

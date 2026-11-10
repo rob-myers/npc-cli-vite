@@ -23,13 +23,13 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space held aims, and `f` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
-- **fire** (`FireHint`), after these in the bar, or at a column's foot. It is outside the slots' scroll, so never scrolled off. Hidden whilst the phaser is lowered, but keeping its place, so nothing shifts. Raised, held, it charges, and let go, fires, as `f` does. A fingerprint on touch, else an `F`. Not a client's.
+- **fire** (`FireHint`), after these in the bar, or at a column's foot. It is outside the slots' scroll, so never scrolled off. Hidden whilst the phaser is lowered, but keeping its place, so nothing shifts. Raised, held, it charges, and let go, fires, as `m` does. A fingerprint on touch, else an `M`. Not a client's.
 - **strafe** has no button: a double tap of Shift toggles it. Whilst on, a hud-toast "strafe" stays over the bar, its "x" turning it off. Turned off mid-move it stays, half transparent with its "x" greyed, whilst the latched move keys are held (`strafeLatch`) A latch from lowering the phaser shows none. With the phaser raised it says "drawn" and the red dot's range, e.g. "drawn 7.3m" ("aim" whilst Space is held), its "x" lowering the phaser, and "strafe" only if it was on, its "x" greyed: a double tap of Shift does nothing then. "drawn" greys whilst something in the way draws the phaser in.
 - **follow**: a press turns it on or off, as `v` does. Whilst on, a hud-toast "followed" stays over the bar ("tethered" whilst gaze mode or a long `r` hold steers them to the pointer), its "x" turning it off.
 - **focal** and **gaze** have no button. Whilst gaze mode is on, or a look caps their frontier (its focal distance) whilst following, a hud-toast stays over the bar: "gaze" in gaze mode, else "focal", then the cap's reach, e.g. "focal 2m", or "focal max" ("gaze max") for a far look (Space held, lowered). Its "x" ends gaze mode and drops the cap. It greys whilst gaze mode yields. Raised, the same hud-toast says "drawn", or "aim" whilst Space is held, its number easing from the focal distance to the red dot's range. Out through a hull window either greys, keeping its last number: there is no range. See Following the player in `docs/camera.md`.
