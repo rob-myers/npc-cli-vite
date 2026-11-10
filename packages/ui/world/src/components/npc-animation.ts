@@ -841,7 +841,9 @@ export class NpcAnimation {
       const pinAhead = speed ** 2 / (2 * agentConfig.maxAcceleration.idle);
       const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
       const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
-      this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
+      const ahead = this.w.npc.getClosestPoly({ x: pinX, y: pinZ }, 0.1);
+      // past an edge they are pressed against, ahead is off the navmesh: pinned where they stand instead
+      if (this.npc.pinTo(ahead) === false) this.npc.pinTo(this.w.npc.getClosestPoly(this.npc.point, 0.1));
     }
 
     this.face.rate = 0;
