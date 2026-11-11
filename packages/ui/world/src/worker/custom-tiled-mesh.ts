@@ -29,6 +29,7 @@ import {
   markConvexPolyArea,
   markWalkableTriangles,
   type NavMeshTileParams,
+  NULL_AREA,
   polyMeshDetailToTileDetailMesh,
   polyMeshToTilePolys,
   rasterizeTriangles,
@@ -202,7 +203,8 @@ const buildCustomNavMeshTile = ({
       door.tris.vs.flatMap((v) => [v.x, 0, v.y]),
       0,
       walkableHeightVoxels * cellHeight,
-      encodeDoorAreaId(door.gmId, door.doorId),
+      // a sealed door is a wall: its outset matches `wallOutset`
+      door.sealed === true ? NULL_AREA : encodeDoorAreaId(door.gmId, door.doorId),
       compactHeightfield,
     );
   }

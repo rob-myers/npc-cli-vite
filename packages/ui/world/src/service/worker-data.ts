@@ -1,19 +1,21 @@
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Poly } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
+import type { GmGraph } from "./gm-graph";
 import { helper } from "./helper";
 import { obstacleBottom } from "./spot-sight";
 
 /**
  * We transform everything into world coords except `triangulation`.
  */
-export function getNavmeshPayload(gms: Geomorph.LayoutInstance[]): WW.GmGeomForNav[] {
+export function getNavmeshPayload(gms: Geomorph.LayoutInstance[], gmGraph: GmGraph): WW.GmGeomForNav[] {
   return gms.map(({ key, doors, bounds, determinant, gridRect, matrix, inverseMatrix, mat4, navDecomp }, gmId) => ({
     key,
     doorways: doors.map((connector, doorId) => ({
       gmId,
       doorId,
       polygon: connector.poly.clone().applyMatrix(matrix).geoJson,
+      sealed: connector.meta.hull === true ? gmGraph.isHullDoorSealed(gmId, doorId) : connector.meta.sealed === true,
     })),
     /** In local coords unlike everything else */
     triangulation: navDecomp,

@@ -240,6 +240,8 @@ declare namespace WW {
     gmId: number;
     doorId: number;
     polygon: Geom.GeoJsonPolygon;
+    /** Cut from the floor like a wall, rather than marked as a doorway */
+    sealed: boolean;
   };
 
   type PhysicsDoorDef = {

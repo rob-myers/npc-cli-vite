@@ -107,7 +107,7 @@ export default function NavWorker() {
   useEffect(() => {
     if (w.hash === 0) return;
 
-    const gmGeoms = getNavmeshPayload(w.gms);
+    const gmGeoms = getNavmeshPayload(w.gms, w.gmGraph);
     const rayCast = getRaycastPayload(w.gms);
     state.post({ type: "set-raycast-statics", gmGeoms, rayCast } satisfies WW.MsgToNavWorker, "fast");
     if (state.regenNavMesh === false && state.navFor === w.gmsHash && w.nav.gmsHash === w.gmsHash) {

@@ -12,7 +12,7 @@ Their settings are `doorConfig` in `const.env`. Their sizes are with the walls':
 | --- | --- |
 | `open` | Changes only once the door has finished opening or shutting. `w.door.isHeadedOpen(door)` is where it will rest. |
 | `locked` | Only an npc with access opens it. Any npc may shut it. |
-| `sealed` | Never opens, and is always locked. |
+| `sealed` | Never opens, and is always locked. The navmesh takes it as wall: it has no doorway area, and the floor stops `wallOutset` short of it. |
 | `auto` | Opens when an npc touches its "nearby sensor", unless locked. Every unsealed hull door is auto. |
 | `proximity` | Stays open whilst anyone is near. Defaults to `auto`. |
 | `held` | Kept open or shut as it is. See [Holding](#holding). |
