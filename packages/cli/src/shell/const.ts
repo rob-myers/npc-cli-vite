@@ -19,6 +19,7 @@ export const ansi = {
   Red: "\x1b[1;38;2;255;100;100m",
   Yellow: "\x1b[22;93m",
   YellowBright: "\x1b[93m",
+  YellowFaint: "\x1b[38;5;179m",
   White: "\x1b[37m",
   WhiteBright: "\x1b[97m",
 
