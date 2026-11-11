@@ -733,7 +733,9 @@ export default function Phasers() {
         const stood = sat === false && lain === false;
         const holding = armed === true && stood && anim.upper.key !== phaserConfig.avoid; // not drawn in
         const hold = (arm.hold ??= { line: new THREE.Ray(), ramp: 0, weight: 0 });
-        hold.ramp = THREE.MathUtils.clamp(hold.ramp + (holding ? delta : -delta) / upperFadeSecs, 0, 1);
+        /** Drawn in by a wall, it lets go as quickly as the pose swaps in */
+        const rampSecs = holding === false && arm.armHit === true ? phaserConfig.wallDrawInSecs : upperFadeSecs;
+        hold.ramp = THREE.MathUtils.clamp(hold.ramp + (holding ? delta : -delta) / rampSecs, 0, 1);
         hold.weight = eased(hold.ramp);
         if (hold.weight > 0 && stood) holdLineOf(npc, arm, hold.line);
         arm.armAim.hold = hold.weight > 0 && stood ? hold : undefined;
@@ -906,7 +908,7 @@ export default function Phasers() {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs =
             pose === phaserConfig.avoid
-              ? phaserConfig[anim.crouched ? "quickDrawInSecs" : "drawInSecs"]
+              ? phaserConfig[arm.armHit ? "wallDrawInSecs" : anim.crouched ? "quickDrawInSecs" : "drawInSecs"]
               : shown === null
                 ? undefined
                 : phaserConfig.drawOutSecs;
@@ -1629,6 +1631,8 @@ const phaserConfig = {
   drawInSecs: 0.3,
   /** Seconds to draw in crouched: the gun drops with them, and is nearer what it meets */
   quickDrawInSecs: 0.12,
+  /** Seconds to draw in by a wall, door or obstacle: the gun may be in it already */
+  wallDrawInSecs: 0.11,
   /** An arm put at rest at once, e.g. on a respawn */
   snapSecs: 0.01,
   /** Seconds the arm takes to come down, stowed lain */
