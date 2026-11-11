@@ -6,6 +6,7 @@ import {
   createFindNearestPolyResult,
   findLocalNeighbourhood,
   findNearestPoly,
+  findPath,
   getNodeByRef,
   getPolyWallSegments,
   getTileAndPolyByRef,
@@ -14,6 +15,7 @@ import {
   type NavMesh,
   type QueryFilter,
 } from "navcat";
+import { planSidestep } from "./sidestep";
 
 /**
  * One function per op, each pure given the navmesh and the map's doors: plain, async, or a
@@ -164,26 +166,40 @@ export const ops: {
     return plans;
   },
   nudge({ npc, to }, navMesh) {
-    const nodeRef = resolveNodeRef(navMesh, npc);
-    if (nodeRef === null) return null;
-    // slid along the navmesh, so a step into a wall — or a door they cannot pass — stops at it
-    const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
-    const slid = moveAlongSurface(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], [to.x, 0, to.y], filter);
-    return slid.success === true ? { x: slid.position[0], y: slid.position[2] } : null;
+    return slideTo(navMesh, npc, to);
   },
+  sidestep: planSidestep,
 };
+
+/** Toward `to` slid along the navmesh, so a step into a wall, or a door they cannot pass, stops at it */
+export function slideTo(navMesh: NavMesh, npc: WW.NpcQuery, to: Geom.VectJson) {
+  const nodeRef = resolveNodeRef(navMesh, npc);
+  if (nodeRef === null) return null;
+  const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
+  const slid = moveAlongSurface(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], [to.x, 0, to.y], filter);
+  return slid.success === true ? { x: slid.position[0], y: slid.position[2] } : null;
+}
+
+/** The navmesh route from them to `to`, as the crowd would walk it, else `null` */
+export function pathTo(navMesh: NavMesh, npc: WW.NpcQuery, to: Geom.VectJson) {
+  const nodeRef = resolveNodeRef(navMesh, npc);
+  if (nodeRef === null) return null;
+  const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
+  const found = findPath(navMesh, [npc.point.x, 0, npc.point.y], [to.x, 0, to.y], placementHalfExtents, filter);
+  return found.success === true ? found.path.map(({ position: p }) => ({ x: p[0], y: p[2] })) : null;
+}
 
 type OpResult<T> = T | Promise<T> | Generator<void, T> | AsyncGenerator<void, T>;
 
 /**
- * The navmesh boundary within `parkQueryRange` of them, nearest first — none if they are off the mesh.
+ * The navmesh boundary within `range` of them, nearest first — none if they are off the mesh.
  * Not navcat's local boundary, which keeps the 8 nearest: stood in a doorway, those are all its frame
  */
-function queryBoundary(npc: WW.NpcQuery, navMesh: NavMesh) {
+export function queryBoundary(npc: WW.NpcQuery, navMesh: NavMesh, range: number = parkQueryRange) {
   const nodeRef = resolveNodeRef(navMesh, npc);
   if (nodeRef === null) return [];
   const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
-  const hood = findLocalNeighbourhood(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], parkQueryRange, filter);
+  const hood = findLocalNeighbourhood(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], range, filter);
   if (hood.success === false) return [];
 
   const found: { d: number; s: number[] }[] = [];
@@ -193,7 +209,7 @@ function queryBoundary(npc: WW.NpcQuery, navMesh: NavMesh) {
     for (let k = 0; k < walls.segmentVerts.length; k += 6) {
       const s = walls.segmentVerts.slice(k, k + 6);
       const d = geomService.getDistanceToSeg(npc.point.x, npc.point.y, { x: s[0], y: s[2] }, { x: s[3], y: s[5] });
-      if (d <= parkQueryRange) found.push({ d, s });
+      if (d <= range) found.push({ d, s });
     }
   }
   return found.sort((u, v) => u.d - v.d);

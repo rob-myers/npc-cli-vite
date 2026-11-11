@@ -31,6 +31,10 @@ export const agentConfig = {
     run: 3.5,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
+    /** A shuffle's steady pace: near the target it eases as the root of the distance — see `NpcAnimation.shuffleSpeed` */
+    shuffle: 0.25,
+    /** Slower than this a shuffle is still, for stuck detection: per second, not per frame as `dist.stuckEpsilon` is */
+    shuffleStill: 0.02,
   },
   /**
    * Whilst a move is `fast` the gait on show follows their speed: run above one, back to walk
@@ -74,7 +78,7 @@ export const npcConfig = {
     arriveMin: 0.02,
     /** Arrival radius is also capped at this fraction of `npc.last.targetDistance` */
     arriveFraction: 0.4,
-    /** Manhattan distance below which a move uses `shuffle` rather than `walk` */
+    /** Manhattan distance below which a move from rest uses `shuffle_step` rather than `walk` */
     shuffleTarget: 0.25,
     /** Within this of the closest reachable point we look rather than walk */
     blockedLook: 0.3,
@@ -208,6 +212,10 @@ export const fromAnimationClipKey = {
   run_strafe_left: true,
   run_strafe_right: true,
   shuffle: true,
+  shuffle_step: true,
+  shuffle_step_back: true,
+  shuffle_step_left: true,
+  shuffle_step_right: true,
   sit: true,
   sit_pacified: true,
   sit_pain_head: true,
@@ -383,7 +391,7 @@ export const fadeSecs: Record<
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
   backwards: {},
-  breathe: { shuffle: 0.15 },
+  breathe: { shuffle: 0.15, shuffle_step: 0.2 },
   collapsed: {},
   collapsed_drag: {},
   crouch: {},
@@ -400,7 +408,7 @@ export const fadeSecs: Record<
   crouch_walk: {},
   drop: {},
   drop_left: {},
-  idle: { shuffle: 0.15 },
+  idle: { shuffle: 0.15, shuffle_step: 0.2 },
   lie: { lie_left: 0.5, lie_right: 0.5 },
   lie_left: { lie: 0.5, lie_right: 0.6 },
   lie_pacified: {},
@@ -427,6 +435,11 @@ export const fadeSecs: Record<
   run_strafe_right: {},
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
+  /** Slower to rest than to start, so the legs settle out of their last step */
+  shuffle_step: { breathe: 0.4, idle: 0.4 },
+  shuffle_step_back: {},
+  shuffle_step_left: {},
+  shuffle_step_right: {},
   sit: {},
   sit_pacified: {},
   sit_pain_head: {},
@@ -575,6 +588,10 @@ export const gaitStride = {
   run_strafe_right: 0.8,
   run_backwards: 1,
   run_strafe_left: 0.8,
+  shuffle_step: 0.12,
+  shuffle_step_right: 0.12,
+  shuffle_step_back: 0.12,
+  shuffle_step_left: 0.12,
 };
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
 export const strafeSpeed = {
@@ -595,6 +612,11 @@ export const strafeSpeed = {
   run_strafe_right: 1.7,
   run_backwards: 1.7,
   run_strafe_left: 1.7,
+  /** A short move's, each way: the crowd slows it near the target, so it peaks far lower */
+  shuffle_step: agentConfig.maxSpeed.shuffle,
+  shuffle_step_right: agentConfig.maxSpeed.shuffle,
+  shuffle_step_back: agentConfig.maxSpeed.shuffle,
+  shuffle_step_left: agentConfig.maxSpeed.shuffle,
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

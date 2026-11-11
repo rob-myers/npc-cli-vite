@@ -82,7 +82,8 @@ export function createPhaserResources() {
   // additive, glowing over a dark floor — `Phasers.syncTheme` lays them over a pale one instead
   const glowOpts = { depthWrite: false, forceSinglePass: true, blending: THREE.AdditiveBlending };
   const mats = [
-    new THREE.MeshBasicNodeMaterial({ transparent: true }),
+    // opaque, else drawn after the walls and over them
+    new THREE.MeshBasicNodeMaterial(),
     new THREE.MeshBasicNodeMaterial({ transparent: true, ...glowOpts, side: THREE.DoubleSide }),
     // seen through whomever it is in, e.g. a body part targeted from their far side
     new THREE.MeshBasicNodeMaterial({ transparent: true, ...glowOpts, depthTest: false }),
@@ -167,7 +168,8 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
     const beamColor = color.mul(gain.min(1));
     const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), beamColor, vArmed);
     const body = mix(gunColor.mul(vShade), emitter, vGlow).add(beamColor.mul(vCharged));
-    return vec4(body.mul(edge.mul(edgeDarken).oneMinus()), a);
+    // opaque, so it fades to black as the body does
+    return vec4(body.mul(edge.mul(edgeDarken).oneMinus()).mul(a), 1);
   })();
 
   return { vertexNode, colorNode };

@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 668" width="760" height="668" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+    <marker id="fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/>
+    </marker>
+  </defs>
+  <rect width="760" height="668" rx="10" fill="#1b1d22"/>
+  <text x="24" y="30" fill="#e6e6e6" font-size="15" font-weight="600">coming: the stages, per walker, each tick</text>
+
+  <!-- for each candidate: rows 3 to 7 -->
+  <path d="M48,178 L36,178 L36,488 L48,488" fill="none" stroke="#9aa0a6" stroke-width="1.5"/>
+  <text x="28" y="333" fill="#9aa0a6" font-size="12" text-anchor="middle" transform="rotate(-90 28 333)">for each candidate npc</text>
+
+  <!-- arrows down the spine -->
+  <g stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)">
+    <line x1="260" y1="96" x2="260" y2="114"/>
+    <line x1="260" y1="158" x2="260" y2="176"/>
+    <line x1="260" y1="220" x2="260" y2="238"/>
+    <line x1="260" y1="282" x2="260" y2="300"/>
+    <line x1="260" y1="344" x2="260" y2="362"/>
+    <line x1="260" y1="406" x2="260" y2="424"/>
+    <line x1="260" y1="468" x2="260" y2="486"/>
+    <line x1="260" y1="530" x2="260" y2="548"/>
+  </g>
+
+  <!-- stage rows: x 60..460, h 44 -->
+  <g>
+    <rect x="60" y="52" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="70" fill="#e6e6e6" font-weight="600">1  due</text>
+    <text x="76" y="87" fill="#9aa0a6" font-size="12">due a look, still moving, and not sidestep's own move</text>
+
+    <rect x="60" y="114" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="132" fill="#e6e6e6" font-weight="600">2  candidates</text>
+    <text x="76" y="149" fill="#9aa0a6" font-size="12">npcs in their room, and beyond open doors their path crosses</text>
+
+    <rect x="60" y="176" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="194" fill="#e6e6e6" font-weight="600">3  box</text>
+    <text x="76" y="211" fill="#9aa0a6" font-size="12">|dx| ≤ reach and |dy| ≤ reach</text>
+
+    <rect x="60" y="238" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="256" fill="#e6e6e6" font-weight="600">4  ahead</text>
+    <text x="76" y="273" fill="#9aa0a6" font-size="12">in front of the walker's heading</text>
+
+    <rect x="60" y="300" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="318" fill="#e6e6e6" font-weight="600">5  free</text>
+    <text x="76" y="335" fill="#9aa0a6" font-size="12">not yet asked this approach, and whyNot is null</text>
+
+    <rect x="60" y="362" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="380" fill="#e6e6e6" font-weight="600">6  on course</text>
+    <text x="76" y="397" fill="#9aa0a6" font-size="12">within 0.3m of the walker's path (collideNear)</text>
+
+    <rect x="60" y="424" width="400" height="44" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="442" fill="#e6e6e6" font-weight="600">7  soon</text>
+    <text x="76" y="459" fill="#9aa0a6" font-size="12">reached within 0.7s, and the walker's destination isn't before them</text>
+
+    <rect x="60" y="486" width="400" height="44" rx="22" fill="#1f3a2c" stroke="#4ec98a"/>
+    <text x="76" y="504" fill="#4ec98a" font-weight="600">passed-coming: yield { walker, npc, eta }</text>
+    <text x="76" y="521" fill="#9aa0a6" font-size="12">makeWay: a step from the worker, taken if still free</text>
+
+    <rect x="60" y="548" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="76" y="566" fill="#e6e6e6" font-weight="600">8  next look</text>
+    <text x="76" y="583" fill="#9aa0a6" font-size="12">when the nearest candidate could first be in reach:</text>
+    <text x="76" y="598" fill="#9aa0a6" font-size="12">(nearest − 2 × radius) / maxSpeed − 0.7s, held to 0.1s … 1s</text>
+  </g>
+
+  <!-- fails -->
+  <g stroke="#e06c6c" stroke-width="1.5" marker-end="url(#fail)">
+    <line x1="460" y1="74" x2="518" y2="74"/>
+    <line x1="460" y1="198" x2="518" y2="198"/>
+    <line x1="460" y1="260" x2="518" y2="260"/>
+    <line x1="460" y1="322" x2="518" y2="322"/>
+    <line x1="460" y1="384" x2="518" y2="384"/>
+    <line x1="460" y1="446" x2="518" y2="446"/>
+  </g>
+  <g font-size="12">
+    <rect x="524" y="62" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="78" fill="#f0a0a0">not due: skip this walker</text>
+    <rect x="524" y="186" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="202" fill="#f0a0a0">failed-box: too far yet</text>
+    <rect x="524" y="248" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="264" fill="#f0a0a0">failed-ahead: falling away</text>
+    <rect x="524" y="310" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="326" fill="#f0a0a0">failed-free: asked, or busy</text>
+    <rect x="524" y="372" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="388" fill="#f0a0a0">failed-course: won't meet</text>
+    <rect x="524" y="434" width="212" height="24" rx="12" fill="#3a2426"/>
+    <text x="536" y="450" fill="#f0a0a0">failed-soon: not in 0.7s</text>
+  </g>
+  <text x="524" y="140" fill="#9aa0a6" font-size="12">the first stage failed is tallied</text>
+  <text x="524" y="156" fill="#9aa0a6" font-size="12">for sidestep status</text>
+
+  <text x="24" y="632" fill="#9aa0a6" font-size="12">heldUp, the fallback each tick, for what coming misses: crowd neighbours within 0.7m,</text>
+  <text x="24" y="648" fill="#9aa0a6" font-size="12">ahead, on the path within both radii + 0.1m, the walker below half speed for lingerSecs.</text>
+</svg>

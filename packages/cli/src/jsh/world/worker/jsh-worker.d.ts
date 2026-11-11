@@ -121,16 +121,6 @@ declare namespace WW {
         a: string;
         /** Who is seen: a spot or an npc */
         b: string;
-      }
-    | {
-        /** The spot nearest `npc` in their rooms clear of a walker's `path` and of `others`, or `null` */
-        q: "makeWay";
-        /** Who makes way */
-        npc: string;
-        /** The walker's way: where they are, then their next corners */
-        path: Geom.VectJson[];
-        /** Where others stand or are stepping to */
-        others: Geom.VectJson[];
       };
 
   /** A spot in world coords; `sees` counts the spots it sees */
@@ -225,7 +215,56 @@ declare namespace WW {
         /** The room wanted round each: from walls and doorways, and from everyone else */
         by: { walls: number; npcs: number };
       }
-    | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson };
+    | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson }
+    | {
+        /** How `npc` makes way for `walker`, as `kind` — see `worker/sidestep.ts` */
+        key: "sidestep";
+        kind: SidestepYield;
+        /** Each kind's limits, as the hud's debug item tunes them */
+        tune: SidestepTune;
+        /** `dragged`: collapsed and scooting */
+        npc: NpcQuery & { dragged: boolean };
+        /** `path`: where they are, then their next corners. `heading`: the way they mean to go, if known */
+        walker: NpcQuery & { path: Geom.VectJson[]; heading: null | Geom.VectJson };
+        /** Where others stand or are stepping to */
+        others: Geom.VectJson[];
+      };
+
+  /** How an idle npc makes way for a walker */
+  type SidestepYield = "aside" | "turn" | "shuffle" | "back" | "wall" | "doorway" | "stand";
+
+  /** What a `--debug` line shows, coloured per theme by `sidestep`'s `debugPalette` */
+  type SidestepRole = "path" | "probe" | "wall" | "step" | "face" | "back" | "clear" | "passed";
+
+  /** Each kind's limits in metres: how far they step, or how far they look for room */
+  type SidestepTune = {
+    aside: { by: number };
+    turn: { by: number };
+    shuffle: { by: number };
+    back: { narrow: number; max: number };
+    wall: { reach: number };
+    doorway: { reach: number; through: number };
+    stand: Record<string, never>;
+  };
+
+  /** How an npc makes way — see `worker/sidestep.ts` */
+  type SidestepPlan = {
+    kind: SidestepYield;
+    reason: string;
+    /** Where they step to, after `via` if given. `null` stays put: `stand`, else no room, as `reason` says */
+    to: null | Geom.VectJson;
+    via: null | Geom.VectJson;
+    /** Strafe there, facing the walker */
+    faceWalker: boolean;
+    /** Turn to `face` as the step begins, then strafe there, rather than turn once there */
+    faceFirst: boolean;
+    /** Shuffle there, keeping their facing */
+    shuffle: boolean;
+    /** What they face once there, else as they were */
+    face: null | Geom.VectJson;
+    /** What `sidestep --debug` draws: `[x, y, height]` on the xz plane, coloured by `role` for the theme */
+    draw: { points: [number, number, number][]; role: SidestepRole; discRadius?: number; dash?: number }[];
+  };
 
   type JshOpKey = JshOp["key"];
 
@@ -263,6 +302,7 @@ declare namespace WW {
     pad: (null | PadPlan)[];
     /** `to`, slid along the navmesh from where they stand — `null` off the mesh */
     nudge: null | Geom.VectJson;
+    sidestep: SidestepPlan;
   };
 
   /** A batch of spot queries, and the npcs they name */

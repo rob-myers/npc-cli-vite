@@ -147,15 +147,21 @@ server.registerTool(
   },
   async ({ since, level }) =>
     tryText(async () => {
-      await cdp.devMcp();
+      // what was buffered is told even if the page has hung
+      const alive = await cdp.alive(2000);
+      if (alive === true) await cdp.devMcp();
       const entries = cdp.console.filter((x) => x.seq > since && (level === undefined || x.level === level));
       const last = cdp.console.at(-1)?.seq ?? since;
       // a compile error is shown in vite's overlay rather than logged
-      const overlay = await cdp.evaluate<null | string>(
-        `document.querySelector("vite-error-overlay")?.shadowRoot?.querySelector(".message-body")?.textContent ?? null`,
-      );
+      const overlay =
+        alive === true
+          ? await cdp.evaluate<null | string>(
+              `document.querySelector("vite-error-overlay")?.shadowRoot?.querySelector(".message-body")?.textContent ?? null`,
+            )
+          : null;
       const lines = entries.map((x) => `[${x.seq} ${x.level}] ${x.text}`);
       if (overlay !== null) lines.push(`[vite-error-overlay] ${overlay}`);
+      if (alive === false) lines.push("[page not responding]");
       return `${lines.join("\n")}\n\n---\n${JSON.stringify({ since: last })}`;
     }),
 );
@@ -169,6 +175,22 @@ server.registerTool("shot", { description: "A screenshot of the page." }, async 
     return { content: [{ type: "text", text: `${e}` }], isError: true };
   }
 });
+
+server.registerTool(
+  "stack",
+  {
+    description:
+      "The page's JS call stack right now, innermost first, e.g. where a frozen page loops. Pauses it briefly. Lines are of Vite's served code",
+  },
+  async () => {
+    // no `userInputNote`: a hung page would never answer it
+    try {
+      return { content: [{ type: "text", text: (await cdp.stack()).join("\n") }] };
+    } catch (e) {
+      return { content: [{ type: "text", text: `${e}` }], isError: true };
+    }
+  },
+);
 
 await server.connect(new StdioServerTransport());
 

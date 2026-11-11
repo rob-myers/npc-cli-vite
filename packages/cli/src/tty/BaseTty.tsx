@@ -188,7 +188,8 @@ import type { ThemeName } from "@npc-cli/theme";
 
 /** Sparse, from colour 16: only `ansi.Grey` (248) is too pale for paper */
 const lightExtendedAnsi: string[] = [];
-lightExtendedAnsi[248 - 16] = "#6b6b6b";
+lightExtendedAnsi[248 - 16] = "#6b6b6b"; // grey -> darker grey
+lightExtendedAnsi[179 - 16] = "#9a5b00"; // yellow faint -> orange
 
 const xtermThemes: Record<ThemeName, ITheme> = {
   dark: {

@@ -100,6 +100,25 @@ declare namespace JshCli {
         graph: null | string;
       }
     | {
+        /** How `npcKey` made way for `walker`, or `none` and why not — jsh `sidestep` */
+        key: "sidestep";
+        npcKey: string;
+        walker: string;
+        kind: string;
+        /** Whether they found room to, as `kind` asked */
+        ok: boolean;
+        reason: string;
+        /** Lines `sidestep --debug` draws: `[x, y, height]` on the xz plane */
+        draw: {
+          points: [number, number, number][];
+          /** What it shows, which `--debug` colours for the theme */
+          role: string;
+          opacity?: number;
+          discRadius?: number;
+          dash?: number;
+        }[];
+      }
+    | {
         /** `by`'s psi acted on them, a placeholder */
         key: "psi-action";
         by: string;
@@ -249,6 +268,9 @@ declare namespace JshCli {
     skins?: string[];
   };
 
+  /** A debug item mounted on the hud from outside the World, e.g. by jsh, shown in the bar whilst hud debug is on */
+  type HudDebugItem = { key: string; title: string; Component: import("react").ComponentType };
+
   type MoveOpts = {
     npcKey: string;
     to: MaybeMeta<JshCli.PointAnyFormat>;
@@ -266,6 +288,8 @@ declare namespace JshCli {
     shove?: boolean;
     /** Fade onto or off a doable however far. Else only within `doableLook`, walking the rest */
     far?: boolean;
+    /** Shuffle however far, walking or not: else only a short move from rest does. `false` never — see `w.e.canShuffle` */
+    shuffle?: boolean;
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {

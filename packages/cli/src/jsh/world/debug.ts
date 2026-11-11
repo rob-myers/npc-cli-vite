@@ -1,3 +1,4 @@
+import { getFirstUnknownNaked } from "./core";
 import { npcQuery, plan } from "./plan.main";
 
 /**
@@ -5,6 +6,7 @@ import { npcQuery, plan } from "./plan.main";
  * Sans npc, takes it down.
  * ```sh
  * debug_boundary npc:rob
+ * debug_boundary rob
  * debug_boundary
  * ```
  */
@@ -12,14 +14,14 @@ export async function debug_boundary(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  if (opts.npcKey === undefined) {
-    w.debug.setLocalBoundary([]);
-    w.view.forceUpdate();
-    return;
-  }
-  // exactly as `park` asks, so what is drawn is what it would see
-  const segs = await plan({ api, w, op: { key: "boundary", npc: npcQuery(w, w.npc.get(opts.npcKey)) } });
-  w.debug.setLocalBoundary(segs.map((s) => [s[0], s[2], s[3], s[5]]));
+  opts.npcKey ??= getFirstUnknownNaked(opts);
+  w.debug.setLocalBoundary(
+    opts.npcKey === undefined
+      ? []
+      : (await plan({ api, w, op: { key: "boundary", npc: npcQuery(w, w.npc.get(opts.npcKey)) } })).map(
+          ([x, , z, x1, , z1]) => [x, z, x1, z1],
+        ),
+  );
   w.view.forceUpdate();
 }
 

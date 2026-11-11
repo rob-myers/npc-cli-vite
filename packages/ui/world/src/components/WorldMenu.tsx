@@ -3,7 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { Select } from "@base-ui/react/select";
 import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
@@ -29,7 +29,7 @@ import {
 import debounce from "debounce";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import type React from "react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { Fragment, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import { compilingShadersText, defaultBrightness } from "../const.env";
@@ -268,6 +268,7 @@ export function WorldMenu() {
   }, []);
 
   const isDebugActive = (item: string) => {
+    if (item.startsWith(hudDebugPrefix)) return w.debug?.hudDebugShown.includes(item.slice(hudDebugPrefix.length));
     switch (item) {
       case "view pick":
         return w.view.objectPick?.value === 1;
@@ -303,8 +304,8 @@ export function WorldMenu() {
         return w.spots?.shown ?? false;
       case "context menu":
         return w.debug?.contextMenu ?? false;
-      case "hud debug":
-        return w.debug?.hudDebug ?? false;
+      case "hud bar":
+        return w.hud?.getLayout() === "bar";
       case "hud left":
         return w.hud?.getLayout() === "left";
       case "hud right":
@@ -315,6 +316,17 @@ export function WorldMenu() {
   };
 
   const onDebugToggle = (item: string) => {
+    if (item.startsWith(hudDebugPrefix)) {
+      const key = item.slice(hudDebugPrefix.length);
+      const shown = w.debug.hudDebugShown;
+      const next = shown.includes(key) ? shown.filter((k) => k !== key) : [...shown, key];
+      w.debug.set({ hudDebugShown: next });
+      if (key === "phaser" && next.includes(key) === false) w.debug.set({ forceShot: "hit" }); // hidden, back to hitting
+      store.patch({ hudDebugShown: next });
+      w.hud?.update();
+      state.update();
+      return;
+    }
     switch (item) {
       case "view pick":
         w.view.toggleViewPick();
@@ -403,19 +415,11 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "hud debug": {
-        const next = !w.debug?.hudDebug;
-        w.debug?.set({ hudDebug: next, forceShot: "hit" }); // hidden, back to hitting
-        store.patch({ hudDebug: next });
-        w.hud?.update();
-        state.update();
-        break;
-      }
+      case "hud bar":
       case "hud left":
       case "hud right": {
-        // one side at most: unticking the side puts the bar back along the bottom
-        const side = item === "hud left" ? "left" : "right";
-        const next: HudLayout = w.hud.getLayout() === side ? "bar" : side;
+        // exactly one: picking the current layout again leaves it
+        const next = item.slice("hud ".length) as HudLayout;
         w.debug?.set({ hudLayout: next });
         store.patch({ hudLayout: next });
         w.hud.update();
@@ -695,7 +699,12 @@ export function WorldMenu() {
                     />
                   );
                 }
-                const group = item in debugGroups ? debugGroups[item as DebugGroup] : null;
+                const group =
+                  item === "hud"
+                    ? [...hudDebugItems(w.hud?.debugItems ?? []), ...debugGroups.hud]
+                    : item in debugGroups
+                      ? debugGroups[item as DebugGroup]
+                      : null;
                 const active = group?.map(({ value }) => value).filter(isDebugActive);
                 return group !== null && active !== undefined ? (
                   <MenuMultiSelect
@@ -1652,9 +1661,9 @@ const debugGroups = {
     value,
   })),
   hud: [
-    { key: "debug", value: "hud debug" },
-    { key: "left", value: "hud left" },
-    { key: "right", value: "hud right" },
+    { key: "bar", value: "hud bar", section: "layout" },
+    { key: "left", value: "hud left", section: "layout" },
+    { key: "right", value: "hud right", section: "layout" },
   ],
   "door ui": [
     { key: "pick", value: "pick doors" },
@@ -1664,8 +1673,22 @@ const debugGroups = {
 
 type DebugGroup = keyof typeof debugGroups;
 
+/** A "hud" option showing one of the bar's debug controls, by its key */
+const hudDebugPrefix = "hud debug ";
+
+/** The "hud" options showing the bar's debug controls: the phaser's shot badge, and each item mounted from outside */
+const hudDebugItems = (mounted: JshCli.HudDebugItem[]) => [
+  { key: "phaser", value: `${hudDebugPrefix}phaser`, section: "debug" },
+  ...mounted.map(({ key, title }) => ({ key: title, value: `${hudDebugPrefix}${key}`, section: "debug" })),
+];
+
 /** Debug options that each open a modal, picked from "modals" */
 const modalItems = ["graphs", "room hit", "skins"].map((value) => ({ key: value, value }));
+
+/** A section's label in a multiselect's popup, e.g. the "hud" select's "layout" */
+const sectionLabelClass = tw(
+  "mt-1 border-t border-neutral-700 px-2 pt-1 text-[0.6rem] uppercase tracking-wider text-neutral-500",
+);
 
 const debugButtonClassName = (touch: boolean, active: boolean) =>
   cn(
@@ -1738,7 +1761,7 @@ export function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+          <Select.Popup className="min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
               {items.map((item) => (
                 <Select.Item
@@ -1761,7 +1784,7 @@ export function MenuSelect<T extends string>({
   );
 }
 
-/** Like `MenuSelect`, but each item toggles, and the popup stays open */
+/** Like `MenuSelect`, but each item toggles, and the popup stays open. An item's `section` is labelled where it starts */
 function MenuMultiSelect<T extends string>({
   className,
   items,
@@ -1771,7 +1794,7 @@ function MenuMultiSelect<T extends string>({
   onValueChange,
 }: {
   className?: string;
-  items: { key: string; value: T; disabled?: boolean }[];
+  items: { key: string; value: T; disabled?: boolean; section?: string }[];
   label: string;
   side?: "left" | "right" | "bottom" | "top";
   value: T[];
@@ -1795,20 +1818,24 @@ function MenuMultiSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+          <Select.Popup className="min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
-              {items.map((item) => (
-                <Select.Item
-                  key={item.key}
-                  value={item.value}
-                  disabled={item.disabled}
-                  className={cn(
-                    selectItemClassName(touch, value.includes(item.value)),
-                    "data-disabled:opacity-40 data-disabled:cursor-default",
+              {items.map((item, i) => (
+                <Fragment key={item.key}>
+                  {item.section !== undefined && item.section !== items[i - 1]?.section && (
+                    <div className={sectionLabelClass}>{item.section}</div>
                   )}
-                >
-                  <Select.ItemText>{item.key}</Select.ItemText>
-                </Select.Item>
+                  <Select.Item
+                    value={item.value}
+                    disabled={item.disabled}
+                    className={cn(
+                      selectItemClassName(touch, value.includes(item.value)),
+                      "data-disabled:opacity-40 data-disabled:cursor-default",
+                    )}
+                  >
+                    <Select.ItemText>{item.key}</Select.ItemText>
+                  </Select.Item>
+                </Fragment>
               ))}
             </Select.List>
           </Select.Popup>

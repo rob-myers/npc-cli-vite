@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "7610b1fc-5640-4be9-9cc4-d10b410ec788",
@@ -144,7 +144,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "d9f4dff8-0c97-431e-8cd5-0d3ef956c9c2",
@@ -252,7 +252,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "a0962b62-a9fe-4d53-afa1-9c6c5061335f",
@@ -311,7 +311,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 40},
           "type": "rect",
-          "baseRect": {"width": 32, "height": 4},
+          "baseRect": {"width": 30, "height": 4},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 40)"
         },
         {
@@ -321,7 +321,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 79},
           "type": "rect",
-          "baseRect": {"width": 32, "height": 4},
+          "baseRect": {"width": 30, "height": 4},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 79)"
         }
       ]

@@ -43,6 +43,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       keyedListener: new Map(),
       keyedTick: new Map(),
       litRooms: new Map(),
+      movesBegun: new WeakMap(),
       timers: new Set(),
       npcToAccess: {},
       npcToDoors: {},
@@ -113,14 +114,22 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
       },
-      async canFade(npc, dst, groundPoint, doResult, far) {
+      canFade(npc, dst, groundPoint, doResult, far) {
         if (state.frontAllows(npc, dst, doResult) === false) return false;
         if (far === true) return true;
         if (npc.distanceTo(groundPoint) > w.npc.config.dist.doableLook) return false;
         // only a fade onto or off a doable heeds walls
         if (doResult.type === "use-current" || (doResult.type === "none" && npc.agentId !== null)) return true;
-        const { hit, hitDoor } = await state.raycast(npc.point, groundPoint);
-        return hit === null && hitDoor === null;
+        return state.raycast(npc.point, groundPoint).then(({ hit, hitDoor }) => hit === null && hitDoor === null);
+      },
+      canShuffle(npc, groundPoint, { fast, backwards, shuffle }) {
+        const { anim, position } = npc;
+        if (shuffle === false || npc.agent === null || anim.dragged === true || anim.crouched === true) return false;
+        if (shuffle === true) return true;
+        const manhattan = Math.abs(groundPoint.x - position.x) + Math.abs(groundPoint.y - position.z);
+        // from rest: one walking walks on, e.g. wasd's steps clamped short by a wall
+        if (npc.isMoving() === true || manhattan >= w.npc.config.dist.shuffleTarget) return false;
+        return fast !== true && backwards !== true;
       },
       chainKey(npcKey, itemKey) {
         const had = state.carried[npcKey];
@@ -292,6 +301,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const transform: Geom.SixTuple = [a, b, c, d, at.x - (a * halfW + c * halfH), at.y - (b * halfW + d * halfH)];
         return { ...def, key, transform, y3d: at.y3d + (def.meta?.h ?? decorCuboidHeight) }; // its top: stood on it
       },
+      getMoveId(npc) {
+        const moveId = (state.movesBegun.get(npc) ?? 0) + 1;
+        state.movesBegun.set(npc, moveId);
+        return moveId;
+      },
       getNpcsInReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
         if (at === undefined) return [];
@@ -364,9 +378,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         // so can resume doable or nav
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
+        const moveId = state.getMoveId(npc);
         npc.rejectAll(new Error("move again"));
         const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
-        if (npc.last.dst !== dst) return; // another move took them over
+        if (state.moveOverridden(npc, moveId)) return;
 
         // doable overrides navigable
         if (doResult.type !== "none") {
@@ -382,12 +397,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
           }
           await state.stepOff(npc, groundPoint);
-          if (npc.last.dst !== dst) {
-            return; // another move took them over
-          }
+          if (state.moveOverridden(npc, moveId)) return;
         }
 
-        await state.walkTo(npc, groundPoint, result, opts);
+        if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
+        await state.walkTo(npc, groundPoint, result, opts, moveId);
+      },
+      moveFailed(npc, e) {
+        if (e instanceof Error && e.message === "move again") {
+          return; // interrupting move owns npc now
+        }
+        if (!(e instanceof Error && e.message === "look again")) {
+          npc.anim.startIdle({ force: true }); // delegated to look
+        }
+        w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
+        throw e;
       },
       async moveOntoDoable(npc, dst, doResult, fades, { fast, strafe }) {
         /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
@@ -417,6 +441,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           await npc.look({ at: dst, minMs: time.look * 1000 });
         }
         await npc.fadeSpawn({ at: dst });
+      },
+      moveOverridden(npc, moveId) {
+        return (state.movesBegun.get(npc) ?? 0) !== moveId;
       },
       moveTarget(npcKey, to, near) {
         let groundPoint = helper.parseGroundPoint(to);
@@ -921,6 +948,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "npc-hurt":
           case "npc-shot":
           case "psi-action":
+          case "sidestep":
           case "speech":
           case "stopped-moving":
             break;
@@ -1437,6 +1465,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
         }
       },
+      async shuffleTo(npc, groundPoint, result) {
+        w.npc.setNpcDo(npc.key, null); // in case do=stand
+        try {
+          npc.anim.aimAt({ groundPoint, result });
+          npc.anim.startShuffle(groundPoint);
+          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
+          await new Promise<string>((resolve, reject) => {
+            npc.resolve.move = resolve;
+            npc.reject.move = reject;
+          });
+        } catch (e) {
+          state.moveFailed(npc, e);
+        }
+      },
       async stepOff(npc, toward) {
         const front = state.frontOf(w.npc.npcToDoable[npc.key]);
         const beside = await state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey, front);
@@ -1672,7 +1714,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       wait(secs) {
         return new Promise((resolve) => void state.after(secs, resolve));
       },
-      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }) {
+      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }, moveId) {
         const { config } = w.npc;
         w.npc.setNpcDo(npc.key, null); // in case do=stand
 
@@ -1681,6 +1723,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         try {
           // navigation unreachable relative to locked doors?
           const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
+          // else this move's resolver replaces the newer one's, which never settles
+          if (state.moveOverridden(npc, moveId)) return;
           npc.last.unreachableResult = unreachableResult;
 
           if (unreachableResult !== null) {
@@ -1707,6 +1751,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
           if (dragged === false) await w.npc.turnBeforeMoving(npc); // a look throws "hurt"
+          if (state.moveOverridden(npc, moveId)) return;
           npc.anim.startMoving(arrive);
 
           w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
@@ -1716,14 +1761,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npc.reject.move = reject;
           });
         } catch (e) {
-          if (e instanceof Error && e.message === "move again") {
-            return; // interrupting move owns npc now
-          }
-          if (!(e instanceof Error && e.message === "look again")) {
-            npc.anim.startIdle({ force: true }); // delegated to look
-          }
-          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
-          throw e;
+          state.moveFailed(npc, e);
         }
       },
     }),
@@ -1789,6 +1827,8 @@ export type State = {
   revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
   /** The others in their room, and in the rooms up to `doors` open doors away: whom they could walk to */
+  /** A new move's id, counting `npc`'s moves begun, for `moveOverridden` */
+  getMoveId(npc: Npc): number;
   getNpcsInReach(npcKey: string, doors?: number): Npc[];
   /** The rooms in view from `grKey`, through doors seen through and windows they vouch for — see `fade-rooms.ts` */
   roomsInView(grKey: Geomorph.GmRoomKey): Geomorph.GmRoomId[];
@@ -1827,6 +1867,11 @@ export type State = {
   keyedListener: Map<string, (event: JshCli.Event, world: JshCli.WorldState) => void>;
   /** Run after every npc tick, so whilst the World is unpaused — see `addKeyedTick` */
   keyedTick: Map<string, (world: JshCli.WorldState) => void>;
+  /**
+   * How many moves each npc has begun. A move that awaits stops if another has begun meanwhile.
+   * Not `last.dst`, which `moveOntoDoable` points back at the doable whilst it walks them beside it
+   */
+  movesBegun: WeakMap<Npc, number>;
   /** Game-time timers, run after each npc tick — see `after` */
   timers: Set<{ at: number; fn: () => void }>;
   /**
@@ -1876,14 +1921,19 @@ export type State = {
   /** Runs `tick` after every npc tick, e.g. from jsh. Can use `key` to avoid duplication */
   addKeyedTick(key: string, tick: (w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
-  /** Whether near enough to fade onto or off a doable, from its front if it needs, with no wall or shut door between. Else they walk the rest */
+  /**
+   * Whether near enough to fade onto or off a doable, from its front if it needs, with no wall or shut door between.
+   * Else they walk the rest. A promise only when it casts a ray
+   */
   canFade(
     npc: Npc,
     dst: Geom.VectJson,
     groundPoint: Geom.VectJson,
     doResult: JshCli.FindDoMetaResult,
     far?: boolean,
-  ): Promise<boolean>;
+  ): boolean | Promise<boolean>;
+  /** A move short of `dist.shuffleTarget`, from rest and stood, else any with `shuffle`: it shuffles rather than walks */
+  canShuffle(npc: Npc, groundPoint: Geom.VectJson, opts: JshCli.MoveOpts): boolean;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(
     srcGrKey: Geomorph.GmRoomKey,
@@ -1917,6 +1967,8 @@ export type State = {
   frontAllows(npc: Npc, dst: Geom.VectJson, doResult: JshCli.FindDoMetaResult): boolean;
   /** The way a `meta.front-only` doable faces: it is taken and left only from in front */
   frontOf(decorKey: undefined | null | string): null | Geom.VectJson;
+  /** A move's error: ends it, as idle and `stopped-moving`, and rethrows. A new move owns them, so is swallowed */
+  moveFailed(npc: Npc, e: unknown): void;
   /** Onto the doable `dst`: faded on, unless `fades` walking up beside it first. Stops if another move takes over */
   moveOntoDoable(
     npc: Npc,
@@ -1925,6 +1977,8 @@ export type State = {
     fades: boolean,
     opts: JshCli.MoveOpts,
   ): Promise<void>;
+  /** Whether a move begun since the one `moveId` names has taken them over */
+  moveOverridden(npc: Npc, moveId: number): boolean;
   /** Where `to` is on the ground and the navmesh, and the doable it picks, if any */
   moveTarget(
     npcKey: string,
@@ -1937,6 +1991,12 @@ export type State = {
   };
   /** The navigable point nearest `p`, within `within` metres, if any */
   navNear(p: Geom.VectJson, within?: 0.1 | 4): null | Geom.VectJson;
+  /** Steps them on the spot to `groundPoint`, a short way, keeping their facing — see `canShuffle` */
+  shuffleTo(
+    npc: Npc,
+    groundPoint: Geom.VectJson,
+    result: ReturnType<WorldState["npc"]["getClosestPoly"]>,
+  ): Promise<void>;
   /** Fades `npc` off their doable, beside it on the way to `toward`: in front, if `meta.front-only` */
   stepOff(npc: Npc, toward: Geom.VectJson): Promise<void>;
   /** Walks them to `groundPoint`, else as near a locked door in the way as they can. Interruptible by the next move */
@@ -1945,6 +2005,8 @@ export type State = {
     groundPoint: Geom.VectJson,
     result: ReturnType<WorldState["npc"]["getClosestPoly"]>,
     opts: JshCli.MoveOpts,
+    /** From `getMoveId` in `move`: a newer move ends this one */
+    moveId: number,
   ): Promise<void>;
   /**
    * @param planning asks whether they COULD pass it, rather than whether they could pass it from

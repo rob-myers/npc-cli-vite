@@ -38,6 +38,7 @@ Pnpm monorepo. Key packages:
 - A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
 - A modal opened from a ui panel stays inside that panel, never over the whole page. Portal it into the panel's root (base-ui `Dialog.Portal container`) and position it `absolute`, not `fixed`.
 - `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.
+  - Keep mutable data in it, not at module level, e.g. `movesBegun` in `use-world-events`. Its fields survive a hot reload, and new ones are added. A module-level `const` is made afresh, so in-flight work and fresh code see different copies.
 - A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
 - Geometry in 2D uses `x/y` on the xz world plane: `y` in 2D is `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) convert.
 
@@ -71,6 +72,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. Also how to make a skin: classic arms, opaque overlays, the face layout. |
 | Slices and eyes | `docs/skin-slices.md` | A slice is a face-sized piece of texture drawn over a skin's face. Each holds that skin's eyes one way: `shut`, `up`, `scared`... An npc's eyes are one uniform, the slice shown (`pose rob eyes:shut`, `blink:2`). None is drawn by hand: the dev server finds each skin's eyes in its png (`meta.eyes`), and a DEV World draws the slices and saves `sheet/skin-slices.N.png`. |
 | Strafing | `docs/npc-strafe.md` | Whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing. `syncStrafe` blends four directional gaits by heading, paced to the ground each covers. |
+| Sidestep | `docs/sidestep.md` | jsh `sidestep` has idle npcs make way for a walker coming at them (`SidestepLookout`, `sidestep status`). A `sidestep` op on the fast worker works out `aside`, `turn`, `shuffle`, `back`, `wall`, `doorway` or `stand`, the kind and its tuning set by its hud debug item (`sidestep-debug.tsx`, mounted by `w.hud.addDebugItem`) or `sidestep kind:wall reach:2`. `sidestep --debug` says and draws each choice. |
 | Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
 | Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their menu (`PickMenu`). |
 | navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
@@ -113,7 +115,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - A double tap of the w, a, s or d key runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
-- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held aims (`w.phasers.steady`): the left hand steadies it, and the view extends along the muzzle's line to the first wall or door (a far look). Raised, `f` held charges it (the gun brightens and shakes a little), and let go fires, the beam fuller by the charge. So a click whilst aiming still picks, e.g. the floor or a switch. `e` whilst charging cancels into a cooldown, the phaser left raised. On touch, raised, a finger held anywhere, then a second after `fireTouchDelayMs`, charges where they face, and letting it go fires (`onFireTouch`). Or the fire button, after the bar's own buttons or at a column's foot (hidden whilst lowered, keeping its place): held, it charges, and let go, fires. Space with the phaser lowered is a far look alone. See `docs/engagements.md`.
+- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held aims (`w.phasers.steady`): the left hand steadies it, and the view extends along the muzzle's line to the first wall or door (a far look). Raised, `m` held charges it (the gun brightens and shakes a little), and let go fires, the beam fuller by the charge. So a click whilst aiming still picks, e.g. the floor or a switch. `e` whilst charging cancels into a cooldown, the phaser left raised. On touch, raised, a finger held anywhere, then a second after `fireTouchDelayMs`, charges where they face, and letting it go fires (`onFireTouch`). Or the fire button, after the bar's own buttons or at a column's foot (hidden whilst lowered, keeping its place): held, it charges, and let go, fires. Space with the phaser lowered is a far look alone. See `docs/engagements.md`.
 - **Closing the page.** Ctrl or cmd with the w-key closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**
   - A **look**: on touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
@@ -133,6 +135,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
 - **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
+- **A short move shuffles.** From rest, stood, a move within `dist.shuffleTarget` (0.25m, Manhattan) shuffles rather than walks: the four `shuffle_step` clips, blended by heading as a strafe's are (`docs/npc-strafe.md`), not the turn's `shuffle`, keeping their facing. It lands within `arriveMin`, where a walk stops short (`canShuffle`, `shuffleTo` in `use-world-events`). A move's `shuffle: true` (jsh `move --shuffle`) shuffles however far, `false` never.
 - **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
 
 **Workers** (see `docs/workers.md`):
@@ -218,6 +221,11 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`.
   - Tile N sub-panels with `uvCoord.x.mul(cols).fract()`, then detect seams with `step(seamW, subU).add(step(subU, seamW).clamp(0,1))`.
 - **`DerivedGmsData.findRoomIdContaining`** throws `"Value is not of type 'long'"` on NaN or Infinity, e.g. from a divide-by-zero in a normal. Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering.
+
+**`w.view.forceUpdate` runs a tick**
+- It runs `w.npc.onTick` and `w.e.postNpcTick`, keyed ticks included, then renders.
+- So never call it from code a tick or World event sets off, even on a microtask. The tick raises events, which call it again, and the page freezes. Ask for a frame with `w.r3f?.invalidate()` instead.
+- To find a freeze like this, call the MCP `stack` tool a few times (`docs/mcp.md`).
 
 **`wallSegs` and panel placement**
 - `wallSegs` are in **local geomorph space**, like `gm.rooms` and `gm.bounds`. Apply the instance `transform` before any world-space comparison.

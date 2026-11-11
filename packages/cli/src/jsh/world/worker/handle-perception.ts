@@ -12,6 +12,11 @@ export function setupPerception(msg: WW.JshSetup) {
   sight.doorRev++;
 }
 
+/** Whether a door is seen through, i.e. open */
+export function isDoorOpen(gdKey: string) {
+  return sight.open.has(gdKey);
+}
+
 export function setDoorSeenThrough({ gdKey, open }: Extract<WW.PerceptionMsgTo, { type: "perception-door" }>) {
   if (open) sight.open.add(gdKey);
   else sight.open.delete(gdKey);

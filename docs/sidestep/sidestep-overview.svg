@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="960" height="440" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+    <marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/>
+    </marker>
+  </defs>
+  <rect width="960" height="440" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">sidestep: idle npcs make way for walkers, then go back</text>
+
+  <!-- inputs -->
+  <g font-size="12" fill="#9aa0a6">
+    <rect x="30" y="50" width="168" height="26" rx="13" fill="#262a31" stroke="#3a404a"/>
+    <text x="114" y="67" text-anchor="middle">World events</text>
+    <rect x="396" y="50" width="168" height="26" rx="13" fill="#262a31" stroke="#3a404a"/>
+    <text x="480" y="67" text-anchor="middle">hud: kind, its tuning</text>
+    <rect x="762" y="50" width="168" height="26" rx="13" fill="#262a31" stroke="#3a404a"/>
+    <text x="846" y="67" text-anchor="middle">hud: back, clear, idle</text>
+  </g>
+  <g stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)">
+    <line x1="114" y1="76" x2="114" y2="98"/>
+    <line x1="480" y1="76" x2="480" y2="98"/>
+    <line x1="846" y1="76" x2="846" y2="98"/>
+  </g>
+
+  <!-- the five parts -->
+  <g>
+    <rect x="30" y="100" width="168" height="128" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="44" y="122" fill="#e6e6e6" font-weight="600">1  lookout</text>
+    <text x="44" y="142" fill="#9aa0a6" font-size="12">idle npcs along each</text>
+    <text x="44" y="158" fill="#9aa0a6" font-size="12">walker's path, soon met</text>
+    <text x="44" y="174" fill="#9aa0a6" font-size="12">or holding them up.</text>
+    <text x="44" y="190" fill="#9aa0a6" font-size="12">Looks only when due</text>
+    <text x="44" y="216" fill="#5aa0f0" font-size="12">→ coming, heldUp</text>
+
+    <rect x="213" y="100" width="168" height="128" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="227" y="122" fill="#e6e6e6" font-weight="600">2  makeWay</text>
+    <text x="227" y="142" fill="#9aa0a6" font-size="12">a worker step per npc</text>
+    <text x="227" y="158" fill="#9aa0a6" font-size="12">found, once an approach.</text>
+    <text x="227" y="174" fill="#9aa0a6" font-size="12">A ~0.1s pause to react,</text>
+    <text x="227" y="190" fill="#9aa0a6" font-size="12">then taken if still free</text>
+    <text x="227" y="216" fill="#5aa0f0" font-size="12">→ makeWay</text>
+
+    <rect x="396" y="100" width="168" height="128" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+    <text x="410" y="122" fill="#8cc0ff" font-weight="600">3  plan</text>
+    <text x="410" y="142" fill="#9aa0a6" font-size="12">on the nav worker: the</text>
+    <text x="410" y="158" fill="#9aa0a6" font-size="12">kind asked, if its route</text>
+    <text x="410" y="174" fill="#9aa0a6" font-size="12">keeps clear of the</text>
+    <text x="410" y="190" fill="#9aa0a6" font-size="12">walker. Else stay put</text>
+    <text x="410" y="216" fill="#5aa0f0" font-size="12">→ plan</text>
+
+    <rect x="579" y="100" width="168" height="128" rx="8" fill="#1f3a2c" stroke="#4ec98a"/>
+    <text x="593" y="122" fill="#4ec98a" font-weight="600">4  perform</text>
+    <text x="593" y="142" fill="#9aa0a6" font-size="12">strafe aside, facing</text>
+    <text x="593" y="158" fill="#9aa0a6" font-size="12">the walker, noting</text>
+    <text x="593" y="174" fill="#9aa0a6" font-size="12">home first</text>
+    <text x="593" y="216" fill="#5aa0f0" font-size="12">→ makeWay</text>
+
+    <rect x="762" y="100" width="168" height="128" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="776" y="122" fill="#e6e6e6" font-weight="600">5  returnBack</text>
+    <text x="776" y="142" fill="#9aa0a6" font-size="12"><tspan fill="#e6e6e6" font-weight="700">unless stay</tspan>: once the</text>
+    <text x="776" y="158" fill="#9aa0a6" font-size="12">walker is clear (1.5m),</text>
+    <text x="776" y="174" fill="#9aa0a6" font-size="12">or idle (1m) stopped,</text>
+    <text x="776" y="190" fill="#9aa0a6" font-size="12">back to last, or home</text>
+    <text x="776" y="216" fill="#5aa0f0" font-size="12">→ returnBack</text>
+  </g>
+
+  <!-- between them -->
+  <g stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)">
+    <line x1="198" y1="150" x2="211" y2="150"/>
+    <line x1="381" y1="150" x2="394" y2="150"/>
+    <line x1="564" y1="150" x2="577" y2="150"/>
+  </g>
+  <line x1="747" y1="150" x2="760" y2="150" stroke="#7a8290" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#next)"/>
+  <text x="754" y="94" fill="#9aa0a6" font-size="11" text-anchor="middle">later</text>
+
+  <!-- events down to output -->
+  <g stroke="#d8b46a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#yellow)" fill="none">
+    <line x1="114" y1="228" x2="114" y2="268"/>
+    <line x1="297" y1="228" x2="297" y2="268"/>
+    <line x1="663" y1="228" x2="663" y2="268"/>
+    <line x1="846" y1="228" x2="846" y2="268"/>
+  </g>
+  <g font-size="11" fill="#d8b46a">
+    <text x="120" y="252">why not</text>
+    <text x="303" y="252">the choice</text>
+    <text x="669" y="252">cut short</text>
+    <text x="852" y="252">returns</text>
+  </g>
+
+  <!-- output -->
+  <rect x="30" y="270" width="900" height="146" rx="10" fill="#2a2618" stroke="#d8b46a" stroke-opacity="0.6"/>
+  <text x="46" y="292" fill="#d8b46a" font-weight="600">sidestep events → sidestep --debug says each, and draws it for 4s</text>
+  <g font-size="12" fill="#9aa0a6">
+    <text x="46" y="316"><tspan fill="#4ec98a">kate avoided rob</tspan>: aside, coming 0.1s, spot g0r18-6 clear</text>
+    <text x="46" y="334"><tspan fill="#e06c6c">kate didn't avoid rob</tspan>: wall, held up, against the wall</text>
+    <text x="46" y="352"><tspan fill="#e06c6c">kate didn't avoid rob</tspan>: aside, step cut short: stuck</text>
+    <text x="46" y="370"><tspan fill="#4ec98a">kate returns</tspan>: home 0.8m after 2 steps, rob 1.6m off</text>
+    <text x="560" y="316">kate <tspan fill="#d8b46a">forgets home</tspan>: pushed 0.42m off</text>
+    <text x="560" y="334" fill="#e6e6e6">kate <tspan fill="#d8b46a">too busy for</tspan> rob</text>
+    <text x="560" y="352" fill="#e6e6e6">rob <tspan fill="#d8b46a">passed by</tspan> kate</text>
+  </g>
+  <text x="46" y="400" fill="#9aa0a6" font-size="11">sidestep status: what the lookout tested since last asked, and each home with why it hasn't gone back</text>
+</svg>

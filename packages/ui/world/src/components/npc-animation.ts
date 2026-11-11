@@ -86,6 +86,10 @@ export class NpcAnimation {
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
   moving = false;
+  /** Whilst a move short of `dist.shuffleTarget` steps on the spot — see `startShuffle` */
+  shuffling = false;
+  /** Whilst shuffling, the rest clip's upper body played on, as the shuffle keys the legs alone */
+  restUpper = null as null | { action: THREE.AnimationAction; clip: THREE.AnimationClip };
   /**
    * Arrive is `true` iff when npc moves it should slow down before final destination.
    * It can be set via `npc.move` or alternatively via `npc.preventArrive` during move.
@@ -205,8 +209,9 @@ export class NpcAnimation {
     return this.hurt?.key === "collapsed";
   }
 
-  /** The four directional gaits a strafe blends: by how low they crouch, else running or walking as `pose` shows */
+  /** The four directional gaits a strafe blends: a short move's, else by how low they crouch, else running or walking as `pose` shows */
   get gaitKeys() {
+    if (this.shuffling === true) return shuffleStepClipKeys;
     if (this.crouchLevel > 0) return gaitSets[this.crouchLevel];
     return isRun(this.pose) && this.backwards === false ? runStrafeClipKeys : strafeClipKeys;
   }
@@ -722,6 +727,13 @@ export class NpcAnimation {
       action.time = (prev.time / clips[this.pose].duration) * clips[next].duration;
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
+    const { restUpper } = this;
+    if (restUpper !== null && (shuffleStepClipKeys as AnimationClipKey[]).includes(next) === false) {
+      // the shuffle's legs give way: its upper body hands back, in step if to the clip it came from
+      if (clips[next] === restUpper.clip) action.time = restUpper.action.time;
+      restUpper.action.fadeOut(Math.max(fade, minFadeSecs));
+      this.restUpper = null;
+    }
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
@@ -805,6 +817,7 @@ export class NpcAnimation {
 
   startIdle({ force = false } = {}) {
     this.npc.resolve.move("idle");
+    if (this.shuffling === true) [this.shuffling, this.strafe] = [false, false];
 
     const skip = !this.arrive && !force;
     this.arrive = true;
@@ -828,7 +841,9 @@ export class NpcAnimation {
       const pinAhead = speed ** 2 / (2 * agentConfig.maxAcceleration.idle);
       const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
       const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
-      this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
+      const ahead = this.w.npc.getClosestPoly({ x: pinX, y: pinZ }, 0.1);
+      // past an edge they are pressed against, ahead is off the navmesh: pinned where they stand instead
+      if (this.npc.pinTo(ahead) === false) this.npc.pinTo(this.w.npc.getClosestPoly(this.npc.point, 0.1));
     }
 
     this.face.rate = 0;
@@ -845,6 +860,7 @@ export class NpcAnimation {
    * has no agent: its movement arrives over the network (see `use-world-net`)
    */
   startMoving(arrive = true) {
+    this.shuffling = false; // e.g. a walk taking over a shuffle
     const agent = this.npc.agent;
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
@@ -855,6 +871,43 @@ export class NpcAnimation {
     this.npc.last.moveTime = this.w.gameTime.now();
     this.arrive = arrive;
     this.showGait();
+  }
+
+  /** Steps whilst the crowd eases them a short way, keeping their facing: `syncStrafe` blends `shuffleStepClipKeys` by heading */
+  startShuffle(to: Geom.VectJson) {
+    const { agent } = this.npc;
+    if (agent !== null) {
+      agent.maxAcceleration = agentConfig.maxAcceleration.idle;
+      agent.maxSpeed = this.shuffleSpeed();
+    }
+    this.npc.last.moveTime = this.w.gameTime.now();
+    [this.arrive, this.backwards, this.strafe, this.strafing] = [true, false, true, false];
+    this.strafeFollowsAim = false; // else, not aiming, it is let go as a walk
+    this.shuffling = true;
+    this.moving = true;
+    this.moveClip = this.npc.clips.shuffle_step;
+    // the shuffle keys the legs alone: the rest clip carries on above them, from where it is
+    const restClip = this.npc.clips[this.restKey];
+    const upper = this.mixer.clipAction(upperOf(restClip)).reset().play();
+    upper.time = this.mixer.existingAction(restClip)?.time ?? 0;
+    this.restUpper = { action: upper, clip: restClip };
+    this.setPose("shuffle_step");
+    // stepping the way they go from the first step, rather than eased round from ahead
+    const { clips, position, rotation } = this.npc;
+    const heading = headingOf(rotation.y, to.x - position.x, to.y - position.z);
+    shuffleStepClipKeys.forEach((key, i) => void (this.mixer.clipAction(clips[key]).weight = gaitWeight(heading, i)));
+  }
+
+  /**
+   * A shuffle's top speed, `maxSpeed.shuffle` but for the crowd's slowdown within twice their radius of the target:
+   * there it scales speed by the distance, which this undoes to its root, so they ease in but arrive
+   */
+  shuffleSpeed() {
+    const { agent, position } = this.npc;
+    if (agent === null) return agentConfig.maxSpeed.shuffle;
+    const [tx, , tz] = agent.targetPosition;
+    const [d, r] = [Math.hypot(tx - position.x, tz - position.z), 2 * agent.radius];
+    return agentConfig.maxSpeed.shuffle * Math.sqrt(r / Math.min(r, Math.max(d, npcConfig.dist.arriveMin)));
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk. Strafing, by heading */
@@ -884,12 +937,8 @@ export class NpcAnimation {
       actions.forEach((action, i) => void (action.weight += ((i === 0 ? 1 : 0) - action.weight) * ease));
     } else if (Math.hypot(vx, vz) >= 0.05) {
       // creeping, their velocity swings about: the last weights are kept
-      const [sin, cos] = [Math.sin(rotation.y), Math.cos(rotation.y)];
-      const heading = Math.atan2(vx * cos - vz * sin, -vx * sin - vz * cos); // `0` ahead, `π/2` to their right
-      actions.forEach((action, i) => {
-        const target = Math.max(0, 1 - Math.abs(deltaAngle(heading, (i * Math.PI) / 2)) / (Math.PI / 2));
-        action.weight += (target - action.weight) * ease;
-      });
+      const heading = headingOf(rotation.y, vx, vz);
+      actions.forEach((action, i) => void (action.weight += (gaitWeight(heading, i) - action.weight) * ease));
     }
     const blend = (byKey: Record<GaitKey, number>, set: readonly GaitKey[] = keys) =>
       actions.reduce((sum, action, i) => sum + action.weight * byKey[set[i]], 0);
@@ -898,7 +947,7 @@ export class NpcAnimation {
     strafeTop.run = blend(strafeSpeed, runStrafeClipKeys);
     // as fast as that way allows, running whilst `fast`
     if (agent !== null && this.strafe === true)
-      agent.maxSpeed = this.fast === true ? strafeTop.run : blend(strafeSpeed);
+      agent.maxSpeed = this.shuffling ? this.shuffleSpeed() : this.fast === true ? strafeTop.run : blend(strafeSpeed);
 
     const [walk] = actions;
     // `tick`'s pace, a cycle per ground the blend covers
@@ -979,10 +1028,13 @@ export class NpcAnimation {
     this.tickRoomLit(delta);
 
     if (this.moving === true) {
-      this.syncGait(delta);
+      if (this.shuffling === false) this.syncGait(delta);
       const key = keyOf(this.moveClip);
       const action = this.mixer.clipAction(this.moveClip);
-      if (isCrouchGait(key)) {
+      if (this.shuffling === true) {
+        // at their speed, which the crowd eases to nothing: `syncStrafe` divides by the blend's stride
+        action.timeScale = Math.max(this.speed, shufflePaceMin);
+      } else if (isCrouchGait(key)) {
         // a cycle a stride, at their speed: a strafe divides by the blend's in `syncStrafe`
         const pace = Math.max(this.speed, crouchPaceMin);
         action.timeScale = this.strafing === true ? pace : pace / gaitStride[key];
@@ -1374,7 +1426,7 @@ function isRun(key: AnimationClipKey) {
 
 /** A pose that leaves the feet apart as it ends */
 function isStride(key: AnimationClipKey) {
-  return isGait(key) || key === "backwards";
+  return isGait(key) || key === "backwards" || (shuffleStepClipKeys as AnimationClipKey[]).includes(key);
 }
 
 /** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
@@ -1451,10 +1503,17 @@ const runStrafeClipKeys = [
   "run_backwards",
   "run_strafe_left",
 ] satisfies AnimationClipKey[];
+/** As `strafeClipKeys`, a short move's subtle steps — see `startShuffle` */
+const shuffleStepClipKeys = [
+  "shuffle_step",
+  "shuffle_step_right",
+  "shuffle_step_back",
+  "shuffle_step_left",
+] satisfies AnimationClipKey[];
 /** Each blend, by crouch level */
 const gaitSets = [strafeClipKeys, halfCrouchStrafeClipKeys, crouchStrafeClipKeys] as const;
-/** Every blend, running too */
-const strafeSets = [...gaitSets, runStrafeClipKeys] as const;
+/** Every blend, running and shuffling too */
+const strafeSets = [...gaitSets, runStrafeClipKeys, shuffleStepClipKeys] as const;
 type GaitKey = (typeof strafeSets)[number][number];
 /** What they rest in, by crouch level */
 const crouchIdleKeys = [defaultIdleAnimationClipKey, "crouch_half", "crouch_cover"] as const;
@@ -1464,6 +1523,19 @@ const crouchGaitKeys = new Set<AnimationClipKey>([...halfCrouchStrafeClipKeys, .
 const isCrouchGait = (key: AnimationClipKey): key is CrouchGaitKey => crouchGaitKeys.has(key);
 /** Metres a second a crouched gait is paced at, however slowly they creep */
 const crouchPaceMin = 0.2;
+/** The way `(dx, dz)` heads, relative to a facing of `rotationY`: `0` ahead, `π/2` to their right */
+function headingOf(rotationY: number, dx: number, dz: number) {
+  const [sin, cos] = [Math.sin(rotationY), Math.cos(rotationY)];
+  return Math.atan2(dx * cos - dz * sin, -dx * sin - dz * cos);
+}
+
+/** The weight of the `i`th of four directional gaits, clockwise from ahead, for `heading` */
+function gaitWeight(heading: number, i: number) {
+  return Math.max(0, 1 - Math.abs(deltaAngle(heading, (i * Math.PI) / 2)) / (Math.PI / 2));
+}
+
+/** Metres a second a shuffle is paced at as it stops, so its steps barely move */
+const shufflePaceMin = 0.02;
 
 const upperTracks = new WeakMap<
   THREE.AnimationClip,
@@ -1473,6 +1545,21 @@ const upperTracks = new WeakMap<
 const upperAddsTorso = new Set<string>(["sit_reach"]);
 /** The chest stays the pose's, though its lean is the clip's — see `tickUpper` */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
+
+/** Seconds at least a shuffle's upper body takes to hand back, as a fade of nought pops */
+const minFadeSecs = 0.05;
+/** The bones above the hips, which a shuffle leaves to the rest clip */
+const restUpperBones = new Set([...upperBodyBones, "stomach", "chest"]);
+/** A clip's tracks for `restUpperBones` alone, cached per clip */
+const upperClips = new WeakMap<THREE.AnimationClip, THREE.AnimationClip>();
+function upperOf(clip: THREE.AnimationClip) {
+  let upper = upperClips.get(clip);
+  if (upper === undefined) {
+    const tracks = clip.tracks.filter((t) => restUpperBones.has(THREE.PropertyBinding.parseTrackName(t.name).nodeName));
+    upperClips.set(clip, (upper = new THREE.AnimationClip(`${clip.name}--upper`, clip.duration, tracks)));
+  }
+  return upper;
+}
 
 type Side = "left" | "right";
 const sides = ["left", "right"] as const;
