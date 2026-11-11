@@ -1391,19 +1391,6 @@
           "cssTransform": "matrix(1, 0, 0, -1, 1012.5, 840)"
         },
         {
-          "id": "0355af36-b040-4fee-aa84-cceadc0c07f3",
-          "name": "decor quad key=switch",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1012.5, "f": 844},
-          "type": "image",
-          "srcType": "decor",
-          "srcKey": "switch",
-          "baseRect": {"width": 6, "height": 6},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 1012.5, 844)"
-        },
-        {
           "id": "ffb2bb45-b364-4e30-8d39-d953269add3a",
           "name": "door slide=[-1,0]",
           "locked": true,
@@ -1412,6 +1399,19 @@
           "type": "rect",
           "baseRect": {"width": 47.5, "height": 7},
           "cssTransform": "matrix(1, 0, 0, 1, 967, 838)"
+        },
+        {
+          "id": "0355af36-b040-4fee-aa84-cceadc0c07f3",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1012.5, "f": 843},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1012.5, 843)"
         }
       ]
     },
