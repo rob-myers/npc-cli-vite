@@ -1710,12 +1710,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }) {
         const { config } = w.npc;
         w.npc.setNpcDo(npc.key, null); // in case do=stand
+        /** Replaced by any move begun whilst this one awaits. That move owns them, so this one ends */
+        const dst = npc.last.dst;
 
         await npc.ensureLegalPosition();
 
         try {
           // navigation unreachable relative to locked doors?
           const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
+          if (npc.last.dst !== dst) return; // else its resolver would replace the newer move's, which never settles
           npc.last.unreachableResult = unreachableResult;
 
           if (unreachableResult !== null) {
@@ -1742,6 +1745,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
           if (dragged === false) await w.npc.turnBeforeMoving(npc); // a look throws "hurt"
+          if (npc.last.dst !== dst) return;
           npc.anim.startMoving(arrive);
 
           w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
