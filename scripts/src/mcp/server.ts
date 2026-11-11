@@ -176,6 +176,22 @@ server.registerTool("shot", { description: "A screenshot of the page." }, async 
   }
 });
 
+server.registerTool(
+  "stack",
+  {
+    description:
+      "The page's JS call stack right now, innermost first, e.g. where a frozen page loops. Pauses it briefly. Lines are of Vite's served code",
+  },
+  async () => {
+    // no `userInputNote`: a hung page would never answer it
+    try {
+      return { content: [{ type: "text", text: (await cdp.stack()).join("\n") }] };
+    } catch (e) {
+      return { content: [{ type: "text", text: `${e}` }], isError: true };
+    }
+  },
+);
+
 await server.connect(new StdioServerTransport());
 
 /** Output lines, then a status line to go on from */

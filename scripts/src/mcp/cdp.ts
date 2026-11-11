@@ -11,6 +11,8 @@ export class Cdp {
   private nextId = 1;
   private pending = new Map<number, (msg: CdpResponse) => void>();
   private consoleSeq = 0;
+  /** Takes the next pause's frames, whilst `stack` waits for one. Any other pause is left be, e.g. a DevTools breakpoint */
+  private onPaused: null | ((frames: CdpCallFrame[]) => void) = null;
   readonly console: ConsoleEntry[] = [];
   readonly devUrl: string;
   readonly port: number;
@@ -76,6 +78,23 @@ export class Cdp {
     return result.value as T;
   }
 
+  /**
+   * Where the page's JS is now, innermost first: paused, read, then resumed. A busy loop shows the same frames each time.
+   * Needs `Debugger.enable` from before any hang, so it is sent on connecting
+   */
+  async stack(): Promise<string[]> {
+    const paused = new Promise<CdpCallFrame[]>((resolve) => void (this.onPaused = resolve));
+    await this.request("Debugger.pause", {});
+    const frames = await Promise.race([paused, sleep(pingMs).then(() => null)]);
+    this.onPaused = null;
+    if (frames === null) return ["no JS ran to pause in"];
+    void this.request("Debugger.resume", {});
+    return frames.map(({ functionName, url, location }) => {
+      const file = url.replace(/^https?:\/\/[^/]+\/(@fs)?/, "").replace(/\?.*$/, "");
+      return `${functionName || "(anonymous)"}  ${file}:${location.lineNumber + 1}:${location.columnNumber + 1}`;
+    });
+  }
+
   /** Loads `window.__devMcp` once the World has a canvas — a reload drops it */
   async devMcp() {
     const ready = "typeof window.__devMcpLoad === 'function' && document.querySelector('canvas') !== null";
@@ -101,6 +120,8 @@ export class Cdp {
     ws.onclose = () => void (this.ws = null);
     this.ws = ws;
     await this.send("Runtime.enable");
+    // a hung page answers `Debugger.pause` only if enabled beforehand. Unused scripts' sources are capped
+    await this.send("Debugger.enable", { maxScriptsCacheSize: maxScriptsCacheBytes });
     return ws;
   }
 
@@ -122,6 +143,8 @@ export class Cdp {
     } else if (msg.method === "Runtime.exceptionThrown") {
       const { exception, text } = msg.params.exceptionDetails;
       this.log("exception", exception?.description ?? text);
+    } else if (msg.method === "Debugger.paused") {
+      this.onPaused?.(msg.params.callFrames);
     }
   }
 
@@ -166,6 +189,9 @@ export class Cdp {
   }
 }
 
+/** Bytes of no-longer-used scripts' sources the debugger keeps: hot reloads and each `evaluate` add scripts */
+const maxScriptsCacheBytes = 10_000_000;
+
 /** A call waiting longer than this pings the page, and fails if that goes unanswered as long */
 const pingMs = 5000;
 
@@ -178,5 +204,10 @@ const ansiRegex = /\x1b\[[0-9;]*m/g;
 const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 type CdpTarget = { type: string; url: string; webSocketDebuggerUrl: string };
+type CdpCallFrame = {
+  functionName: string;
+  url: string;
+  location: { lineNumber: number; columnNumber: number };
+};
 type CdpResponse = { id?: number; result?: any; error?: { message: string } };
 export type ConsoleEntry = { seq: number; level: string; text: string };

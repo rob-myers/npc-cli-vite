@@ -49,8 +49,9 @@ Loading:
 | `click({ x, z, y? } \| { clientX, clientY }, long?, button? })` | A real pointer press, e.g. to answer `pick`. A world point is projected by the camera |
 | `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error. `level: "debug"` shows Vite's `hot updated` lines. On a hung page it still returns what was logged before, ending `[page not responding]` |
 | `shot()` | A screenshot |
+| `stack()` | The page's JS call stack now, innermost first: paused, read and resumed. On a frozen page, called a few times, it shows where the loop is. Lines are of Vite's served code |
 
-A call waiting over 5s pings the page (`pingMs` in `cdp.ts`). It fails with `page not responding` if the ping goes unanswered as long, e.g. on a hung main thread, so no call hangs for good.
+A call waiting over 5s pings the page (`pingMs` in `cdp.ts`). It fails with `page not responding` if the ping goes unanswered as long, e.g. on a hung main thread, so no call hangs for good. The server enables the debugger as it connects, which `stack` needs from before any hang: so make a call before reproducing a freeze. Any pause it did not ask for is left be, so DevTools breakpoints work. So a `debugger;` statement pauses the page whilst the server is connected, DevTools open or not. The debugger keeps at most 10MB of unused scripts' sources (`maxScriptsCacheBytes`).
 
 Each result ends with a status line, e.g. `{"running":false,"exitCode":0,"since":42}`.
 
