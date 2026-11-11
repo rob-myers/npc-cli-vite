@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
-import { memo, useContext, useEffect, useRef, useState } from "react";
+import { Component, memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
 import { getWorldStore, type HudLayout } from "../service/storage";
 import { WorldContext } from "./world-context";
@@ -32,6 +32,7 @@ export default function WorldHud() {
       barEl: null,
       colEl: null,
       compassEl: null,
+      debugItems: [],
       dragged: false,
       fireHint: null,
       itemsEl: null,
@@ -44,6 +45,13 @@ export default function WorldHud() {
       selected: null,
       y: null as any,
 
+      addDebugItem(item) {
+        // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
+        const index = state.debugItems.findIndex((x) => x.key === item.key);
+        if (index === -1) state.debugItems.push(item);
+        else state.debugItems[index] = item;
+        state.update();
+      },
       drop(name) {
         if (w.client === true) return;
         if (w.e.dropItem(w.player.key, name) === false) {
@@ -124,6 +132,10 @@ export default function WorldHud() {
       persistY() {
         store.patch(state.isColumn() ? { hudColumnY: state.y.get() } : { hudY: state.y.get() });
       },
+      removeDebugItem(key) {
+        state.debugItems = state.debugItems.filter((x) => x.key !== key);
+        state.update();
+      },
       press(index) {
         if (w.client === true) return;
         if (index === 0) w.player.togglePsi();
@@ -150,6 +162,18 @@ export default function WorldHud() {
         el.querySelector("title")?.replaceChildren(`w heads ${wasdSnapped ? "" : "near "}${letter}`);
         el.querySelector("text")?.replaceChildren(letter);
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
+      },
+      watchDebug(el) {
+        const row = el?.parentElement;
+        if (el == null || row == null || w.rootEl == null) return;
+        const root = w.rootEl;
+        const place = () => {
+          const room = root.getBoundingClientRect().right - row.getBoundingClientRect().right - debugStackGap;
+          el.dataset.above = `${el.offsetWidth > room}`;
+        };
+        const observer = new ResizeObserver(place);
+        for (const at of [el, row, root]) observer.observe(at);
+        return () => observer.disconnect();
       },
       watchFollow(el) {
         if (el === null || w.r3f == null) return;
@@ -233,8 +257,9 @@ export default function WorldHud() {
     dragMomentum: false,
     dragElastic: 0,
     onPointerDown(e: React.PointerEvent) {
-      // an overflowing column's slots scroll instead
+      // an overflowing column's slots scroll instead, as do the debug badges
       if (state.itemsEl?.style.touchAction === "pan-y" && state.itemsEl.contains(e.target as Node)) return;
+      if ((e.target as Element).closest?.("[data-hud-debug]") != null) return;
       dragControls.start(e);
     },
     onDrag: () => state.makeWay("hud"),
@@ -332,17 +357,20 @@ export default function WorldHud() {
   const muted = soundMute.get();
   const dead = w.shields?.isDead(playerKey) === true;
 
+  /** The mounted debug items the World menu shows */
+  const debugShown = state.debugItems.filter(({ key }) => w.debug?.hudDebugShown.includes(key));
+
   /** By slot, what a right-click on it offers */
   const menus: Record<number, undefined | SlotMenuItem[]> = {};
 
   /** Debug: how every shot ends, cycled by a press. Over the phaser's slot in a bar, below it in a column, where slots stack tight */
-  const forceShot = w.debug?.hudDebug === true && (
+  const forceShot = w.debug?.hudDebugShown.includes("phaser") === true && (
     <button
       type="button"
       tabIndex={-1}
       title="debug: how every shot ends"
       className={cn(
-        "cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!",
+        debugBadgeClass,
         column ? "pointer-events-auto -mt-2 mb-1 self-center" : "absolute bottom-0.5 left-1/2 -translate-x-1/2",
       )}
       onClick={(e) => {
@@ -573,8 +601,25 @@ export default function WorldHud() {
             )}
           </div>
           {/* desktop's bar sets it in the player's buttons' group, else it stands alone */}
-          <PlayerButtons column={column}>{!column && !big && <FireHint armed={armed} column={false} />}</PlayerButtons>
+          <PlayerButtons column={column} unframed={!column && !big && !armed}>
+            {!column && !big && <FireHint armed={armed} column={false} />}
+          </PlayerButtons>
           {(column || big) && <FireHint armed={armed} column={column} />}
+          {/* debug items mounted from outside, at the end */}
+          {debugShown.length > 0 && (
+            <div
+              data-hud-debug
+              ref={column ? undefined : state.watchDebug}
+              className={cn(
+                debugStackClass,
+                layout === "bar" ? debugStackRowClass : layout === "left" ? debugStackLeftClass : debugStackRightClass,
+              )}
+            >
+              {debugShown.map((item) => (
+                <HudDebugBoundary key={item.key} item={item} />
+              ))}
+            </div>
+          )}
         </motion.div>
 
         <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
@@ -611,7 +656,16 @@ export default function WorldHud() {
 }
 
 /** The player themself, after the slots or atop a column: where the camera stands by them, and how they go */
-function PlayerButtons({ column, children }: { column: boolean; children?: React.ReactNode }) {
+/** `unframed` hides the group's outline, e.g. round the fire button's empty place whilst lowered */
+function PlayerButtons({
+  column,
+  unframed = false,
+  children,
+}: {
+  column: boolean;
+  unframed?: boolean;
+  children?: React.ReactNode;
+}) {
   const w = useContext(WorldContext);
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
@@ -626,7 +680,12 @@ function PlayerButtons({ column, children }: { column: boolean; children?: React
 
   return (
     <div
-      className={cn(playerGroupClass(big, column), column ? "order-first mb-2 shrink-0 flex-col" : "ml-4 min-w-0")}
+      className={cn(
+        playerGroupClass(big, column),
+        column ? "order-first mb-2 shrink-0 flex-col" : "ml-4 min-w-0",
+        "transition-[border-color] duration-300",
+        unframed && "border-transparent",
+      )}
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -1206,6 +1265,25 @@ type Kept = { label: string; title: string; end?: () => void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
 const shotCycle: JshCli.ShotOutcome[] = ["hit", "ghost", "armour"];
+/** The debug items mounted from outside, stacked, scrolling past a few. Out of the bar's flow, so it never grows the bar */
+const debugStackClass = tw(
+  "pointer-events-auto absolute flex max-h-[60vh] w-max touch-pan-y flex-col items-stretch gap-1 overflow-y-auto [scrollbar-width:thin]",
+);
+/** Past the bar's end, level with its foot, rising as it grows. Without room there, above the bar's end (`watchDebug`) */
+const debugStackRowClass = tw(
+  "bottom-0 left-full ml-2 data-[above=true]:right-0 data-[above=true]:bottom-full data-[above=true]:left-auto data-[above=true]:mb-2 data-[above=true]:ml-0",
+);
+/** Pixels between the bar's end and the debug stack beside it, its `ml-2` */
+const debugStackGap = 8;
+/** Under the column, on the World's side of it, so it stays in the World */
+const debugStackLeftClass = tw("left-0 top-full mt-2");
+const debugStackRightClass = tw("right-0 top-full mt-2");
+/** A mounted debug item's title, over it */
+const debugTitleClass = tw("text-[0.6rem] uppercase tracking-wider text-neutral-500");
+/** A debug badge on the bar: the shot's, or a mounted item's error */
+const debugBadgeClass = tw(
+  "cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!",
+);
 
 type SlotOpts = {
   title: string;
@@ -1221,11 +1299,43 @@ type SlotOpts = {
   menu?: SlotMenuItem[];
 };
 
+/** A mounted debug item, its error shown in its place rather than losing the hud. A new item clears it */
+class HudDebugBoundary extends Component<{ item: JshCli.HudDebugItem }, { error: null | Error }> {
+  override state = { error: null as null | Error };
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error : Error(String(error)) };
+  }
+  override componentDidUpdate(prev: { item: JshCli.HudDebugItem }) {
+    if (prev.item !== this.props.item && this.state.error !== null) this.setState({ error: null });
+  }
+  override render() {
+    const { item } = this.props;
+    const { error } = this.state;
+    return (
+      <div className="flex flex-col items-stretch gap-0.5">
+        <span className={debugTitleClass}>{item.title}</span>
+        {error === null ? (
+          <item.Component />
+        ) : (
+          <span title={error.message} className={cn(debugBadgeClass, "border-red-400/60 text-red-300")}>
+            error
+          </span>
+        )}
+      </div>
+    );
+  }
+}
+
 export type State = {
   barEl: null | HTMLDivElement;
   /** What is dragged: the row, or the column */
   colEl: null | HTMLDivElement;
   compassEl: null | SVGSVGElement;
+  /** Debug items mounted from outside, shown after the slots whilst hud debug is on */
+  debugItems: JshCli.HudDebugItem[];
+  /** Mounts a debug item, replacing any with its key */
+  addDebugItem(item: JshCli.HudDebugItem): void;
+  removeDebugItem(key: string): void;
   /** The bar is being dragged, so what ends on it is no press */
   dragged: boolean;
   /** The slots, scrolled once they outgrow the bar */
@@ -1268,6 +1378,8 @@ export type State = {
   getKept(): Kept[];
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
+  /** Keeps the debug stack in the World: past the bar's end where there is room, else above it, as either resizes */
+  watchDebug(el: null | HTMLDivElement): undefined | (() => void);
   /** The follow's hud-toast: "tethered" whilst gaze mode or a long `r` hold steers them to the pointer, else "followed" */
   watchFollow(el: null | HTMLDivElement): undefined | (() => void);
   /** The one hud-toast of looking: "drawn" (or "aim") and the red dot's range whilst raised, else "gaze" or "focal" and the cap's reach. Its number eases between them */

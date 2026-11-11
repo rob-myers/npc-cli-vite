@@ -942,6 +942,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "npc-hurt":
           case "npc-shot":
           case "psi-action":
+          case "sidestep":
           case "speech":
           case "stopped-moving":
             break;

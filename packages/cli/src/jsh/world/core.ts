@@ -1883,7 +1883,7 @@ function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
-function getFirstUnknownNaked(opts: Record<string, any>) {
+export function getFirstUnknownNaked(opts: Record<string, any>) {
   return keys(opts).find(
     (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
   );

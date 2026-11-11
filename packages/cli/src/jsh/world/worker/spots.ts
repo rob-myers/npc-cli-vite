@@ -271,22 +271,6 @@ export function answerSpotQueries(
           const { pair } = all.bestListed(spotsAt(query.a), spotsAt(query.b), isOpen);
           return { ...judge(query.a, query.b), lines, pair, eye, top: heightsOf(nb).top };
         }
-        case "makeWay": {
-          const npc = resolveNpc(query.npc);
-          const [walker, ...corners] = query.path;
-          const legs = corners.map((b, i) => [query.path[i], b] as const);
-          const best = all
-            .near(npc.point, makeWay.within)
-            .find(
-              (s) =>
-                placeKinds.includes(s.kind) &&
-                (npc.grKeys.length === 0 || (s.grKey !== null && npc.grKeys.includes(s.grKey))) &&
-                legs.every(([a, b]) => distToSeg(s, a, b) >= makeWay.clear) &&
-                query.others.every((p) => dist(s, p) >= makeWay.clear) &&
-                distToSeg(walker, npc.point, s) >= makeWay.pass,
-            );
-          return best === undefined ? null : all.json(best);
-        }
       }
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) };
@@ -453,6 +437,20 @@ class MapSpots {
   /** In any of these rooms */
   inRooms(grKeys: string[]) {
     return grKeys.flatMap((grKey) => this.byRoom.get(grKey) ?? []);
+  }
+
+  /** The spots in `npc`'s rooms clear of a walker's `path` and of `others`, not passing the walker, nearest first: making way */
+  clearOf(npc: Pick<WW.SpotNpc, "point" | "grKeys">, path: Geom.VectJson[], others: Geom.VectJson[]) {
+    const [walker, ...corners] = path;
+    const legs = corners.map((b, i) => [path[i], b] as const);
+    return this.near(npc.point, makeWay.within).filter(
+      (s) =>
+        placeKinds.includes(s.kind) &&
+        (npc.grKeys.length === 0 || (s.grKey !== null && npc.grKeys.includes(s.grKey))) &&
+        legs.every(([a, b]) => distToSeg(s, a, b) >= makeWay.clear) &&
+        others.every((p) => dist(s, p) >= makeWay.clear) &&
+        distToSeg(walker, npc.point, s) >= makeWay.pass,
+    );
   }
 
   /** Within `r` metres of `p`, nearest first */

@@ -28,8 +28,9 @@ Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
 
 - **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
-- **The badge** shows on the phaser slot whilst the World menu's debug **hud debug** is on (persisted per World). A
-  click cycles it through `hit`, `ghost` and `armour`. Turning hud debug off resets it to `hit`.
+- **The badge** shows on the phaser slot whilst **phaser** is ticked under **debug** in the World menu's **hud** select
+  (`w.debug.hudDebugShown`, persisted per World). A click cycles it through `hit`, `ghost` and `armour`. Unticking it
+  resets it to `hit`.
 - **A shot whose line meets no part of them**, from the muzzle through the dot, has no outcome and sends no `npc-shot`.
   It passes there, e.g. they moved since it was aimed.
 - **A shot passing them** runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond`

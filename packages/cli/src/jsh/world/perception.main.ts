@@ -125,8 +125,6 @@ function namedIn(q: WW.SpotQuery): string[] {
     case "hide":
     case "hidden":
       return [q.npc, ...q.from];
-    case "makeWay":
-      return [q.npc];
     case "view":
       return [q.from];
     case "explain":

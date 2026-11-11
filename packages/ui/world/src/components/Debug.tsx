@@ -23,8 +23,8 @@ export function Debug() {
   const quad = useMemo(() => createXzQuad(), []);
   const polylinesGeo = useMemo(() => {
     const geo = createXzQuad();
-    // 1 for the discs, 0 for the lines joining them — see `materials.polylines`
-    geo.setAttribute("isDisc", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances), 1));
+    // -1 for a disc, else a segment's dash-and-gap repeats, 0 if solid — see `materials.polylines`
+    geo.setAttribute("shape", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances), 1));
     // rgb, then opacity
     geo.setAttribute("lineColor", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances * 4), 4));
     return geo;
@@ -60,7 +60,7 @@ export function Debug() {
       pickGdkeyOpensDoors: getWorldStore(w.key).read().pickOpenDoors,
       pickDoors: getWorldStore(w.key).read().pickDoors,
       contextMenu: getWorldStore(w.key).read().contextMenu,
-      hudDebug: getWorldStore(w.key).read().hudDebug,
+      hudDebugShown: getWorldStore(w.key).read().hudDebugShown,
       hudLayout: getWorldStore(w.key).read().hudLayout,
       forceShot: "hit",
 
@@ -165,6 +165,13 @@ export function Debug() {
         state.polylines.set(key, polyline);
         state.drawPolylines();
       },
+      setPolylines(entries) {
+        for (const [key, polyline] of entries) {
+          if (polyline === null) state.polylines.delete(key);
+          else state.polylines.set(key, polyline);
+        }
+        state.drawPolylines();
+      },
       removePolyline(key) {
         if (state.polylines.delete(key) === true) state.drawPolylines();
       },
@@ -177,7 +184,7 @@ export function Debug() {
       drawPolylines() {
         const inst = state.polylinesInst;
         if (!inst) return;
-        const isDisc = polylinesGeo.getAttribute("isDisc").array as Float32Array;
+        const shape = polylinesGeo.getAttribute("shape").array as Float32Array;
         const lineColor = polylinesGeo.getAttribute("lineColor").array as Float32Array;
         let offset = 0;
         for (const {
@@ -186,17 +193,23 @@ export function Debug() {
           opacity = 1,
           width = pathWidth,
           discRadius = polylineDiscRadius,
+          dash = 0,
         } of state.polylines.values()) {
           const ps = points.slice(0, Math.floor((maxPolylineInstances - offset + 1) / 2));
           if (ps.length === 0) continue;
           tmpColor.set(color);
           // a disc per point, then the lines joining them, all one colour
-          for (const [i, [x, z, y]] of ps.entries()) writeDiscInstance(inst, offset + i, x, z, discRadius, y);
+          for (const [i, [x, z, y]] of ps.entries()) {
+            writeDiscInstance(inst, offset + i, x, z, discRadius, y);
+            shape[offset + i] = -1;
+          }
           const segs = ps.slice(1).map((q, i) => [ps[i], q] as const);
-          for (const [i, [p, q]] of segs.entries()) writeSegmentInstance(inst, offset + ps.length + i, p, q, width);
+          for (const [i, [p, q]] of segs.entries()) {
+            writeSegmentInstance(inst, offset + ps.length + i, p, q, width);
+            shape[offset + ps.length + i] = dash > 0 ? Math.hypot(q[0] - p[0], q[1] - p[1]) / (2 * dash) : 0;
+          }
           inst.count = offset + ps.length + segs.length;
           for (let i = 0; i < ps.length + segs.length; i++) {
-            isDisc[offset + i] = i < ps.length ? 1 : 0;
             tmpColor.toArray(lineColor, (offset + i) * 4);
             lineColor[(offset + i) * 4 + 3] = opacity;
           }
@@ -205,7 +218,7 @@ export function Debug() {
         inst.count = offset;
         inst.visible = offset > 0; // empty, it is not drawn
         inst.instanceMatrix.needsUpdate = true;
-        polylinesGeo.getAttribute("isDisc").needsUpdate = true;
+        polylinesGeo.getAttribute("shape").needsUpdate = true;
         polylinesGeo.getAttribute("lineColor").needsUpdate = true;
       },
     }),
@@ -286,9 +299,11 @@ export function Debug() {
     };
     // a disc is cut out of the quad, rather than given a geometry of its own
     const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
-    const isDisc = attribute<"float">("isDisc", "float").greaterThan(0.5);
+    const shape = attribute<"float">("shape", "float");
     const lineColor = attribute<"vec4">("lineColor", "vec4"); // each polyline its own
-    const polylines = create("white", selectAs<"float">(isDisc, disc, float(1)).mul(lineColor.w), false);
+    // a dashed segment's gaps are the second half of each repeat along it. A solid one's 0 has none
+    const line = selectAs<"float">(uv().x.mul(shape).fract().greaterThan(0.5), float(0), float(1));
+    const polylines = create("white", selectAs<"float">(shape.lessThan(0), disc, line).mul(lineColor.w), false);
     polylines.colorNode = lineColor.xyz;
     return {
       navPath: create("rgb(255, 50, 0)", float(1)),
@@ -425,6 +440,8 @@ export type Polyline = {
   opacity?: number;
   width?: number;
   discRadius?: number;
+  /** Metres of each dash, and of each gap between: solid without */
+  dash?: number;
 };
 
 /** A disc of radius `r` centred on `(x, z)` — the quad's disc is cut out by its material */
@@ -488,8 +505,8 @@ export type State = {
   pickDoors: boolean;
   /** Whether a right click or long press on an npc, decor or door opens its menu — see `PickMenu` */
   contextMenu: boolean;
-  /** Whether the player's bar shows debug controls — see `WorldHud` */
-  hudDebug: boolean;
+  /** Which debug controls the player's bar shows: `phaser` (the shot's badge), or a mounted item's key — see `WorldHud` */
+  hudDebugShown: string[];
   /** The player's bar along the bottom, or a column on either side: the "hud" select — see `WorldHud` */
   hudLayout: import("../service/storage").HudLayout;
   /** How every phaser shot at someone ends: set by the hud's debug badge */
@@ -507,6 +524,8 @@ export type State = {
   showPhysicsColliders(shouldShow?: boolean): void;
   setLocalBoundary(segs: XZSeg[]): void;
   setPolyline(key: string, polyline: Polyline): void;
+  /** Sets each, or with `null` removes it, then redraws once: for many at a time */
+  setPolylines(entries: Iterable<readonly [string, null | Polyline]>): void;
   removePolyline(key: string): void;
   /** Writes `localBoundary` into its mesh */
   drawBoundary(): void;

@@ -63,8 +63,8 @@ export type WorldSettings = {
   contextMenu: boolean;
   /** Whether the map's spots are drawn — see `Debug`'s `spotsShown` */
   spotsShown: boolean;
-  /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
-  hudDebug: boolean;
+  /** Which debug controls the player's bar shows: `phaser`, or a mounted item's key — see `Debug`'s `hudDebugShown` */
+  hudDebugShown: string[];
   /** The player's bar along the bottom, or a column on the World's left or right — see `Debug`'s `hudLayout` */
   hudLayout: HudLayout;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
@@ -119,7 +119,7 @@ const defaultWorldSettings: WorldSettings = {
   decorShown: false,
   contextMenu: true,
   spotsShown: false,
-  hudDebug: false,
+  hudDebugShown: [],
   hudLayout: isTouchDevice() ? "right" : "bar",
   timeScale: 1,
   timeSliderOpen: false,

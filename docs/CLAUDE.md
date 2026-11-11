@@ -71,6 +71,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. Also how to make a skin: classic arms, opaque overlays, the face layout. |
 | Slices and eyes | `docs/skin-slices.md` | A slice is a face-sized piece of texture drawn over a skin's face. Each holds that skin's eyes one way: `shut`, `up`, `scared`... An npc's eyes are one uniform, the slice shown (`pose rob eyes:shut`, `blink:2`). None is drawn by hand: the dev server finds each skin's eyes in its png (`meta.eyes`), and a DEV World draws the slices and saves `sheet/skin-slices.N.png`. |
 | Strafing | `docs/npc-strafe.md` | Whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing. `syncStrafe` blends four directional gaits by heading, paced to the ground each covers. |
+| Sidestep | `docs/sidestep.md` | jsh `sidestep` has idle npcs make way for a walker coming at them (`SidestepLookout`, `sidestep status`). A `sidestep` op on the fast worker works out `aside`, `turn`, `shuffle`, `back`, `wall`, `doorway` or `stand`, the kind and its tuning set by its hud debug item (`sidestep-debug.tsx`, mounted by `w.hud.addDebugItem`) or `sidestep kind:wall reach:2`. `sidestep --debug` says and draws each choice. |
 | Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
 | Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their menu (`PickMenu`). |
 | navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
@@ -219,6 +220,11 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`.
   - Tile N sub-panels with `uvCoord.x.mul(cols).fract()`, then detect seams with `step(seamW, subU).add(step(subU, seamW).clamp(0,1))`.
 - **`DerivedGmsData.findRoomIdContaining`** throws `"Value is not of type 'long'"` on NaN or Infinity, e.g. from a divide-by-zero in a normal. Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering.
+
+**`w.view.forceUpdate` runs a tick**
+- It runs `w.npc.onTick` and `w.e.postNpcTick`, keyed ticks included, then renders.
+- So never call it from code a tick or World event sets off, even on a microtask. The tick raises events, which call it again, and the page freezes. Ask for a frame with `w.r3f?.invalidate()` instead.
+- To find a freeze like this, call the MCP `stack` tool a few times (`docs/mcp.md`).
 
 **`wallSegs` and panel placement**
 - `wallSegs` are in **local geomorph space**, like `gm.rooms` and `gm.bounds`. Apply the instance `transform` before any world-space comparison.

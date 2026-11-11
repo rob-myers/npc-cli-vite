@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 527" width="760" height="527" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+<rect width="760" height="527" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">heldUp: the fallback, per walker, each tick</text>
+<rect x="60" y="56" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="75" fill="#e6e6e6" font-weight="600">1  near</text>
+<text x="76" y="92" fill="#9aa0a6" font-size="12">a crowd neighbour (agent.neis) within 0.7m (dist)</text>
+<line x1="460" y1="77.5" x2="518" y2="77.5" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+<rect x="524" y="65.5" width="212" height="24" rx="12" fill="#3a2426"/>
+<text x="536" y="81.5" fill="#f0a0a0" font-size="12">not near: not tested</text>
+<line x1="260.0" y1="99" x2="260.0" y2="115" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="117" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="136" fill="#e6e6e6" font-weight="600">2  ahead</text>
+<text x="76" y="153" fill="#9aa0a6" font-size="12">in front of the walker&#x27;s heading</text>
+<line x1="460" y1="138.5" x2="518" y2="138.5" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="126.5" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="142.5" fill="#e8c880" font-size="12">rob passed by kate</text>
+<line x1="260.0" y1="160" x2="260.0" y2="176" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="178" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="197" fill="#e6e6e6" font-weight="600">3  on their way</text>
+<text x="76" y="214" fill="#9aa0a6" font-size="12">within both radii + 0.1m (pathMargin) of the path,</text>
+<text x="76" y="229" fill="#9aa0a6" font-size="12">so their bodies meet</text>
+<line x1="460" y1="201.0" x2="518" y2="201.0" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="189.0" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="205.0" fill="#e8c880" font-size="12">kate clear of rob</text>
+<line x1="260.0" y1="236" x2="260.0" y2="252" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="254" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="273" fill="#e6e6e6" font-weight="600">4  free</text>
+<text x="76" y="290" fill="#9aa0a6" font-size="12">whyNot is null, not already stepping, and not</text>
+<text x="76" y="305" fill="#9aa0a6" font-size="12">yet asked by that walker this approach (asked)</text>
+<line x1="460" y1="277.0" x2="518" y2="277.0" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="265.0" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="281.0" fill="#e8c880" font-size="12">kate too busy for rob</text>
+<line x1="260.0" y1="312" x2="260.0" y2="328" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="330" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="349" fill="#e6e6e6" font-weight="600">5  slowed</text>
+<text x="76" y="366" fill="#9aa0a6" font-size="12">the walker below half their top speed (slowShare)</text>
+<text x="76" y="381" fill="#9aa0a6" font-size="12">for 0.05s (lingerSecs)</text>
+<line x1="460" y1="353.0" x2="518" y2="353.0" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+<rect x="524" y="341.0" width="212" height="24" rx="12" fill="#3a2426"/>
+<text x="536" y="357.0" fill="#f0a0a0" font-size="12">timed afresh</text>
+<line x1="260.0" y1="388" x2="260.0" y2="404" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="406" width="400" height="43" rx="22" fill="#1f3a2c" stroke="#4ec98a"/>
+<text x="76" y="425" fill="#4ec98a" font-weight="600">yield { walker, npc, why: null }</text>
+<text x="76" y="442" fill="#9aa0a6" font-size="12">makeWay, its cause held up: see makeWay</text>
+<path d="M48,58 L36,58 L36,386 L48,386" fill="none" stroke="#9aa0a6" stroke-width="1.5"/>
+<text x="28" y="222.0" fill="#9aa0a6" font-size="12" text-anchor="middle" transform="rotate(-90 28 222.0)">for each neighbour</text>
+<text x="24" y="471" fill="#9aa0a6" font-size="12">Each tick, for each moving walker bar sidestep&#x27;s own movers: no due look. Only the crowd&#x27;s neighbours are tested.</text>
+<text x="24" y="487" fill="#9aa0a6" font-size="12">A yellow reason is said by --debug in faint yellow, once each time it changes (skip, skipped).</text>
+<text x="24" y="503" fill="#9aa0a6" font-size="12">Like coming, it asks once per approach: a stepless plan is not asked again whilst that walker presses on.</text>
+</svg>

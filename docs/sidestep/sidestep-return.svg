@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 557" width="760" height="557" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+<rect width="760" height="557" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">returnBack: each tick, each home</text>
+<rect x="60" y="56" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="75" fill="#e6e6e6" font-weight="600">back: stay?</text>
+<text x="76" y="92" fill="#9aa0a6" font-size="12">the hud&#x27;s back choice</text>
+<line x1="460" y1="77.5" x2="518" y2="77.5" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="65.5" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="81.5" fill="#e8c880" font-size="12">stay: homes dropped</text>
+<line x1="260.0" y1="99" x2="260.0" y2="115" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="117" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="136" fill="#e6e6e6" font-weight="600">busy?</text>
+<text x="76" y="153" fill="#9aa0a6" font-size="12">already returning, stepping, or moving</text>
+<line x1="460" y1="138.5" x2="518" y2="138.5" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+<rect x="524" y="126.5" width="212" height="24" rx="12" fill="#3a2426"/>
+<text x="536" y="142.5" fill="#f0a0a0" font-size="12">skip this tick</text>
+<line x1="260.0" y1="160" x2="260.0" y2="176" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="178" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="197" fill="#e6e6e6" font-weight="600">pushed off?</text>
+<text x="76" y="214" fill="#9aa0a6" font-size="12">over 0.3m from their last step (returnSlack)</text>
+<line x1="460" y1="199.5" x2="518" y2="199.5" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="187.5" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="203.5" fill="#e8c880" font-size="12">forgets home</text>
+<line x1="260.0" y1="221" x2="260.0" y2="237" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="239" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="258" fill="#e6e6e6" font-weight="600">already there?</text>
+<text x="76" y="275" fill="#9aa0a6" font-size="12">within 3cm of the spot</text>
+<line x1="460" y1="260.5" x2="518" y2="260.5" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+<rect x="524" y="248.5" width="212" height="24" rx="12" fill="#2a2618"/>
+<text x="536" y="264.5" fill="#e8c880" font-size="12">home dropped</text>
+<line x1="260.0" y1="282" x2="260.0" y2="298" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="300" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="319" fill="#e6e6e6" font-weight="600">walker gone, and free?</text>
+<text x="76" y="336" fill="#9aa0a6" font-size="12">their walker clear (1.5m) of the spot, or idle (1m)</text>
+<text x="76" y="351" fill="#9aa0a6" font-size="12">of it once stopped, or gone. And whyNot is null</text>
+<line x1="460" y1="323.0" x2="518" y2="323.0" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+<rect x="524" y="311.0" width="212" height="24" rx="12" fill="#3a2426"/>
+<text x="536" y="327.0" fill="#f0a0a0" font-size="12">wait</text>
+<line x1="260.0" y1="358" x2="260.0" y2="374" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="376" width="400" height="58" rx="8" fill="#1f3a2c" stroke="#4ec98a"/>
+<text x="76" y="395" fill="#4ec98a" font-weight="600">return</text>
+<text x="76" y="412" fill="#9aa0a6" font-size="12">a returns event. Walk to prev (last) or to home&#x27;s</text>
+<text x="76" y="427" fill="#9aa0a6" font-size="12">at (home), then shuffle in if over 3cm off</text>
+<line x1="260.0" y1="434" x2="260.0" y2="450" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<rect x="60" y="452" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="471" fill="#e6e6e6" font-weight="600">after</text>
+<text x="76" y="488" fill="#9aa0a6" font-size="12">there: home dropped, settle 0.3s</text>
+<line x1="460" y1="473.5" x2="518" y2="473.5" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+<rect x="524" y="461.5" width="212" height="24" rx="12" fill="#3a2426"/>
+<text x="536" y="477.5" fill="#f0a0a0" font-size="12">broken off: retried, twice</text>
+<text x="24" y="517" fill="#9aa0a6" font-size="12">A home is where they stood before their first step aside. Later steps keep it,</text>
+<text x="24" y="533" fill="#9aa0a6" font-size="12">noting where each began (prev) and ended (last), however far, through doorways too.</text>
+</svg>
