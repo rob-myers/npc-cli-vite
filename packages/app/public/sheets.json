@@ -450,22 +450,16 @@
       "rect": {"x": 1722, "y": 8, "width": 307, "height": 307},
       "sheetId": 1
     },
-    "iris-valves--005 0": {
-      "symbolKey": "iris-valves--005",
-      "obstacleId": 0,
-      "rect": {"x": 1722, "y": 323, "width": 220, "height": 220},
-      "sheetId": 1
-    },
     "iris-valves--006 0": {
       "symbolKey": "iris-valves--006",
       "obstacleId": 0,
-      "rect": {"x": 1722, "y": 551, "width": 220, "height": 220},
+      "rect": {"x": 1722, "y": 323, "width": 220, "height": 220},
       "sheetId": 1
     },
     "office--074 0": {
       "symbolKey": "office--074",
       "obstacleId": 0,
-      "rect": {"x": 1722, "y": 779, "width": 212.5, "height": 212.5},
+      "rect": {"x": 1722, "y": 551, "width": 212.5, "height": 212.5},
       "sheetId": 1
     }
   },

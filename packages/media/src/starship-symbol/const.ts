@@ -96,7 +96,7 @@ export const symbolByGroup = {
   },
 
   "symbol-misc": {
-    "iris-valves--005": true,
+    // "iris-valves--005": true, // unused: replaced by iris-valves--006
     "iris-valves--006": true,
     "misc-stellar-cartography--020": true,
     "misc-stellar-cartography--023": true,

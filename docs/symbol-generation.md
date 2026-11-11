@@ -217,6 +217,21 @@ reading runs of dark pixels along a row or column.
 
 The layout in `assets.json` says whether it worked: `layout[key].rooms` goes up as rooms close.
 
+## Removing a symbol
+
+There is no api for it. Replace every instance of it first, e.g. `iris-valves--005` by `iris-valves--006`.
+
+1. Comment out its key in `symbolByGroup`, saying why, so it is not added back.
+2. Delete `symbol/{key}.json`, `symbol/{key}.thumbnail.png` and `starship-symbol/{key}.png` with plain `rm`.
+3. Drop its entry from `symbol/manifest.json`.
+4. Drop it from `assets.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
+   `safeJsonCompact`.
+5. Run `pnpm starship-pngs-to-public`, then `pnpm gen-assets-json --changedFiles '[]'` (re-levels and
+   re-hashes), then `pnpm gen-starship-sheets`.
+
+Its key is gone from the schema once step 1 is done. So any mention of it left in `assets.json` fails to
+parse, and `gen-assets-json` then starts from empty (see Pitfalls).
+
 ## Pitfalls
 
 - **`assets.json` can be cut short.** `safeJsonCompact` once dropped everything past 100,000 values,

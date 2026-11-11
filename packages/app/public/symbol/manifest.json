@@ -90,15 +90,6 @@
       "type": "symbol",
       "key": "stateroom--036"
     },
-    "iris-valves--005": {
-      "filename": "iris-valves--005.json",
-      "thumbnailFilename": "iris-valves--005.thumbnail.png",
-      "width": 44,
-      "height": 44,
-      "bounds": {"x": 0, "y": 0.5, "width": 44.2, "height": 44},
-      "type": "symbol",
-      "key": "iris-valves--005"
-    },
     "console--019": {
       "filename": "console--019.json",
       "thumbnailFilename": "console--019.thumbnail.png",

@@ -7319,37 +7319,6 @@
         }
       ]
     },
-    "iris-valves--005": {
-      "key": "iris-valves--005",
-      "isHull": false,
-      "width": 1.1,
-      "height": 1.1,
-      "bounds": {"x": 0, "y": 0.0125, "width": 1.105, "height": 1.1},
-      "decor": [],
-      "doors": [],
-      "obstacles": [
-        {
-          "type": "Polygon",
-          "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
-          "meta": {
-            "obstacle": true,
-            "permit-nav": true,
-            "no-shadow": true,
-            "y": 0,
-            "tint": "#888",
-            "symKey": "iris-valves--005",
-            "origObstacleId": 0
-          }
-        }
-      ],
-      "unsorted": [],
-      "walls": [],
-      "windows": [],
-      "removableDoors": [],
-      "addableWalls": [],
-      "hullWalls": [],
-      "symbols": []
-    },
     "iris-valves--006": {
       "key": "iris-valves--006",
       "isHull": false,
@@ -12675,35 +12644,14 @@
           "meta": {"machinery--158": true, "y": 1}
         },
         {
-          "symbolKey": "iris-valves--005",
+          "symbolKey": "iris-valves--006",
           "width": 1.1,
           "height": 1.1,
-          "transform": {
-            "a": 0,
-            "b": -1,
-            "c": 1,
-            "d": 0,
-            "e": 0.1875,
-            "f": 9.0125
-          },
-          "meta": {"iris-valves--005": true}
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 21, "f": 0.2},
+          "meta": {"iris-valves--006": true}
         },
         {
-          "symbolKey": "iris-valves--005",
-          "width": 1.1,
-          "height": 1.1,
-          "transform": {
-            "a": 0,
-            "b": 1,
-            "c": -1,
-            "d": 0,
-            "e": 29.80625,
-            "f": 20.9875
-          },
-          "meta": {"iris-valves--005": true}
-        },
-        {
-          "symbolKey": "iris-valves--005",
+          "symbolKey": "iris-valves--006",
           "width": 1.1,
           "height": 1.1,
           "transform": {
@@ -12711,10 +12659,24 @@
             "b": 0,
             "c": 0,
             "d": 1,
-            "e": 20.9875,
-            "f": 0.1875
+            "e": 0.2125,
+            "f": 7.925
           },
-          "meta": {"iris-valves--005": true}
+          "meta": {"iris-valves--006": true}
+        },
+        {
+          "symbolKey": "iris-valves--006",
+          "width": 1.1,
+          "height": 1.1,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 28.725,
+            "f": 20.9875
+          },
+          "meta": {"iris-valves--006": true}
         },
         {
           "symbolKey": "stateroom--012",
@@ -18168,35 +18130,6 @@
           }
         }
       ],
-      "removableDoors": [],
-      "addableWalls": []
-    },
-    "iris-valves--005": {
-      "key": "iris-valves--005",
-      "isHull": false,
-      "width": 1.1,
-      "height": 1.1,
-      "bounds": {"x": 0, "y": 0.0125, "width": 1.105, "height": 1.1},
-      "decor": [],
-      "doors": [],
-      "obstacles": [
-        {
-          "type": "Polygon",
-          "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
-          "meta": {
-            "obstacle": true,
-            "permit-nav": true,
-            "no-shadow": true,
-            "y": 0,
-            "tint": "#888",
-            "symKey": "iris-valves--005",
-            "origObstacleId": 0
-          }
-        }
-      ],
-      "unsorted": [],
-      "walls": [],
-      "windows": [],
       "removableDoors": [],
       "addableWalls": []
     },
@@ -47585,65 +47518,59 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [
-              [0.1875, 7.9125],
-              [1.2875, 7.9125],
-              [1.2875, 9.0125],
-              [0.1875, 9.0125]
-            ]
-          ],
+          "coordinates": [[[22.1, 0.2], [22.1, 1.3], [21, 1.3], [21, 0.2]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
-            "symKey": "iris-valves--005",
+            "symKey": "iris-valves--006",
             "origObstacleId": 0,
-            "transform": [0, -1, 1, 0, 0.1875, 9.0125]
+            "transform": [1, 0, 0, 1, 21, 0.2]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.3125, 7.925], [1.3125, 9.025], [0.2125, 9.025], [0.2125, 7.925]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "floor": true,
+            "permit-nav": true,
+            "no-shadow": true,
+            "y": 0,
+            "h": 0,
+            "tint": "#888",
+            "symKey": "iris-valves--006",
+            "origObstacleId": 0,
+            "transform": [1, 0, 0, 1, 0.2125, 7.925]
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [
-              [29.8062, 22.0875],
-              [28.7062, 22.0875],
-              [28.7062, 20.9875],
-              [29.8062, 20.9875]
+              [29.825, 20.9875],
+              [29.825, 22.0875],
+              [28.725, 22.0875],
+              [28.725, 20.9875]
             ]
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
-            "symKey": "iris-valves--005",
+            "symKey": "iris-valves--006",
             "origObstacleId": 0,
-            "transform": [0, 1, -1, 0, 29.80625, 20.9875]
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [22.0875, 0.1875],
-              [22.0875, 1.2875],
-              [20.9875, 1.2875],
-              [20.9875, 0.1875]
-            ]
-          ],
-          "meta": {
-            "obstacle": true,
-            "permit-nav": true,
-            "no-shadow": true,
-            "y": 0,
-            "tint": "#888",
-            "symKey": "iris-valves--005",
-            "origObstacleId": 0,
-            "transform": [1, 0, 0, 1, 20.9875, 0.1875]
+            "transform": [1, 0, 0, 1, 28.725, 20.9875]
           }
         },
         {
@@ -57096,7 +57023,6 @@
       {"id": "extra--022--fresher"},
       {"id": "fuel--010"},
       {"id": "g-301--playground"},
-      {"id": "iris-valves--005"},
       {"id": "iris-valves--006"},
       {"id": "machinery--155"},
       {"id": "machinery--156"},
@@ -87654,7 +87580,7 @@
           }
         },
         {
-          "symbolKey": "iris-valves--005",
+          "symbolKey": "iris-valves--006",
           "obstacleId": 0,
           "height": 0,
           "origPoly": {
@@ -87662,35 +87588,32 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
-              "symKey": "iris-valves--005",
+              "symKey": "iris-valves--006",
               "origObstacleId": 0
             }
           },
-          "transform": {
-            "a": 0,
-            "b": -1,
-            "c": 1,
-            "d": 0,
-            "e": 0.1875,
-            "f": 9.0125
-          },
-          "center": {"x": 0.74, "y": 8.46},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 21, "f": 0.2},
+          "center": {"x": 21.55, "y": 0.75},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
-            "symKey": "iris-valves--005",
+            "symKey": "iris-valves--006",
             "origObstacleId": 0
           }
         },
         {
-          "symbolKey": "iris-valves--005",
+          "symbolKey": "iris-valves--006",
           "obstacleId": 0,
           "height": 0,
           "origPoly": {
@@ -87698,47 +87621,13 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
+              "h": 0,
               "tint": "#888",
-              "symKey": "iris-valves--005",
-              "origObstacleId": 0
-            }
-          },
-          "transform": {
-            "a": 0,
-            "b": 1,
-            "c": -1,
-            "d": 0,
-            "e": 29.80625,
-            "f": 20.9875
-          },
-          "center": {"x": 29.26, "y": 21.54},
-          "meta": {
-            "obstacle": true,
-            "permit-nav": true,
-            "no-shadow": true,
-            "y": 0,
-            "tint": "#888",
-            "symKey": "iris-valves--005",
-            "origObstacleId": 0
-          }
-        },
-        {
-          "symbolKey": "iris-valves--005",
-          "obstacleId": 0,
-          "height": 0,
-          "origPoly": {
-            "type": "Polygon",
-            "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
-            "meta": {
-              "obstacle": true,
-              "permit-nav": true,
-              "no-shadow": true,
-              "y": 0,
-              "tint": "#888",
-              "symKey": "iris-valves--005",
+              "symKey": "iris-valves--006",
               "origObstacleId": 0
             }
           },
@@ -87747,17 +87636,59 @@
             "b": 0,
             "c": 0,
             "d": 1,
-            "e": 20.9875,
-            "f": 0.1875
+            "e": 0.2125,
+            "f": 7.925
           },
-          "center": {"x": 21.54, "y": 0.74},
+          "center": {"x": 0.76, "y": 8.47},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
+            "h": 0,
             "tint": "#888",
-            "symKey": "iris-valves--005",
+            "symKey": "iris-valves--006",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "symbolKey": "iris-valves--006",
+          "obstacleId": 0,
+          "height": 0,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
+            "meta": {
+              "obstacle": true,
+              "floor": true,
+              "permit-nav": true,
+              "no-shadow": true,
+              "y": 0,
+              "h": 0,
+              "tint": "#888",
+              "symKey": "iris-valves--006",
+              "origObstacleId": 0
+            }
+          },
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 28.725,
+            "f": 20.9875
+          },
+          "center": {"x": 29.28, "y": 21.54},
+          "meta": {
+            "obstacle": true,
+            "floor": true,
+            "permit-nav": true,
+            "no-shadow": true,
+            "y": 0,
+            "h": 0,
+            "tint": "#888",
+            "symKey": "iris-valves--006",
             "origObstacleId": 0
           }
         },
@@ -95766,5 +95697,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": 2045291346}
+  "hash": {"obstacles": 964379202}
 }

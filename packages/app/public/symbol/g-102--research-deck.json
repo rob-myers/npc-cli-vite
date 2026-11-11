@@ -60,47 +60,40 @@
           "cssTransform": "matrix(1, 0, 0, 1, 10, 10)"
         },
         {
-          "id": "ad459ccc-b343-4762-3f62-5301baad57d3",
-          "name": "iris-valves--005",
+          "id": "be33ad1a-06a9-40e4-8ea4-e80ce26282db",
+          "name": "iris-valves--006",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 7.5, "f": 360.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 840, "f": 8},
           "type": "symbol",
-          "srcKey": "iris-valves--005",
+          "srcKey": "iris-valves--006",
           "baseRect": {"width": 44, "height": 44},
-          "offset": {"x": 0.5, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 8, 360.5)"
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 840, 8)"
         },
         {
-          "id": "4852711f-88fb-f404-5dcc-c516677dc877",
-          "name": "iris-valves--005",
+          "id": "a700da0d-f6a8-4199-b6a2-9e427f6cd563",
+          "name": "iris-valves--006",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 0,
-            "b": 1,
-            "c": -1,
-            "d": 0,
-            "e": 1192.25,
-            "f": 839.5
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 8.5, "f": 317},
           "type": "symbol",
-          "srcKey": "iris-valves--005",
+          "srcKey": "iris-valves--006",
           "baseRect": {"width": 44, "height": 44},
-          "offset": {"x": -0.5, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, 1191.75, 839.5)"
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 8.5, 317)"
         },
         {
-          "id": "8ece0bd7-da5e-3d61-f146-44bc56a51e36",
-          "name": "iris-valves--005",
+          "id": "96f86aa5-7b89-4d3e-ba10-54f18d709fd1",
+          "name": "iris-valves--006",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 839.5, "f": 7.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1149, "f": 839.5},
           "type": "symbol",
-          "srcKey": "iris-valves--005",
+          "srcKey": "iris-valves--006",
           "baseRect": {"width": 44, "height": 44},
-          "offset": {"x": 0, "y": 0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 839.5, 8)"
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1149, 839.5)"
         },
         {
           "id": "dd0e656d-568b-497b-783b-8ccf420f93a7",
