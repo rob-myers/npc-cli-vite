@@ -47,8 +47,10 @@ Loading:
 | `interrupt({ tty? })` | Ctrl-c: ends the foreground command, so the tty takes input again |
 | `query({ fn, world?, depth? })` | Runs `fn`, JS source such as `w => w.gms[0].rooms.length`, on the World and returns JSON. Writes to no tty. It runs in the page, so `window` is in reach |
 | `click({ x, z, y? } \| { clientX, clientY }, long?, button? })` | A real pointer press, e.g. to answer `pick`. A world point is projected by the camera |
-| `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error. `level: "debug"` shows Vite's `hot updated` lines |
+| `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error. `level: "debug"` shows Vite's `hot updated` lines. On a hung page it still returns what was logged before, ending `[page not responding]` |
 | `shot()` | A screenshot |
+
+A call waiting over 5s pings the page (`pingMs` in `cdp.ts`). It fails with `page not responding` if the ping goes unanswered as long, e.g. on a hung main thread, so no call hangs for good.
 
 Each result ends with a status line, e.g. `{"running":false,"exitCode":0,"since":42}`.
 

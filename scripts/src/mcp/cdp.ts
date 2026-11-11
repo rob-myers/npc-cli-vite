@@ -20,15 +20,47 @@ export class Cdp {
     this.port = port;
   }
 
+  /** Sends a message and awaits its reply. Throws if the page stops answering meanwhile, e.g. a hung main thread */
   async send<T = any>(method: string, params: object = {}): Promise<T> {
+    const { id, reply } = await this.request(method, params);
+    let waiting = true;
+    try {
+      const response = await Promise.race([reply, this.hungWhile(() => waiting)]);
+      if (response === "hung") throw Error(`${method}: page not responding`);
+      if (response.error !== undefined) throw Error(`${method}: ${response.error.message}`);
+      return response.result as T;
+    } finally {
+      waiting = false;
+      this.pending.delete(id);
+    }
+  }
+
+  /** Whether the page answers a trivial evaluate within `ms` */
+  async alive(ms: number) {
+    const { id, reply } = await this.request("Runtime.evaluate", { expression: "1" });
+    const answered = await Promise.race([reply.then(() => true), sleep(ms).then(() => false)]);
+    this.pending.delete(id);
+    return answered;
+  }
+
+  /** Pings the page every `pingMs` whilst `waiting()`. Resolves `"hung"` once a ping goes unanswered, else never */
+  private async hungWhile(waiting: () => boolean): Promise<"hung"> {
+    while (waiting()) {
+      await sleep(pingMs);
+      if (waiting() && (await this.alive(pingMs)) === false) return "hung";
+    }
+    return new Promise(() => {}); // the reply came first
+  }
+
+  /** Sends a message. Its reply resolves `reply`, by `onMessage` */
+  private async request(method: string, params: object) {
     const ws = await this.connect();
     const id = this.nextId++;
-    const response = await new Promise<CdpResponse>((resolve) => {
+    const reply = new Promise<CdpResponse>((resolve) => {
       this.pending.set(id, resolve);
       ws.send(JSON.stringify({ id, method, params }));
     });
-    if (response.error !== undefined) throw Error(`${method}: ${response.error.message}`);
-    return response.result as T;
+    return { id, reply };
   }
 
   /** `expression` in the page, awaited, as plain data */
@@ -133,6 +165,9 @@ export class Cdp {
     throw Error(`no page at ${this.devUrl} on CDP port ${this.port}`);
   }
 }
+
+/** A call waiting longer than this pings the page, and fails if that goes unanswered as long */
+const pingMs = 5000;
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
