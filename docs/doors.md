@@ -86,6 +86,7 @@ Their sounds are jsh's: see `docs/audio.md`.
   exhaustive, so a door the map locks (`meta.locked`) but we unlocked stays unlocked.
 - `doorFlags` holds, by gdKey, each `auto` and `proximity` that differs from the map's.
 - `persistLocks` saves all three on each change. `buildByKey` restores them.
+- A rebuild keeps each door's live state, unless the map or its geomorphs changed, e.g. a symbol saved in MapEdit. Then the saved state comes back, and on the same map each door stays open if it was. A rebuild drops pending closes, so each open door is asked to close again (`try-close-door`), which waits whilst anybody is in it.
 - A reset of the map's state (`resetLocks`) locks just what the map asks for, holds none, and takes its `auto` and `proximity`.
 - Restoring from another World takes its locks and holds (`applyLocks`).
 - A client of a server World takes its locks and open doors, but not its holds: its switches show no hold.

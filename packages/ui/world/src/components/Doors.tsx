@@ -69,6 +69,8 @@ export default function Doors() {
         // between with the new key over the old doors. Keying on both keeps it out of the next
         const stale = state.builtMapKey !== w.mapKey || state.builtGmsHash !== w.gmsHash;
         const prevByKey = stale === true ? {} : state.byKey;
+        /** The same map's doors rebuilt, e.g. a symbol saved: each stays open if it was */
+        const wasOpen = state.builtMapKey === w.mapKey ? state.byKey : {};
         state.builtMapKey = w.mapKey;
         state.builtGmsHash = w.gmsHash;
         state.byKey = {};
@@ -105,7 +107,7 @@ export default function Doors() {
               // live state wins on rebuild (e.g. hmr), then the previous session, then the map
               locked:
                 sealed === true ? true : (prev?.locked ?? savedLocked?.has(gdKey) ?? connector.meta.locked === true),
-              open: prev?.open ?? false,
+              open: prev?.open ?? wasOpen[gdKey]?.open === true,
               sealed,
               held: sealed === false && (prev?.held ?? savedHeld.has(gdKey)),
               proximity: prev?.proximity ?? flags.proximity,
@@ -128,6 +130,10 @@ export default function Doors() {
               gapAtHighLambda: false,
             };
           }
+        }
+        // their closes went with the old doors: each shuts in its usual time, unless somebody is in it
+        for (const door of Object.values(state.byKey)) {
+          if (door.open === true) w.events.next({ key: "try-close-door", gdKey: door.gdKey });
         }
       },
       buildInstanceIds() {
