@@ -197,7 +197,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "ea1bd927-c7b3-436e-bc01-128397f0e0c5",
@@ -489,7 +489,7 @@
         },
         {
           "id": "838a74b8-2a87-4724-83dc-049dac6150fd",
-          "name": "decor point label=fresher",
+          "name": "decor point label=fresher max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {

@@ -414,6 +414,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 10.1625, 6.275],
             "direction": {"x": 1, "y": 0}
@@ -25839,6 +25840,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 10.1625, 6.275],
             "direction": {"x": 1, "y": 0}
@@ -38991,6 +38993,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [
               0.5,
@@ -75364,6 +75367,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [
               0.5,
