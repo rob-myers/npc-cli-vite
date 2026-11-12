@@ -48,7 +48,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToAccess: {},
       npcToDoors: {},
       pendingUnreachable: {},
-      roomToMeta: [],
 
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
@@ -576,7 +575,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.npcToDoors = {};
         state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
-        state.roomToMeta = [];
 
         // anything still waiting on the worker asked about the old map's rooms
         state.rejectPendingUnreachable(new Error("map changed"));
@@ -645,7 +643,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (w.isMapChanging() === false) state.persistDecor();
             break;
           case "decor-ready":
-            state.syncRoomToMeta();
             // an edit may have taken the decor somebody was using
             state.standUpStrandedDoers();
             // or added an item
@@ -1564,14 +1561,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // those in the player's room are lit more
         if (w.npc != null) w.npc.playerRoom = w.n[w.player.key]?.roomSlot.value ?? neverShownSlot;
       },
-      syncRoomToMeta() {
-        state.roomToMeta = w.gms.map(() => []);
-        for (const decor of Object.values(w.decor.byKey)) {
-          if (helper.isRoomLabel(decor) === false) continue;
-          // the first wins: a symbol's own decor precedes its sub-symbols', so a parent's label names the room
-          state.roomToMeta[decor.meta.gmId][decor.meta.roomId] ??= decor.meta;
-        }
-      },
       takeItem(npcKey, decorKey) {
         const def = w.decor.runtime.defByKey[decorKey];
         const kind = def?.meta?.item as ItemKind;
@@ -1867,10 +1856,6 @@ export type State = {
   externalNpcs: Set<string>;
   npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
-  /** By gmId then roomId: the meta of the room's first label point, which decorates the room. See `syncRoomToMeta` */
-  roomToMeta: (undefined | Geomorph.DecorPoint["meta"])[][];
-  /** Rebuilds `roomToMeta` off the decor, on `decor-ready` */
-  syncRoomToMeta(): void;
   /** Takes them off every door's lists, as their exit colliders would, and lets those doors close */
   forgetNpcAtDoors(npcKey: string): void;
   /**

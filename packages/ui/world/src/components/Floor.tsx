@@ -109,7 +109,7 @@ export default function Floor() {
         // room labels, which `deckConfig`'s `wiring` and `doorTicks` use.
         // The FIRST instance's will do: a label is never added at runtime, so all agree
         const gmId = w.gms.findIndex((gm) => gm.key === gmKey);
-        const labelOfRoom = (w.e.roomToMeta[gmId] ?? []).map((meta) => meta?.label as undefined | string);
+        const labelOfRoom = (w.decor.roomToMeta[gmId] ?? []).map((meta) => meta?.label as undefined | string);
 
         // the deck itself, plated, and conduit along the walls of some rooms. See `deckConfig`
         drawRoomFloors(ct, layout);
