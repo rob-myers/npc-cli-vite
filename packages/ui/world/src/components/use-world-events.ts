@@ -61,27 +61,22 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       admitWalker(grKey, npcKey, admit = true) {
         const room = w.gmRoomGraph.getNode(grKey);
         if (room?.type !== "room" || room.maxWalkers === null) return true;
-        const inside = w.npc.roomToNpcs[room.gmId]?.[room.roomId] ?? emptySet;
-        const admitted = state.roomWalkers.get(grKey) ?? emptySet;
-        let count = 0;
-        for (const key of inside) {
-          if (w.npc.npcToDoable[key] != null) continue; // one at a doable is held still, never in the way
-          if (key === npcKey) return true;
-          count++;
-        }
-        for (const key of admitted) {
-          if (inside.has(key) && w.npc.npcToDoable[key] == null) continue; // counted
+        /** Those on its floor, or at a doable tagged `as-walker`, e.g. a shower. Others at a doable are held still */
+        const walkers = new Set(
+          [...(w.npc.roomToNpcs[room.gmId]?.[room.roomId] ?? [])].filter((key) => {
+            const decorKey = w.npc.npcToDoable[key];
+            return decorKey == null || w.decor.byKey[decorKey]?.meta["as-walker"] === true;
+          }),
+        );
+        const admitted = state.roomWalkers.get(grKey);
+        for (const key of admitted ?? []) {
+          // admitted but not yet inside: kept whilst on their way in
           const npc = w.n[key];
-          // not yet inside: forgotten once at a doable, or no longer on their way in
-          const onTheirWay =
-            npc !== undefined &&
-            (npc.isFading() || (w.npc.npcToDoable[key] == null && npc.isMoving() && npc.last.dstGrId?.grKey === grKey));
-          if (onTheirWay === false) admitted.delete(key);
-          else if (key === npcKey) return true;
-          else count++;
+          if (npc?.isFading() || (npc?.isMoving() && npc.last.dstGrId?.grKey === grKey)) walkers.add(key);
+          else admitted?.delete(key);
         }
-        if (count >= room.maxWalkers) return false;
-        if (admit === true) state.roomWalkers.set(grKey, new Set(admitted).add(npcKey));
+        if (walkers.has(npcKey) === false && walkers.size >= room.maxWalkers) return false;
+        if (admit === true) state.roomWalkers.set(grKey, (admitted ?? new Set()).add(npcKey));
         return true;
       },
       after(secs, fn) {

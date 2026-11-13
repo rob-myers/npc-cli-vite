@@ -163,7 +163,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - A move onto a doable with nowhere beside it fades on from outside its room's door, not from wherever they are.
 - An npc at a doable on the navmesh, e.g. a sink's `do=stand`, is held still (`npc.setStill`, set by `setNpcDo`). The crowd neither steers nor separates them, and sidestep leaves them be.
 - **Max walkers.** A room's first label may set `max-walkers=N`, read once into `maxWalkers` on its `w.gmRoomGraph` node. Its doors are in `w.gmRoomGraph.walkerRooms`.
-  - At most N stand on its navmesh (`w.e.admitWalker`); those at a doable never count.
+  - At most N stand on its navmesh (`w.e.admitWalker`). Those at a doable don't count, unless it has `meta.as-walker`, e.g. a shower's (`do:as-walker` on its symbol instance).
   - A full room's door areas are refused to others, as a locked door's (`w.e.refusesWalker`, from `canPassNode`).
   - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. A doable further in fails `room full`.
   - Between its doables they hop, at most `doableLook` each, e.g. toilet, toilet, sink, then out.
