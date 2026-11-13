@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "8c0ddce7-acc2-4ffd-9c82-7367ef95b0fc",
@@ -932,7 +932,7 @@
         {
           "id": "439eb533-5125-4a1f-96e2-c4396aecc2ea",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 361.5, "f": 299},
           "type": "rect",
@@ -972,7 +972,7 @@
         {
           "id": "a8c5c8f1-5e53-438e-8847-689718393f36",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 400, "f": 275},
           "type": "rect",
@@ -982,7 +982,7 @@
         {
           "id": "2ff747e7-e4e5-4263-8c94-4951e0beacd0",
           "name": "wall",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 436, "f": 275.5},
           "type": "rect",
