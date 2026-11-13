@@ -827,6 +827,15 @@
       "bounds": {"x": 0, "y": 0, "width": 220.4, "height": 220.2},
       "type": "symbol",
       "key": "extra--023--machine"
+    },
+    "extra--024--fresher": {
+      "filename": "extra--024--fresher.json",
+      "thumbnailFilename": "extra--024--fresher.thumbnail.png",
+      "width": 21,
+      "height": 18,
+      "bounds": {"x": 0, "y": 0, "width": 20.8, "height": 17.6},
+      "type": "symbol",
+      "key": "extra--024--fresher"
     }
   }
 }

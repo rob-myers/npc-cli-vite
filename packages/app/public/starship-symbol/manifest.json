@@ -78,6 +78,12 @@
       "width": 1102,
       "height": 1101
     },
+    "extra--024--fresher": {
+      "key": "extra--024--fresher",
+      "group": "extra",
+      "width": 104,
+      "height": 88
+    },
     "g-301--playground": {
       "key": "g-301--playground",
       "group": "playground",
