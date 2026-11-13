@@ -277,7 +277,7 @@ async function perform(
     for (const at of via === null ? [to] : [via, to]) {
       if (at === null) continue;
       noteStage(w, s, npc, at === via ? "moving via" : "moving");
-      await w.e.move({ npcKey: npc.key, to: at, strafe: true, shove: true, shuffle: shuffle || undefined });
+      await w.e.moveOrThrow({ npcKey: npc.key, to: at, strafe: true, shove: true, shuffle: shuffle || undefined });
     }
     if (face !== null && free === true) {
       if (npc.anim.face.aim === aim) npc.anim.face.aim = null;
@@ -335,10 +335,15 @@ function returnBack(w: JshCli.WorldState, s: Sidestep) {
         if (s.home.get(npcKey) === home) s.home.delete(npcKey);
       })
       .catch((e) => {
-        // kept, to try again: where they stopped is theirs, unless another move took them on
-        Object.assign(home, { returning: false, last: npc.point, fails: home.fails + 1 });
         emit(w, npcKey, home.walker, "return", false, `${e}`);
-        if (home.fails < sidestepConfig.returnTries || s.home.get(npcKey) !== home) return;
+        if (s.home.get(npcKey) !== home) return; // a step aside took over, keeping home
+        if (e instanceof Error && e.message === "move again") {
+          s.home.delete(npcKey); // another move took them on: theirs, so not undone
+          return void emit(w, npcKey, home.walker, "forget", false, "moved on");
+        }
+        // kept, to try again: where they stopped is theirs
+        Object.assign(home, { returning: false, last: npc.point, fails: home.fails + 1 });
+        if (home.fails < sidestepConfig.returnTries) return;
         s.home.delete(npcKey); // e.g. a shuffle into place stuck against an edge, again and again
         emit(w, npcKey, home.walker, "forget", false, `gave up after ${home.fails} tries`);
       });
@@ -461,8 +466,8 @@ const tuneDefaults: WW.SidestepTune = {
 
 /** Walks them back to `from`, then a move short enough to shuffle the little a walk stops short by */
 async function returnTo(w: JshCli.WorldState, npc: JshCli.Npc, from: Geom.VectJson) {
-  await w.e.move({ npcKey: npc.key, to: from });
-  if (npc.distanceTo(from) > sidestepConfig.returnExact) await w.e.move({ npcKey: npc.key, to: from });
+  await w.e.moveOrThrow({ npcKey: npc.key, to: from });
+  if (npc.distanceTo(from) > sidestepConfig.returnExact) await w.e.moveOrThrow({ npcKey: npc.key, to: from });
 }
 
 /** Where `npc`'s neighbours stand, bar `walker`, and where others are stepping to */

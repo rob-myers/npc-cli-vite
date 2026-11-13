@@ -518,6 +518,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         await npc.fadeSpawn({ at: dst });
       },
+      async moveOrThrow(opts) {
+        const npc = w.npc.get(opts.npcKey);
+        const moving = state.move(opts);
+        const moveId = state.movesBegun.get(npc) ?? 0; // its own, taken before its first await
+        await moving;
+        if (state.moveOverridden(npc, moveId)) throw Error("move again");
+      },
       moveOverridden(npc, moveId) {
         return (state.movesBegun.get(npc) ?? 0) !== moveId;
       },
@@ -2086,6 +2093,8 @@ export type State = {
     fades: boolean,
     opts: JshCli.MoveOpts,
   ): Promise<void>;
+  /** As `move`, but throws `move again` if another move takes them over, which `move` ends quietly */
+  moveOrThrow(opts: JshCli.MoveOpts): Promise<void>;
   /** Whether a move begun since the one `moveId` names has taken them over */
   moveOverridden(npc: Npc, moveId: number): boolean;
   /** Where `to` is on the ground and the navmesh, and the doable it picks, if any */
