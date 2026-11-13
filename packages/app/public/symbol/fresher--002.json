@@ -101,7 +101,7 @@
       "children": [
         {
           "id": "9ea1bd52-f7c7-4023-b976-4298bd9c42c2",
-          "name": "decor point label=fresher",
+          "name": "decor point label=fresher max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 20},

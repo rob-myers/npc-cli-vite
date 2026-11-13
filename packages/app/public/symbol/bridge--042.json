@@ -381,7 +381,7 @@
         },
         {
           "id": "06149ca6-aabd-4769-862f-c641211f1ea6",
-          "name": "decor point label=locker",
+          "name": "decor point label=locker max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 140, "f": 162},
@@ -394,7 +394,7 @@
         },
         {
           "id": "d39b91b3-81ed-4549-aa43-809614835025",
-          "name": "decor point label=locker",
+          "name": "decor point label=locker max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 320, "f": 162},

@@ -324,6 +324,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 3.5, 4.05],
             "direction": {"x": 1, "y": 0}
@@ -336,6 +337,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 8, 4.05],
             "direction": {"x": 1, "y": 0}
@@ -2999,6 +3001,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 0.5, 0.5],
             "direction": {"x": 1, "y": 0}
@@ -10883,6 +10886,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.9],
             "direction": {"x": 1, "y": 0}
@@ -11035,7 +11039,7 @@
           "width": 0.9,
           "height": 1.45,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "meta": {"extra--021--shower": true}
+          "meta": {"extra--021--shower": true, "do:as-walker": true}
         }
       ]
     },
@@ -19603,6 +19607,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 0.5, 0.5],
             "direction": {"x": 1, "y": 0}
@@ -25771,6 +25776,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 3.5, 4.05],
             "direction": {"x": 1, "y": 0}
@@ -25783,6 +25789,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 8, 4.05],
             "direction": {"x": 1, "y": 0}
@@ -28364,6 +28371,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.5],
             "direction": {"x": 1, "y": 0},
@@ -29428,6 +29436,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.9],
             "direction": {"x": 1, "y": 0}
@@ -29593,7 +29602,8 @@
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 6,
-            "y": 0.01
+            "y": 0.01,
+            "as-walker": true
           }
         }
       ],
@@ -37895,6 +37905,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.9],
             "direction": {"x": 1, "y": 0},
@@ -38061,7 +38072,8 @@
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 10,
-            "y": 0.01
+            "y": 0.01,
+            "as-walker": true
           }
         },
         {
@@ -38269,6 +38281,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 2, 11.5],
             "direction": {"x": 1, "y": 0},
@@ -38400,6 +38413,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 5, 11.5],
             "direction": {"x": 1, "y": 0},
@@ -38515,6 +38529,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 0.9, 13],
             "direction": {"x": 0, "y": -1},
@@ -38691,7 +38706,8 @@
             "transform": [-1, 0, 0, -1, 0.8, 14.6375],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 29,
-            "y": 0.01
+            "y": 0.01,
+            "as-walker": true
           }
         },
         {
@@ -38908,6 +38924,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 12.5125, 5.5625],
             "direction": {"x": 1, "y": 0},
@@ -38928,6 +38945,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 17.0125, 5.5625],
             "direction": {"x": 1, "y": 0},
@@ -39905,6 +39923,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 28, 0.9],
             "direction": {"x": -1, "y": 0},
@@ -40081,7 +40100,8 @@
             "transform": [0, -1, -1, 0, 29.6375, 0.8],
             "direction": {"x": 0, "y": -1},
             "obstacleId": 70,
-            "y": 0.01
+            "y": 0.01,
+            "as-walker": true
           }
         },
         {
@@ -73986,6 +74006,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.9],
             "y": 0.01,
@@ -74201,6 +74222,7 @@
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "obstacleId": 10,
             "y": 0.01,
+            "as-walker": true,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -74485,6 +74507,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 2, 11.5],
             "y": 0.01,
@@ -74665,6 +74688,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 5, 11.5],
             "y": 0.01,
@@ -74821,6 +74845,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 0.9, 13],
             "y": 0.01,
@@ -75036,6 +75061,7 @@
             "transform": [-1, 0, 0, -1, 0.8, 14.6375],
             "obstacleId": 29,
             "y": 0.01,
+            "as-walker": true,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -75297,6 +75323,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 12.5125, 5.5625],
             "y": 0.01,
@@ -75319,6 +75346,7 @@
             "decor": true,
             "point": true,
             "label": "locker",
+            "max-walkers": 1,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 17.0125, 5.5625],
             "y": 0.01,
@@ -76460,6 +76488,7 @@
             "decor": true,
             "point": true,
             "label": "fresher",
+            "max-walkers": 2,
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 28, 0.9],
             "y": 0.01,
@@ -76675,6 +76704,7 @@
             "transform": [0, -1, -1, 0, 29.6375, 0.8],
             "obstacleId": 70,
             "y": 0.01,
+            "as-walker": true,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
