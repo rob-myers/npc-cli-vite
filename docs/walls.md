@@ -52,3 +52,21 @@ Two per door, from `getLintelSegs` in `service/DerivedGmsData.ts`, kept apart fr
 - One shows with either of its door's rooms, read live, as a door's `roomIds` are known only once the
   World has built. A missing side is never shown.
 - No taller than a band, a lintel is drawn wholly at the band's opacity.
+
+## Obstacles poking into a wall
+
+An obstacle may be moved into a wall, e.g. a toilet, to widen its room's navmesh. Walls can be
+see-through (`theme.walls.opacity`), so `Obstacles` clips it at its room's edge, through
+`service/obstacle-clip.ts`. Only one wall per obstacle is supported.
+
+- **Which.** One with a corner outside its room's polygon (`clipLineOf`). The cut is the room's edge
+  nearest the furthest-out corner. A window's sill (`meta.window`) and a doorway's floor plate
+  (`meta.floor`) span openings, so they are never clipped.
+- **Kept** in `clipTex`, a float texture of `(nx, nz, d)` by instance id, filled by `buildInstanceIds`.
+  It is a texture rather than an attribute: the skirts have no vertex buffer to spare.
+- **Drawn.** Both materials read it (`insideClipBy`) and drop what lies past the cut (`maskNode`). A
+  top whitens within `cutLineWidth` of it.
+- **A black back.** Its own back skirt lies past the cut, so it is dropped with the rest, leaving a hole.
+  `transformAndColorSkirts` adds one more skirt in its place, across the cut (`cutAcross`), facing into
+  the room. It is plain black (`#000`), not panelled, as the obstacle's inside would be.
+- **Cost.** One texel fetch per pixel, and one more skirt instance per clipped obstacle. No draw calls.
