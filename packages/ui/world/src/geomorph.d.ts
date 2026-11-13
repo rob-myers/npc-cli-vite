@@ -40,6 +40,8 @@ declare namespace Geomorph {
     /** `poly.lineSegs` rather than `connector.seg`  */
     windowSegs: { seg: [Geom.Vect, Geom.Vect] }[];
     roomHitCt: CanvasRenderingContext2D;
+    /** By roomId: the meta of its first label point, which decorates the room, e.g. `max-walkers` */
+    roomMeta: (undefined | Meta)[];
     /** Graph of rooms and doors within geomorph */
     roomGraph: import("./service/room-graph").RoomGraph;
   };

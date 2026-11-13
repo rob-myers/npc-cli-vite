@@ -583,14 +583,12 @@ function fromKeys(ctx: Ctx, opts: Opts) {
   return from.filter((key) => key !== ctx.npcKey && ctx.ct.w.n[key] !== undefined);
 }
 
-/** Off a seat or bed onto the floor beside it: a move from there would fade them all the way */
-async function getUp(ctx: Ctx) {
-  const { w } = ctx.ct;
-  if (typeof w.npc.npcToDoable[ctx.npcKey] !== "string") return;
-  const npc = w.npc.get(ctx.npcKey);
-  const near = w.npc.getClosestPoly(npc.point, 4);
-  if (near.success === false) throw Error("nowhere to stand");
-  await resumable(ctx, () => npc.fadeSpawn({ at: { x: near.position[0], y: near.position[2] } }));
+/** Off a seat or bed as a move off it would (`w.e.stepOff`). A move from there would fade them all the way */
+async function getUp(c: Ctx) {
+  const { w } = c.ct;
+  if (typeof w.npc.npcToDoable[c.npcKey] !== "string") return;
+  const npc = w.npc.get(c.npcKey);
+  await resumable(c, () => w.e.stepOff(npc, npc.point));
 }
 
 /**
@@ -651,6 +649,8 @@ const keysOf = (x: Opts[string]) =>
 /** How a walk ends besides arriving, by its error: given up on, stopped by a pause, or cut short by a look and walked again */
 const walkEnds: Partial<Record<string, false | "paused" | "again">> = {
   blocked: false,
+  locked: false,
+  "room full": false,
   stuck: false,
   paused: "paused",
   "look again": "again",

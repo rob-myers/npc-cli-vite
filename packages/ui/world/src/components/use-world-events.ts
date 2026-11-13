@@ -5,7 +5,6 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import * as THREE from "three/webgpu";
-import { npcDims } from "../const.both";
 import {
   decorCuboidHeight,
   defaultPlayerKey,
@@ -48,6 +47,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToAccess: {},
       npcToDoors: {},
       pendingUnreachable: {},
+      roomWalkers: new Map(),
 
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
@@ -57,6 +57,32 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       addKeyedTick(key, tick) {
         state.keyedTick.set(key, tick);
+      },
+      admitWalker(grKey, npcKey, admit = true) {
+        const room = w.gmRoomGraph.getNode(grKey);
+        if (room?.type !== "room" || room.maxWalkers === null) return true;
+        const inside = w.npc.roomToNpcs[room.gmId]?.[room.roomId] ?? emptySet;
+        const admitted = state.roomWalkers.get(grKey) ?? emptySet;
+        let count = 0;
+        for (const key of inside) {
+          if (w.npc.npcToDoable[key] != null) continue; // one at a doable is held still, never in the way
+          if (key === npcKey) return true;
+          count++;
+        }
+        for (const key of admitted) {
+          if (inside.has(key) && w.npc.npcToDoable[key] == null) continue; // counted
+          const npc = w.n[key];
+          // not yet inside: forgotten once at a doable, or no longer on their way in
+          const onTheirWay =
+            npc !== undefined &&
+            (npc.isFading() || (w.npc.npcToDoable[key] == null && npc.isMoving() && npc.last.dstGrId?.grKey === grKey));
+          if (onTheirWay === false) admitted.delete(key);
+          else if (key === npcKey) return true;
+          else count++;
+        }
+        if (count >= room.maxWalkers) return false;
+        if (admit === true) state.roomWalkers.set(grKey, new Set(admitted).add(npcKey));
+        return true;
       },
       after(secs, fn) {
         const timer = { at: w.gameTime.now() + secs, fn };
@@ -84,12 +110,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         // the cheapest with no wall or shut door between it and the doable
         const casts = await state.raycasts(tried.map(({ p }) => ({ src: p, dst: at })));
-        let best = { p: null as null | Geom.VectJson, cost: Infinity };
+        const none = { p: null as null | Geom.VectJson, cost: Infinity };
+        let [best, any] = [none, none];
         tried.forEach(({ p, cost }, i) => {
           const cast = casts[i];
+          if (cost < any.cost) any = { p, cost };
           if (cost < best.cost && (cast === null || (cast.hit === null && cast.hitDoor === null))) best = { p, cost };
         });
-        return best.p;
+        // none in sight, e.g. behind a cubicle's partition: the cheapest in the room
+        return best.p ?? any.p;
       },
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
@@ -146,6 +175,26 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      closestExitFrom(grKey, npc, near) {
+        const room = w.gmRoomGraph.getNode(grKey);
+        if (room?.type !== "room") return null;
+        // past each door they may pass, away from the room, nearest first
+        const [exit] = (w.gmRoomGraph.getSuccs(room) as Graph.GmRoomGraphNode[])
+          .flatMap((node) => {
+            if (node.type !== "door" || state.npcCanAccess(npc.key, node.gdKey) === false) return [];
+            const { connector, normal } = w.d[node.gdKey];
+            const side = connector.roomIds.indexOf(room.roomId);
+            return side === -1
+              ? []
+              : [node.astar.centroid.clone().addScaled(normal, side === 1 ? doorwayOut : -doorwayOut)];
+          })
+          .sort((a, b) => a.distanceTo(npc.point) - b.distanceTo(npc.point));
+        if (exit === undefined || (near !== undefined && exit.distanceTo(near) > w.npc.config.dist.doableLook)) {
+          return null;
+        }
+        const close = w.npc.getClosestPoly(exit, 0.5);
+        return close.success === true ? helper.parseGroundPoint(close.position) : exit;
       },
       dispatchToKeyedListeners(e) {
         for (const listener of state.keyedListener.values()) {
@@ -391,9 +440,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           throw Error("not navigable");
         }
 
-        if (npc.agentId === null) {
+        // a room with `maxWalkers` admits them if it has room. Else from outside `walkTo` stops them at its door
+        const into = w.gmRoomGraph.walkerRooms.size === 0 ? undefined : w.findRoomContaining(groundPoint)?.grKey;
+        if (
+          into !== undefined &&
+          state.admitWalker(into, npcKey) === false &&
+          w.npc.npcToRoom.get(npcKey)?.grKey === into
+        ) {
+          throw Error("room full"); // inside it, e.g. getting up
+        }
+
+        if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
           // fade off the doable: onto the target if near, else beside it, walking on
-          if (fades) {
+          if (fades && npc.agentId === null) {
             return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
           }
           await state.stepOff(npc, groundPoint);
@@ -420,14 +479,32 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         const { dist, time } = w.npc.config;
         const grKey = helper.maybeGmRoomId(doResult.meta)?.grKey;
-        const beside = fades
-          ? null
-          : await state.besideDoable(dst, npc.point, grKey, state.frontOf(doResult.meta.decorKey));
+        const inRoom = grKey !== undefined && w.npc.npcToRoom.get(npc.key)?.grKey === grKey;
+        const room = inRoom ? w.gmRoomGraph.getNode(grKey) : null;
+        /** Doable to a nearby doable in a room with `maxWalkers`: a hop, never a step onto its floor */
+        const across =
+          w.npc.npcToDoable[npc.key] != null &&
+          room?.type === "room" &&
+          room.maxWalkers !== null &&
+          npc.distanceTo(dst) <= dist.doableLook;
+        /** No room on its floor for them: inside, they stay put. Outside, from a door they may pass */
+        const full = grKey !== undefined && !fades && !across && state.admitWalker(grKey, npc.key) === false;
+        // a fade from its doorway reaches only the doables near it
+        const doorway = full && !inRoom ? state.closestExitFrom(grKey, npc, dst) : null;
+        if (full && doorway === null) throw Error("room full");
+        const beside =
+          fades || across || full
+            ? null
+            : ((await state.besideDoable(dst, npc.point, grKey, state.frontOf(doResult.meta.decorKey))) ??
+              // nowhere beside it: from outside its room's door, rather than from wherever they are
+              (inRoom || grKey === undefined ? null : state.closestExitFrom(grKey, npc)));
         if (npc.last.dst !== dst) return;
-        if (beside !== null) {
-          if (npc.agentId === null) await state.stepOff(npc, beside); // off their own first, so they walk
+        /** Up to it first, on their side, else to its room's doorway */
+        const via = doorway ?? beside;
+        if (via !== null) {
+          if (w.npc.npcToDoable[npc.key] != null) await state.stepOff(npc, via); // off their own first, so they walk
           if (npc.last.dst !== dst) return;
-          const walk = state.move({ npcKey: npc.key, to: beside, fast, strafe }); // up to it first, on their side
+          const walk = state.move({ npcKey: npc.key, to: via, fast, strafe });
           npc.last.dst = dst; // set by the walk: a pause resumes this move
           await walk;
           if (npc.last.dst !== dst) return;
@@ -575,6 +652,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.npcToDoors = {};
         state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
+        state.roomWalkers = new Map();
 
         // anything still waiting on the worker asked about the old map's rooms
         state.rejectPendingUnreachable(new Error("map changed"));
@@ -1139,6 +1217,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryPutNpcIntoRoom(npc);
         }
       },
+      refusesWalker(gdKey, npcKey) {
+        const grKeys = w.gmRoomGraph.walkerRooms.get(gdKey);
+        if (grKeys === undefined) return false;
+        const inRoom = w.npc.npcToRoom.get(npcKey)?.grKey;
+        // those inside may always leave
+        return grKeys.some((grKey) => grKey !== inRoom && state.admitWalker(grKey, npcKey, false) === false);
+      },
       rejectPendingUnreachable(err) {
         for (const uid of Object.keys(state.pendingUnreachable)) {
           state.pendingUnreachable[uid].reject(err);
@@ -1196,8 +1281,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const open = new Uint8Array(nodes.length);
         for (const [index, node] of nodes.entries()) {
           if (node.type !== "door") continue;
-          locked[index] = w.d[node.gdKey]?.locked === true ? 1 : 0;
-          open[index] = w.d[node.gdKey]?.open === true ? 1 : 0;
+          // a full room's door is as locked to them, keys or not, and never open to slip through
+          const refused = state.refusesWalker(node.gdKey, npc.key);
+          locked[index] = w.d[node.gdKey]?.locked === true || refused ? 1 : 0;
+          open[index] = w.d[node.gdKey]?.open === true && !refused ? 1 : 0;
         }
 
         const uid = shortUuid.generate();
@@ -1209,7 +1296,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             dstIndex,
             // likewise: an npc holds few keys, read afresh each time
             accessDoorIndices: Object.entries(state.npcToAccess[npc.key] ?? {}).flatMap(([gdKey, granted]) =>
-              granted === true ? (w.gmRoomGraph.getNode(gdKey as Geomorph.GmDoorKey)?.index ?? []) : [],
+              granted === true && state.refusesWalker(gdKey as Geomorph.GmDoorKey, npc.key) === false
+                ? (w.gmRoomGraph.getNode(gdKey as Geomorph.GmDoorKey)?.index ?? [])
+                : [],
             ),
             locked,
             open,
@@ -1480,8 +1569,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async stepOff(npc, toward) {
+        const grKey = w.npc.npcToRoom.get(npc.key)?.grKey;
+        if (grKey !== undefined && state.admitWalker(grKey, npc.key) === false) {
+          // no room on its floor for them: out through a door they may pass, if near it, else they stay put
+          const at = state.closestExitFrom(grKey, npc, npc.point);
+          if (at === null) throw Error("room full");
+          return void (await npc.fadeSpawn({ at, facing: toward }));
+        }
+        if (npc.agentId !== null) return void w.npc.setNpcDo(npc.key, null); // on the navmesh already: they walk off
         const front = state.frontOf(w.npc.npcToDoable[npc.key]);
-        const beside = await state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey, front);
+        const beside =
+          (await state.besideDoable(npc.point, toward, grKey, front)) ??
+          (grKey === undefined ? null : state.closestExitFrom(grKey, npc)); // nowhere in the room: out of its door
         if (beside === null) throw Error("not navigable");
         await npc.fadeSpawn({ at: beside, facing: toward });
       },
@@ -1619,7 +1718,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           blockingGdKey: door.gdKey,
           nearbyPoint: doorNode.astar.centroid
             .clone()
-            .addScaled(door.normal, shutDoorKeepOut * (indexOfRoomId === 0 ? 1 : -1)),
+            .addScaled(door.normal, doorwayOut * (indexOfRoomId === 0 ? 1 : -1)), // out of the way of the door
         };
       },
       toggleDoor(gdKey, opts = {}) {
@@ -1727,12 +1826,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (state.moveOverridden(npc, moveId)) return;
           npc.last.unreachableResult = unreachableResult;
 
+          let blocked: null | "locked" | "room full" = null;
           if (unreachableResult !== null) {
-            // destination unreachable
+            // they get no further than its door: into a full room, else locked to them
+            blocked = state.refusesWalker(unreachableResult.blockingGdKey, npc.key) ? "room full" : "locked";
             if (npc.distanceTo(unreachableResult.nearbyPoint) < config.dist.blockedLook) {
               // too close: look instead of walk
               await npc.look({ at: unreachableResult.nearbyPoint, minMs: config.time.look * 1000 });
-              return;
+              throw Error(blocked);
             }
             // change destination to point near eventual locked door
             const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
@@ -1760,6 +1861,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npc.resolve.move = resolve;
             npc.reject.move = reject;
           });
+          if (blocked !== null) throw Error(blocked);
         } catch (e) {
           state.moveFailed(npc, e);
         }
@@ -1953,7 +2055,7 @@ export type State = {
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   move(opts: JshCli.MoveOpts): Promise<void>;
-  /** A navigable point of room `grKey` beside the doable at `at`, with no wall between, the nearest by `besideTurnCost` metres per radian off the way to `toward` */
+  /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`. One with no wall between first */
   besideDoable(
     at: Geom.VectJson,
     toward: Geom.VectJson,
@@ -1997,7 +2099,10 @@ export type State = {
     groundPoint: Geom.VectJson,
     result: ReturnType<WorldState["npc"]["getClosestPoly"]>,
   ): Promise<void>;
-  /** Fades `npc` off their doable, beside it on the way to `toward`: in front, if `meta.front-only` */
+  /**
+   * Takes `npc` off their doable: out of a full room's door, else let go on the navmesh, else faded beside it on the way
+   * to `toward` (in front, if `meta.front-only`)
+   */
   stepOff(npc: Npc, toward: Geom.VectJson): Promise<void>;
   /** Walks them to `groundPoint`, else as near a locked door in the way as they can. Interruptible by the next move */
   walkTo(
@@ -2014,6 +2119,17 @@ export type State = {
    * them the crossing. For reachability and the like; leave it off to ask about this moment
    */
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey, planning?: boolean): boolean;
+  /** By grKey: those admitted onto a room's floor (`maxWalkers`) not yet inside. See `admitWalker` */
+  roomWalkers: Map<Geomorph.GmRoomKey, Set<string>>;
+  /**
+   * Whether they may walk on the room's floor: always without `maxWalkers`, else if among its walkers or it has room.
+   * Admits them unless not `admit`
+   */
+  admitWalker(grKey: Geomorph.GmRoomKey, npcKey: string, admit?: boolean): boolean;
+  /** Outside the room's nearest door they may pass, on the navmesh. With `near`, only within `doableLook` of it */
+  closestExitFrom(grKey: Geomorph.GmRoomKey, npc: Npc, near?: Geom.VectJson): null | Geom.VectJson;
+  /** A side of the door is a full room they are not in: its door area is refused them */
+  refusesWalker(gdKey: Geomorph.GmDoorKey, npcKey: string): boolean;
   /** Restore this map's npcs, place the player, then maybe run the intro */
   onBootstrapMap(): Promise<void>;
   /** Persist and remove every npc, whilst the outgoing map still exists */
@@ -2147,7 +2263,8 @@ function easeSitAim(aim: { weight: number; head?: number }, t: number) {
 const reachFrom = new THREE.Vector3(0, -0.3, 0);
 /** How far of the way an aimed reach swings: short of all of it, else the arm lies flat back */
 const reachAimWeight = 0.75;
-const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
+/** Metres from a door's centre to its doorway outside, past its door area */
+const doorwayOut = 0.6;
 
 /** Is `to` close behind `npc`, where stepping back beats turning round? */
 function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State["config"]) {

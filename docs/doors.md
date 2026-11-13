@@ -38,6 +38,9 @@ Likewise we could have `auto` doors which are not `proximity` i.e. automatically
 - The player's keys slot locks or unlocks the nearest door they hold keys to.
 - A long press on the door itself, or on a switch or door spot whilst it is shut, locks or unlocks it, keyless.
 - An unlocked door that is open starts its usual close.
+- **A walk past a door they may not pass** stops just outside it, past its door area, then fails `locked` (`walkTo`, from `testTargetUnreachable`). A full room's door counts as locked to them, failing `room full` (`docs/CLAUDE.md`, Max walkers).
+  - `requestUnreachable` sends the worker a refused door as locked and never open, keys or not. Else an open door would let them through.
+  - jsh `move_next` ignores both errors, `move_lazy` drops its pending moves, and `act` counts both as not arrived.
 
 ## Holding
 

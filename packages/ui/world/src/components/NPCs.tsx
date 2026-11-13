@@ -331,6 +331,13 @@ export default function NPCs() {
           }
 
           const agent = state.crowd.agents[npc.agentId];
+          if (npc.still === true) {
+            agent.updateFlags = 0; // neither steered nor separated: see `setStill`
+            npc.position.x = agent.position[0];
+            npc.position.z = agent.position[2];
+            npc.anim.speed = 0;
+            continue;
+          }
           // ignore obstacles when nearly arrived to avoid slow-down near nav-edges
           const arriving = crowdApi.isAgentAtTarget(state.crowd, npc.agentId, agent.radius * 2);
           agent.updateFlags = arriving === true ? arrivingUpdateFlags : movingUpdateFlags;
@@ -474,7 +481,9 @@ export default function NPCs() {
       rawSpawn(opts) {
         let npc = w.n[opts.npcKey];
 
-        const closePolyResult = opts.closePolyResult ?? state.getClosestPoly(opts.groundPoint);
+        // a doable's own point, not where it was picked: one on the navmesh keeps their agent
+        const closePolyResult =
+          opts.closePolyResult ?? state.getClosestPoly(opts.doResult?.meta.groundPoint ?? opts.groundPoint);
         const positionY = opts.doResult?.meta.y ?? 0;
         const rotationY = state.determineSpawnedAngle({
           groundPoint: opts.groundPoint,
@@ -562,6 +571,7 @@ export default function NPCs() {
           state.doableToNpc[decorKey] = npcKey;
         }
         state.npcToDoable[npcKey] = decorKey;
+        state.npc[npcKey]?.setStill(decorKey !== null); // at a doable on the navmesh, they keep their place
         w.events.next({ key: "npc-do", npcKey, decorKey });
         // only a bed, left or taken, can change whose label clears a bunk
         const isBed = (key: unknown) => typeof key === "string" && w.decor.byKey[key]?.meta.do === "lie";

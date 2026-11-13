@@ -55,7 +55,6 @@ export default function Decor() {
       lastHmr: 0,
       ready: false,
       restored: false,
-      roomToMeta: [],
 
       // assigned rather than spread: a batch's `ref` writes to the batch itself
       static: Object.assign(createTexBatch(MAX_DECOR_QUAD_INSTANCES), { gdKeyToDecorKeys: {} }),
@@ -476,14 +475,6 @@ export default function Decor() {
         w.physics.worker.postMessage({ type: "remove-physics-colliders", colliders } satisfies WW.MsgToWorker);
         w.physics.worker.postMessage({ type: "add-physics-colliders", colliders } satisfies WW.MsgToWorker);
       },
-      syncRoomToMeta() {
-        state.roomToMeta = w.gms.map(() => []);
-        for (const decor of Object.values(state.byKey)) {
-          if (helper.isRoomLabel(decor) === false) continue;
-          // the first wins: a symbol's own decor precedes its sub-symbols', so a parent's label names the room
-          state.roomToMeta[decor.meta.gmId][decor.meta.roomId] ??= decor.meta;
-        }
-      },
       removeDecorColliders(...decor) {
         w.physics.worker.postMessage({
           type: "remove-physics-colliders",
@@ -841,7 +832,6 @@ export default function Decor() {
       // and every dependant redraws off `ready` alone
       if (buildId !== state.buildId) return null;
 
-      state.syncRoomToMeta();
       state.ready = true;
       state.sendToRaycast();
       if (w.physics.physicsRebuilds > 0) state.syncStaticColliders(); // else its setup's reply does
@@ -927,8 +917,6 @@ export type State = {
   ready: boolean;
   /** Whether this map's saved decor is back. Until then a save would overwrite it with less — see `persistDecor` */
   restored: boolean;
-  /** By gmId then roomId: the meta of the room's first label point, which decorates the room. See `syncRoomToMeta` */
-  roomToMeta: (undefined | Geomorph.DecorPoint["meta"])[][];
 
   /** Static quads and points */
   static: TexBatch & {
@@ -993,8 +981,6 @@ export type State = {
   sendToRaycast(changes?: { added: Geomorph.Decor[]; removed: string[] }): void;
   /** Sends the physics worker every static decor that senses — see `isColliderDecor` */
   syncStaticColliders(): void;
-  /** Rebuilds `roomToMeta` off the decor, as it becomes ready */
-  syncRoomToMeta(): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;
   /** Writes where a decor stands into `slots`, both components alike */

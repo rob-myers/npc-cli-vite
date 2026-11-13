@@ -1,12 +1,20 @@
 import { BaseGraph, createBaseAstar } from "@npc-cli/graph";
 import { jsStringify } from "@npc-cli/util/legacy/generic";
 import { AStar, type AStarSearchResult } from "../pathfinding/AStar";
+import type DerivedGmsData from "./DerivedGmsData";
 import { helper } from "./helper";
 
 export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGraphEdgeOpts> {
-  static fromGmGraph(gmGraph: Graph.GmGraph): Graph.GmRoomGraph {
+  /** By door: the rooms with `maxWalkers` it opens into, for a direct test in `w.e.refusesWalker` */
+  walkerRooms = new Map<Geomorph.GmDoorKey, Geomorph.GmRoomKey[]>();
+
+  static fromGmGraph(gmGraph: Graph.GmGraph, gmsData: DerivedGmsData): Graph.GmRoomGraph {
     const graph = new GmRoomGraph();
     let index = 0;
+    const maxWalkersOf = (gm: Geomorph.LayoutInstance, roomId: null | number) => {
+      const max = roomId === null ? undefined : gmsData.byKey[gm.key].roomMeta[roomId]?.["max-walkers"];
+      return typeof max === "number" ? max : null;
+    };
 
     const roomNodes: Graph.GmRoomGraphNodeRoom[] = gmGraph.gms.flatMap((gm, gmId) =>
       gm.rooms.map((room, roomId) => ({
@@ -15,6 +23,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
         gmId,
         roomId,
         grKey: helper.getGmRoomKey(gmId, roomId),
+        maxWalkers: maxWalkersOf(gm, roomId),
         ...createBaseAstar({ centroid: gm.matrix.transformPoint(room.center) }),
         index: index++,
       })),
@@ -48,6 +57,10 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
     gmGraph.gms.forEach((gm, gmId) => {
       gm.doors.forEach((door, doorId) => {
         const doorKey = helper.getGmDoorKey(gmId, doorId);
+        const walkerRooms = door.roomIds.flatMap((roomId) =>
+          roomId === null || maxWalkersOf(gm, roomId) === null ? [] : helper.getGmRoomKey(gmId, roomId),
+        );
+        if (walkerRooms.length > 0) graph.walkerRooms.set(doorKey, walkerRooms);
 
         if (gm.isHullDoor(doorId)) {
           const roomId = door.roomIds.find((x) => x !== null);

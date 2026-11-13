@@ -18,6 +18,7 @@ import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
+  agentConfig,
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcConfig,
@@ -110,6 +111,8 @@ export class Npc {
     unreachableResult: null,
   };
   spawns = 0;
+  /** Held where they stand: the crowd neither steers nor separates them. See `setStill` */
+  still = false;
 
   resolve = {
     fade: (_k: string): void => {},
@@ -216,7 +219,8 @@ export class Npc {
 
     if (isDoorAreaId(node.area) === true) {
       const gmDoorId = decodeDoorAreaId(node.area);
-      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
+      // locked to them, or into a room with `maxWalkers` already full
+      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey) || this.w.e.refusesWalker(gmDoorId.gdKey, this.key)) {
         if (exemptStanding === true && nodeRef === this.nodeRef) {
           return true;
         }
@@ -638,6 +642,17 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
+  }
+
+  /** Holds them where they stand, e.g. at a doable on the navmesh, or lets them go as idle */
+  setStill(still: boolean) {
+    if (still === false && this.still === false) return; // every walk lets go, and few were held
+    this.still = still;
+    const { agent } = this;
+    if (agent === null) return;
+    agent.maxSpeed = still ? 0 : agentConfig.maxSpeed.idle;
+    agent.maxAcceleration = still ? 0 : agentConfig.maxAcceleration.idle;
+    if (still) [agent.velocity, agent.desiredVelocity].forEach((v) => v.fill(0));
   }
 }
 

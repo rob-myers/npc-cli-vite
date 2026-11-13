@@ -183,12 +183,12 @@ type Home = {
   fails: number;
 };
 
-/** Why they cannot make way now, else `null`. Idle for `stillSecs`, stood or collapsed. Never the player */
+/** Why they cannot make way now, else `null`. Idle for `stillSecs`, stood or collapsed. The player once still `playerStillSecs` */
 function whyNot(w: JshCli.WorldState, npc: JshCli.Npc, s: Sidestep) {
   const { hurt, dragged } = npc.anim;
-  if (npc.key === w.player.key) return "player";
   const returning = s.home.get(npc.key)?.returning === true;
   if (npc.agent === null) return "off the navmesh";
+  if (npc.still === true) return "still";
   if (hurt !== null && hurt.key !== "pacified" && dragged === false) return "hurt";
   if (npc.isMoving() && returning === false) return "moving";
   if (npc.isLooking() || npc.isFading()) return "busy";
@@ -196,7 +196,9 @@ function whyNot(w: JshCli.WorldState, npc: JshCli.Npc, s: Sidestep) {
   if (returning === true) return null; // neither a return's moves nor the pause between them hold them
   const since = Math.max(npc.last.idleTime, s.fell.get(npc.key) ?? -Infinity);
   const own = s.ownIdle.get(npc.key) === npc.last.idleTime;
-  return w.gameTime.now() - since < (own ? sidestepConfig.ownSettleSecs : sidestepConfig.stillSecs) ? "settling" : null;
+  const { ownSettleSecs, playerStillSecs, stillSecs } = sidestepConfig;
+  const settle = own ? ownSettleSecs : npc.key === w.player.key ? playerStillSecs : stillSecs;
+  return w.gameTime.now() - since < settle ? "settling" : null;
 }
 
 /** Asks the worker how `npc` makes way for `walker`, as `s.choices.kind`, then has them make way after `reactSecs`, if still free to */
@@ -264,7 +266,8 @@ async function perform(
     returning: false,
     fails: 0,
   };
-  if (to !== null && s.choices.back !== "stay") s.home.set(npc.key, home);
+  // the player is never walked back: where they go is theirs
+  if (to !== null && s.choices.back !== "stay" && npc.key !== w.player.key) s.home.set(npc.key, home);
   const free = npc.anim.hurt === null && npc.anim.face.aim === null;
   /** Eased round whilst stepping, dropped at rest: to face the walker, else to `face` from the start */
   const aimAt = faceWalker === true ? walker.point : faceFirst === true ? face : null;
@@ -613,10 +616,10 @@ const skipSays: Record<string, string> = {
   hurt: "{npc} too hurt for {walker}",
   "off the navmesh": "{npc} off the navmesh, ignores {walker}",
   passed: "{walker} passed by {npc}",
-  player: "{npc}, the player, ignores {walker}",
   "path clear": "{npc} clear of {walker}",
   settling: "{npc} settling, ignores {walker}",
   stepping: "{npc} avoiding {walker}",
+  still: "{npc} held still, ignores {walker}",
 };
 
 /** `--debug`'s colour for a line's role, in the theme shown now. Vivid on light, to stand out on the pale floor */
@@ -661,6 +664,8 @@ const sidestepConfig = {
   says: { chance: 0, lines: ["Sorry.", "Excuse me."] },
   /** Seconds after stopping or collapsing before they step aside, so an arrival settles first */
   stillSecs: 2,
+  /** As `stillSecs`, for the player: their own walking always wins */
+  playerStillSecs: 3,
   /** Seconds after sidestep's own step aside or return, before they may again */
   ownSettleSecs: 0.3,
   /** Returning: moved this far off their last step by anything else, they forget home */

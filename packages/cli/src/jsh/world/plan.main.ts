@@ -23,7 +23,9 @@ export function npcQuery(w: JshCli.WorldState, npc: JshCli.Npc): WW.NpcQuery {
     point: npc.point,
     nodeRef,
     grKey,
-    blockedGdKeys: doors.filter((gdKey) => w.e.npcCanAccess(npc.key, gdKey) === false),
+    blockedGdKeys: doors.filter(
+      (gdKey) => w.e.npcCanAccess(npc.key, gdKey) === false || w.e.refusesWalker(gdKey, npc.key),
+    ),
   };
 }
 
