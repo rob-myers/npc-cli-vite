@@ -331,10 +331,12 @@ export default function NPCs() {
           }
 
           const agent = state.crowd.agents[npc.agentId];
-          if (npc.still === true) {
-            agent.updateFlags = 0; // neither steered nor separated: see `setStill`
-            npc.position.x = agent.position[0];
-            npc.position.z = agent.position[2];
+          if (npc.hardPinned === true) {
+            agent.updateFlags = 0; // neither steered nor separated: see `setHardPin`
+            // back from where the crowd's collisions pushed them, so a walker gives way instead
+            agent.position[0] = npc.position.x;
+            agent.position[2] = npc.position.z;
+            if (npc.isMoving() === true) npc.setHardPin(true); // a walk begun whilst pinned ends at once
             npc.anim.speed = 0;
             continue;
           }
@@ -571,7 +573,7 @@ export default function NPCs() {
           state.doableToNpc[decorKey] = npcKey;
         }
         state.npcToDoable[npcKey] = decorKey;
-        state.npc[npcKey]?.setStill(decorKey !== null); // at a doable on the navmesh, they keep their place
+        state.npc[npcKey]?.setHardPin(decorKey !== null); // at a doable on the navmesh, they keep their place
         w.events.next({ key: "npc-do", npcKey, decorKey });
         // only a bed, left or taken, can change whose label clears a bunk
         const isBed = (key: unknown) => typeof key === "string" && w.decor.byKey[key]?.meta.do === "lie";

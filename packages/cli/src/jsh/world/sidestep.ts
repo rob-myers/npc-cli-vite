@@ -188,7 +188,7 @@ function whyNot(w: JshCli.WorldState, npc: JshCli.Npc, s: Sidestep) {
   const { hurt, dragged } = npc.anim;
   const returning = s.home.get(npc.key)?.returning === true;
   if (npc.agent === null) return "off the navmesh";
-  if (npc.still === true) return "still";
+  if (npc.hardPinned === true) return "hard pinned";
   if (hurt !== null && hurt.key !== "pacified" && dragged === false) return "hurt";
   if (npc.isMoving() && returning === false) return "moving";
   if (npc.isLooking() || npc.isFading()) return "busy";

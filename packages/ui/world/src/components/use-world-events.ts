@@ -415,6 +415,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (hurt !== null && (shove !== true || (hurt.key !== "pacified" && npc.anim.dragged === false))) {
           throw Error("hurt");
         }
+        // a doable's pin goes as they step off it, any other only by `setHardPin(false)`
+        if (npc.hardPinned === true && w.npc.npcToDoable[npcKey] == null) {
+          throw Error("hard pinned");
+        }
         const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
         if (doResult.type === "occupied") {
           throw Error("occupied");
@@ -1550,7 +1554,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async shuffleTo(npc, groundPoint, result) {
-        w.npc.setNpcDo(npc.key, null); // in case do=stand
         try {
           npc.anim.aimAt({ groundPoint, result });
           npc.anim.startShuffle(groundPoint);
@@ -1810,7 +1813,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }, moveId) {
         const { config } = w.npc;
-        w.npc.setNpcDo(npc.key, null); // in case do=stand
 
         await npc.ensureLegalPosition();
 
