@@ -709,9 +709,11 @@ export function instantiateFlatSymbol(
     if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
   }
 
-  /** e.g. tag `do:foo=42` sets `foo: 42` on every do point within */
-  const doMeta = Object.fromEntries(
-    Object.entries(meta).flatMap(([k, v]) => (k.startsWith("do:") ? [[k.slice(3), v]] : [])),
+  /** e.g. tag `do:foo=42` sets `foo: 42` on every do point within, and `obs:foo=42` on every obstacle */
+  const [doMeta, obsMeta] = ["do:", "obs:"].map((prefix) =>
+    Object.fromEntries(
+      Object.entries(meta).flatMap(([k, v]) => (k.startsWith(prefix) ? [[k.slice(prefix.length), v]] : [])),
+    ),
   );
   const decor = src.decor.flatMap((d) => {
     const { doorId } = d.meta;
@@ -745,6 +747,7 @@ export function instantiateFlatSymbol(
     doors,
     obstacles: src.obstacles.map((poly) =>
       poly.cleanClone(mat, {
+        ...obsMeta,
         // aggregate height-off-floor from MapEdit symbols
         ...(typeof meta.y === "number" && {
           y: toPrecision(meta.y + (parseFloat(poly.meta.y) || 0)),

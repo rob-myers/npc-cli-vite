@@ -1372,7 +1372,7 @@
             "e": 10.225,
             "f": 7.5875
           },
-          "meta": {"extra--002--fresher": true, "y": 0.6}
+          "meta": {"extra--002--fresher": true, "y": 0.6, "obs:nav-outset": 4.5}
         },
         {
           "symbolKey": "extra--002--fresher",
@@ -1386,7 +1386,7 @@
             "e": 11.1,
             "f": 7.5875
           },
-          "meta": {"extra--002--fresher": true, "y": 0.6}
+          "meta": {"extra--002--fresher": true, "y": 0.6, "obs:nav-outset": 5}
         }
       ]
     },
@@ -27388,7 +27388,7 @@
             "obstacle": true,
             "toilet": true,
             "inset": 0.05,
-            "nav-outset": 6,
+            "nav-outset": 4.5,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
             "y": 0.6,
@@ -27414,7 +27414,7 @@
             "obstacle": true,
             "toilet": true,
             "inset": 0.05,
-            "nav-outset": 6,
+            "nav-outset": 5,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
             "y": 0.6,
@@ -42188,7 +42188,7 @@
             "obstacle": true,
             "toilet": true,
             "inset": 0.05,
-            "nav-outset": 6,
+            "nav-outset": 4.5,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
             "y": 0.6,
@@ -42214,7 +42214,7 @@
             "obstacle": true,
             "toilet": true,
             "inset": 0.05,
-            "nav-outset": 6,
+            "nav-outset": 5,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
             "y": 0.6,
@@ -82463,13 +82463,13 @@
           {"x": 18.3125, "y": 8.0125},
           {"x": 18.3125, "y": 7.8125},
           {"x": 20.6453, "y": 7.8125},
-          {"x": 20.6077, "y": 8.1713},
-          {"x": 20.6031, "y": 8.1625},
-          {"x": 20.2625, "y": 8.1625},
+          {"x": 20.603, "y": 8.216},
+          {"x": 20.588, "y": 8.1875},
+          {"x": 20.2625, "y": 8.1875},
           {"x": 20.2625, "y": 8.15},
           {"x": 19.6625, "y": 8.15},
-          {"x": 19.6625, "y": 8.1625},
-          {"x": 19.3625, "y": 8.1625},
+          {"x": 19.6625, "y": 8.2},
+          {"x": 19.3625, "y": 8.2},
           {"x": 19.3625, "y": 8.1375},
           {"x": 18.7625, "y": 8.1375},
           {"x": 18.7625, "y": 8.46},

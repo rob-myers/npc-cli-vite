@@ -178,6 +178,8 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
 
 - **Add to the `symbols` group**, one `symbol` node each, named with its tags:
   `office--006 doors=['e','w']`, `shop--031 y=1`.
+- **Tags reach inside an instance** by prefix (`instantiateFlatSymbol`): `do:foo=bar` sets `foo: "bar"` on
+  every do point within, e.g. `do:as-walker` on a shower, and `obs:foo=bar` on every obstacle within.
 - **The transform is a plain matrix** from the symbol's own origin: no transform-origin. A quarter turn
   clockwise of a room at `(x0, y0)` is `(0, 1, -1, 0, x0 + height, y0)`; a half turn
   `(-1, 0, 0, -1, x0 + width, y0 + height)`; a mirror in x `(-1, 0, 0, 1, x0 + width, y0)`.
