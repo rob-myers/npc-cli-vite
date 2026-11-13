@@ -207,7 +207,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookAtPoint(x, z) {
         const npc = state.get();
         if (npc === undefined || w.client === true || w.disabled === true) return;
-        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
+        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookMarkerDeadMetres) return;
         state.lookAt = { x, y: z };
         state.lookMarked = true;
         // held as `r` would be, long enough to come round
@@ -614,7 +614,7 @@ const doingMaxSecs = 3;
 /** Game seconds gaze mode waits after they are done with what it yielded to */
 const gazeYieldSecs = 0.8;
 /** Metres from them within which a tap gives no direction to look */
-const lookDeadMetres = 0.3;
+const lookMarkerDeadMetres = 0.05;
 /** Metres off that a tap past the horizon is taken to be */
 const lookFarMetres = 500;
 /** How far off their facing one sat may look, over a shoulder */
