@@ -96,8 +96,9 @@ export default function Phasers() {
           return;
         }
         if (w.n?.[npcKey]?.anim.hurt != null) return; // nor in pain, or pacified
-        const arm = state.ensure(npcKey);
         const at = opts.at ?? null;
+        if (at !== null && at !== npcKey && state.isDrawnIn(npcKey)) return; // no shot leaves `phaser_aim_avoid`
+        const arm = state.ensure(npcKey);
         arm.target =
           at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null, local: opts.local ?? null };
         if (arm.target !== null) state.takeCharge(arm); // fired
@@ -128,7 +129,8 @@ export default function Phasers() {
       },
       charge(npcKey) {
         const arm = state.arms.get(npcKey);
-        if (arm?.armed !== true || arm.charge != null || state.isCooling(npcKey)) return false;
+        if (arm?.armed !== true || arm.charge != null || state.isCooling(npcKey) || state.isDrawnIn(npcKey))
+          return false;
         arm.charge = { since: w.gameTime.now() };
         w.r3f?.invalidate();
         return true;
@@ -252,6 +254,7 @@ export default function Phasers() {
         return arm;
       },
       fireAlong(npcKey, end) {
+        if (state.isDrawnIn(npcKey)) return false; // no shot leaves `phaser_aim_avoid`
         if (state.isArmed(npcKey) === false) state.arm(npcKey);
         const arm = state.arms.get(npcKey);
         if (arm?.armed !== true) return false;
@@ -683,6 +686,10 @@ export default function Phasers() {
         const free = armed === true && isFreeShot(arm.target) ? arm.target : null;
         state.recast(npc, arm, target, secs);
         const { avoid, swingHit } = state.wieldBlock(npc, arm, target, secs);
+        if (avoid === true && state.cancelCharge(npc.key) && npc.key === w.player.key) {
+          w.hud?.fireHint?.update(); // drawn in, it is called off: the fire hint stops pulsing
+          w.hud?.say("phaser blocked");
+        }
         state.wieldStance(npc, arm, state.wieldPose(npc, arm, avoid, swingHit));
         const heldAt = state.wieldFacing(npc, arm, target, free);
         state.wieldPitch(npc, arm, heldAt, delta, secs);
@@ -1082,7 +1089,7 @@ export type State = PhaserResources & {
   gunHeight(npcKey: string): number;
   /** Ends their charge into a cooldown, the phaser left raised: `false` if not charging */
   cancelCharge(npcKey: string): boolean;
-  /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling */
+  /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling, nor drawn in */
   charge(npcKey: string): boolean;
   /** Their charge so far, `0` to `1` over `chargeSecs` */
   chargeOf(npcKey: string): number;

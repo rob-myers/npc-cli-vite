@@ -57,7 +57,7 @@ export default function NpcFocus() {
       },
       fire(by) {
         const entry = state.phasers.get(by);
-        if (entry === undefined) return false;
+        if (entry === undefined || w.phasers.isDrawnIn(by)) return false; // none leaves `phaser_aim_avoid`
         // one with a laser dot, or a held aim, stays whilst raised: anyone else's is over
         if (state.showsDot(by) === false && w.phasers.arms.get(by)?.aimAt?.held !== true) {
           state.phasers.delete(by);
