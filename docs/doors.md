@@ -12,7 +12,7 @@ Their settings are `doorConfig` in `const.env`. Their sizes are with the walls':
 | --- | --- |
 | `open` | Changes only once the door has finished opening or shutting. `w.door.isHeadedOpen(door)` is where it will rest. |
 | `locked` | Only an npc with access opens it. Any npc may shut it. |
-| `sealed` | Never opens, and is always locked. |
+| `sealed` | Never opens, and is always locked. The navmesh takes it as wall: it has no doorway area, and the floor stops `wallOutset` short of it. |
 | `auto` | Opens when an npc touches its "nearby sensor", unless locked. Every unsealed hull door is auto. |
 | `proximity` | Stays open whilst anyone is near. Defaults to `auto`. |
 | `held` | Kept open or shut as it is. See [Holding](#holding). |
@@ -36,8 +36,12 @@ Likewise we could have `auto` doors which are not `proximity` i.e. automatically
 
 - `w.e.toggleLock`, jsh `lock` and `unlock`.
 - The player's keys slot locks or unlocks the nearest door they hold keys to.
-- A long press on the door itself, or on a switch or door spot whilst it is shut, locks or unlocks it, keyless.
+- A long press on a door, its switch or a door spot unlocks it, keyless, if it is locked and not held, open or shut.
+  Neither locked nor held, a long press locks it if shut, or if on the door itself.
 - An unlocked door that is open starts its usual close.
+- **A walk past a door they may not pass** stops just outside it, past its door area, then fails `locked` (`walkTo`, from `testTargetUnreachable`). A full room's door counts as locked to them, failing `room full` (`docs/CLAUDE.md`, Max walkers).
+  - `requestUnreachable` sends the worker a refused door as locked and never open, keys or not. Else an open door would let them through.
+  - jsh `move_next` ignores both errors, `move_lazy` drops its pending moves, and `act` counts both as not arrived.
 
 ## Holding
 
@@ -49,7 +53,9 @@ Otherwise only a press, jsh without `as:`, or an npc asked to hold or let go cha
 
 - `w.door.setHeld(door, held)` holds it as it is, or lets it go. Let go whilst open, it starts its usual close (`try-close-door`).
 - `w.e.toggleDoor(gdKey, { open, close, held, npcKey })` opens or shuts it, then holds it or lets it go.
-- A long press on a switch or a door spot whilst the door is open holds it, or lets it go.
+- A long press lets a held door go, if it is not locked, open or shut.
+  Neither locked nor held, a long press on a switch or a door spot whilst it is open holds it.
+- A long press on a door both locked and held lets it go if open, else unlocks it.
 - An npc asked to open or shut a held door is refused, unless walking into it, or also asked to hold it or let it go.
 
 ## Switches
@@ -86,6 +92,7 @@ Their sounds are jsh's: see `docs/audio.md`.
   exhaustive, so a door the map locks (`meta.locked`) but we unlocked stays unlocked.
 - `doorFlags` holds, by gdKey, each `auto` and `proximity` that differs from the map's.
 - `persistLocks` saves all three on each change. `buildByKey` restores them.
+- A rebuild keeps each door's live state, unless the map or its geomorphs changed, e.g. a symbol saved in MapEdit. Then the saved state comes back, and on the same map each door stays open if it was. A rebuild drops pending closes, so each open door is asked to close again (`try-close-door`), which waits whilst anybody is in it.
 - A reset of the map's state (`resetLocks`) locks just what the map asks for, holds none, and takes its `auto` and `proximity`.
 - Restoring from another World takes its locks and holds (`applyLocks`).
 - A client of a server World takes its locks and open doors, but not its holds: its switches show no hold.

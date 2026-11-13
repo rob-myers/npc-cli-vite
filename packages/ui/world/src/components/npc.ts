@@ -18,6 +18,7 @@ import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
+  agentConfig,
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcConfig,
@@ -110,6 +111,8 @@ export class Npc {
     unreachableResult: null,
   };
   spawns = 0;
+  /** Held where they stand, unlike `pinTo`'s target: nothing moves them, not even a shove. See `setHardPin` */
+  hardPinned = false;
 
   resolve = {
     fade: (_k: string): void => {},
@@ -216,7 +219,8 @@ export class Npc {
 
     if (isDoorAreaId(node.area) === true) {
       const gmDoorId = decodeDoorAreaId(node.area);
-      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
+      // locked to them, or into a room with `maxWalkers` already full
+      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey) || this.w.e.refusesWalker(gmDoorId.gdKey, this.key)) {
         if (exemptStanding === true && nodeRef === this.nodeRef) {
           return true;
         }
@@ -638,6 +642,25 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
+  }
+
+  /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */
+  setHardPin(pinned: boolean) {
+    pinned = Boolean(pinned);
+    if (pinned === false && this.hardPinned === false) return; // every walk lets go, and few were held
+    if (pinned === true && this.isMoving() === true) {
+      // pinned, they never arrive: so their walk ends here
+      this.anim.startIdle({ force: true });
+      this.w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: this.key });
+    }
+    this.hardPinned = pinned;
+    const { agent } = this;
+    if (agent === null) return;
+    agent.maxSpeed = pinned ? 0 : agentConfig.maxSpeed.idle;
+    agent.maxAcceleration = pinned ? 0 : agentConfig.maxAcceleration.idle;
+    if (pinned === false) return;
+    [agent.velocity, agent.desiredVelocity].forEach((v) => v.fill(0));
+    [this.position.x, this.position.z] = [agent.position[0], agent.position[2]]; // where each tick puts them back
   }
 }
 

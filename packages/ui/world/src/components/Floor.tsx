@@ -24,7 +24,6 @@ import * as THREE from "three/webgpu";
 import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const.env";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
-import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import {
   deckConfig,
@@ -107,16 +106,9 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
-        // room labels, read exactly as `RoomLabels` reads them — off the instantiated decor, so
-        // `meta.roomId` is already resolved. `deckConfig`'s `wiring` and `doorTicks` use them.
-        // The FIRST instance's will do: a label is never added at runtime, so all agree
+        // room labels, which `deckConfig`'s `wiring` and `doorTicks` use
+        const labelOfRoom = w.gmsData.byKey[gmKey].roomMeta.map((meta) => meta?.label as undefined | string);
         const gmId = w.gms.findIndex((gm) => gm.key === gmKey);
-        const labelOfRoom: (undefined | string)[] = [];
-        for (const decor of Object.values(w.decor.byKey)) {
-          if (helper.isRoomLabel(decor) === false || decor.meta.gmId !== gmId) continue;
-          // the first wins: a symbol's own decor precedes its sub-symbols', so a parent's label names the room
-          labelOfRoom[decor.meta.roomId] ??= decor.meta.label;
-        }
 
         // the deck itself, plated, and conduit along the walls of some rooms. See `deckConfig`
         drawRoomFloors(ct, layout);

@@ -201,7 +201,8 @@ export function buildDoorwayGrid(
 ): DoorwayGrid {
   // outset door polys to prevent npc intersecting locked door
   const polys = doorways.map((door) => {
-    const [outsetDoorPoly] = geomService.createOutset(Poly.from(door.polygon), doorAreaOutsetAmount);
+    // a mirrored geomorph's door is clockwise, which an outset garbles
+    const [outsetDoorPoly] = geomService.createOutset(Poly.from(door.polygon).fixOrientation(), doorAreaOutsetAmount);
     return outsetDoorPoly;
   });
 

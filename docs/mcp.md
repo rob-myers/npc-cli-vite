@@ -10,15 +10,27 @@ what works as TypeScript, run it, and see what happened.
   lists it as `npc-cli`.
 - On first use it attaches to Chrome on CDP port `NPC_MCP_CDP_PORT` (9382). If none is running, it
   launches a visible one with its own profile, and opens the dev page there.
-- That Chrome is a second instance, not a window of your own: the Dock and Spotlight open your usual one.
+- That Chrome is Chrome for Testing if installed, else a second instance of your usual Chrome.
+  - Chrome for Testing has its own Dock icon and Cmd-Tab entry. Install it with
+    `npx @puppeteer/browsers install chrome@stable --path ~/.cache/npc-cli-mcp`.
+  - A second usual Chrome shares its app with yours, so the Dock and Cmd-Tab bring yours forward.
+- A windowless Chrome may still hold the port, e.g. one relaunched with `--no-startup-window --restart`.
+  Quitting its windows leaves it running, and the MCP attaches to it again. Find it and end it:
+  `pgrep -fl remote-debugging-port=9382`.
 ```sh
-# If MCP not started, do what `openPage` in `cdp.ts` does
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9382 \
-  --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --window-size=1400,900 http://localhost:5173/ &
+# Is anything serving the port?
+curl -s http://127.0.0.1:9382/json/version
 
-# If it has no window, e.g. started with `--no-startup-window`, ask it for one on the dev page:
+# If MCP not started, do what `openPage` in `cdp.ts` does
+APP=$(ls -d ~/.cache/npc-cli-mcp/chrome/*/chrome-mac-arm64/"Google Chrome for Testing.app" | sort -V | tail -1)
+"$APP/Contents/MacOS/Google Chrome for Testing" --remote-debugging-port=9382 \
+  --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --disable-infobars --window-size=1400,900 http://localhost:5173/ &
+
+# If one is running but has no window, ask it for one on the dev page:
 curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
 ```
+- Chrome for Testing and the usual Chrome share the profile `$TMPDIR/npc-cli-mcp-chrome`, so its saved data carries over. A newer Chrome
+  upgrades it, and an older one then warns.
 
 ## The page side
 

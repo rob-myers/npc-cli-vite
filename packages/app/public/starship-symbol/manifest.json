@@ -78,6 +78,12 @@
       "width": 1102,
       "height": 1101
     },
+    "extra--024--fresher": {
+      "key": "extra--024--fresher",
+      "group": "extra",
+      "width": 104,
+      "height": 88
+    },
     "g-301--playground": {
       "key": "g-301--playground",
       "group": "playground",
@@ -323,12 +329,6 @@
       "group": "symbol-small-craft",
       "width": 643,
       "height": 1238
-    },
-    "iris-valves--005": {
-      "key": "iris-valves--005",
-      "group": "symbol-misc",
-      "width": 221,
-      "height": 220
     },
     "iris-valves--006": {
       "key": "iris-valves--006",

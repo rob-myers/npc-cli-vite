@@ -30,5 +30,5 @@
   "[yaml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
-  "cSpell.words": ["Geomorph"]
+  "cSpell.words": ["Geomorph", "resumable"]
 }

@@ -760,16 +760,15 @@ async function move_lazy(
       if (readNext) pendingRead = api.read();
 
       const npc = getNpcOrThrow();
+      /** Stopped short, e.g. at a door: none of what follows can be reached */
+      const stopped = () => {
+        pendingMoves.length = 0;
+        api.flush();
+      };
 
       const movePromise = movePausable(
         { ...moveFlags(opts), npcKey: npc.key, to: dst },
-        {
-          "not navigable": false,
-          stuck: () => {
-            pendingMoves.length = 0;
-            api.flush();
-          },
-        },
+        { "not navigable": false, stuck: stopped, locked: stopped, "room full": stopped },
       );
 
       // glide through destination if next step is a navigation
@@ -818,7 +817,7 @@ async function move_next(
                 to: next,
                 arrive: next.meta?.preventArrive !== true, // for wasd_delta --nav
               },
-              { "not navigable": false, occupied: false, stuck: false },
+              { "not navigable": false, occupied: false, stuck: false, locked: false, "room full": false },
             );
       await Promise.race([movePromise, (pendingRead = api.read())]);
     }
@@ -1610,12 +1609,16 @@ export async function spawn(
   // support e.g. `spawn rob at:$( pick 1 )`
   opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
 
+  /** prevent spawns into rooms where max-walkers is reached i.e. confined spaces */
+  const spawnUnderMax = async (o: JshCli.SpawnOpts) => (throwOnMaxWalkers(w, o), w.npc.spawn(o));
+
   if (api.isTtyAt(0)) {
-    return await w.npc.spawn(opts);
+    return await spawnUnderMax(opts);
   }
 
   function ignoreSpawnErrors(e: unknown) {
-    if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
+    const ignored = ["not placable", "not doable", "room full"];
+    if (opts.force && e instanceof Error && ignored.includes(e.message)) {
       numSpawns--;
       return;
     }
@@ -1625,20 +1628,18 @@ export async function spawn(
   let numSpawns = 0;
   if (!opts.facing) {
     while ((datum = await api.read()) !== api.eof) {
-      await w.npc.spawn({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum }).catch(ignoreSpawnErrors);
+      await spawnUnderMax({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum }).catch(ignoreSpawnErrors);
     }
     return;
   }
 
   while (true) {
-    await w.npc
-      .spawn({
-        ...opts,
-        npcKey: `${opts.npcKey}${numSpawns++}`,
-        at: await api.read(),
-        facing: await api.read(),
-      })
-      .catch(ignoreSpawnErrors);
+    await spawnUnderMax({
+      ...opts,
+      npcKey: `${opts.npcKey}${numSpawns++}`,
+      at: await api.read(),
+      facing: await api.read(),
+    }).catch(ignoreSpawnErrors);
   }
 }
 
@@ -1751,6 +1752,18 @@ export async function* w(ct: JshCli.RunArg) {
   }
 }
 
+/** Admits them onto the floor of a room with `maxWalkers`, else throws `room full`. A doable is off its floor */
+function throwOnMaxWalkers(
+  w: JshCli.WorldState,
+  { npcKey, at }: { npcKey: string; at?: MaybeMeta<JshCli.PointAnyFormat> },
+) {
+  if (at === undefined) return; // nowhere to check: `w.npc.spawn` throws
+  const point = w.helper.parseGroundPoint(at);
+  const grKey = w.findRoomContaining(point)?.grKey;
+  if (grKey === undefined || w.npc.findFreeDoMeta(at.meta ?? {}, npcKey, point).type !== "none") return;
+  if (w.e.admitWalker(grKey, npcKey) === false) throw Error("room full");
+}
+
 /**
  * ```sh
  * warp npc:rob to:$( pick 1 )
@@ -1763,6 +1776,7 @@ export async function warp(
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
+  throwOnMaxWalkers(w, { npcKey: npc.key, at: opts.to });
   await npc.fadeSpawn({ at: opts.to });
 }
 

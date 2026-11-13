@@ -178,6 +178,8 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
 
 - **Add to the `symbols` group**, one `symbol` node each, named with its tags:
   `office--006 doors=['e','w']`, `shop--031 y=1`.
+- **Tags reach inside an instance** by prefix (`instantiateFlatSymbol`): `do:foo=bar` sets `foo: "bar"` on
+  every do point within, e.g. `do:as-walker` on a shower, and `obs:foo=bar` on every obstacle within.
 - **The transform is a plain matrix** from the symbol's own origin: no transform-origin. A quarter turn
   clockwise of a room at `(x0, y0)` is `(0, 1, -1, 0, x0 + height, y0)`; a half turn
   `(-1, 0, 0, -1, x0 + width, y0 + height)`; a mirror in x `(-1, 0, 0, 1, x0 + width, y0)`.
@@ -216,6 +218,21 @@ reading runs of dark pixels along a row or column.
 - **Left for a person**: a door lying along a slanted wall. Whether a rotated door rect works is untested.
 
 The layout in `assets.json` says whether it worked: `layout[key].rooms` goes up as rooms close.
+
+## Removing a symbol
+
+There is no api for it. Replace every instance of it first, e.g. `iris-valves--005` by `iris-valves--006`.
+
+1. Comment out its key in `symbolByGroup`, saying why, so it is not added back.
+2. Delete `symbol/{key}.json`, `symbol/{key}.thumbnail.png` and `starship-symbol/{key}.png` with plain `rm`.
+3. Drop its entry from `symbol/manifest.json`.
+4. Drop it from `assets.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
+   `safeJsonCompact`.
+5. Run `pnpm starship-pngs-to-public`, then `pnpm gen-assets-json --changedFiles '[]'` (re-levels and
+   re-hashes), then `pnpm gen-starship-sheets`.
+
+Its key is gone from the schema once step 1 is done. So any mention of it left in `assets.json` fails to
+parse, and `gen-assets-json` then starts from empty (see Pitfalls).
 
 ## Pitfalls
 

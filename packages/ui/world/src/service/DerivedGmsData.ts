@@ -156,6 +156,14 @@ export default class DerivedGmsData {
       broadWall.roomIds = this.roomsTouching(gm, broadWall.poly);
     }
 
+    gmData.roomMeta = [];
+    for (const decor of gm.decor) {
+      if (decor.type !== "point" || typeof decor.meta.label !== "string") continue;
+      const roomId = this.findRoomIdContaining(gm, decor, false);
+      // the first wins: a symbol's own decor precedes its sub-symbols', so a parent's label names the room
+      if (roomId !== null) gmData.roomMeta[roomId] ??= decor.meta;
+    }
+
     gmData.roomGraph = RoomGraph.from(gm, `${gm.key}: `);
 
     gmData.unseen = false;
@@ -262,6 +270,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
     roomGraph: new RoomGraph(),
+    roomMeta: [],
   };
 }
 

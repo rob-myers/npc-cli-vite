@@ -497,7 +497,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.view.roomSlots.ensure(state.gms, state.gmsData, state.gmsHash);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
-      state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
+      state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph, state.gmsData);
 
       // a settled map rebuilding is an EDIT: no teardown, so the npcs must be caught up by hand
       if (state.settledMapKey === state.mapKey) {

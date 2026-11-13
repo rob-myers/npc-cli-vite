@@ -153,40 +153,47 @@
           "cssTransform": "matrix(1, 0, 0, 1, 368, 308)"
         },
         {
-          "id": "6fc6aa86-72a9-4098-b504-ce1b9f8d15d9",
-          "name": "extra--001--fresher y=0.65",
+          "id": "a8946c05-7cae-4da4-b311-30ca4e2940a2",
+          "name": "extra--024--fresher y=0.65",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 370, "f": 301},
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 373.5,
+            "f": 299.5
+          },
           "type": "symbol",
-          "srcKey": "extra--001--fresher",
-          "baseRect": {"width": 28, "height": 23},
+          "srcKey": "extra--024--fresher",
+          "baseRect": {"width": 21, "height": 18},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 370, 301)"
+          "cssTransform": "matrix(1, 0, 0, -1, 373.5, 299.5)"
         },
         {
           "id": "080d514a-10e6-4de6-a1e2-e33185dd1378",
-          "name": "extra--002--fresher y=0.6",
+          "name": "extra--002--fresher y=0.6 obs:nav-outset=4.5",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 409, "f": 302},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 409, "f": 304.5},
           "type": "symbol",
           "srcKey": "extra--002--fresher",
           "baseRect": {"width": 24, "height": 32},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 409, 302)"
+          "cssTransform": "matrix(1, 0, 0, -1, 409, 304.5)"
         },
         {
           "id": "579f608d-0665-4fcf-bde7-a597ce859e50",
-          "name": "extra--002--fresher y=0.6",
+          "name": "extra--002--fresher y=0.6 obs:nav-outset=5",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 444, "f": 302},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 444, "f": 304.5},
           "type": "symbol",
           "srcKey": "extra--002--fresher",
           "baseRect": {"width": 24, "height": 32},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 444, 302)"
+          "cssTransform": "matrix(1, 0, 0, -1, 444, 304.5)"
         }
       ]
     },
@@ -381,7 +388,7 @@
         },
         {
           "id": "06149ca6-aabd-4769-862f-c641211f1ea6",
-          "name": "decor point label=locker",
+          "name": "decor point label=locker max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 140, "f": 162},
@@ -394,7 +401,7 @@
         },
         {
           "id": "d39b91b3-81ed-4549-aa43-809614835025",
-          "name": "decor point label=locker",
+          "name": "decor point label=locker max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 320, "f": 162},
@@ -489,7 +496,7 @@
         },
         {
           "id": "838a74b8-2a87-4724-83dc-049dac6150fd",
-          "name": "decor point label=fresher",
+          "name": "decor point label=fresher max-walkers=1",
           "locked": true,
           "visible": true,
           "transform": {
@@ -516,6 +523,32 @@
           "type": "rect",
           "baseRect": {"width": 8, "height": 42},
           "cssTransform": "matrix(1, 0, 0, 1, 356, 250)"
+        },
+        {
+          "id": "79d68854-8519-4f43-b7e1-993039a87d0a",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 363.5, "f": 242},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 363.5, 242)"
+        },
+        {
+          "id": "c7444c66-93a1-4964-8416-7ed9d96318a6",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 359.5, "f": 242},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 359.5, 242)"
         },
         {
           "id": "ac4e4c9a-d688-4208-bfab-3de478e73eb8",
@@ -903,7 +936,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 361.5, "f": 299},
           "type": "rect",
-          "baseRect": {"width": 118.5, "height": 4},
+          "baseRect": {"width": 118.5, "height": 5},
           "cssTransform": "matrix(1, 0, 0, 1, 361.5, 299)"
         },
         {
@@ -941,20 +974,20 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 400, "f": 270},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 400, "f": 275},
           "type": "rect",
-          "baseRect": {"width": 4, "height": 32},
-          "cssTransform": "matrix(1, 0, 0, 1, 400, 270)"
+          "baseRect": {"width": 4, "height": 27},
+          "cssTransform": "matrix(1, 0, 0, 1, 400, 275)"
         },
         {
           "id": "2ff747e7-e4e5-4263-8c94-4951e0beacd0",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 436, "f": 270},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 436, "f": 275.5},
           "type": "rect",
-          "baseRect": {"width": 4, "height": 32},
-          "cssTransform": "matrix(1, 0, 0, 1, 436, 270)"
+          "baseRect": {"width": 4, "height": 26.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 436, 275.5)"
         }
       ]
     }

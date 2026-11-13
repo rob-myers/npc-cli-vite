@@ -1,5 +1,5 @@
 lastPicked () {
-  /shared/pred/lastPicked
+  echo /shared/pred/lastPicked
 }
 
 pickGdKey () {

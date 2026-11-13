@@ -153,6 +153,8 @@ declare namespace Graph {
   type GmRoomGraphNodeRoom = BaseGmRoomGraphNode & {
     type: "room";
     id: Geomorph.GmRoomKey;
+    /** How many may walk on its navmesh at once, from its label's `max-walkers`, else `null` */
+    maxWalkers: null | number;
   } & Geomorph.GmRoomId;
 
   type GmRoomGraphNodeDoor = BaseGmRoomGraphNode & {

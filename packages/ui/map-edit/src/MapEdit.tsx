@@ -409,22 +409,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           newItem.cssTransform = computeNodeCssTransform(newItem);
         }
 
-        if (!parent) {
-          state.set({
-            nodes: [...state.nodes, newItem],
-            selectedIds: new Set([newItem.id]),
-            editingId: null,
-            pickImageForId: newItem.type === "image" ? newItem.id : null,
-            pickSymbolForId: newItem.type === "symbol" ? newItem.id : null,
-          });
-        } else {
-          parent.children.push(newItem);
-          state.set({
-            selectedIds: new Set([newItem.id]),
-            pickImageForId: newItem.type === "image" ? newItem.id : null,
-            pickSymbolForId: newItem.type === "symbol" ? newItem.id : null,
-          });
-        }
+        if (parent !== null) parent.children.push(newItem);
+        else if (selection !== null) state.insertAfterNode(selection.id, [newItem]); // the selected node's next sibling
+        state.set({
+          ...(parent === null && selection === null && { nodes: [...state.nodes, newItem] }),
+          selectedIds: new Set([newItem.id]),
+          editingId: null,
+          pickImageForId: newItem.type === "image" ? newItem.id : null,
+          pickSymbolForId: newItem.type === "symbol" ? newItem.id : null,
+        });
       },
       cloneNode(node, seenDuringClone) {
         seenDuringClone?.add(node.id);

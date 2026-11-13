@@ -31,6 +31,7 @@ import * as THREE from "three/webgpu";
 import { getObstacleSheetKey, getSheetUrl, type SheetsType } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
+import * as obstacleClip from "../service/obstacle-clip";
 import { alongFace, panelSeams } from "../service/panel-seams";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
@@ -63,6 +64,7 @@ export default function Obstacles(_props: Props) {
       toInstanceId: [],
       fromInstanceId: [],
       roomSlotByInstanceId: [],
+      clipTex: obstacleClip.createClipTex(MAX_OBSTACLE_QUAD_INSTANCES),
 
       addUvs() {
         if (!w.sheets) return;
@@ -121,6 +123,7 @@ export default function Obstacles(_props: Props) {
         state.toInstanceId = [];
         state.fromInstanceId = [];
         state.roomSlotByInstanceId = [];
+        const clips = state.clipTex.image.data as Float32Array;
         const roomIdsByGmKey: Partial<Record<Geomorph.StarShipGeomorphKey, (null | number)[]>> = {};
         const broadIdsByGmKey: typeof roomIdsByGmKey = {};
         let nextId = 0;
@@ -133,6 +136,9 @@ export default function Obstacles(_props: Props) {
             if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
               const roomId = roomIds[obstacleId];
               state.toInstanceId[gmId][obstacleId] = nextId;
+              const room = roomId === null ? undefined : gm.rooms[roomId];
+              const clip = obstacleClip.clipLineOf(gm.obstacles[obstacleId], room, gm.matrix);
+              clips.set(clip ?? obstacleClip.neverClipped, nextId * 4);
               state.fromInstanceId[nextId] = { gmId, obstacleId };
               const broadId = broadIds[obstacleId];
               // shown with its ROOM: a broad wall abuts many, and would show it from any of them.
@@ -147,6 +153,7 @@ export default function Obstacles(_props: Props) {
             nextId++;
           }
         }
+        state.clipTex.needsUpdate = true;
         if (nextId > MAX_OBSTACLE_QUAD_INSTANCES) {
           warn(`Obstacles: ${nextId} exceeds MAX_OBSTACLE_QUAD_INSTANCES (${MAX_OBSTACLE_QUAD_INSTANCES})`);
         }
@@ -249,6 +256,7 @@ export default function Obstacles(_props: Props) {
       transformAndColorSkirts() {
         if (!state.skirtInst) return;
         const slots = ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
+        const clips = state.clipTex.image.data as Float32Array;
         let sId = 0;
 
         state.skirtInst.instanceMatrix.array.fill(0);
@@ -271,28 +279,28 @@ export default function Obstacles(_props: Props) {
             // the outline's winding, so each edge's normal can be turned outward: a skirt's two
             // quads are one surface seen from either side, saying nothing about which side is out
             const outward = new Poly(corners).anticlockwise() ? -1 : 1;
+            const skirt = { slot, instanceId: instanceId ?? 0, height, dimY: height - obstacleBottom(height, meta) };
+            const look = { ...skirt, kind: skirtKindOf(meta), tint: meta.skirtTint ?? "#999" };
 
-            // biome-ignore format: succinct
-            for (let i = 0; i < corners.length; i++) {
-              const j = (i + 1) % corners.length;
-              if (sId >= MAX_OBSTACLE_SKIRT_INSTANCES) { sId++; continue; } // counted, for the warning
-              const [p1, p2] = determinant > 0 ? [corners[j], corners[i]] : [corners[i], corners[j]];
-              const dx = p2.x - p1.x, dy = p2.y - p1.y;
-              const len = Math.sqrt(dx * dx + dy * dy);
-              const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
-              const skirtDimY = height - obstacleBottom(height, meta);
-              tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
-              slots.setXY(sId, slot, slot);
-              state.skirtObstacleIds[sId] = instanceId ?? 0; // a pick on a skirt picks its obstacle
-              // off the UNSWAPPED edge: `p1`/`p2` flip with the geomorph, the outline does not
-              state.skirtNormals[sId * 2] = (outward * (corners[j].y - corners[i].y)) / len;
-              state.skirtNormals[sId * 2 + 1] = (outward * (corners[i].x - corners[j].x)) / len;
-              state.skirtInfo[sId * 2] = height;
-              state.skirtInfo[sId * 2 + 1] = skirtKindOf(meta);
-              state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
-              state.skirtInst.setMatrixAt(sId++,
-                embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
-              );
+            for (const [i, u] of corners.entries()) {
+              const v = corners[(i + 1) % corners.length];
+              const len = Math.hypot(v.x - u.x, v.y - u.y);
+              // its normal off the UNSWAPPED edge: the ends flip with the geomorph, the outline does not
+              const normal = { x: (outward * (v.y - u.y)) / len, y: (outward * (u.x - v.x)) / len };
+              const [from, to] = determinant > 0 ? [v, u] : [u, v];
+              if (sId < MAX_OBSTACLE_SKIRT_INSTANCES)
+                obstacleClip.writeSkirt(state, slots, sId, { from, to, normal }, look);
+              sId++; // counted past the cap too, for the warning
+            }
+
+            // clipped at the wall it pokes into: a back across the cut, rather than a hole
+            const back = instanceId === null ? null : obstacleClip.clipBackOf(corners, clips, instanceId);
+            if (back !== null && sId < MAX_OBSTACLE_SKIRT_INSTANCES) {
+              obstacleClip.writeSkirt(state, slots, sId++, back, {
+                ...skirt,
+                kind: 0,
+                tint: obstacleClip.clipBackTint,
+              });
             }
           }
         }
@@ -319,7 +327,10 @@ export default function Obstacles(_props: Props) {
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texNodeFinal = texNode.depth(uvTexIds);
     const normalNode = transformNormalToView(vec3(0, 1, 0));
-    const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
+    const insideBy = obstacleClip.insideClipBy(state.clipTex, int(instanceIndex));
+    const shaded = texNodeFinal.mul(vec3(state.brightnessNode), 1);
+    /** A white line along where it is cut against a wall */
+    const unlit = vec4(mix(shaded.rgb, vec3(1), step(insideBy, obstacleClip.cutLineWidth)), shaded.a);
     const topFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     return {
       // - obstacles tops are not tinted by playerLight, although obstacle skirts are
@@ -341,6 +352,7 @@ export default function Obstacles(_props: Props) {
         const alpha = mix(step(softEdgeFrom, lit.a), lit.a, shown);
         return selectAs(w.view.objectPick.notEqual(0), lit, vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), alpha));
       })(),
+      maskNode: insideBy.greaterThanEqual(0),
       uid: generateUUID(),
     };
   }, [w.texObs.hash, w.view.fadeRoomsFx.uid]);
@@ -414,6 +426,9 @@ export default function Obstacles(_props: Props) {
       attribute<"float">("obstacleIds", "float"),
     ) as THREE.Node<"vec4">;
     const shown = skirtFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
+    mat.maskNode = obstacleClip
+      .insideClipBy(state.clipTex, int(attribute<"float">("obstacleIds", "float")))
+      .greaterThanEqual(0);
     mat.outputNode = selectAs(
       w.view.objectPick.notEqual(0),
       lit,
@@ -468,6 +483,7 @@ export default function Obstacles(_props: Props) {
           colorNode={material.colorNode}
           outputNode={material.outputNode}
           normalNode={material.normalNode}
+          maskNode={material.maskNode}
         />
       </instancedMesh>
 
@@ -517,6 +533,8 @@ export type State = {
   fromInstanceId: { gmId: number; obstacleId: number }[];
   /** Which room each instance stands in, worked out once per map — see `roomSlotOf` */
   roomSlotByInstanceId: number[];
+  /** By instance id: `(nx, nz, d)` in world space, past which neither material draws it. See `obstacle-clip` */
+  clipTex: THREE.DataTexture;
   /** Dense instance ids (`0..instanceCount-1`), rebuilt whenever the obstacles can change */
   buildInstanceIds(): number;
   addUvs(): void;
@@ -542,7 +560,6 @@ const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
 const tmpVec1 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
-const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
 const obstaclesSkirtBaseColor = "#555";

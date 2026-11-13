@@ -47,7 +47,12 @@ export async function createGmNavMesh(layout: Geomorph.Layout): Promise<NavMesh>
   const result = await generateTiledNavMeshResult([
     {
       key: layout.key,
-      doorways: layout.doors.map((door, doorId) => ({ gmId: 0, doorId, polygon: door.poly.geoJson })),
+      doorways: layout.doors.map((door, doorId) => ({
+        gmId: 0,
+        doorId,
+        polygon: door.poly.geoJson,
+        sealed: door.meta.sealed === true,
+      })),
       triangulation: layout.navDecomp,
       determinant: 1,
       worldBounds: layout.bounds.json,

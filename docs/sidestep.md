@@ -50,7 +50,7 @@ Each npc goes through the stages in turn, and their outcome is tallied for `side
 
 Like `coming`, it asks each npc once per approach. They are asked again once that walker stops, goes or passes them, or `askedSecs` (1s) on if still in the way. So a jammed walker, pushing on with almost no speed, has them make way again, and a `chain` can start. Until then `--debug` says `kate already tried for rob`.
 
-**Free** (`whyNot`) means on the navmesh, idle and stood (or stood pacified, or collapsed and dragged), `stillSecs` past stopping or collapsing (only `ownSettleSecs` past sidestep's own step aside or return), and not already stepping. It tells `moving` apart from `busy` (mid-look or fading). On their own way back, neither moving nor settling holds them (see returnBack). Never the player (`player`): an npc never moves them aside. One brushing past is neither ahead nor on their way. `--debug` says which set it off, e.g. `coming 0.4s` or `held up`.
+**Free** (`whyNot`) means on the navmesh, idle and stood (or stood pacified, or collapsed and dragged), `stillSecs` past stopping or collapsing (only `ownSettleSecs` past sidestep's own step aside or return), and not already stepping. It tells `moving` apart from `busy` (mid-look or fading). On their own way back, neither moving nor settling holds them (see returnBack). The player too, but only `playerStillSecs` (3s) past their own last walk, so their walking always wins. They are never sent back (see returnBack), and a hard-pinned npc at a doable (`hardPinned`) is never moved. One brushing past is neither ahead nor on their way. `--debug` says which set it off, e.g. `coming 0.4s` or `held up`.
 
 `sidestep status` tables what `coming` tested: see sidestep status.
 
