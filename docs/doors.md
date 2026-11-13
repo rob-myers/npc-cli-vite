@@ -36,7 +36,8 @@ Likewise we could have `auto` doors which are not `proximity` i.e. automatically
 
 - `w.e.toggleLock`, jsh `lock` and `unlock`.
 - The player's keys slot locks or unlocks the nearest door they hold keys to.
-- A long press on the door itself, or on a switch or door spot whilst it is shut, locks or unlocks it, keyless.
+- A long press on a door, its switch or a door spot unlocks it, keyless, if it is locked and not held, open or shut.
+  Neither locked nor held, a long press locks it if shut, or if on the door itself.
 - An unlocked door that is open starts its usual close.
 - **A walk past a door they may not pass** stops just outside it, past its door area, then fails `locked` (`walkTo`, from `testTargetUnreachable`). A full room's door counts as locked to them, failing `room full` (`docs/CLAUDE.md`, Max walkers).
   - `requestUnreachable` sends the worker a refused door as locked and never open, keys or not. Else an open door would let them through.
@@ -52,7 +53,9 @@ Otherwise only a press, jsh without `as:`, or an npc asked to hold or let go cha
 
 - `w.door.setHeld(door, held)` holds it as it is, or lets it go. Let go whilst open, it starts its usual close (`try-close-door`).
 - `w.e.toggleDoor(gdKey, { open, close, held, npcKey })` opens or shuts it, then holds it or lets it go.
-- A long press on a switch or a door spot whilst the door is open holds it, or lets it go.
+- A long press lets a held door go, if it is not locked, open or shut.
+  Neither locked nor held, a long press on a switch or a door spot whilst it is open holds it.
+- A long press on a door both locked and held lets it go if open, else unlocks it.
 - An npc asked to open or shut a held door is refused, unless walking into it, or also asked to hold it or let it go.
 
 ## Switches

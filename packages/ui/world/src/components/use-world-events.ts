@@ -828,9 +828,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               firing === false &&
               w.debug?.contextMenu === true &&
               (e.meta.type === "npc" || e.meta.type === "decor" || e.meta.type === "door");
+            const gdKey = state.pressedDoorOf(e);
             if (menu === true) state.openPickMenu(e);
-            // a press on a door, its switch or its spot — see the debug menu's "toggle doors"
-            else if (w.debug?.pickGdkeyOpensDoors === true) state.onPickDoor(e);
+            // see the debug menu's "toggle doors"
+            else if (gdKey !== null && w.debug?.pickGdkeyOpensDoors === true) state.onPickDoor(e, gdKey);
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
@@ -1033,16 +1034,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             throw new ExhaustiveError(e);
         }
       },
-      onPickDoor(e) {
-        const { meta } = e;
-        if (meta.type !== "door" && meta.type !== "decor" && meta.type !== "spot") return;
-        if (w.helper.isGmDoorKey(meta.gdKey) === false || e.clickId !== undefined) return; // e.g. `pick 1`
-        if (meta.type === "spot" && e.rightDown === true) return; // a spot's right click chooses it
-        const door = w.door.byKey[meta.gdKey];
-        // a long press on a switch or spot holds an open door, or lets it go, and locks a shut one keyless
-        if (e.longDown !== true) state.toggleDoor(meta.gdKey);
-        else if (meta.type === "door" || door?.open === false) state.toggleLock(meta.gdKey, {});
-        else if (door !== undefined) w.door.setHeld(door, !door.held);
+      onPickDoor(e, gdKey) {
+        const door = w.door.byKey[gdKey];
+        if (e.longDown !== true) return void state.toggleDoor(gdKey);
+        if (door === undefined) return;
+        // a long press undoes a lock or a hold, keyless. Both: the hold if open, else the lock
+        if (door.locked && (door.held === false || door.open === false)) state.toggleLock(gdKey, {});
+        else if (door.held) w.door.setHeld(door, false);
+        // neither: it locks a shut door, or the door itself. A switch or spot holds an open one
+        else if (e.meta.type === "door" || door.open === false) state.toggleLock(gdKey, {});
+        else w.door.setHeld(door, true);
       },
       async openDoorwaysWithNpcs() {
         await w.physics?.settle();
@@ -1117,6 +1118,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.player?.aimAtPointer();
         w.player?.syncRun();
         for (const tick of state.keyedTick.values()) tick(w);
+      },
+      pressedDoorOf(e) {
+        const { meta } = e;
+        return (meta.type === "door" || meta.type === "decor" || meta.type === "spot") &&
+          w.helper.isGmDoorKey(meta.gdKey) &&
+          e.clickId === undefined &&
+          (meta.type !== "spot" || e.rightDown !== true)
+          ? meta.gdKey
+          : null;
       },
       async raycast(origSrc, origDst, { offMap = false } = {}) {
         const src = helper.parseGroundPoint(origSrc);
@@ -2166,8 +2176,8 @@ export type State = {
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   /** Opens a menu on the npc, decor or door picked, its Cancel under the press — see `PickMenu` */
   openPickMenu(e: Extract<JshCli.Event, { key: "picked" }>): void;
-  /** A press on a door, its switch or its spot: toggles it. A long press holds an open door, and locks a shut one */
-  onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>): void;
+  /** A press on a door, its switch or its spot: toggles it. A long press undoes a lock or a hold, else locks or holds it */
+  onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>, gdKey: Geomorph.GmDoorKey): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
@@ -2232,6 +2242,8 @@ export type State = {
   syncDoorways(): void;
   /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
   postNpcTick(): void;
+  /** The door pressed, its switch or its spot, else `null`. Never a click `pick 1` waits on, nor a spot's right click */
+  pressedDoorOf(e: Extract<JshCli.Event, { key: "picked" }>): null | Geomorph.GmDoorKey;
   /** Resolves after `secs` of game time */
   wait(secs: number): Promise<void>;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
