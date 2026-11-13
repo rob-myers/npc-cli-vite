@@ -7,10 +7,13 @@ pick meta.{floor,do} | move $( playerPath ) --force
 # keys move player
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
-# pointer moves npc
+# last picked moves
+pick meta.{floor,do} | move $( lastPicked ) --force
+
+# pointer moves named npc
 pick meta.{floor,do} | move npc:rob --backstep --force
 
-# keys move npc
+# keys move named npc
 wasd_delta --nav npc:rob | move npc:rob --force
 
 # pointer strafes npc
@@ -18,10 +21,6 @@ pick meta.{floor,do} | move rob --strafe --force
 
 # keys strafe npc
 wasd_delta npc:rob | move npc:rob --strafe --force
-
-
-# last picked moves
-pick meta.{floor,do} | move /shared/pred/lastPicked --force
 
 # long pressed looks
 pick --long | look npc:rob --force
