@@ -18,8 +18,8 @@
     },
     {
       "id": "713527fa-5e37-4e9c-a266-1477ef38c8a2",
-      "name": "obstacle sink h=0.2 nav-outset=4",
-      "locked": false,
+      "name": "obstacle sink h=0.2 nav-outset=5",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",

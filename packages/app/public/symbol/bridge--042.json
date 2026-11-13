@@ -176,24 +176,24 @@
           "name": "extra--002--fresher y=0.6 obs:nav-outset=4.5",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 409, "f": 303.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 409, "f": 304.5},
           "type": "symbol",
           "srcKey": "extra--002--fresher",
           "baseRect": {"width": 24, "height": 32},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 409, 303.5)"
+          "cssTransform": "matrix(1, 0, 0, -1, 409, 304.5)"
         },
         {
           "id": "579f608d-0665-4fcf-bde7-a597ce859e50",
           "name": "extra--002--fresher y=0.6 obs:nav-outset=5",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 444, "f": 303.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 444, "f": 304.5},
           "type": "symbol",
           "srcKey": "extra--002--fresher",
           "baseRect": {"width": 24, "height": 32},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 444, 303.5)"
+          "cssTransform": "matrix(1, 0, 0, -1, 444, 304.5)"
         }
       ]
     },
