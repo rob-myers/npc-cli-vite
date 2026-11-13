@@ -197,7 +197,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "ea1bd927-c7b3-436e-bc01-128397f0e0c5",
@@ -529,6 +529,19 @@
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 363.5, 242)"
+        },
+        {
+          "id": "c7444c66-93a1-4964-8416-7ed9d96318a6",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 359.5, "f": 242},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 359.5, 242)"
         },
         {
           "id": "ac4e4c9a-d688-4208-bfab-3de478e73eb8",
