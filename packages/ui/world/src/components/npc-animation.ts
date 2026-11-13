@@ -14,6 +14,7 @@ import {
   dragConfig,
   eyesConfig,
   fadeSecs,
+  fidgetClipKeys,
   flinchConfig,
   gaitStride,
   headShakeConfig,
@@ -1429,9 +1430,13 @@ function isStride(key: AnimationClipKey) {
   return isGait(key) || key === "backwards" || (shuffleStepClipKeys as AnimationClipKey[]).includes(key);
 }
 
-/** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
+/** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips and fidgets of each */
 export function postureOf(key: AnimationClipKey) {
-  return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
+  return key === "sit" || (key.startsWith("sit_") && key !== "sit_reach")
+    ? "sit"
+    : key === "lie" || key.startsWith("lie_")
+      ? "lie"
+      : "stand";
 }
 
 type PostureKey = ReturnType<typeof postureOf>;
@@ -1704,8 +1709,16 @@ function airLeft(x: number) {
   return (1 + k * x) * Math.exp(-k * x);
 }
 
-/** Poses at rest whose clip is one breath: empty at `0` and full halfway, whatever its length */
-const breathClips = new Set<AnimationClipKey>(["idle", "breathe", "sit", "lie", "lie_left", "lie_right"]);
+/** Poses at rest whose clip is one breath: empty at `0` and full halfway, whatever its length. Fidgets breathe as their base */
+const breathClips = new Set<AnimationClipKey>([
+  "idle",
+  "breathe",
+  "sit",
+  "lie",
+  "lie_left",
+  "lie_right",
+  ...fidgetClipKeys,
+]);
 
 /** Seconds into such a clip at which it has them `volume` full */
 function clipTimeOf(volume: number, exhaling: boolean, duration: number) {

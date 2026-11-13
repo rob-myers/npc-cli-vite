@@ -698,8 +698,15 @@ const legalPositionMargin = 0.05;
 
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
+  sit_check_wrist: "not while sitting",
+  sit_look_around: "not while sitting",
+  sit_rub_chin: "not while sitting",
+  sit_shrug: "not while sitting",
+  sit_lean_forward: "not while sitting",
   lie: "not while lying",
+  lie_stretch: "not while lying",
   lie_left: "not while lying",
+  lie_look_around: "not while lying",
   lie_right: "not while lying",
 };
 

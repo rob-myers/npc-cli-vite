@@ -184,10 +184,11 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `crouch_strafe_right`, `crouch_half_strafe_right` (`crouchStrafeRight`) | `down back lean splay toeOut stride duty lift bob abduct` |
 | `crouch_backwards`, `crouch_strafe_left`, and the half crouch's | none: the walk reversed (`reversedOf`), the strafe mirrored (`mirroredOf`) |
 | `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
+| fidgets: `rub_chin`, `check_wrist`, `look_around`, `shrug`, `shift_weight`, `sit_lean_forward`, `lie_stretch`, and `sit_` / `lie_` versions | `rub hz tilt`, `bow aside`, `yaw pitch`, `lift fore tuck tilt`, `shift drop tilt`, `stomach chest look`, `reach arms legs toes arch` |
 
 - A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in
-  Blockbench, and save.
-- It appends to the glTF's buffer, so restore both files first: `git checkout`, or re-export from Blockbench.
+  Blockbench, and save. A recipe's `bases` make theirs afresh instead, each a copy of its base clip.
+- It drops whatever of the glTF's buffer is no longer used, so a re-run needs no restore.
 - Reload the project in Blockbench afterwards, else a save puts the old keys back.
 
 ## Clips
@@ -208,6 +209,7 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
 | `collapsed` | 1.8s | after a body shot stood: on the floor, breathing hard | posed by search |
+| fidgets, e.g. `rub_chin`, `sit_rub_hands` | as their base | a rest clip, arms or head moving once a cycle | posed by search |
 
 ### walk / run: planted feet
 
@@ -406,6 +408,40 @@ alone in Blockbench it shows them off an upright torso; the arm is keyed against
 - Solved against a table 0.6m high whose edge is 0.15m ahead of the hips (the end seat of `table--004`), the
   forearm's tip staying a unit clear of it.
 - If `sit`'s arm changes, its first pose must follow.
+
+### Fidgets
+
+`breathe`, `sit` or `lie` with the arms, head, torso or legs moving once a cycle, e.g. jsh `pose rob as:shrug`.
+Each is a copy of its base clip (a recipe's `bases`), so whatever it leaves is the base's and it breathes in step.
+Each re-keyed bone eases along its path of poses over `hold` of the cycle (`over` for its own), and back.
+
+- **They never take more room than their base.** `gen-clip-keys` skins every frame and writes nothing if a
+  fidget's box leaves its base's. The head's own vertices are left out, since a look turns it anyway.
+- **Except out front, by `frontLeeway`.** The torso is thick, so a forearm before it reaches past the face:
+  `check_wrist` 23.5cm, `check_wrist_avoid` 16.5cm, `rub_chin` 9.5cm, `sit_check_wrist` 5cm, `sit_lean_forward` 1.5cm. Lain, up is their
+  front (`upLeeway`).
+- **A forearm stays clear of the torso, head and thighs**, along its whole path. Search against each bone's own
+  box in its frame, leaving out the arms' overlap with the torso's sides at rest. A rough box misses it.
+- **`check_wrist` is eased in straight** by `setUpper`, with no waypoint, so its two poses were searched for clear
+  straight paths from rest and between them. That is why it needs the most leeway.
+- So no hand reaches the head above the jaw. The elbow pokes out at least 7cm stood, 3.5cm sat, 5cm lain.
+- Stood, a hand to the chin goes by way of the hand folded up by the shoulder, else it swings out in front.
+- **The arms are stumps.** Nothing reads that needs hands, e.g. rubbing them. Lean on shoulders, weight and head.
+- `shift_weight` solves the legs to the rest ankles (`steppingLegs`, `abduct`), so its root is unturned. The
+  torso rolls back over the hips, and the arms roll back by as much so they hang plumb.
+
+| Clip | What | Pose |
+|---|---|---|
+| `rub_chin` | right hand at the chin, rubbing | arm via [0,0,10] to [35,52.5,15], forearm 150, 130 |
+| `sit_rub_chin` | likewise | [35,52.5,15], 135 |
+| `check_wrist` | jsh `pose`, as `point`: right forearm level before the waist, held, head bowed 25 | [40,37.5,15], 60 |
+| `check_wrist_avoid` | its drawn-in pair whilst an npc is near: the wrist raised before the chest, head bowed 15 | [20,15,10], 120 |
+| `sit_check_wrist` | left wrist before them | [30,-30,-10], 95 |
+| `shrug` / `sit_` | shoulders lifted 0.7, forearms up 15, arms tucked 3, head tipped 8 | `over` 0.25 to 0.75 |
+| `shift_weight` | hips 1 to their right and 0.3 down, torso and arms rolled 5 | |
+| `sit_lean_forward` | leant 14 + 20, forearms on the thighs, looking ahead | arms [28,25,11] mirrored, 100 |
+| `lie_stretch` | shoulders pushed 0.5 down the bed, arms and legs straight, toes pointed 20, back arched 3 + 3 | |
+| `look_around` / `sit_` / `lie_` | head alone: left then right, 35 | |
 
 ### Hits, stood: pain_* / pacified
 
