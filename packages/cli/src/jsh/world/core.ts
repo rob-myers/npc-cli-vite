@@ -1759,7 +1759,7 @@ function throwOnMaxWalkers(
   const point = w.helper.parseGroundPoint(at);
   const grKey = w.findRoomContaining(point)?.grKey;
   if (grKey === undefined || w.npc.findFreeDoMeta(at.meta ?? {}, npcKey, point).type !== "none") return;
-  if (w.e.admitWalker(grKey, npcKey) === false) throw Error("room full");
+  if (w.e.admitWalker(grKey, npcKey) === false) throw w.e.roomFull(w.n[npcKey]);
 }
 
 /**

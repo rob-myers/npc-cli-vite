@@ -42,6 +42,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
+        if (npc.hardPinned === true && npc.posture === "stand") return void (face.aim = null); // stood at a doable, they face it
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;

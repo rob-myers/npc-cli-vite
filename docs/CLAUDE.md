@@ -167,9 +167,10 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Max walkers.** A room's first label may set `max-walkers=N`, read once into `maxWalkers` on its `w.gmRoomGraph` node. Its doors are in `w.gmRoomGraph.walkerRooms`.
   - At most N stand on its navmesh (`w.e.admitWalker`). Those at a doable don't count, unless it has `meta.as-walker`, e.g. a shower's (`do:as-walker` on its symbol instance).
   - A full room's door areas are refused to others, as a locked door's (`w.e.refusesWalker`, from `canPassNode`).
-  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. A doable further in fails `room full`.
+  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. For a doable further in, they walk up to its door, then fail `room full`.
   - Between its doables they hop, at most `doableLook` each, e.g. toilet, toilet, sink, then out.
   - A walk onto its floor is refused as at a locked door: it stops outside and fails `room full` (`docs/doors.md`). So do `spawn` and `warp` onto it.
+  - Refused, they shake their head (`w.e.roomFull`, which gives the error).
 - **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
   - `act park` records via `parked.mark`. A move, respawn or removal unparks.
 - `padded` beside it is the same for `act pad`: by npcKey, the room they were stood with to walk right round them (`by`, from walls and from others).
