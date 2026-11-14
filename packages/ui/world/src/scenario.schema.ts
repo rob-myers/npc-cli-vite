@@ -1,7 +1,7 @@
 import z from "zod";
 
 /** A folder of entries each */
-export const scenarioKinds = ["character", "graph"] as const;
+export const scenarioKinds = ["graph"] as const;
 
 /** A file's name, and an entry's key after its kind */
 export const scenarioSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -11,19 +11,6 @@ const EntryBase = {
   key: z.string(),
   name: z.string().default(""),
 };
-
-export const CharacterEntrySchema = z.object({
-  ...EntryBase,
-  kind: z.literal("character"),
-  /** Their npc in the World */
-  npcKey: z.string().optional(),
-  /** e.g. `medic-0` */
-  skin: z.string().optional(),
-  /** By mapKey: the rooms that are theirs, and the doors they hold keys to */
-  maps: z
-    .record(z.string(), z.object({ rooms: z.array(z.string()).default([]), doors: z.array(z.string()).default([]) }))
-    .default({}),
-});
 
 /** Free-form, read by the behaviours using a graph */
 const GraphMetaSchema = z.record(z.string(), z.unknown()).default({});
@@ -70,24 +57,12 @@ export const GraphEntrySchema = z
   });
 
 /** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
-export const ScenarioEntrySchema = z.discriminatedUnion("kind", [CharacterEntrySchema, GraphEntrySchema]);
+export const ScenarioEntrySchema = z.discriminatedUnion("kind", [GraphEntrySchema]);
 
 export type ScenarioEntry = z.infer<typeof ScenarioEntrySchema>;
-export type CharacterEntry = z.infer<typeof CharacterEntrySchema>;
 export type GraphEntry = z.infer<typeof GraphEntrySchema>;
 export type GraphNode = z.infer<typeof GraphNodeSchema>;
 export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
-
-/** A character with an npc, who can be spawned */
-export type ScenarioCharacter = CharacterEntry & { npcKey: string };
-
-export function isCharacterEntry(entry: ScenarioEntry): entry is CharacterEntry {
-  return entry.kind === "character";
-}
-
-export function isScenarioCharacter(entry: ScenarioEntry): entry is ScenarioCharacter {
-  return entry.kind === "character" && entry.npcKey !== undefined;
-}
 
 export function isGraphEntry(entry: ScenarioEntry): entry is GraphEntry {
   return entry.kind === "graph";

@@ -4,7 +4,7 @@ A graph is nodes and edges on one map, with free-form `meta` on the graph, each 
 
 ## The data
 
-A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenario/graph/{slug}.json`, keyed `graph/{slug}`. It is saved and served as characters are (`docs/scenarios.md`, Characters). The schema is `GraphEntrySchema` in `ui/world/src/scenario.schema.ts`.
+A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenario/graph/{slug}.json`, keyed `graph/{slug}`. It is saved and served as every entry is (`docs/scenarios.md`, Entry files). The schema is `GraphEntrySchema` in `ui/world/src/scenario.schema.ts`.
 
 | Field | Default | |
 | --- | --- | --- |

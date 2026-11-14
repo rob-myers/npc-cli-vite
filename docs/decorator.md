@@ -8,12 +8,6 @@ Decor is made two ways, both ending in `w.decor.create(def)`: placed on the pane
 in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
 neither the panel nor a terminal.
 
-Characters are edited in a panel of their own, the Scenario panel (`docs/scenarios.md`). The two neither
-import nor contain each other: on the same World they talk through `scenarioShared`
-(`ui/world/src/service/scenario-shared.ts`). The map outlines the shown character (`CharacterLayer.tsx`),
-centres where it asks, and tells it which npc was last chosen. The map loads the characters for its npcs
-menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
-
 | file | what it holds |
 |---|---|
 | `ui/decorator/src/Decorator.tsx` | the panel: finds the World (`useWorld`, from `ui/world`) |

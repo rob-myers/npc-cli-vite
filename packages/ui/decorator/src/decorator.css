@@ -1,4 +1,4 @@
-/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `CharacterLayer` */
+/* The map's ink — see `ink` in `NavMap2d` and `DecorLayer` */
 .decorator {
   --deco-bg: #050608;
   --deco-hull: #0b0d10;
@@ -24,9 +24,6 @@
   --deco-rect: #7fc3d9;
   --deco-circle: #9ccf8f;
   --deco-quad: #e09a6a;
-
-  --deco-character-room: rgba(250, 204, 21, 0.12);
-  --deco-character-edge: rgba(250, 204, 21, 0.8);
 
   --deco-graph: #e879f9;
   --deco-graph-selected: #fafafa;
@@ -58,9 +55,6 @@
   --deco-rect: #1f7a99;
   --deco-circle: #3d8a2e;
   --deco-quad: #b55a1e;
-
-  --deco-character-room: rgba(194, 65, 12, 0.12);
-  --deco-character-edge: rgba(65, 194, 12, 0.85);
 
   --deco-graph: #a21caf;
   --deco-graph-selected: #050608;

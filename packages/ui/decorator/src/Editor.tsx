@@ -6,10 +6,7 @@ import {
   deleteScenarioEntry,
   loadScenarioEntries,
   saveScenarioEntry,
-  scenarioShared,
-  useScenarioCharacters,
   useScenarioGraphs,
-  useScenarioShared,
 } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
@@ -26,7 +23,6 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { CharacterLayer } from "./CharacterLayer";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
@@ -57,11 +53,6 @@ import { nearestSpot, parseSpotPick, type SpotPick, spotPointOf, spotWorldPoint,
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const { w, meta } = props;
   const map = useRef<NavMap2dApi>(null);
-  /** What a Scenario panel on this World shows, should there be one: its character is drawn on the map */
-  const shared = useScenarioShared(meta.worldKey);
-  const character = shared.entry;
-  /** Each can be spawned, with their skin and their doors */
-  const characters = useScenarioCharacters(character);
   /** This map's graphs, as their files have them */
   const graphs = useScenarioGraphs(w.mapKey);
   const { uiStoreApi } = useContext(UiContext);
@@ -197,15 +188,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return performance.now() < state.menuBlockedUntil;
       },
       async spawnNpc(npcKey, at) {
-        // theirs, should a character be theirs: its skin and its doors
-        const { skin, maps } = characters.find((x) => x.npcKey === npcKey) ?? {};
         try {
-          const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
-          await w.npc.spawn({ npcKey, at, as: hasSkin ? skin : undefined });
-          if (hasSkin) w.n[npcKey]?.setSkin(skin); // a respawn keeps the old one
-          for (const gdKey of maps?.[w.mapKey]?.doors ?? []) {
-            if (gdKey in w.door.byKey) w.e.setAccess(npcKey, gdKey as Geomorph.GmDoorKey, true);
-          }
+          await w.npc.spawn({ npcKey, at });
           w.view.forceUpdate();
           if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
           state.set({ spawning: null, spawnError: null });
@@ -338,7 +322,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, graphs], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, graphs], reset: { history: false } },
   );
 
   /** Fetched for the spots layer, and for a chosen graph's nodes on spots */
@@ -359,26 +343,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     [graph, spots, w],
   );
 
-  /** The characters first, then whoever else is in the World */
-  const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
-
-  // a Scenario panel shows the character of whoever was last chosen here
-  const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1] ?? null;
-  useEffect(() => {
-    scenarioShared.set(meta.worldKey, { npcKey: mapNpcKey });
-  }, [meta.worldKey, mapNpcKey]);
-
-  // ...and asks for the map to be centred on its entry's npc, else its first room
-  useEffect(() => {
-    if (shared.locate !== null) map.current?.centreOn(shared.locate.x, shared.locate.y, locateZoom);
-  }, [shared.locate]);
-
-  // ...and whoever it renames is followed here under their new key
-  useEffect(() => {
-    const { renamed } = shared;
-    if (renamed === null || meta.npcKeys.includes(renamed.from) === false) return;
-    state.setNpcKeys(meta.npcKeys.flatMap((key) => (key !== renamed.from ? key : (renamed.to ?? []))));
-  }, [shared.renamed]);
+  /** Whoever is in the World, then those shown who are not, to spawn again */
+  const npcKeys = [...new Set([...Object.keys(w.n ?? {}), ...meta.npcKeys])];
 
   /** The latest, for the World's events */
   const reveal = useRef(revealSpot);
@@ -658,7 +624,6 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
-            {character !== null && <CharacterLayer w={w} entry={character} />}
             {graph !== null && (
               <GraphLayer
                 w={w}
@@ -716,7 +681,7 @@ function ToolButton(props: {
 }
 
 /**
- * The characters and whoever else is in the World. A name centres on them, staying open, else arms a spawn
+ * Whoever is in the World, and whoever the map shows. A name in the World centres on them, staying open, else arms a spawn
  * where the map is next clicked. The eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
@@ -802,7 +767,7 @@ type State = {
   /** The npc who goes where the map is next clicked */
   spawning: null | string;
   spawnError: null | string;
-  /** Spawns them there, or respawns them, as their character has them if they have one */
+  /** Spawns them there, or respawns them */
   spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;

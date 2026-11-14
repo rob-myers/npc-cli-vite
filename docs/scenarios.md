@@ -1,6 +1,6 @@
 # Scenarios
 
-Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Also the characters and conversations they use, edited in the Scenario panel.
+Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Also the graphs and conversations they use, listed in the Scenario panel.
 
 A query becomes an interaction when it is asked again, on a tick or an event, and its npcs act on the change.
 
@@ -8,7 +8,7 @@ A query becomes an interaction when it is asked again, on a tick or an event, an
 
 `@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
-On the left is one list in four sections: **scenarios**, **characters**, **graphs** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}`, `graph/{slug}` or `talk/{key}`. A graph's card is read-only: see `docs/npc-graphs.md`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
+On the left is one list in three sections: **scenarios**, **graphs** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `graph/{slug}` or `talk/{key}`. A graph's card is read-only: see `docs/npc-graphs.md`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
 ## The scenarios
 
@@ -106,9 +106,9 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 `sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. `--los` asks for line of sight alone, ignoring eyes and facing, e.g. `sees --los --all abe ben`. Both exit 1 if none, for `if` and `while`.
 
-## Characters
+## Entry files
 
-Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, of `character` and `graph` (`docs/npc-graphs.md`). A character has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below).
+Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph` (`docs/npc-graphs.md`).
 
 `scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -116,27 +116,11 @@ Authored in DEV and shipped as data. One JSON file per character, `packages/medi
 |---|---|---|
 | read | `GET /api/scenario`, every entry by key | `virtual:scenario`, bundled |
 | write | `POST` / `DELETE /api/scenario/file/{kind}/{slug}`, zod-checked | read-only |
-| change | the watcher sends `scenario-changed`, and the panel reloads | |
+| change | the watcher sends `scenario-changed`, and readers reload | |
 
 A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, kinds included, so a schema edit needs no restart. An edit to the plugin itself does.
 
 The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator uses them without depending on the panel.
-
-### The card
-
-A character's card has name, npc, skin and keys. It is editable in DEV only, and an edit saves itself `autosaveMs` after the last keystroke.
-
-Keys are typed into ONE box (`KeyBox`), with a World: a room's (`g0r1`) or a door's (`g0d29`) on this map, ended by a space, comma, enter, paste or blur. Each becomes a badge once it is found to exist. What is not stays typed, and the box goes red. Backspace in the empty box takes the last badge off. A badge whose key this map lacks is red.
-
-### In the World
-
-A character has, per map, `maps[mapKey].rooms` (grKeys) and `.doors` (the gdKeys they hold keys to), as a `g0r21` means nothing on another map. Both are entered in the card's key box.
-
-- The Decorator's map outlines the shown character's rooms and doors (`ui/decorator/src/CharacterLayer.tsx`).
-- Its **npcs** menu lists every character with an npc (`useScenarioCharacters`). Choosing one puts them where the map is next clicked (`Editor.spawnNpc`): spawned or moved, in their skin, and granted their doors.
-- Selecting a character centres the Decorator's map on their npc, else their first room. Choosing an npc on that map shows the character whose `npcKey` they are.
-- Both go through `scenarioShared`, a small store keyed by `worldKey` (`entry`, `npcKey`, `locate`, `renamed`). Neither panel imports the other, and either may be absent.
-- Editing `npcKey` (committed on enter or blur) removes their npc and adds it back under the new key where they stood, keeping their doors. Clearing it only removes. Editing `skin` reskins them.
 
 ## Graphs
 

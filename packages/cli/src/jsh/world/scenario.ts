@@ -67,7 +67,6 @@ async function getEntry(key: undefined | string) {
 
 /** One line, e.g. `graph/my-path 3 nodes 2 edges directed` */
 function summary(entry: ScenarioEntry, all: boolean) {
-  if (entry.kind === "character") return `${entry.key} ${entry.npcKey ?? "-"}`;
   const directed = entry.directed ? " directed" : "";
   return `${entry.key} ${entry.nodes.length} nodes ${entry.edges.length} edges${directed}${all ? ` on ${entry.mapKey}` : ""}`;
 }
