@@ -165,9 +165,10 @@ async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, name: 
     const filePath = path.join(PUBLIC_DIR, "sheet", `${name}.${sheetId}.png`);
     const hash = skinSheetHash(name as "skin" | "skin-slices", sheetId);
     // every World sends it on every load: written only if what it is drawn from changed
-    if (!fs.existsSync(filePath) || hashOf(fs.readFileSync(filePath)) !== hash) {
+    const was = fs.existsSync(filePath) ? (hashOf(fs.readFileSync(filePath)) ?? "unhashed") : "missing";
+    if (was !== hash) {
       fs.writeFileSync(filePath, withHash(await squeezePng(Buffer.concat(chunks)), hash));
-      console.log(`[skin-sheet] redrew ${name}.${sheetId}.png`);
+      console.log(`[skin-sheet] redrew ${name}.${sheetId}.png: was ${was}, now ${hash}`);
     }
     res.writeHead(200).end();
   } catch (err) {
