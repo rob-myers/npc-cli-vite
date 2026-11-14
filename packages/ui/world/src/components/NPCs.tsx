@@ -1,5 +1,5 @@
 import { url } from "@npc-cli/media";
-import { useStateRef } from "@npc-cli/util";
+import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
 import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
@@ -54,6 +54,7 @@ import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
 import { emptyAnimationClip, NpcAnimation } from "./npc-animation";
+import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -83,6 +84,7 @@ export default function NPCs() {
       byPickId: {},
       config: npcConfig,
       doableToNpc: {},
+      near: null as any, // set below
       nextPickId: 0,
       npc: {},
       npcToDoable: {},
@@ -719,6 +721,7 @@ export default function NPCs() {
 
   w.npc = state;
   w.n = state.npc;
+  state.near = useNearbyNpcs(w);
 
   const queryData =
     useQuery({
@@ -855,6 +858,8 @@ export type State = {
   /** `const.npc`'s tuning, for World hooks, which must not import it */
   config: typeof npcConfig;
   doableToNpc: { [decorKey: string]: string | null };
+  /** Nearby-npc lookups */
+  near: UseStateRef<import("./use-nearby-npcs").State>;
   nextPickId: number;
   npc: Record<string, Npc>;
   npcToDoable: { [npcKey: string]: string | null };

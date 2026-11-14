@@ -473,10 +473,7 @@ async function returnTo(w: JshCli.WorldState, npc: JshCli.Npc, from: Geom.VectJs
 /** Where `npc`'s neighbours stand, bar `walker`, and where others are stepping to */
 function othersNear(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc, stepping: Map<string, Stepping>) {
   return [
-    ...(npc.agent?.neis ?? []).flatMap(({ agentId }) => {
-      const other = w.npc.byAgentId[agentId];
-      return other === undefined || other === walker ? [] : [other.point];
-    }),
+    ...w.npc.near.beside(npc.key, Infinity).flatMap(({ npc: other }) => (other === walker ? [] : [other.point])),
     ...[...stepping.values()].flatMap(({ to }) => to ?? []),
   ];
 }

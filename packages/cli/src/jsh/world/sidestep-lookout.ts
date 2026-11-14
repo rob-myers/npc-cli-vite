@@ -96,12 +96,7 @@ export class SidestepLookout {
       if (Math.abs(door.centre.x - at.x) > reach || Math.abs(door.centre.y - at.y) > reach) continue;
       if (crossesWithin(path, door, reach) === true) rooms.push(door.beyond);
     }
-    for (const { gmId, roomId } of rooms) {
-      for (const key of w.npc.roomToNpcs[gmId]?.[roomId] ?? []) {
-        const npc = key === self ? undefined : w.n[key];
-        if (npc !== undefined) yield npc;
-      }
-    }
+    yield* w.npc.near.inRooms(rooms, self);
   }
 
   /** Forgets whom each made way for, once that walker has stopped, gone or passed them, or `askedSecs` on */
@@ -122,13 +117,13 @@ export class SidestepLookout {
     const seen = new Set<string>();
     for (const key of this.walkers.keys()) {
       const by = w.n[key];
-      if (by?.agent == null || by.isMoving() === false || by.agent.neis.length === 0 || ignore(key)) continue;
+      if (by?.agent == null || by.isMoving() === false || ignore(key)) continue;
+      // 1. near: the crowd's own neighbours
+      const beside = w.npc.near.beside(key, c.dist);
+      if (beside.length === 0) continue;
       const { agent } = by;
       const [heading, path] = [headingOf(by), pathOf(by)]; // once per walker with someone near
-      for (const { agentId, dist: distSq } of agent.neis) {
-        // 1. near: the crowd's own neighbours
-        const npc = w.npc.byAgentId[agentId];
-        if (npc === undefined || distSq >= c.dist ** 2) continue;
+      for (const { npc } of beside) {
         seen.add(npc.key);
         const [dx, dy] = [npc.position.x - by.position.x, npc.position.z - by.position.z];
         // 2. ahead

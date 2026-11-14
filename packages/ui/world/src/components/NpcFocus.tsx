@@ -245,15 +245,12 @@ export default function NpcFocus() {
         const { aim, end } = entry;
         if (aim == null || end == null) return void (entry.npcKey = null);
         // those in the rooms its last cast passed through: no wall is between. Not one it passes through
-        tmpNear.length = 0;
-        for (const { gmId, roomId } of end.roomIds ?? []) {
-          for (const key of w.npc.roomToNpcs[gmId]?.[roomId] ?? []) {
-            const npc = w.n[key];
-            if (npc !== undefined && w.npcGhost?.ghosts.has(key) !== true) tmpNear.push(npc);
-          }
-        }
+        const near = w.npc.near.inRooms(end.roomIds ?? [], undefined, tmpNear);
+        let kept = 0; // ghosts dropped in place, as this runs each frame
+        for (const npc of near) if (w.npcGhost?.ghosts.has(npc.key) !== true) near[kept++] = npc;
+        near.length = kept;
         entry.met ??= { part: "", local: new THREE.Vector3(), point: new THREE.Vector3(), dist: 0 };
-        const met = npcOnRay(aimToRay(aim, tmpRay), tmpNear, entry.by, hitBones, entry.met);
+        const met = npcOnRay(aimToRay(aim, tmpRay), near, entry.by, hitBones, entry.met);
         const { point } = entry.met;
         // short of what stopped the cast, or against it
         const short = Math.hypot(point.x - aim.from.x, point.z - aim.from.y) <= end.dist + npcFocusConfig.againstM;

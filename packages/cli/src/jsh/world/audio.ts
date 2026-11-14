@@ -249,8 +249,8 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
 /** The npcs in reach of the player, through open doors, within `reachMetres`, nearest first */
 function npcsInReach(w: JshCli.WorldState, player: JshCli.Npc) {
   const { x, z } = player.position;
-  return w.e
-    .getNpcsInReach(player.key)
+  return w.npc.near
+    .inReach(player.key)
     .filter((npc) => npc !== player)
     .map((npc) => ({ npc, dist: Math.hypot(npc.position.x - x, npc.position.z - z) }))
     .filter(({ dist }) => dist < hearConfig.reachMetres)

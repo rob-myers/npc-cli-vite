@@ -64,7 +64,7 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
 
 - **Synced to feet** (`footfalls`, in jsh `sounds`), not to World events: the player's, and those of npcs near them.
   - Every `everySecs` (0.5 game seconds) it finds the npcs in reach of the player, through open doors
-    (`w.e.getNpcsInReach`), within `hearMetres` (10 m), the nearest `maxNear` (6). Each tick it reads only their feet,
+    (`w.npc.near.inReach`), within `hearMetres` (10 m), the nearest `maxNear` (6). Each tick it reads only their feet,
     and the player's.
   - An npc's step is quieter (`npcLevel`), fading with distance to silence at `hearMetres`, and panned by where they
     stand across the view (`heardFrom`). So one walking away fades out before they are dropped.

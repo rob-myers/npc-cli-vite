@@ -537,7 +537,7 @@ async function hideFrom(ctx: Ctx, opts: Opts, strict: boolean) {
 async function hidingSpot(ctx: Ctx, opts: Opts, skip: string[], strict: boolean) {
   const { w } = ctx.ct;
   /** Only those within two doors: hiding spots are tried nearest first */
-  const others = w.e.getNpcsInReach(ctx.npcKey, 2);
+  const others = w.npc.near.inReach(ctx.npcKey, 2);
   const headed = others.flatMap((npc) => (npc.isMoving() ? [npc.last.dst] : []));
   const taken = await spotQuery(ctx.ct, [
     ...others.map((npc): WW.SpotQuery => ({ q: "of", npc: npc.key })),

@@ -63,9 +63,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (room?.type !== "room" || room.maxWalkers === null) return true;
         /** Those on its floor, or at a doable tagged `as-walker`, e.g. a shower. Others at a doable are held still */
         const walkers = new Set(
-          [...(w.npc.roomToNpcs[room.gmId]?.[room.roomId] ?? [])].filter((key) => {
+          w.npc.near.inRooms([room]).flatMap(({ key }) => {
             const decorKey = w.npc.npcToDoable[key];
-            return decorKey == null || w.decor.byKey[decorKey]?.meta["as-walker"] === true;
+            return decorKey == null || w.decor.byKey[decorKey]?.meta["as-walker"] === true ? [key] : [];
           }),
         );
         const admitted = state.roomWalkers.get(grKey);
@@ -349,24 +349,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const moveId = (state.movesBegun.get(npc) ?? 0) + 1;
         state.movesBegun.set(npc, moveId);
         return moveId;
-      },
-      getNpcsInReach(npcKey, doors = 1) {
-        const at = w.npc.npcToRoom.get(npcKey);
-        if (at === undefined) return [];
-        if (doors === 0) {
-          const keys = w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [];
-          return [...keys].flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
-        }
-        if (w.gmRoomGraph.getNode(at.grKey) === null) return [];
-        // their room is depth 0, its connectors 1, the rooms beyond those 2
-        return w.gmRoomGraph
-          .getReachableUpTo(at.grKey, (node, depth) =>
-            node.type === "room"
-              ? depth >= doors * 2
-              : node.type !== "door" || w.door.isSeenThrough(node.gdKey) === false,
-          )
-          .flatMap((node) => (node.type === "room" ? [...(w.npc.roomToNpcs[node.gmId]?.[node.roomId] ?? [])] : []))
-          .flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
       },
       getPoint(npcKey) {
         const npc = w.npc.get(npcKey);
@@ -1942,10 +1924,8 @@ export type State = {
   /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
   revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
-  /** The others in their room, and in the rooms up to `doors` open doors away: whom they could walk to */
   /** A new move's id, counting `npc`'s moves begun, for `moveOverridden` */
   getMoveId(npc: Npc): number;
-  getNpcsInReach(npcKey: string, doors?: number): Npc[];
   /** The rooms in view from `grKey`, through doors seen through and windows they vouch for — see `fade-rooms.ts` */
   roomsInView(grKey: Geomorph.GmRoomKey): Geomorph.GmRoomId[];
   /** `roomsInView`'s answers by room, until a door changes what is seen through, or the map does */

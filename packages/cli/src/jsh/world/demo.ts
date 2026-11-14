@@ -100,12 +100,12 @@ export async function demo_back_off(ct: JshCli.RunArg) {
   }
 }
 
-/** The nearest walker beside `npc` — `neis` have `dist` squared */
+/** The nearest walker beside `npc` */
 function presser(w: JshCli.WorldState, npc: JshCli.Npc) {
-  const [nearest] = (npc.agent?.neis ?? [])
-    .filter(({ agentId, dist }) => dist < backOffConfig.dist ** 2 && w.npc.byAgentId[agentId]?.isMoving())
-    .sort((a, b) => a.dist - b.dist);
-  return nearest === undefined ? undefined : w.npc.byAgentId[nearest.agentId];
+  let nearest: undefined | { npc: JshCli.Npc; dist: number };
+  for (const near of w.npc.near.beside(npc.key, backOffConfig.dist))
+    if (near.npc.isMoving() && (nearest === undefined || near.dist < nearest.dist)) nearest = near;
+  return nearest?.npc;
 }
 
 /** Unit `(x, z)` across `walker`'s path on `npc`'s side of it, else straight away from it */

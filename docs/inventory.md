@@ -270,7 +270,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 | lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
 | lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
 
-- `armMeetsNpc` looks through their room (`getNpcsInReach(key, 0)`), not the crowd's neighbours: those reach only
+- `armMeetsNpc` looks through their room (`w.npc.near.inReach(key, 0)`), not the crowd's neighbours: those reach only
   `collisionQueryRange` (0.7m), short of the gun's tip.
 - Near a door (its "nearby" sensor), it also looks at whoever else is near that door (`w.e.doorToNpcs`), either side.
   An arm can reach through a doorway into the next room.

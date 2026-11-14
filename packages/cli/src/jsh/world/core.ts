@@ -1284,9 +1284,7 @@ async function poseUpper(
     while (ended === undefined && w.n[npc.key] === npc && mine()) {
       const delta = w.gameTime.now() - secs;
       secs += delta;
-      if (npc.agent?.neis.some(({ dist }) => dist < poseConfig.near ** 2) === true) {
-        holdUntil = secs + poseConfig.holdSecs; // `dist` squared
-      }
+      if (w.npc.near.beside(npc.key, poseConfig.near).length > 0) holdUntil = secs + poseConfig.holdSecs;
       const next = holdUntil > secs ? avoid : clipKey;
       if (upper.key !== next) {
         npc.anim.setUpper(next, { swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
