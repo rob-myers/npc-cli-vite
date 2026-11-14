@@ -25,6 +25,11 @@ export function newGraph(key: string, mapKey: string, a: Pt, b: Pt): GraphEntry 
   };
 }
 
+/** A copy as `key` on map `mapKey`, each node at `to[id]`, off any spot */
+export function copiedGraph(graph: GraphEntry, key: string, mapKey: string, to: Record<string, Pt>): GraphEntry {
+  return { ...movedNodes(graph, to), key, mapKey };
+}
+
 /** With each node named in `to` there, off any spot */
 export function movedNodes(graph: GraphEntry, to: Record<string, Pt>): GraphEntry {
   const offSpot = ({ spot: _, ...n }: GraphNode, at: Pt): GraphNode => ({ ...n, at });

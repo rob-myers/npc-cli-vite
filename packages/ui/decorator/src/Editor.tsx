@@ -41,7 +41,7 @@ import {
 } from "./decor-edit";
 import { GraphLayer } from "./GraphLayer";
 import { GraphSidebar } from "./GraphSidebar";
-import { addedEdge, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
+import { addedEdge, copiedGraph, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import { SpotCard, SpotKeyField } from "./SpotCard";
@@ -265,6 +265,26 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         const { x, y } = Vect.average(nodes.map(({ at: [x, y] }) => ({ x, y })));
         map.current?.centreOn(x, y, locateZoom, sidebarOffset());
       },
+      async copyGraph(src) {
+        const c = state.viewCentre();
+        if (c === null) return;
+        const from = Vect.average(src.nodes.map(({ at: [x, y] }) => ({ x, y })));
+        const to: Record<string, Pt> = {};
+        const off: string[] = [];
+        for (const { id, at } of src.nodes) {
+          const moved = { x: at[0] - from.x + c.x, y: at[1] - from.y + c.y };
+          const onMesh = snapped(w, moved);
+          if (onMesh === null) off.push(id);
+          to[id] = onMesh ?? [moved.x, moved.y];
+        }
+        const keys = await loadScenarioEntries();
+        const slug = src.key.slice("graph/".length);
+        let [key, n] = [`graph/${slug}`, 1];
+        while (key in keys) key = `graph/${slug}-${++n}`;
+        state.chooseGraph(key);
+        state.saveGraph(copiedGraph(src, key, w.mapKey, to));
+        if (off.length > 0) state.set({ graphError: `off the navmesh: ${off.join(" ")}. Drag them on` });
+      },
       connectGraph(to) {
         const [graph, from] = [state.graphOf(state.graph), state.graphConnect];
         state.set({ graphConnect: null });
@@ -279,12 +299,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return state.graphDraft?.key === key ? state.graphDraft.graph : (graphs[key] ?? null);
       },
       async newGraph() {
-        const view = map.current?.getViewRect();
-        const shownWidth = state.mapEl?.getBoundingClientRect().width;
-        if (view === undefined || shownWidth === undefined) return;
-        // the centre of what the sidebar leaves clear
-        const clear = meta.sidebarOpen ? sidebarWidth / shownWidth : 0;
-        const c = { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
+        const c = state.viewCentre();
+        if (c === null) return;
         const [a, b] = [snapped(w, { x: c.x - 1, y: c.y }), snapped(w, { x: c.x + 1, y: c.y })];
         if (a === null || b === null) return state.set({ graphError: "no navmesh at the map's centre" });
         const keys = await loadScenarioEntries();
@@ -293,6 +309,13 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         const next = newGraph(`graph/graph-${n}`, w.mapKey, a, b);
         state.chooseGraph(next.key);
         state.saveGraph(next);
+      },
+      viewCentre() {
+        const view = map.current?.getViewRect();
+        const shownWidth = state.mapEl?.getBoundingClientRect().width;
+        if (view === undefined || shownWidth === undefined) return null;
+        const clear = meta.sidebarOpen ? sidebarWidth / shownWidth : 0;
+        return { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
       },
       saveGraph(next) {
         if (next === state.graphOf(next.key)) return; // e.g. an edge from a node to itself
@@ -567,6 +590,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                 error={state.graphError}
                 onChoose={state.chooseGraph}
                 onNew={state.newGraph}
+                onCopy={state.copyGraph}
                 onDelete={state.deleteGraph}
                 onCommit={state.saveGraph}
                 onTarget={(graphTarget) => state.set({ graphTarget })}
@@ -814,6 +838,10 @@ type State = {
   graphConnect: null | string;
   /** Chooses a graph, and centres the map on it */
   chooseGraph(key: string): void;
+  /** DEV: a copy of another map's graph, centred in the view, as a new graph here */
+  copyGraph(src: GraphEntry): Promise<void>;
+  /** In map metres, the centre of what the sidebar leaves clear */
+  viewCentre(): null | Geom.VectJson;
   /** Ends an edge being drawn, at node `to` */
   connectGraph(to: string): void;
   /** DEV */

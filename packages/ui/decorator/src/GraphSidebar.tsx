@@ -18,6 +18,7 @@ export function GraphSidebar({
   error,
   onChoose,
   onNew,
+  onCopy,
   onDelete,
   onCommit,
   onTarget,
@@ -137,6 +138,7 @@ export function GraphSidebar({
         graph={others.find((x) => x.key === viewing) ?? null}
         container={container}
         onClose={() => setViewing(null)}
+        onCopy={editable ? onCopy : undefined}
       />
     </div>
   );
@@ -273,6 +275,8 @@ type Props = {
   error: null | string;
   onChoose(key: string): void;
   onNew(): void;
+  /** Another map's graph, copied onto this one */
+  onCopy(graph: GraphEntry): void;
   onDelete(key: string): void;
   onCommit(next: GraphEntry): void;
   onTarget(target: GraphTarget): void;

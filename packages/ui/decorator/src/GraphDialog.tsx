@@ -10,10 +10,13 @@ export function GraphDialog({
   graph,
   container,
   onClose,
+  onCopy,
 }: {
   graph: null | GraphEntry;
   container: null | HTMLElement;
   onClose(): void;
+  /** DEV: copies it onto the map shown, at the view's centre, then closes */
+  onCopy?(graph: GraphEntry): void;
 }) {
   return (
     <Dialog.Root open={graph !== null} onOpenChange={(open) => open === false && onClose()}>
@@ -28,6 +31,20 @@ export function GraphDialog({
           onKeyDown={(e) => e.stopPropagation()}
         >
           {graph !== null && <GraphCard graph={graph} />}
+          {graph !== null && onCopy !== undefined && (
+            <div className="flex justify-end px-3 pb-3">
+              <button
+                type="button"
+                className="rounded border border-zinc-700 px-2 py-0.5 cursor-pointer text-zinc-200 hover:bg-zinc-800"
+                onClick={() => {
+                  onCopy(graph);
+                  onClose();
+                }}
+              >
+                copy to this map
+              </button>
+            </div>
+          )}
           <Dialog.Close className="absolute top-2 right-2 p-1 rounded cursor-pointer text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100">
             <XIcon className="size-4" />
           </Dialog.Close>
@@ -79,7 +96,7 @@ function GraphCard({ graph }: { graph: GraphEntry }) {
         ))}
       </div>
       <div className="text-zinc-500">
-        Edit it in this tab on its own map. <code>act patrol {graph.key.slice("graph/".length)}</code> walks it.
+        Edit it on its own map. <code>act patrol {graph.key.slice("graph/".length)}</code> walks it.
       </div>
     </div>
   );

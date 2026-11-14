@@ -36,7 +36,7 @@ Saved over, a graph keeps what is not given. Its nodes and edges are replaced on
 
 ## In the Decorator
 
-The sidebar's **graph** tab (`GraphSidebar.tsx`) lists this map's graphs: name, node and edge counts, and ⇢ unless undirected. Other maps' graphs are listed below by mapKey, and a press on one shows it read-only, drawn, in a dialog inside the panel (`GraphDialog.tsx`). Choosing one draws it on the map (`GraphLayer.tsx`) and centres the map on it. Its nodes and edges are listed too, and a press on one selects it. A node on a spot is ringed, and drawn at the spot. Every edge has an arrow, faint when undirected. Edges joining the same pair bow apart (`edgeBows`, `arc` in `graph-edit.ts`). The spots are fetched whilst a graph is chosen.
+The sidebar's **graph** tab (`GraphSidebar.tsx`) lists this map's graphs: name, node and edge counts, and ⇢ unless undirected. Other maps' graphs are listed below by mapKey, and a press on one shows it read-only, drawn, in a dialog inside the panel (`GraphDialog.tsx`). In DEV its **copy to this map** makes it a new graph here (`copyGraph`): the next free `graph/{slug}`, its centroid at the centre of the view, each node snapped onto the navmesh and off any spot. A node off the navmesh is named, to be dragged on. The copy is undoable, as a new graph is. Choosing one draws it on the map (`GraphLayer.tsx`) and centres the map on it. Its nodes and edges are listed too, and a press on one selects it. A node on a spot is ringed, and drawn at the spot. Every edge has an arrow, faint when undirected. Edges joining the same pair bow apart (`edgeBows`, `arc` in `graph-edit.ts`). The spots are fetched whilst a graph is chosen.
 
 In DEV each edit saves its file (`saveScenarioEntry`). The pure edits are in `graph-edit.ts`.
 
