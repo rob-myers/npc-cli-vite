@@ -53,6 +53,12 @@ Two per door, from `getLintelSegs` in `service/DerivedGmsData.ts`, kept apart fr
   World has built. A missing side is never shown.
 - No taller than a band, a lintel is drawn wholly at the band's opacity.
 
+## Hull walls by a hull door
+
+A hull wall is never shown in fade mode (`neverShownSlot`): it is the ship's outside, with nothing behind it.
+By a hull door it is inside the ship, e.g. a column between two doors, or a doorway's side. `Walls` shows a
+hull segment whose midpoint is within 0.1 m of a hull door with that door's room (`setSegSlots`).
+
 ## Obstacles poking into a wall
 
 An obstacle may be moved into a wall, e.g. a toilet, to widen its room's navmesh. Walls can be

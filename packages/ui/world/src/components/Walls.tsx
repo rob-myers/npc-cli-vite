@@ -51,9 +51,14 @@ export default function Walls() {
       },
       setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }) {
         if (meta.hull === true) {
-          // the hull is the ship's outside, which fade mode has nothing behind — and
-          // `neverShownSlot` is 1 whilst the fade is off, so this costs nothing there
-          slots.setXY(instanceId, neverShownSlot, neverShownSlot);
+          // the ship's outside, which fade mode has nothing behind (`neverShownSlot`, 1 whilst the fade is off).
+          // Bar by a hull door, e.g. a column between two: shown with the door's room
+          const mid = { x: (seg[0].x + seg[1].x) / 2, y: (seg[0].y + seg[1].y) / 2 };
+          const roomId = w.gms[gmId].hullDoors
+            .flatMap((door) => (door.poly.rect.outset(0.1).contains(mid) ? door.roomIds : []))
+            .find((id) => typeof id === "number");
+          const slot = roomId === undefined ? neverShownSlot : slotOf(gmId, roomId);
+          slots.setXY(instanceId, slot, slot);
         } else if (broadWallId !== null) {
           // A BROAD wall goes on its own slot, whole: it is one piece of structure, and the ceiling
           // draws one lid over the lot on that same slot.
