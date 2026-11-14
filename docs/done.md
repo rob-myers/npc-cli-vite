@@ -78,6 +78,18 @@
 - ✅ `move rob --back to:$( pick 1 )`
 - ✅ `demo_back_off kate`
 
+- ✅ sidestep refine
+  - ✅ too sensitive
+  - ✅ multiple sidestep strategies
+  - ❌ when wasd walk into npc in corner, navcat can move us into the moving npc
+    - doesn't matter
+  - ✅ sidestep types: aside, turn, shuffle, back, wall, doorway, stand
+  - ✅ sidestep debug ui + params
+- ✅ resolve confined npcs e.g. in fresher
+  - maybe suppress player move
+- ✅ more max-walkers + careful about do=stand
+- ✅ more idle animations
+
 ### Camera
 
 - ✅ zoomed in rgb-shift is too large
@@ -99,12 +111,17 @@
 - ✅ debug sliders for fov/minDist/maxDist with natural relationship
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
+- ✅ fix jerky camera on pause
+  - freeze camera on pause again
+
 ### Cleanliness
 
 - ✅ simplify `npc.agent`
 
 - ✅ predicates -> preds
 - ✅ preds -> predicates, kamma -> inventory
+
+- ✅ keep track of all "nearby npc polling"
 
 ### Controls
 
@@ -147,6 +164,8 @@
 - ❌ add shelves
 - ✅ separate dynamic/static decor into colliders and quads/points (2 more draw calls)
 
+- ✅ clip obstacles against ≤1 wall
+
 ### Focus
 
 - ✅ on cancel npc focus re-focus world
@@ -171,6 +190,13 @@
 - ✅ refine drop inventory
   - can drop decor points on floor e.g. keycard
   - can only drop decor quads on meta.surface
+
+- ✅ improve toast naming
+  - drawn/aim for phaser raise/hold-space
+  - look -> focal
+  - recon-mode -> gaze-mode
+  - follow -> followed
+  - follow + gaze-mode -> tethered
 
 ### Performance
 
@@ -212,6 +238,8 @@
 - ✅ spotKey alias {grKey}-{id}, {gdKey}-{id}
 - ✅ spots overlay toggle not grey if `spot_overlay` has run
 - ✅ some cover spots don't provide cover
+
+- ✅ spot overlay: white unreachable spots should be black
 
 ### Phaser and Psi
 
@@ -362,6 +390,16 @@
 
 - ✅ player can activate on mobile
 
+- ✅ max-look on hold-space during aim too
+- ✅ fire via aim (e) + hold-space + click (long or not)
+  - indicated via large inventory icon (lmb or fingerprint)
+- ✅ try fix long corridor aim issue -- nearby npc vs wall large delta
+  - camera shows wall spot even if intersects npc first
+- ✅ lmb fire can be confusing when using lmb to move
+  - likewise with space-held and try click door switch
+- ✅ m-key to fire
+- ✅ cannot fire phaser during phaser_aim_avoid
+
 
 ### Shield
 
@@ -481,6 +519,9 @@
 ## Media
 
 - ✅ ask Claude to create some sub-symbols of 101
+
+- ✅ need a smaller sink i.e. construct a new symbol specially.
+  - ✅ extra--fresher--024
 
 ## Site and Theme
 
