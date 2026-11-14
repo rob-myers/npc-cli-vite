@@ -735,6 +735,7 @@ export class NpcAnimation {
       restUpper.action.fadeOut(Math.max(fade, minFadeSecs));
       this.restUpper = null;
     }
+    const crouchMove = isCrouch(this.pose) || isCrouch(next); // their label glides
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
@@ -744,7 +745,7 @@ export class NpcAnimation {
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
-    this.npc.setLabelYShift(labelYShiftForClip(next));
+    this.npc.setLabelYShift(labelYShiftForClip(next), crouchMove);
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
@@ -1777,7 +1778,8 @@ function bubbleHeightForClip(clipName: AnimationClipKey): number {
 }
 
 /** Stood, yet about as low as one sat: collapsed on the floor, or crouched */
-const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || clipName.startsWith("crouch");
+const isCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch");
+const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || isCrouch(clipName);
 /** Crouched half: the head lower than stood, higher than sat */
 const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
 
