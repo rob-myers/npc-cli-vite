@@ -157,19 +157,12 @@
           "name": "extra--024--fresher y=0.65",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 1,
-            "b": 0,
-            "c": 0,
-            "d": -1,
-            "e": 373.5,
-            "f": 299.5
-          },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 373.5, "f": 301},
           "type": "symbol",
           "srcKey": "extra--024--fresher",
           "baseRect": {"width": 21, "height": 18},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, 373.5, 299.5)"
+          "cssTransform": "matrix(1, 0, 0, -1, 373.5, 301)"
         },
         {
           "id": "080d514a-10e6-4de6-a1e2-e33185dd1378",
