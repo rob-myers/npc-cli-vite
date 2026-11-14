@@ -53,8 +53,10 @@ import { nearestSpot, parseSpotPick, type SpotPick, spotPointOf, spotWorldPoint,
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const { w, meta } = props;
   const map = useRef<NavMap2dApi>(null);
-  /** This map's graphs, as their files have them */
-  const graphs = useScenarioGraphs(w.mapKey);
+  /** This map's graphs, as their files have them, and every other map's */
+  const { here: graphs, others: otherGraphs } = useScenarioGraphs(w.mapKey);
+  /** At least the tabs' width, whatever was saved */
+  const sidebarWidth = Math.max(minSidebarWidth, meta.sidebarWidth);
   const { uiStoreApi } = useContext(UiContext);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
   const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
@@ -73,7 +75,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     const m = revealMarginPx;
     // choosing a spot opens the sidebar, so it is kept clear of where the sidebar will be
     const [left, right, top, bottom] = [
-      shown.left + meta.sidebarWidth + m,
+      shown.left + sidebarWidth + m,
       shown.right - m,
       shown.top + m,
       shown.bottom - m,
@@ -85,7 +87,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     map.current?.centreOn(at.x, at.y, 0, { x: to.x - centre.x, y: to.y - centre.y });
   };
   /** On screen, the centre of the map left clear by the sidebar, from the map's own centre. A chosen spot opens it */
-  const sidebarOffset = () => ({ x: meta.sidebarWidth / 2, y: 0 });
+  const sidebarOffset = () => ({ x: sidebarWidth / 2, y: 0 });
 
   const state = useStateRef(
     (): State => ({
@@ -164,7 +166,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         e.stopPropagation();
         e.preventDefault(); // else the drag selects text across the list
         const startX = e.clientX;
-        const startWidth = meta.sidebarOpen ? meta.sidebarWidth : 0;
+        const startWidth = meta.sidebarOpen ? sidebarWidth : 0;
         const onMove = (ev: MouseEvent) => {
           const width = startWidth + ev.clientX - startX;
           // dragged in past its narrowest it closes; dragged out again it opens, at that width
@@ -281,7 +283,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         const shownWidth = state.mapEl?.getBoundingClientRect().width;
         if (view === undefined || shownWidth === undefined) return;
         // the centre of what the sidebar leaves clear
-        const clear = meta.sidebarOpen ? meta.sidebarWidth / shownWidth : 0;
+        const clear = meta.sidebarOpen ? sidebarWidth / shownWidth : 0;
         const c = { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
         const [a, b] = [snapped(w, { x: c.x - 1, y: c.y }), snapped(w, { x: c.x + 1, y: c.y })];
         if (a === null || b === null) return state.set({ graphError: "no navmesh at the map's centre" });
@@ -475,7 +477,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           // over the map: dark smoked glass, the map behind blurred and greyed
           <div
             className="absolute inset-y-0 left-0 z-10 flex flex-col bg-neutral-900/45 text-zinc-300 backdrop-blur-sm backdrop-saturate-0"
-            style={{ width: meta.sidebarWidth }}
+            style={{ width: sidebarWidth }}
           >
             <div className="shrink-0 flex items-center gap-1 m-1.5">
               {/* a segmented control: the chosen tab a raised pill */}
@@ -558,6 +560,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             {meta.sidebarTab === "graph" && (
               <GraphSidebar
                 graphs={graphs}
+                others={otherGraphs}
                 chosen={graph}
                 target={state.graphTarget}
                 editable={graphsEditable}
@@ -584,7 +587,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
         <div
           className="absolute inset-y-0 z-10 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
-          style={{ left: meta.sidebarOpen ? meta.sidebarWidth : 0 }}
+          style={{ left: meta.sidebarOpen ? sidebarWidth : 0 }}
           onMouseDown={state.onSidebarResizeStart}
         />
         <DecorMenu
@@ -840,7 +843,8 @@ const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static", "
 const tools: ("select" | DecorType)[] = ["select", "point", "rect", "circle", "quad"];
 type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };
-const minSidebarWidth = 120;
+/** The tabs' width */
+const minSidebarWidth = 192;
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
 /** Screen px a chosen spot must be clear of the map's visible edges, else the map glides to it */

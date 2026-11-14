@@ -1,6 +1,6 @@
 # Scenarios
 
-Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Also the graphs and conversations they use, listed in the Scenario panel.
+Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Also the conversations they use, listed in the Scenario panel. Their graphs are in the Decorator (`docs/npc-graphs.md`).
 
 A query becomes an interaction when it is asked again, on a tick or an event, and its npcs act on the change.
 
@@ -8,7 +8,7 @@ A query becomes an interaction when it is asked again, on a tick or an event, an
 
 `@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
-On the left is one list in three sections: **scenarios**, **graphs** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `graph/{slug}` or `talk/{key}`. A graph's card is read-only: see `docs/npc-graphs.md`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
+On the left is one list in two sections: **scenarios** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
 ## The scenarios
 

@@ -1,15 +1,17 @@
 import type { GraphEntry } from "@npc-cli/ui__world/scenario.schema";
 import { cn } from "@npc-cli/util";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { GraphDialog } from "./GraphDialog";
 import { type GraphTarget, metaOf, withMeta } from "./graph-edit";
 
 /**
- * The graph tab: this map's graphs, then the chosen one's meta, or its selected node's or edge's.
+ * The graph tab: this map's graphs, then the chosen one's nodes, edges and meta, then other maps' graphs.
  * In DEV a graph can be made, deleted, renamed and its meta edited — see `docs/npc-graphs.md`
  */
 export function GraphSidebar({
   graphs,
+  others,
   chosen,
   target,
   editable,
@@ -23,9 +25,17 @@ export function GraphSidebar({
   const [confirming, setConfirming] = useState(false);
   useEffect(() => setConfirming(false), [chosen?.key]);
   const meta = chosen === null ? undefined : metaOf(chosen, target);
+  /** Another map's graph shown in a dialog, by key */
+  const [viewing, setViewing] = useState<null | string>(null);
+  /** The panel's root, which the dialog stays inside */
+  const [container, setContainer] = useState<null | HTMLElement>(null);
+  const rootRef = useCallback(
+    (el: null | HTMLElement) => setContainer(el?.closest<HTMLElement>(".decorator") ?? null),
+    [],
+  );
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
+    <div ref={rootRef} className="flex-1 min-h-0 overflow-y-auto border-r border-zinc-800 py-1 text-xs">
       {Object.values(graphs).map((x) => (
         <button
           key={x.key}
@@ -91,6 +101,7 @@ export function GraphSidebar({
               onCommit={(name) => onCommit({ ...chosen, name })}
             />
           )}
+          <Parts graph={chosen} target={target} onTarget={onTarget} />
           <div className="text-zinc-500">{describe(chosen, target)} meta</div>
           <MetaField
             key={`${chosen.key} ${JSON.stringify(target)}`}
@@ -99,9 +110,77 @@ export function GraphSidebar({
             onCommit={(next) => onCommit(withMeta(chosen, target, next))}
           />
           <div className="text-zinc-600">ctrl+enter or blur saves. Node meta e.g. {'{ "secs": 4 }'}</div>
+          <div className="text-zinc-600">
+            <code>act patrol {chosen.key.slice("graph/".length)}</code> walks it.
+          </div>
         </div>
       )}
+
+      {others.length > 0 && (
+        <div className="mt-2 border-t border-zinc-800 pt-1">
+          <div className="px-2 text-zinc-500">on other maps</div>
+          {others.map((x) => (
+            <button
+              key={x.key}
+              type="button"
+              title={`view ${x.key}`}
+              className="w-full flex gap-2 px-2 py-0.5 text-left text-zinc-500 cursor-pointer hover:bg-zinc-800 hover:text-zinc-300"
+              onClick={() => setViewing(x.key)}
+            >
+              <span className="truncate">{x.name || x.key}</span>
+              <span className="ml-auto shrink-0">{x.mapKey}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <GraphDialog
+        graph={others.find((x) => x.key === viewing) ?? null}
+        container={container}
+        onClose={() => setViewing(null)}
+      />
     </div>
+  );
+}
+
+/** Its nodes and edges, each pressed to select it */
+function Parts({
+  graph,
+  target,
+  onTarget,
+}: {
+  graph: GraphEntry;
+  target: GraphTarget;
+  onTarget(t: GraphTarget): void;
+}) {
+  const node = target !== null && "node" in target ? target.node : null;
+  const edge = target !== null && "edge" in target ? target.edge : null;
+  const row = (key: string, label: string, selected: boolean, next: GraphTarget) => (
+    <button
+      key={key}
+      type="button"
+      className={cn(
+        "rounded px-1 font-mono cursor-pointer",
+        selected ? "bg-zinc-700 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800",
+      )}
+      onClick={() => onTarget(selected ? null : next)}
+    >
+      {label}
+    </button>
+  );
+  const arrow = graph.directed ? "→" : "—";
+  return (
+    <>
+      <div className="text-zinc-500">nodes</div>
+      <div className="flex flex-wrap gap-0.5">
+        {graph.nodes.map((n) =>
+          row(n.id, n.spot === undefined ? n.id : `${n.id} ${n.spot}`, n.id === node, { node: n.id }),
+        )}
+      </div>
+      <div className="text-zinc-500">edges</div>
+      <div className="flex flex-wrap gap-0.5">
+        {graph.edges.map((e, i) => row(`${i}`, `${e.from}${arrow}${e.to}`, i === edge, { edge: i }))}
+      </div>
+    </>
   );
 }
 
@@ -186,6 +265,8 @@ function parseObject(text: string): null | Record<string, unknown> {
 
 type Props = {
   graphs: Record<string, GraphEntry>;
+  /** Every other map's, viewed read-only in a dialog */
+  others: GraphEntry[];
   /** As edited */
   chosen: null | GraphEntry;
   target: GraphTarget;

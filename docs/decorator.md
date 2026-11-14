@@ -16,7 +16,8 @@ neither the panel nor a terminal.
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
 | `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor, edit the chosen graph; `HeightInput` |
 | `ui/decorator/src/GraphLayer.tsx` | the chosen graph: its edges and nodes, draggable and selectable |
-| `ui/decorator/src/GraphSidebar.tsx` | the graph tab: this map's graphs, new, delete, and the selected meta |
+| `ui/decorator/src/GraphSidebar.tsx` | the graph tab: this map's graphs, new, delete, the chosen one's nodes, edges and selected meta, and other maps' graphs |
+| `ui/decorator/src/GraphDialog.tsx` | another map's graph, read-only and drawn (`GraphShape.tsx`), in a dialog inside the panel |
 | `ui/decorator/src/graph-edit.ts` | pure helpers over a graph: `snapped`, `movedNode`, `addedEdge`, `splitEdge`, `withMeta`... |
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
@@ -63,7 +64,7 @@ shows behind its graphs — so it is where things really are:
 
 `meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m, on by default) and `static` — the map's
 own decor, faint, for context (off by default). The sidebar's width and whether it is out (not by default)
-are `meta.sidebarWidth` / `sidebarOpen`. The panel re-renders on
+are `meta.sidebarWidth` / `sidebarOpen`. It is never narrower than its tabs (`minSidebarWidth`). The panel re-renders on
 `map-settled`, `nav-updated`, `decor-ready` and the door events.
 
 ## Npcs are opt-in

@@ -32,19 +32,16 @@ export function useScenarioEntries(): Record<string, ScenarioEntry> {
   return entries;
 }
 
-/** The graphs on map `mapKey`, by key */
-export function useScenarioGraphs(mapKey: string): Record<string, GraphEntry> {
+/** The graphs on map `mapKey` by key, and every other map's */
+export function useScenarioGraphs(mapKey: string): { here: Record<string, GraphEntry>; others: GraphEntry[] } {
   const entries = useScenarioEntries();
-  return useMemo(
-    () =>
-      Object.fromEntries(
-        Object.values(entries)
-          .filter(isGraphEntry)
-          .filter((x) => x.mapKey === mapKey)
-          .map((x) => [x.key, x]),
-      ),
-    [entries, mapKey],
-  );
+  return useMemo(() => {
+    const graphs = Object.values(entries).filter(isGraphEntry);
+    return {
+      here: Object.fromEntries(graphs.filter((x) => x.mapKey === mapKey).map((x) => [x.key, x])),
+      others: graphs.filter((x) => x.mapKey !== mapKey),
+    };
+  }, [entries, mapKey]);
 }
 
 const ScenarioEntriesSchema = z.record(z.string(), ScenarioEntrySchema);

@@ -1,22 +1,19 @@
-import { type GraphEntry, isGraphEntry } from "@npc-cli/ui__world/scenario.schema";
-import { useScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
 import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, tw } from "@npc-cli/util";
 import { MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
-import { Fragment, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ConversationCard } from "./ConversationCard";
 import { columnClass } from "./classes";
 import { conversations } from "./demo/trees";
-import { GraphShape } from "./GraphShape";
 import { IconButton } from "./parts";
 import { type ScenarioStub, scenarios } from "./scenarios";
 import type { ScenarioUiMeta } from "./schema";
 
 import "./scenario.css";
 
-/** Scenarios, graphs and conversation trees, listed beside the one chosen — see `docs/scenarios.md` */
+/** Scenarios and conversation trees, listed beside the one chosen — see `docs/scenarios.md` */
 export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   const w = useWorld(meta.worldKey);
   const { uiStoreApi } = useContext(UiContext);
@@ -37,8 +34,6 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     return () => observer.disconnect();
   }, []);
 
-  /** Every map's graphs, shown here: the Decorator edits them */
-  const graphs = Object.values(useScenarioEntries()).filter(isGraphEntry);
   const zoom = meta.zoom ?? 1;
   /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
@@ -65,10 +60,6 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         {scenarios.map((x) => listButton(`${scenarioPrefix}${x.key}`, x.title, x.npcs))}
       </div>
       <div>
-        <div className={sectionClass}>graphs</div>
-        {graphs.map((r) => listButton(r.key, r.name || r.key, r.mapKey))}
-      </div>
-      <div>
         <div className={sectionClass}>conversations</div>
         {conversations.map((c) => listButton(`${talkPrefix}${c.key}`, c.title, c.summary))}
       </div>
@@ -76,18 +67,13 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   );
   const conv = conversations.find((c) => `${talkPrefix}${c.key}` === meta.entryKey);
   const stub = scenarios.find((x) => `${scenarioPrefix}${x.key}` === meta.entryKey);
-  const graph = graphs.find((r) => r.key === meta.entryKey);
   const shownCol =
     stub !== undefined ? (
       <ScenarioCard stub={stub} />
-    ) : graph !== undefined ? (
-      <GraphCard graph={graph} />
     ) : conv !== undefined ? (
       <ConversationCard key={conv.key} w={w} conv={conv} />
     ) : (
-      <div className="h-full grid place-items-center text-zinc-500 p-4">
-        choose a scenario, a graph or a conversation
-      </div>
+      <div className="h-full grid place-items-center text-zinc-500 p-4">choose a scenario or a conversation</div>
     );
 
   return (
@@ -152,56 +138,7 @@ function ScenarioCard({ stub }: { stub: ScenarioStub }) {
   );
 }
 
-/** A graph as saved, read-only: the Decorator's graph tab edits it, and jsh behaviours read it */
-function GraphCard({ graph }: { graph: GraphEntry }) {
-  const meta = (value: Record<string, unknown>) => (Object.keys(value).length === 0 ? "" : JSON.stringify(value));
-  const rows: [string, string][] = [
-    ["map", graph.mapKey],
-    ["edges", graph.directed ? "directed" : "undirected"],
-    ["meta", meta(graph.meta) || "none"],
-  ];
-  return (
-    <div className="p-3 flex flex-col gap-2">
-      <div className="text-zinc-100">{graph.name || graph.key}</div>
-      <div className="text-zinc-500">{graph.key}</div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-3">
-        {rows.map(([label, value]) => (
-          <Fragment key={label}>
-            <span className="text-zinc-500">{label}</span>
-            <span className="break-all">{value}</span>
-          </Fragment>
-        ))}
-      </div>
-      <GraphShape graph={graph} />
-      <div className="text-zinc-500">nodes</div>
-      <div className="grid grid-cols-[auto_auto_1fr] gap-x-3 font-mono">
-        {graph.nodes.map((n) => (
-          <Fragment key={n.id}>
-            <span>{n.id}</span>
-            <span>{n.spot ?? `${n.at[0]}, ${n.at[1]}`}</span>
-            <span className="break-all text-zinc-500">{meta(n.meta)}</span>
-          </Fragment>
-        ))}
-      </div>
-      <div className="text-zinc-500">edges</div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 font-mono">
-        {graph.edges.map((e, i) => (
-          <Fragment key={i}>
-            <span>
-              {e.from} {graph.directed ? "→" : "—"} {e.to}
-            </span>
-            <span className="break-all text-zinc-500">{meta(e.meta)}</span>
-          </Fragment>
-        ))}
-      </div>
-      <div className="text-zinc-500">
-        Edit it in the Decorator's graph tab. <code>act patrol {graph.key.slice("graph/".length)}</code> walks it.
-      </div>
-    </div>
-  );
-}
-
-/** Prefix a scenario's or a conversation's key in `meta.entryKey`, where a graph's is `graph/{slug}` */
+/** Prefix a scenario's or a conversation's key in `meta.entryKey` */
 const scenarioPrefix = "scenario/";
 const talkPrefix = "talk/";
 const sectionClass = tw("text-zinc-500 uppercase text-[10px]");

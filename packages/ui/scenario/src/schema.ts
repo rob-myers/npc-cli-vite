@@ -10,7 +10,7 @@ export const ScenarioUiMetaSchema = z.object({
   zoom: z.number().default(1),
   /** The columns' sizes, when wide enough to have them */
   split: z.array(z.number()).optional(),
-  /** The entry shown: `scenario/{key}`, `graph/{slug}` or `talk/{key}` */
+  /** The entry shown: `scenario/{key}` or `talk/{key}` */
   entryKey: z.string().optional(),
 });
 
