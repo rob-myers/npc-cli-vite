@@ -1,29 +1,29 @@
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { int, ivec2, positionWorld, textureLoad } from "three/tsl";
+import { cos, int, ivec2, min, positionWorld, sin, textureLoad, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { embedXZMat4 } from "./geometry";
 
 /** Metres wide, the white line along a top where it is cut against a wall */
 export const cutLineWidth = 0.03;
 
-/** `(nx, nz, d, 0)` no point on the floor passes */
-export const neverClipped = [0, 0, Number.MAX_VALUE, 0];
+/** `(cx, cz, a1, a2)` no point on the floor passes: one wall, far off */
+export const neverClipped = [1e30, 0, 0, 0];
 
 /** The back across a cut: plain, as the obstacle's inside would be */
 export const clipBackTint = "#000";
 
-/** One texel `(nx, nz, d, 0)` per obstacle instance. A texture, as the skirts have no vertex buffer to spare */
+/** One texel `(cx, cz, a1, a2)` per obstacle instance. A texture, as the skirts have no vertex buffer to spare */
 export function createClipTex(count: number) {
   const tex = new THREE.DataTexture(new Float32Array(count * 4), count, 1, THREE.RGBAFormat, THREE.FloatType);
   return Object.assign(tex, { needsUpdate: true });
 }
 
 /**
- * The edge of its room an obstacle pokes past, as `(nx, nz, d, 0)` in world space, its normal out of the room.
- * One wall at most: e.g. a toilet moved out to widen its room's navmesh. Else `null`. See `docs/walls.md`
+ * Where an obstacle is cut at its room's edge, as `(cx, cz, a1, a2)` in world space: a point, and the outward angles of the walls through it.
+ * One wall, or two meeting at a corner of the room, e.g. a sink run into it. Else `null`. See `docs/walls.md`
  */
-export function clipLineOf(
+export function clipOf(
   { origPoly, transform, meta }: Geomorph.LayoutObstacle,
   room: undefined | Geom.Poly,
   toWorld: Mat,
@@ -31,38 +31,63 @@ export function clipLineOf(
   // what spans an opening shows on both sides: a window's sill, a floor plate in a doorway
   if (room === undefined || meta.window === true || meta.floor === true) return null;
   const toGm = tmpMat.setMatrixValue(transform);
-  const { rect } = origPoly;
-  const centre = toGm.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
-  // the corner furthest past its room's outline, and the outline's edge nearest it
-  let found = null as null | { a: Geom.VectJson; b: Geom.VectJson; dst: number };
-  let edges = null as null | Geom.Vect[][]; // read once, if at all: `lineSegs` clones every edge
-  for (const p of origPoly.outline) {
-    const corner = toGm.transformPoint({ x: p.x, y: p.y });
-    if (room.contains(corner)) continue; // a wall begins at the room's edge, see-through or not
-    let near = null as typeof found;
-    for (const [a, b] of (edges ??= room.lineSegs)) {
-      const { dst } = geomService.getClosestOnSeg(corner, a, b);
-      if (near === null || dst < near.dst) near = { a, b, dst };
-    }
-    if (near !== null && (found === null || near.dst > found.dst)) found = near;
-  }
-  if (found === null) return null;
-  const { a, b } = found;
-  const n = new Vect(a.y - b.y, b.x - a.x).normalize();
-  if ((centre.x - a.x) * n.x + (centre.y - a.y) * n.y > 0) n.scale(-1); // out of the room
-  const at = toWorld.transformPoint({ x: a.x, y: a.y });
-  toWorld.transformSansTranslate(n);
-  return [n.x, n.y, n.x * at.x + n.y * at.y, 0];
+  // a wall begins at the room's edge, see-through or not
+  const past = origPoly.outline.map((p) => toGm.transformPoint(Vect.from(p))).filter((p) => !room.contains(p));
+  if (past.length === 0) return null;
+  const centre = toGm.transformPoint(origPoly.rect.center);
+  const edges = room.lineSegs; // read only now: it clones every edge
+  /** Each corner's nearest edge of the room, the furthest past first, with its normal out of the room */
+  const walls = past
+    .map((p) => edges.map(([a, b]) => ({ a, b, dst: geomService.getClosestOnSeg(p, a, b).dst })))
+    .map((near) => near.reduce((x, y) => (y.dst < x.dst ? y : x)))
+    .sort((x, y) => y.dst - x.dst)
+    .map(({ a, b }) => {
+      const n = new Vect(a.y - b.y, b.x - a.x).normalize();
+      return { a, b, n: n.dot(Vect.from(centre).sub(a)) > 0 ? n.scale(-1) : n };
+    });
+  const [{ a, b, n }] = walls;
+  const shared = (w: (typeof walls)[number]) => [a, b].find((p) => p.equals(w.a) || p.equals(w.b));
+  /** Another wall from a corner of the room, convex there: just past the first wall alone is outside it */
+  const second = walls.find((w) => {
+    const at = shared(w);
+    const turns = Math.abs(w.n.x * n.y - w.n.y * n.x) > 1e-6;
+    return at !== undefined && turns && !room.contains(at.clone().addScaled(n, 0.01).addScaled(w.n, -0.01));
+  });
+  const c = toWorld.transformPoint((second === undefined ? a : (shared(second) as Geom.Vect)).clone());
+  const [a1, a2] = [n, (second ?? walls[0]).n].map((v) => toWorld.transformSansTranslate(v.clone()).angle);
+  return [c.x, c.y, a1, a2];
 }
 
 /**
- * A skirt across where an instance is cut, facing into its room, from its outline in world space.
- * Its own back skirt lies past the cut. Else `null`
+ * The skirts across where an instance is cut, facing into its room, from its outline in world space.
+ * Its own back skirts lie past the cut. One per wall it is cut at
  */
-export function clipBackOf(corners: Geom.VectJson[], clips: Float32Array, instanceId: number) {
-  const line = clips.subarray(instanceId * 4, instanceId * 4 + 3);
-  const [from, to] = cutAcross(corners, line);
-  return to === undefined ? null : { from, to, normal: { x: -line[0], y: -line[1] } };
+export function clipBacksOf(corners: Geom.VectJson[], clips: Float32Array, instanceId: number) {
+  const [cx, cz, ...angles] = clips.subarray(instanceId * 4, instanceId * 4 + 4);
+  /** Each wall a millimetre on the kept side, `past(p)` how far past it */
+  const walls = [...new Set(angles)].map((angle) => {
+    const [nx, nz] = [Math.cos(angle), Math.sin(angle)];
+    return { normal: { x: -nx, y: -nz }, past: (p: Geom.VectJson) => (p.x - cx) * nx + (p.y - cz) * nz + 0.001 };
+  });
+  const kept = walls.reduce(
+    (outline, { past }) =>
+      outline.flatMap((p, i) => {
+        const q = outline[(i + 1) % outline.length];
+        const [sp, sq] = [past(p), past(q)];
+        const t = sp / (sp - sq);
+        const cut = sp > 0 === sq > 0 ? [] : [{ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t }];
+        return sp > 0 ? cut : [p, ...cut];
+      }),
+    corners,
+  );
+  // its edges along each wall
+  return walls.flatMap(({ normal, past }) =>
+    kept.flatMap((from, i) => {
+      const to = kept[(i + 1) % kept.length];
+      const along = Math.abs(past(from)) < 1e-6 && Math.abs(past(to)) < 1e-6;
+      return along && Vect.distanceBetween(from, to) > 1e-6 ? [{ from, to, normal }] : [];
+    }),
+  );
 }
 
 /** What `writeSkirt` writes into: `Obstacles`' skirt mesh and its per-instance arrays */
@@ -95,24 +120,11 @@ export function writeSkirt(
   );
 }
 
-/**
- * Where the clip line `(nx, nz, d)` crosses an outline in world space, a millimetre on the kept side.
- * Two points for the one wall an obstacle pokes into, else fewer
- */
-function cutAcross(corners: Geom.VectJson[], [nx, nz, d]: Float32Array): Geom.VectJson[] {
-  return corners.flatMap((p, i) => {
-    const q = corners[(i + 1) % corners.length];
-    const [sp, sq] = [p.x * nx + p.y * nz - d, q.x * nx + q.y * nz - d];
-    if (sp > 0 === sq > 0) return [];
-    const t = sp / (sp - sq);
-    return [{ x: p.x + (q.x - p.x) * t - nx * 0.001, y: p.y + (q.y - p.y) * t - nz * 0.001 }];
-  });
-}
-
-/** Metres this fragment is inside its obstacle's clip line, negative past it */
+/** Metres this fragment is inside its obstacle's cut, negative past it: by the nearer of its walls */
 export function insideClipBy(clipTex: THREE.DataTexture, instanceId: THREE.Node<"int">) {
   const clip = textureLoad(clipTex, ivec2(instanceId, int(0)));
-  return clip.z.sub(positionWorld.xz.dot(clip.xy));
+  const rel = clip.xy.sub(positionWorld.xz);
+  return min(rel.dot(vec2(cos(clip.z), sin(clip.z))), rel.dot(vec2(cos(clip.w), sin(clip.w))));
 }
 
 const tmpMat = new Mat();

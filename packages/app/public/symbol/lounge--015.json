@@ -147,14 +147,34 @@
       "expanded": false,
       "children": [
         {
-          "id": "d9f4dff8-0c97-431e-8cd5-0d3ef956c9c2",
+          "id": "970dea76-99cf-4522-8811-3a3659ff0a5c",
           "name": "obstacle sink surface y=0.7 h=0.7",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 59.2},
           "type": "rect",
-          "baseRect": {"width": 24, "height": 62.8},
+          "baseRect": {"width": 24, "height": 19.4},
           "cssTransform": "matrix(1, 0, 0, 1, 60.5, 59.2)"
+        },
+        {
+          "id": "bacfffb6-fafe-4942-af38-4f263b7a6ea5",
+          "name": "obstacle sink y=0.7 h=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 78.6},
+          "type": "rect",
+          "baseRect": {"width": 24, "height": 23},
+          "cssTransform": "matrix(1, 0, 0, 1, 60.5, 78.6)"
+        },
+        {
+          "id": "c8739c84-6b31-4f3e-8249-afd704cafd7c",
+          "name": "obstacle sink surface y=0.7 h=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 101.6},
+          "type": "rect",
+          "baseRect": {"width": 24, "height": 20.4},
+          "cssTransform": "matrix(1, 0, 0, 1, 60.5, 101.6)"
         }
       ]
     },
