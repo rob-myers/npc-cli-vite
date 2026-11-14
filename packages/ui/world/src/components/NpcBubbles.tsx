@@ -34,10 +34,17 @@ export default function NpcBubbles() {
       },
       onTick(delta) {
         for (const [npcKey, line] of state.lines) {
-          if (line.held) continue;
+          const last = line.page === line.pages.length - 1;
+          if (last && line.held) continue;
           if ((line.secs -= delta) > 0) {
             // written to the DOM, rendering nothing. A new line replaces it at full opacity
-            if (line.secs < lineFadeSecs && line.el) line.el.style.opacity = `${line.secs / lineFadeSecs}`;
+            if (last && line.secs < lineFadeSecs && line.el) line.el.style.opacity = `${line.secs / lineFadeSecs}`;
+            continue;
+          }
+          if (last === false) {
+            line.page++;
+            line.secs = line.page === line.pages.length - 1 ? line.lastSecs : lineSecsOf(line.pages[line.page]);
+            showPage(line);
             continue;
           }
           state.lines.delete(npcKey);
@@ -74,12 +81,16 @@ export default function NpcBubbles() {
           const line = state.lines.get(npcKey);
           if (line?.held !== true) continue;
           line.held = false;
-          line.secs = lineSecsOf(line.words);
+          line.lastSecs = lineSecsOf(line.pages[line.pages.length - 1]);
+          if (line.page === line.pages.length - 1) line.secs = line.lastSecs;
         }
       },
-      say(npcKey, words, { secs = lineSecsOf(words), hold = false } = {}) {
+      say(npcKey, words, { secs, hold = false } = {}) {
         if (!(npcKey in w.n)) return;
-        state.lines.set(npcKey, { words, secs, held: hold });
+        const pages = pagesOf(words);
+        const lastSecs = secs ?? lineSecsOf(pages[pages.length - 1]);
+        const first = pages.length === 1 ? lastSecs : lineSecsOf(pages[0]);
+        state.lines.set(npcKey, { words, pages, page: 0, secs: first, lastSecs, held: hold });
         state.sync(npcKey);
       },
       setShown(npcKey, shown) {
@@ -158,11 +169,14 @@ export default function NpcBubbles() {
             {thought !== undefined && <ThoughtBubble words={thought.words} tag={thought.tag} />}
             {line !== undefined && (
               <SaidBubble
-                words={line.words}
+                pages={line.pages}
                 elRef={(el) => {
                   line.el = el;
                   // the element is reused by the next line said, at its own fade, e.g. none whilst paused
-                  if (el !== null) el.style.opacity = `${Math.min(1, line.secs / lineFadeSecs)}`;
+                  if (el === null) return;
+                  const last = line.page === line.pages.length - 1;
+                  el.style.opacity = last ? `${Math.min(1, line.secs / lineFadeSecs)}` : "1";
+                  showPage(line);
                 }}
               />
             )}
@@ -173,16 +187,47 @@ export default function NpcBubbles() {
   );
 }
 
-/** Just the line said, click-through */
-function SaidBubble({ words, elRef }: { words: string; elRef: (el: HTMLDivElement | null) => void }) {
+/** The line said, click-through: one page shown at a time, see `showPage` */
+function SaidBubble({ pages, elRef }: { pages: string[]; elRef: (el: HTMLDivElement | null) => void }) {
   return (
     <div
       ref={elRef}
       className="mb-1.5 w-max max-w-64 rounded-xl border border-white/30 bg-black/75 px-2.5 py-1 text-[13px] text-white/95"
     >
-      <Glyphed text={words} />
+      {pages.map((page, i) => (
+        <span key={i} data-page={i}>
+          <Glyphed text={page} />
+        </span>
+      ))}
+      {pages.length > 1 && <span data-page-count="" className="ml-1.5 text-[10px] text-white/50" />}
     </div>
   );
+}
+
+/** Shows its current page alone, and which it is: written to the DOM, so a page turns without a render */
+function showPage(line: Line) {
+  const el = line.el;
+  if (el === null || el === undefined) return;
+  for (const span of el.querySelectorAll<HTMLElement>(":scope > [data-page]")) {
+    span.style.display = span.dataset.page === `${line.page}` ? "" : "none";
+  }
+  const count = el.querySelector<HTMLElement>(":scope > [data-page-count]");
+  if (count !== null) count.textContent = `${line.page + 1}/${line.pages.length}`;
+}
+
+/** A line as pages: whole sentences, each page at most `pageChars` unless one word is longer */
+function pagesOf(words: string) {
+  const sentences = words.trim().match(/[^.!?…]+(?:[.!?…]+["')\]]*|$)\s*/g) ?? [words];
+  const pages: string[] = [];
+  for (const part of sentences.flatMap((sentence) =>
+    sentence.length <= pageChars ? [sentence] : sentence.split(/(?<=\s)/),
+  )) {
+    const last = pages.at(-1);
+    if (last !== undefined && last.length + part.length <= pageChars) pages[pages.length - 1] = last + part;
+    else pages.push(part);
+  }
+  const trimmed = pages.map((page) => page.trim()).filter((page) => page !== "");
+  return trimmed.length > 0 ? trimmed : [words];
 }
 
 /** A thought read off them, click-through: outlined in its khandha's colour, which it names */
@@ -202,6 +247,8 @@ function ThoughtBubble({ words, tag }: { words: string; tag: ThoughtTag }) {
 const lineSecsOf = (words: string) =>
   Math.min(lineConfig.minSecs + lineConfig.wordSecs * words.trim().split(/\s+/).length, lineConfig.maxSecs);
 const lineConfig = { minSecs: 2, wordSecs: 0.4, maxSecs: 10 };
+/** Characters a bubble's page holds, at most */
+const pageChars = 120;
 /** Its last seconds, in which it fades out */
 const lineFadeSecs = 1;
 
@@ -222,7 +269,7 @@ export type State = {
   /** Whose bubble is hidden, e.g. whilst they fade out to be moved */
   hidden: Set<string>;
   /** The line each said last, and the seconds it has left — none whilst `held` */
-  lines: Map<string, { words: string; secs: number; held: boolean; el?: HTMLDivElement | null }>;
+  lines: Map<string, Line>;
   /** The thought last read off each, and the seconds it has left */
   thoughts: Map<string, { words: string; tag: ThoughtTag; secs: number }>;
   delete(...npcKeys: string[]): void;
@@ -232,7 +279,7 @@ export type State = {
   place(): void;
   /** A held line starts its `lineSecsOf`, e.g. once answered */
   release(...npcKeys: string[]): void;
-  /** Over them for `secs`, replacing what they said before — or until released, when `hold` */
+  /** Over them, replacing what they said before, page by page. Its last page lasts `secs`, or until released when `hold` */
   say(npcKey: string, words: string, opts?: { secs?: number; hold?: boolean }): void;
   setShown(npcKey: string, shown: boolean): void;
   /** Their bubble as it should be: a line, a thought, both, or gone */
@@ -241,4 +288,15 @@ export type State = {
   syncRoomFades(): void;
   /** Over them as a thought, above anything they are saying, for `thoughtConfig.shownSecs` */
   think(npcKey: string, words: string, tag: ThoughtTag): void;
+};
+
+/** A line said, shown a page at a time: `secs` are the current page's, `lastSecs` the last page's */
+type Line = {
+  words: string;
+  pages: string[];
+  page: number;
+  secs: number;
+  lastSecs: number;
+  held: boolean;
+  el?: HTMLDivElement | null;
 };

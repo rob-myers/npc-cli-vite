@@ -1,12 +1,13 @@
+import { isConversationEntry } from "@npc-cli/ui__world/scenario.schema";
+import { useScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
 import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, tw } from "@npc-cli/util";
 import { MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ConversationCard } from "./ConversationCard";
 import { columnClass } from "./classes";
-import { conversations } from "./demo/trees";
 import { IconButton } from "./parts";
 import { type ScenarioStub, scenarios } from "./scenarios";
 import type { ScenarioUiMeta } from "./schema";
@@ -17,6 +18,14 @@ import "./scenario.css";
 export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   const w = useWorld(meta.worldKey);
   const { uiStoreApi } = useContext(UiContext);
+  const entries = useScenarioEntries();
+  const conversations = useMemo(
+    () =>
+      Object.values(entries)
+        .filter(isConversationEntry)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [entries],
+  );
 
   const select = (key: string) =>
     uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).entryKey = key));
@@ -61,7 +70,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
       </div>
       <div>
         <div className={sectionClass}>conversations</div>
-        {conversations.map((c) => listButton(`${talkPrefix}${c.key}`, c.title, c.summary))}
+        {conversations.map((c) => listButton(`${talkPrefix}${c.key}`, c.name, c.summary))}
       </div>
     </div>
   );

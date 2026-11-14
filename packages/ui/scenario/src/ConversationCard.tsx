@@ -53,10 +53,11 @@ export function ConversationCard({ w, conv }: { w: WorldState | undefined; conv:
   return (
     <div className="p-3 flex flex-col gap-2">
       <div>
-        <div className="text-zinc-100">{conv.title}</div>
+        <div className="text-zinc-100">{conv.name}</div>
         <div className="text-zinc-500">
           <Glyphed text={conv.summary} />
         </div>
+        {conv.source !== undefined && <Credit source={conv.source} />}
       </div>
       {w !== undefined && (
         <div className="flex items-center gap-1 text-zinc-500">
@@ -171,6 +172,24 @@ function OutlineRowView(props: {
   );
 }
 
+/** Where its lines come from, as their licence asks: the page, its authors, the licence */
+function Credit({ source }: { source: NonNullable<Conversation["source"]> }) {
+  const shown = source.authors.slice(0, maxAuthors);
+  const more = source.authors.length - shown.length;
+  return (
+    <div className="text-zinc-600" title={source.authors.join(", ")}>
+      from{" "}
+      <a href={source.url} target="_blank" rel="noreferrer" className="underline hover:text-zinc-300">
+        {source.title}
+      </a>{" "}
+      by {shown.join(", ")}
+      {more > 0 && ` and ${more} more`} · {source.license}
+    </div>
+  );
+}
+
+/** Authors named in a credit, the rest in its title */
+const maxAuthors = 3;
 /** Per level of the outline */
 const indentPx = 12;
 const rosterEvents = new Set(["spawned", "spawned-many", "removed-npcs", "npcs-restored", "set-player"]);

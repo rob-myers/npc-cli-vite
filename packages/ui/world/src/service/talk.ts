@@ -1,32 +1,8 @@
-/**
- * A two-party conversation: the npc says a node's `text`, the player answers with one of its
- * `choices`. Played in `WorldSpeech`, outlined in the Scenario panel — see `docs/scenarios.md`
- */
-export type Conversation = {
-  key: string;
-  title: string;
-  summary: string;
-  /** Who the player talks to */
-  speaker: string;
-  /** A node's id */
-  start: string;
-  nodes: Record<string, ConversationNode>;
-};
+import type { ConversationChoice, ConversationEntry, ConversationNode } from "../scenario.schema";
 
-export type ConversationNode = {
-  text: string;
-  /** What it is about, e.g. `crew` */
-  topic?: string;
-  /** None is an ending */
-  choices?: ConversationChoice[];
-};
-
-export type ConversationChoice = {
-  text: string;
-  to: string;
-  /** Keys of what must hold before the player can say it, defined by e.g. jsh `comms` */
-  needs?: string[];
-};
+/** Played in `WorldSpeech`, outlined in the Scenario panel — see `docs/scenarios.md` */
+export type Conversation = ConversationEntry;
+export type { ConversationChoice, ConversationNode };
 
 export type OutlineRow = {
   key: string;

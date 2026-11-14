@@ -108,7 +108,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 ## Entry files
 
-Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph` (`docs/npc-graphs.md`).
+Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`: `graph` (`docs/npc-graphs.md`) and `conversation` (below).
 
 `scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -128,9 +128,9 @@ Nodes and edges on one map, with meta, made and edited in the Decorator. jsh beh
 
 ## Conversations
 
-Generic sci-fi as yet, to be moved to the SCP setting. Conversations are terse: lines of one to five words, to be decoded, not read.
+None are saved as yet: a jsh API for conversations, in `comms`, is to come. Lines are short, at most 8 words, the player's too.
 
-A `Conversation` (`ui/world/src/service/talk.ts`, imported as `@npc-cli/ui__world/talk`) is two-party: `nodes` by id, each the npc's `text` and `topic`, and the player's `choices` (`text`, `to`, `needs`). None is an ending. It is a graph, as choices lead back. As yet the trees are ten short hand-written demos, `ui/scenario/src/demo/trees.ts` (an airlock guard, a medic, a quartermaster...). An emoji is inline, and only where it explains the word before it (`Cells 🔋.`) or stands for a word (`👍.`).
+A conversation is a scenario entry of kind `conversation` (`ConversationEntrySchema`, typed `Conversation` in `ui/world/src/service/talk.ts`): `packages/media/src/scenario/conversation/{slug}.json`, hand-written. It is two-party: `nodes` by id, each the npc's `text` and `topic`, and the player's `choices` (`text`, `to`, `needs`). None is an ending, by convention `end-…`. It is a graph, as choices may lead back. A `source` credits lines taken from elsewhere, shown on its card.
 
 A conversation's card (`ConversationCard.tsx`) outlines its tree (`toOutline`). Each node is unfolded once, under the parent a breadth-first walk meets it by, so nearest the start. Elsewhere it is a reference. A row is the choice, then what is said back, with its needs as neutral pips. The box finds a line, topic or id. The count flags a choice leading nowhere, or a line nothing leads to. **the player talks to** an npc starts it in the World: `w.speech.startTalk(conv, npcKey)`.
 
@@ -138,7 +138,9 @@ A conversation's card (`ConversationCard.tsx`) outlines its tree (`toOutline`). 
 
 `WorldSpeech` is a button, marked when something was said since its history was last open, and that history, grouped into threads by who spoke and to whom (`threadKeyOf`). A plain `w.speech.say` is a thread of one; a talk is the player's and the npc's. `say` takes `to`, which the `speech` event carries, so a client's history groups alike. A thread is drawn by `TalkThread` (`@npc-cli/ui__world/talk-thread`, styled by `talk-thread.css`): speech bubbles, the player's on the right, an npc's tinted by topic (`topicHue`) with a rule naming each topic turned to. A reply and its answer share a row. Only the latest row and the one before, dimmed, show; the rest fold into an ellipsis until clicked, and a click on the latest folds them again.
 
-Every line said also shows over the speaker's head: ONE click-through bubble per npc (`NpcBubbles`), pinned over them each frame. Their menu (room, pose, items, and for the player `BreathControls`) is a `PickMenu`. It opens on right-click with the debug **context menu** on, or from the speech menu's **debug** (`w.pickMenu.toggle`). A talk's line awaiting an answer is `hold`: it stays until someone it addresses speaks (`release`), then runs `lineSecs` of world time, as any other line does.
+Every line said also shows over the speaker's head: ONE click-through bubble per npc (`NpcBubbles`), pinned over them each frame. Their menu (room, pose, items, and for the player `BreathControls`) is a `PickMenu`. It opens on right-click with the debug **context menu** on, or from the speech menu's **debug** (`w.pickMenu.toggle`). A talk's line awaiting an answer is `hold`: it stays until someone it addresses speaks (`release`), then runs `lineSecsOf` of world time, as any other line does.
+
+A long line is shown a page at a time (`pagesOf`): whole sentences, at most `pageChars` (120) a page, with a counter, e.g. `2/3`. Each page runs its own `lineSecsOf`, and only the last fades. A held line stays on its last page. Pages turn by writing to the DOM from `onTick` (`showPage`), never by a render. The speech history shows the line whole.
 
 A talk (`talks`, by thread) offers the replies of the line replied to, under it. Each waits on its `needs`, drawn as pips, green once met. A need is only a key to the conversation code: `w.speech.defineNeeds({ [key]: { label, icon? } })` names them, and `w.speech.setMet({ [threadKey]: keys })` says which are met. One undefined is never met. Not all green, the reply cannot be said. A reply said, the npc answers after `answerSecs` of world time, so never whilst paused.
 
