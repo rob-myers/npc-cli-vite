@@ -164,6 +164,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Getting up** (`w.e.stepOff`, and jsh `act`'s `getUp`) lands beside the doable, in sight of it if possible, else anywhere in their room, else outside its door (`w.e.closestExitFrom`). At a doable on the navmesh they are let go where they stand. In a full room, either way, they fade out of its door.
 - A move onto a doable with nowhere beside it fades on from outside its room's door, not from wherever they are.
 - An npc at a doable on the navmesh, e.g. a sink's `do=stand`, is hard pinned (`npc.setHardPin`, set by `setNpcDo`). Neither the crowd nor a shove moves them, and sidestep leaves them be. An idle npc is only pinned softly (`pinTo`), so two spawned on top of one another slide apart.
+- An edit that takes a doer's decor puts them back on a free doable within `reseatMetres` (0.25m), i.e. the one nudged. Else they stand up where they are (`w.e.standUpStrandedDoers`).
 - **Max walkers.** A room's first label may set `max-walkers=N`, read once into `maxWalkers` on its `w.gmRoomGraph` node. Its doors are in `w.gmRoomGraph.walkerRooms`.
   - At most N stand on its navmesh (`w.e.admitWalker`). Those at a doable don't count, unless it has `meta.as-walker`, e.g. a shower's (`do:as-walker` on its symbol instance).
   - A full room's door areas are refused to others, as a locked door's (`w.e.refusesWalker`, from `canPassNode`).

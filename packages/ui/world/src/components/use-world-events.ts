@@ -1552,7 +1552,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (typeof decorKey !== "string" || w.decor.byKey[decorKey] !== undefined) {
             continue; // idle, or what they are doing is still there
           }
-          const near = w.npc.getClosestPoly(npc.point, 4); // an edit took their decor
+          // an edit took their decor: a doable it nudged takes them back
+          const nearby = w.decor.queryRect(Rect.fromPoints(npc.point).outset(reseatMetres));
+          const doables = nearby.filter(
+            (d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.do === "string",
+          );
+          const nudged = w.npc.findFreeDoPoint(doables, npc.key, npc.point);
+          if (nudged !== null) {
+            void w.npc.spawn({ npcKey: npc.key, at: nudged }).catch(warn);
+            continue;
+          }
+          const near = w.npc.getClosestPoly(npc.point, 4);
           if (near.success === false) state.strandNpc(npc);
           // faded, as any teleport; nothing waits on it, and a doer has no agent to go stale
           else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
@@ -2272,6 +2282,9 @@ const reachFrom = new THREE.Vector3(0, -0.3, 0);
 const reachAimWeight = 0.75;
 /** Metres from a door's centre to its doorway outside, past its door area */
 const doorwayOut = 0.6;
+
+/** Metres an edit may nudge a doable whilst its doer stays on it */
+const reseatMetres = 0.25;
 
 /** Is `to` close behind `npc`, where stepping back beats turning round? */
 function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State["config"]) {
