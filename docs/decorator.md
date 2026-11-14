@@ -76,6 +76,11 @@ next time it opens, and draws nothing meanwhile. `meta.npcKeys` keeps the choice
 A chosen npc is a dot with its key, moved straight through its ref on the World's own frames
 (`w.e.addFrameCallback`) rather than by rendering — and only whilst at least one is chosen.
 
+A dot dragged and dropped, or an npc placed by a click, is respawned there (`spawnNpc`). Onto a doable they
+do it: the nearest decor point with `meta.do` within `doableReach` (0.4m), else a doable obstacle under the
+drop, e.g. a bed, whose free point nearest the drop is taken (`doableAt`). A spawn that fails, e.g. `occupied`, says so in a
+tooltip over where it was tried, for a few seconds (`SpawnErrorTip`).
+
 ## Type-checking
 
 `ui/decorator/tsconfig.json` lists `../world/src` before `./src`. Every project re-checks the World's

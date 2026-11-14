@@ -10,7 +10,7 @@ import {
 } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom";
+import { Mat, Vect } from "@npc-cli/util/geom";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
   ArrowUUpLeftIcon,
@@ -44,6 +44,7 @@ import { GraphSidebar } from "./GraphSidebar";
 import { addedEdge, copiedGraph, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { SpawnErrorTip } from "./SpawnErrorTip";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import { type DecoratorUiMeta, type NavMapLayer, sidebarTabs } from "./schema";
@@ -189,14 +190,34 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       isMenuBlocked() {
         return performance.now() < state.menuBlockedUntil;
       },
+      doableAt(at) {
+        const r = doableReach;
+        const dist = (d: Geomorph.DecorPoint) => Math.hypot(d.x - at.x, d.y - at.y);
+        const [near] = w.decor
+          .queryRect({ x: at.x - r, y: at.y - r, width: 2 * r, height: 2 * r })
+          .filter((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.do === "string" && dist(d) <= r)
+          .sort((a, b) => dist(a) - dist(b));
+        if (near !== undefined) return { x: near.x, y: near.y, meta: near.meta };
+        const gmId = w.findGmIdContaining(at);
+        if (gmId === null) return null;
+        const gm = w.gms[gmId];
+        const local = gm.inverseMatrix.transformPoint({ ...at });
+        const obstacleId = gm.obstacles.findIndex(
+          (o) => o.meta.decorIds && o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).contains(local),
+        );
+        // the World takes its free point nearest `at`
+        return obstacleId === -1
+          ? null
+          : { ...at, meta: { ...gm.obstacles[obstacleId].meta, obstacle: true, gmId, obstacleId } };
+      },
       async spawnNpc(npcKey, at) {
         try {
-          await w.npc.spawn({ npcKey, at });
+          await w.npc.spawn({ npcKey, at: state.doableAt(at) ?? at });
           w.view.forceUpdate();
           if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
           state.set({ spawning: null, spawnError: null });
         } catch (e) {
-          state.set({ spawnError: e instanceof Error ? e.message : String(e) });
+          state.set({ spawnError: { message: e instanceof Error ? e.message : String(e), at } });
         }
       },
       onMapClick(at) {
@@ -402,12 +423,17 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       tabIndex={0}
       onKeyDown={state.onKeyDown}
     >
+      <SpawnErrorTip
+        error={state.spawnError}
+        container={state.mapEl}
+        toClient={(x, y) => map.current?.toClient(x, y)}
+        onClose={() => state.set({ spawnError: null })}
+      />
       {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
       <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap select-none *:shrink-0">
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
-        {state.spawnError !== null && <span className="text-red-400">{state.spawnError}</span>}
         {/* the tool: select, or add one of a type where the map is clicked */}
         <Picker
           title={
@@ -793,8 +819,11 @@ type State = {
   tool: "select" | DecorType;
   /** The npc who goes where the map is next clicked */
   spawning: null | string;
-  spawnError: null | string;
-  /** Spawns them there, or respawns them */
+  /** Why the last spawn failed, and where: shown there */
+  spawnError: null | { message: string; at: Geom.VectJson };
+  /** A doable decor point near `at`, else a doable obstacle under it, as a point the World spawns onto */
+  doableAt(at: Geom.VectJson): null | MaybeMeta<Geom.VectJson>;
+  /** Spawns them there, or respawns them: onto a doable there, doing it */
   spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;
@@ -873,6 +902,9 @@ type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };
 /** The tabs' width */
 const minSidebarWidth = 192;
+/** Metres from a drop within which a doable point is taken */
+const doableReach = 0.4;
+const tmpMat = new Mat();
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
 /** Screen px a chosen spot must be clear of the map's visible edges, else the map glides to it */
