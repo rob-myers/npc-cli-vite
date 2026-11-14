@@ -213,13 +213,13 @@ for (const [sheetId, bin] of bins.entries()) {
 
 //#endregion
 
-// reduce PNG size
+// reduce PNG size: its own sheets alone, as it would strip the skin sheets' hashes
 try {
   process.chdir(path.resolve(PROJECT_ROOT, "packages/app/public/sheet"));
   await loggedSpawn({
     label: "pngquant",
     command: "pngquant",
-    args: ["--force", "--ext", ".png", "*.png"],
+    args: ["--force", "--ext", ".png", `${path.basename(baseSymbolsSheetPath)}.*.png`],
     shell: true,
   });
 } catch (e) {

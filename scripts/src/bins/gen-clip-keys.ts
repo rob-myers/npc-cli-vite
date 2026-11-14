@@ -9,7 +9,7 @@
  * gen-clip-keys sit                      # one
  * gen-clip-keys sit knee=70 phaser_aim rock=0.6 drop=0.4
  * ```
- * It appends to the glTF's buffer, so restore both files first: `git checkout` them, or export from Blockbench
+ * It drops whatever of the glTF's buffer is no longer used, so a re-run needs no restore
  */
 
 import { randomUUID } from "node:crypto";
@@ -29,8 +29,15 @@ type Side = "left" | "right";
 const sides: Side[] = ["left", "right"];
 /** A bone's channel over a clip: degrees, or model units off its rest. `keys` are the times Blockbench is given */
 type Track = { clip: string; bone: string; channel: "rotation" | "position"; keys: number[]; at(t: number): Triple };
-/** What re-keys a clip, or a few that share a pose: `params` are its defaults, each settable as `name=value` */
-type Recipe<P extends Record<string, number>> = { params: P; tracks(params: P): Track[] };
+/**
+ * What re-keys a clip, or a few that share a pose: `params` are its defaults, each settable as `name=value`.
+ * `bases` are the clips it makes afresh, each a copy of its base clip that the tracks then re-key
+ */
+type Recipe<P extends Record<string, number>> = {
+  params: P;
+  tracks(params: P): Track[];
+  bases?: Record<string, string>;
+};
 
 /** Every clip is this long, bar a gait, at this many frames a second */
 const length = 2.5;
@@ -588,6 +595,402 @@ const crouchClips = {
   }),
 };
 
+//#endregion
+
+//#region fidgets: a rest clip, its arms and head moving once a cycle
+
+/** The skinned mesh's box over every frame of `clip`, leaving out the vertices on bone `skip` */
+function boxOf(clip: string, buffer: Buffer, skip?: string): THREE.Box3 {
+  const nodes: THREE.Object3D[] = gltf.nodes.map((n: { name: string; translation?: Triple; rotation?: number[] }) => {
+    const o = new THREE.Object3D();
+    o.name = n.name;
+    if (n.translation !== undefined) o.position.fromArray(n.translation);
+    if (n.rotation !== undefined) o.quaternion.fromArray(n.rotation);
+    return o;
+  });
+  gltf.nodes.forEach((n: { children?: number[] }, i: number) => n.children?.forEach((c) => nodes[i].add(nodes[c])));
+  const animation = gltf.animations.find((a: { name: string }) => a.name === clip);
+  const channels = animation.channels.map((c: any) => ({
+    node: nodes[c.target.node],
+    path: c.target.path as string,
+    times: rowsOf(buffer, animation.samplers[c.sampler].input).map(([t]) => t),
+    values: rowsOf(buffer, animation.samplers[c.sampler].output),
+  }));
+  const [primitive] = gltf.meshes[0].primitives;
+  const skin = gltf.skins[0];
+  const positions = rowsOf(buffer, primitive.attributes.POSITION);
+  const joints = rowsOf(buffer, primitive.attributes.JOINTS_0);
+  const inverses = rowsOf(buffer, skin.inverseBindMatrices).map((m) => new THREE.Matrix4().fromArray(m));
+  /** Each vertex's joint: Blockbench binds each to one bone */
+  const jointOf = rowsOf(buffer, primitive.attributes.WEIGHTS_0).map((w, i) => joints[i][w.indexOf(Math.max(...w))]);
+  const root = nodes[gltf.scenes[0].nodes[0]];
+  const [box, at, matrix] = [new THREE.Box3(), new THREE.Vector3(), new THREE.Matrix4()];
+  for (const t of framesOf(secsOf(clip))) {
+    for (const { node, path, times, values } of channels) {
+      const i = Math.max(
+        0,
+        times.findLastIndex((s: number) => s <= t),
+      );
+      const j = Math.min(i + 1, times.length - 1);
+      const u = j === i ? 0 : Math.min(1, (t - times[i]) / (times[j] - times[i]));
+      if (path === "rotation")
+        node.quaternion.fromArray(values[i]).slerp(new THREE.Quaternion().fromArray(values[j]), u);
+      else node.position.fromArray(values[i]).lerp(new THREE.Vector3().fromArray(values[j]), u);
+    }
+    root.updateMatrixWorld(true);
+    positions.forEach((p, i) => {
+      const bone = nodes[skin.joints[jointOf[i]]];
+      if (bone.name === skip) return;
+      box.expandByPoint(at.fromArray(p).applyMatrix4(matrix.multiplyMatrices(bone.matrixWorld, inverses[jointOf[i]])));
+    });
+  }
+  return box;
+}
+
+/** The glTF's buffer as read, which holds every clip a fidget is based on */
+const readBuffer = Buffer.from(gltf.buffers[0].uri.split(",")[1], "base64");
+/** A clip's length, as the bbmodel has it */
+const secsOf = (clip: string): number => bbmodel.animations.find((a: { name: string }) => a.name === clip).length;
+/** Degrees as Blockbench keys them */
+const quatOf = (deg: Triple) => new THREE.Quaternion().setFromEuler(euler(deg));
+const degOf = (q: THREE.Quaternion): Triple => {
+  const e = new THREE.Euler().setFromQuaternion(q, "ZYX");
+  return [e.x, e.y, e.z].map(THREE.MathUtils.radToDeg) as Triple;
+};
+
+/** A bone's rotation in a glTF clip at `t`, as the game samples it */
+function turnIn(clip: string, bone: string): (t: number) => THREE.Quaternion {
+  const animation = gltf.animations.find((a: { name: string }) => a.name === clip);
+  const node = gltf.nodes.findIndex((n: { name: string }) => n.name === bone);
+  const channel = animation.channels.find((c: any) => c.target.node === node && c.target.path === "rotation");
+  if (channel === undefined) return () => new THREE.Quaternion();
+  const { input, output } = animation.samplers[channel.sampler];
+  const [times, quats] = [rowsOf(readBuffer, input), rowsOf(readBuffer, output)];
+  return (t) => {
+    const i = Math.max(
+      0,
+      times.findLastIndex(([at]) => at <= t),
+    );
+    if (i >= times.length - 1) return new THREE.Quaternion().fromArray(quats[times.length - 1]);
+    const u = (t - times[i][0]) / (times[i + 1][0] - times[i][0]);
+    return new THREE.Quaternion().fromArray(quats[i]).slerp(new THREE.Quaternion().fromArray(quats[i + 1]), u);
+  };
+}
+
+/** A bone's position in a glTF clip at `t`: model units off its rest, as a position key is */
+function offsetIn(clip: string, bone: string): (t: number) => Triple {
+  const animation = gltf.animations.find((a: { name: string }) => a.name === clip);
+  const node = gltf.nodes.findIndex((n: { name: string }) => n.name === bone);
+  const channel = animation.channels.find((c: any) => c.target.node === node && c.target.path === "translation");
+  if (channel === undefined) return () => [0, 0, 0];
+  const { input, output } = animation.samplers[channel.sampler];
+  const [times, at] = [rowsOf(readBuffer, input), rowsOf(readBuffer, output)];
+  return (t) => {
+    const i = Math.max(
+      0,
+      times.findLastIndex(([s]) => s <= t),
+    );
+    const j = Math.min(i + 1, times.length - 1);
+    const u = j === i ? 0 : Math.min(1, (t - times[i][0]) / (times[j][0] - times[i][0]));
+    const v = new THREE.Vector3().fromArray(at[i]).lerp(new THREE.Vector3().fromArray(at[j]), u);
+    return v.multiplyScalar(16).sub(rest(bone)).toArray();
+  };
+}
+
+/** An accessor's rows, read from `buffer` */
+function rowsOf(buffer: Buffer, accessor: number): number[][] {
+  const a = gltf.accessors[accessor];
+  const view = gltf.bufferViews[a.bufferView];
+  const width = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 }[a.type as string] as number;
+  const Kind = { 5126: Float32Array, 5125: Uint32Array, 5123: Uint16Array, 5121: Uint8Array }[
+    a.componentType as number
+  ] as Float32ArrayConstructor;
+  const stride = view.byteStride === undefined ? width : view.byteStride / Kind.BYTES_PER_ELEMENT;
+  const offset = buffer.byteOffset + (view.byteOffset ?? 0) + (a.byteOffset ?? 0);
+  const all = new Kind(buffer.buffer.slice(offset, offset + ((a.count - 1) * stride + width) * Kind.BYTES_PER_ELEMENT));
+  return Array.from({ length: a.count }, (_, i) => Array.from(all.subarray(i * stride, i * stride + width)));
+}
+
+/** `0` to `1` and back, eased: `1` from `from` to `to`, fractions of the cycle */
+const held = (u: number, from: number, to: number, ease: number) => {
+  const smooth = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+  return smooth((u - from) / ease) * smooth((to - u) / ease);
+};
+
+/** A fidget's pose is held over this much of the cycle, eased in and out, so it loops on its base */
+const hold = { from: 0.08, to: 0.92, ease: 0.22 };
+
+/**
+ * `clip` as `base`, each bone of `poses` turned along its path by how far the fidget is `held`: by way of each
+ * pose to the last. `on` turns a bone further whilst held, given the time and that weight, e.g. a rub or a glance
+ */
+function fidget(
+  clip: string,
+  base: string,
+  poses: Record<string, Triple[]>,
+  on: Record<string, (t: number, weight: number) => Triple> = {},
+  { over = hold, lifts = {} }: { over?: typeof hold; lifts?: Record<string, Triple> } = {},
+): Track[] {
+  const secs = secsOf(base);
+  const keys = framesOf(secs).filter((_, i) => i % 2 === 0);
+  const weight = (t: number) => held(t / secs, over.from, over.to, over.ease);
+  const bones = [...new Set([...Object.keys(poses), ...Object.keys(on)])];
+  const shifts = Object.entries(lifts).map(([bone, by]): Track => {
+    const from = offsetIn(base, bone);
+    return { clip, bone, channel: "position", keys, at: (t) => from(t).map((v, i) => v + by[i] * weight(t)) as Triple };
+  });
+  return shifts.concat(
+    bones.map((bone) => {
+      const from = turnIn(base, bone);
+      const path = (poses[bone] ?? []).map(quatOf);
+      return turn(
+        clip,
+        bone,
+        (t) => {
+          const along = weight(t) * path.length;
+          const i = Math.min(Math.floor(along), path.length - 1);
+          const q = path.length === 0 ? from(t) : (i === 0 ? from(t) : path[i - 1].clone()).slerp(path[i], along - i);
+          return degOf(on[bone] === undefined ? q : q.multiply(quatOf(on[bone](t, weight(t)))));
+        },
+        keys,
+      );
+    }),
+  );
+}
+
+/** A to-and-fro of `amp` at `hz`, by `weight` */
+const wobble = (amp: number, hz: number, t: number, weight: number) => amp * weight * Math.sin(2 * Math.PI * hz * t);
+/** An arm's poses mirrored onto the left */
+const mirror = (path: Triple[]) => path.map(([x, y, z]): Triple => [x, -y, -z]);
+/** A forearm's poses, bent at the elbow alone */
+const bent = (path: number[]) => path.map((x): Triple => [x, 0, 0]);
+
+/** The right hand at the chin, rubbing it, the head tipped into it */
+const rubChin = (clip: string, base: string, arm: Triple[], foreX: number[]) =>
+  recipe({
+    params: { rub: 5, hz: 2.5, tilt: 5 },
+    bases: { [clip]: base },
+    tracks: ({ rub, hz, tilt }) =>
+      fidget(
+        clip,
+        base,
+        { rightarm: arm, rightforearm: bent(foreX) },
+        {
+          rightforearm: (t, w) => [wobble(rub, hz, t, w), 0, 0],
+          head: (_, w) => [tilt * w, 0, -tilt * w],
+        },
+      ),
+  });
+
+/** The left forearm across the waist, the head bowed to its wrist */
+const checkWrist = (clip: string, base: string, arm: Triple[], foreX: number[]) =>
+  recipe({
+    params: { bow: 25, aside: 5 },
+    bases: { [clip]: base },
+    tracks: ({ bow, aside }) =>
+      fidget(
+        clip,
+        base,
+        { leftarm: arm, leftforearm: bent(foreX) },
+        {
+          head: (_, w) => [-bow * w, aside * w, 0],
+        },
+      ),
+  });
+
+/** The head alone glances to their left, then their right */
+const lookAround = (clip: string, base: string) =>
+  recipe({
+    params: { yaw: 35, pitch: 4 },
+    bases: { [clip]: base },
+    tracks: ({ yaw, pitch }) => {
+      const secs = secsOf(base);
+      return fidget(
+        clip,
+        base,
+        {},
+        {
+          head: (t) => {
+            const u = t / secs;
+            const glance = held(u, 0.08, 0.48, 0.15) - held(u, 0.52, 0.92, 0.15);
+            return [pitch * Math.abs(glance), yaw * glance, 0];
+          },
+        },
+      );
+    },
+  });
+
+/** Held over the whole cycle: a pose jsh `pose` eases in and holds, as `point` */
+const always = { from: -1, to: 2, ease: 0.01 };
+
+/** The right wrist held before them to be looked at, the head bowed to it: jsh `pose rob as:check_wrist` */
+const wristPose = (clip: string, arm: Triple, foreX: number, bow: number) =>
+  recipe({
+    params: { bow },
+    bases: { [clip]: "breathe" },
+    tracks: (p) =>
+      fidget(
+        clip,
+        "breathe",
+        { rightarm: [arm], rightforearm: bent([foreX]) },
+        { head: () => [-p.bow, 0, 0] },
+        { over: always },
+      ),
+  });
+
+/** Shoulders up, forearms lifted and tucked in a little, the head tipped, then down again: quicker than the rest */
+const shrug = (clip: string, base: string) =>
+  recipe({
+    params: { lift: 0.7, fore: 15, tuck: 3, tilt: 8 },
+    bases: { [clip]: base },
+    tracks: ({ lift, fore, tuck, tilt }) =>
+      fidget(
+        clip,
+        base,
+        {},
+        {
+          rightarm: (_, w) => [0, 0, -tuck * w],
+          leftarm: (_, w) => [0, 0, tuck * w],
+          rightforearm: (_, w) => [fore * w, 0, 0],
+          leftforearm: (_, w) => [fore * w, 0, 0],
+          head: (_, w) => [0, 0, tilt * w],
+        },
+        { over: { from: 0.25, to: 0.75, ease: 0.12 }, lifts: { rightarm: [0, lift, 0], leftarm: [0, lift, 0] } },
+      ),
+  });
+
+/** Their weight onto the right leg: the hips `shift` across and `drop`, the torso tilted back over them, the feet kept */
+const shiftWeight = (clip: string) =>
+  recipe({
+    params: { shift: 1, drop: 0.3, tilt: 5 },
+    bases: { [clip]: "breathe" },
+    tracks: ({ shift, drop, tilt }) => {
+      const secs = secsOf("breathe");
+      const weight = (t: number) => held(t / secs, hold.from, hold.to, hold.ease);
+      const root = offsetIn("breathe", "skeleton-root");
+      const rootAt = (t: number): Triple => {
+        const [x, y, z] = root(t);
+        return [x + shift * weight(t), y - drop * weight(t), z];
+      };
+      const feet = restAnkles();
+      return [
+        turn(clip, "skeleton-root", () => [0, 0, 0], still), // planted feet need it unturned
+        ...steppingLegs(
+          clip,
+          rootAt,
+          { left: () => feet.left, right: () => feet.right },
+          { keys: dense, abduct: true },
+        ),
+        ...fidget(
+          clip,
+          "breathe",
+          {},
+          {
+            stomach: (_, w) => [0, 0, tilt * w],
+            chest: (_, w) => [0, 0, tilt * w],
+            head: (_, w) => [0, 0, -2 * tilt * w],
+            rightarm: (_, w) => [0, 0, -2 * tilt * w], // hanging plumb
+            leftarm: (_, w) => [0, 0, -2 * tilt * w],
+          },
+        ),
+      ];
+    },
+  });
+
+/** Sat, leant forward, forearms on the thighs and hands past the knees, looking ahead */
+const leanForward = (clip: string) =>
+  recipe({
+    params: { stomach: 14, chest: 20, look: 30 },
+    bases: { [clip]: "sit" },
+    tracks: ({ stomach, chest, look }) =>
+      fidget(
+        clip,
+        "sit",
+        {
+          rightarm: [[28, 25, 11]],
+          leftarm: mirror([[28, 25, 11]]),
+          rightforearm: bent([100]),
+          leftforearm: bent([100]),
+        },
+        {
+          stomach: (_, w) => [-stomach * w, 0, 0],
+          chest: (_, w) => [-chest * w, 0, 0],
+          head: (_, w) => [look * w, 0, 0],
+        },
+      ),
+  });
+
+/** Lain, a stretch: shoulders pushed down the bed and the arms straight, the legs straight and the toes pointed */
+const lieStretch = (clip: string) =>
+  recipe({
+    params: { reach: 0.5, arms: 8, legs: 4, toes: 20, arch: 3 },
+    bases: { [clip]: "lie" },
+    tracks: ({ reach, arms, legs, toes, arch }) =>
+      fidget(
+        clip,
+        "lie",
+        {},
+        {
+          stomach: (_, w) => [arch * w, 0, 0],
+          chest: (_, w) => [arch * w, 0, 0],
+          rightforearm: (_, w) => [-arms * w, 0, 0],
+          leftforearm: (_, w) => [-arms * w, 0, 0],
+          rightthigh: (_, w) => [-legs * w, 0, 0],
+          leftthigh: (_, w) => [-legs * w, 0, 0],
+          rightshin: (_, w) => [legs * w, 0, 0],
+          leftshin: (_, w) => [legs * w, 0, 0],
+          rightfoot: (_, w) => [-toes * w, 0, 0],
+          leftfoot: (_, w) => [-toes * w, 0, 0],
+        },
+        { over: { from: 0.1, to: 0.9, ease: 0.3 }, lifts: { rightarm: [0, -reach, 0], leftarm: [0, -reach, 0] } },
+      ),
+  });
+
+/**
+ * Arm poses searched to reach their mark inside the base clip's box, clear of the body. Each goes by way of its
+ * first pose, else the forearm swings out level in front or through the torso. A `wristPose` is eased in straight,
+ * so its pose was searched for a clear straight path from rest, and between the two
+ */
+const fidgetClips = {
+  rub_chin: rubChin(
+    "rub_chin",
+    "breathe",
+    [
+      [0, 0, 10],
+      [35, 52.5, 15],
+    ],
+    [150, 130],
+  ),
+  check_wrist: wristPose("check_wrist", [40, 37.5, 15], 60, 25),
+  /** Raised from `check_wrist` whilst an npc is near: drawn in, though no forearm before the chest fits the box */
+  check_wrist_avoid: wristPose("check_wrist_avoid", [20, 15, 10], 120, 15),
+  look_around: lookAround("look_around", "breathe"),
+  shrug: shrug("shrug", "breathe"),
+  shift_weight: shiftWeight("shift_weight"),
+  sit_rub_chin: rubChin("sit_rub_chin", "sit", [[35, 52.5, 15]], [135]),
+  sit_check_wrist: checkWrist("sit_check_wrist", "sit", [[30, -30, -10]], [95]),
+  sit_look_around: lookAround("sit_look_around", "sit"),
+  sit_shrug: shrug("sit_shrug", "sit"),
+  sit_lean_forward: leanForward("sit_lean_forward"),
+  lie_look_around: lookAround("lie_look_around", "lie"),
+  lie_stretch: lieStretch("lie_stretch"),
+};
+
+/** Metres a fidget may reach out front past its base's box: forearms before the torso, which is thick */
+const frontLeeway: Partial<Record<string, number>> = {
+  check_wrist: 0.235,
+  check_wrist_avoid: 0.165,
+  rub_chin: 0.095,
+  sit_check_wrist: 0.05,
+  sit_lean_forward: 0.015,
+};
+/** Metres a lain fidget may reach up past its base's box: up is their front */
+const upLeeway: Partial<Record<string, number>> = {};
+
+//#endregion
+
+//#region every recipe
+
 const clips = {
   /** Thighs level as they were, shins hung from the knee, soles near flat and breathing a little */
   sit: recipe({
@@ -756,6 +1159,8 @@ const clips = {
       ];
     },
   }),
+
+  ...fidgetClips,
 };
 
 //#endregion
@@ -777,6 +1182,20 @@ for (const arg of process.argv.slice(2)) {
   }
 }
 if (chosen.size === 0) for (const [name, { params }] of Object.entries(clips)) chosen.set(name, { ...params });
+
+/** Clips made afresh, each as its base: renamed copies the tracks then re-key */
+const made = [...chosen.keys()].flatMap((name) =>
+  Object.entries((clips[name as keyof typeof clips] as Recipe<Record<string, number>>).bases ?? {}),
+);
+for (const [clip, base] of made) {
+  const keyed = structuredClone(bbmodel.animations.find((a: { name: string }) => a.name === base));
+  Object.assign(keyed, { uuid: randomUUID(), name: clip });
+  for (const animator of Object.values<any>(keyed.animators))
+    for (const key of animator.keyframes ?? []) key.uuid = randomUUID();
+  bbmodel.animations = bbmodel.animations.filter((a: { name: string }) => a.name !== clip).concat(keyed);
+  const baked = structuredClone(gltf.animations.find((a: { name: string }) => a.name === base));
+  gltf.animations = gltf.animations.filter((a: { name: string }) => a.name !== clip).concat({ ...baked, name: clip });
+}
 
 const tracks = [...chosen].flatMap(([name, params]) => {
   const made = (clips[name as keyof typeof clips] as Recipe<Record<string, number>>).tracks(params);
@@ -825,8 +1244,6 @@ function addAccessor(rows: number[][], type: "SCALAR" | "VEC3" | "VEC4") {
     }) - 1
   );
 }
-/** Each clip's length, as the bbmodel has it */
-const lengthOf = (clip: string): number => bbmodel.animations.find((a: { name: string }) => a.name === clip).length;
 /** A key a frame, by clip length, or one alone */
 const times = new Map<number, number>();
 const timesOf = (secs: number) => {
@@ -847,7 +1264,7 @@ for (const { clip, bone, channel, at } of tracks) {
   if (animation === undefined) gltf.animations.push((animation = { name: clip, channels: [], samplers: [] })); // new to it
   const node = gltf.nodes.findIndex((n: { name: string }) => n.name === bone);
   const path = channel === "rotation" ? "rotation" : "translation";
-  const rows = framesOf(lengthOf(clip)).map((t) =>
+  const rows = framesOf(secsOf(clip)).map((t) =>
     channel === "rotation"
       ? new THREE.Quaternion().setFromEuler(euler(at(t))).toArray()
       : rest(bone)
@@ -857,7 +1274,7 @@ for (const { clip, bone, channel, at } of tracks) {
   );
   const still = rows.every((row) => row.every((v, i) => Math.abs(v - rows[0][i]) < 1e-7));
   const sampler = {
-    input: still ? oneTime : timesOf(lengthOf(clip)),
+    input: still ? oneTime : timesOf(secsOf(clip)),
     output: addAccessor(still ? [rows[0]] : rows, channel === "rotation" ? "VEC4" : "VEC3"),
     interpolation: "LINEAR",
   };
@@ -865,12 +1282,68 @@ for (const { clip, bone, channel, at } of tracks) {
   if (found !== undefined) animation.samplers[found.sampler] = sampler;
   else animation.channels.push({ sampler: animation.samplers.push(sampler) - 1, target: { node, path } });
 }
-gltf.buffers[0] = {
-  byteLength,
-  uri: `data:application/octet-stream;base64,${Buffer.concat(chunks).toString("base64")}`,
-};
+const written = Buffer.concat(chunks);
+gltf.buffers[0] = { byteLength, uri: `data:application/octet-stream;base64,${written.toString("base64")}` };
 
+// a clip made afresh takes no more room than its base, so shows no more through a wall. Its head may turn, as a look does
+const xyz = (v: THREE.Vector3) => v.toArray().map((n) => n.toFixed(3));
+const box = (b: THREE.Box3) => `${xyz(b.min)} to ${xyz(b.max)}`;
+const outside = made.filter(([clip, base]) => {
+  const [own, room] = [boxOf(clip, written, "head"), boxOf(base, written).expandByScalar(0.005)];
+  room.min.z -= frontLeeway[clip] ?? 0; // -z is ahead
+  room.max.y += upLeeway[clip] ?? 0;
+  const fits = room.containsBox(own);
+  console.log(`${clip}: ${box(own)}, ${fits ? "within" : "OUTSIDE"} ${base}'s ${box(room)}`);
+  return !fits;
+});
+if (outside.length > 0) throw Error(`outside their base's box: ${outside.map(([clip]) => clip)}. Nothing written`);
+
+compactGltf(written);
 writeFileSync(join(dir, "current.bbmodel"), JSON.stringify(bbmodel));
 writeFileSync(join(dir, "current.gltf"), JSON.stringify(gltf));
+
+/** Keeps only the accessors still in use, so a re-run or a replaced clip leaves nothing behind */
+function compactGltf(buffer: Buffer) {
+  const inUse = new Set<number>();
+  for (const mesh of gltf.meshes)
+    for (const p of mesh.primitives) {
+      for (const a of Object.values<number>(p.attributes)) inUse.add(a);
+      if (p.indices !== undefined) inUse.add(p.indices);
+    }
+  for (const skin of gltf.skins) inUse.add(skin.inverseBindMatrices);
+  for (const a of gltf.animations)
+    for (const s of a.samplers) {
+      inUse.add(s.input);
+      inUse.add(s.output);
+    }
+  const kept = [...inUse].sort((a, b) => a - b);
+  const [parts, views, viewOf] = [[] as Buffer[], [] as any[], new Map<number, number>()];
+  let offset = 0;
+  const accessors = kept.map((i) => {
+    const accessor = gltf.accessors[i];
+    if (!viewOf.has(accessor.bufferView)) {
+      const view = gltf.bufferViews[accessor.bufferView];
+      const pad = (4 - (offset % 4)) % 4;
+      parts.push(Buffer.alloc(pad), buffer.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+      offset += pad;
+      viewOf.set(accessor.bufferView, views.push({ ...view, byteOffset: offset }) - 1);
+      offset += view.byteLength;
+    }
+    return { ...accessor, bufferView: viewOf.get(accessor.bufferView) };
+  });
+  const renumber = new Map(kept.map((a, i) => [a, i]));
+  const to = (a: number) => renumber.get(a) as number;
+  for (const mesh of gltf.meshes)
+    for (const p of mesh.primitives) {
+      for (const key of Object.keys(p.attributes)) p.attributes[key] = to(p.attributes[key]);
+      if (p.indices !== undefined) p.indices = to(p.indices);
+    }
+  for (const skin of gltf.skins) skin.inverseBindMatrices = to(skin.inverseBindMatrices);
+  for (const a of gltf.animations)
+    for (const s of a.samplers) Object.assign(s, { input: to(s.input), output: to(s.output) });
+  const all = Buffer.concat(parts);
+  Object.assign(gltf, { accessors, bufferViews: views });
+  gltf.buffers[0] = { byteLength: all.length, uri: `data:application/octet-stream;base64,${all.toString("base64")}` };
+}
 
 //#endregion

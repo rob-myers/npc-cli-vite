@@ -240,6 +240,10 @@ turn eases too (`headTurn`), so it glides.
 
 The arm is drawn in for a wall or closed door within reach, a shield, a target out of sight, or someone in the way.
 
+- **No shot leaves it** (`isDrawnIn`): `fireAlong`, `arm` at a target and `npcFocus.fire` refuse, so jsh `phaser --fire`
+  fails `cannot fire`. Nor does it charge: `charge` refuses, and drawing in calls a charge off into its cooldown. So the
+  fire hint never pulses whilst drawn in. The player is told "phaser blocked".
+
 - A wall, door or shield is looked for along two rays from their middle (`armEnds`): ahead, and to the gun's outer
   side at `reach`. Stood, the gun is right of their middle, so a jamb meets it before it meets the first ray.
 - Both rays end `leadSecs` of their velocity on, so the arm is in before a strafe takes the gun into a wall.
@@ -266,7 +270,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 | lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
 | lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
 
-- `armMeetsNpc` looks through their room (`getNpcsInReach(key, 0)`), not the crowd's neighbours: those reach only
+- `armMeetsNpc` looks through their room (`w.npc.near.inReach(key, 0)`), not the crowd's neighbours: those reach only
   `collisionQueryRange` (0.7m), short of the gun's tip.
 - Near a door (its "nearby" sensor), it also looks at whoever else is near that door (`w.e.doorToNpcs`), either side.
   An arm can reach through a doorway into the next room.

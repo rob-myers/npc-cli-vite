@@ -86,10 +86,7 @@ export function roomOthers(w: JshCli.WorldState, npcs: JshCli.Npc[]) {
     npcs.flatMap((npc) => {
       const at = w.npc.npcToRoom.get(npc.key);
       if (at === undefined) return [];
-      return [...(w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
-        const point = w.n[key]?.point;
-        return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
-      });
+      return w.npc.near.inRooms([at]).map(({ key, point }) => [key, { key, point, grKey: at.grKey }] as const);
     }),
   );
   return [...others.values()];

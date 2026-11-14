@@ -5,10 +5,10 @@ import path from "node:path";
 import { WorldThemeSchema } from "@npc-cli/ui__world/assets.schema";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
-import { Canvas, loadImage } from "skia-canvas";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
+import { hashOf, skinSheetHash, withHash } from "./skin-sheet-hash.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
@@ -151,19 +151,24 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 /** A `skin` or `skin-slices` sheet drawn by a DEV World — see `docs/skins.md` */
 async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, name: string, sheetId: number) {
-  // only this machine's: unsecured https may draw them wrongly
   if (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress ?? "")) {
+    return res.writeHead(403).end();
+  }
+  // a self-signed https page may draw them wrongly
+  if ("encrypted" in req.socket) {
+    console.warn(`[skin-sheet] not saving ${name}.${sheetId}.png: drawn over https`);
     return res.writeHead(403).end();
   }
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
-    const png = await squeezePng(Buffer.concat(chunks));
     const filePath = path.join(PUBLIC_DIR, "sheet", `${name}.${sheetId}.png`);
-    // every World sends it on every load: written only if its pixels changed
-    if (!fs.existsSync(filePath) || !(await samePixels(png, fs.readFileSync(filePath)))) {
-      fs.writeFileSync(filePath, png);
-      console.log(`[skin-sheet] redrew ${name}.${sheetId}.png`);
+    const hash = skinSheetHash(name as "skin" | "skin-slices", sheetId);
+    // every World sends it on every load: written only if what it is drawn from changed
+    const was = fs.existsSync(filePath) ? (hashOf(fs.readFileSync(filePath)) ?? "unhashed") : "missing";
+    if (was !== hash) {
+      fs.writeFileSync(filePath, withHash(await squeezePng(Buffer.concat(chunks)), hash));
+      console.log(`[skin-sheet] redrew ${name}.${sheetId}.png: was ${was}, now ${hash}`);
     }
     res.writeHead(200).end();
   } catch (err) {
@@ -180,18 +185,6 @@ function squeezePng(png: Buffer) {
     });
     proc.stdin?.end(png);
   });
-}
-
-async function samePixels(a: Buffer, b: Buffer) {
-  const [pa, pb] = await Promise.all([a, b].map(getPixels));
-  return Buffer.from(pa.buffer).equals(Buffer.from(pb.buffer));
-}
-
-async function getPixels(png: Buffer) {
-  const image = await loadImage(png);
-  const ct = new Canvas(image.width, image.height).getContext("2d");
-  ct.drawImage(image, 0, 0);
-  return ct.getImageData(0, 0, image.width, image.height).data;
 }
 
 async function handleGenSkinSheets(res: ServerResponse) {

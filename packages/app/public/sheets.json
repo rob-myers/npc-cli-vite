@@ -240,40 +240,34 @@
       "rect": {"x": 3593, "y": 3348, "width": 298, "height": 356},
       "sheetId": 0
     },
-    "lounge--015 0": {
-      "symbolKey": "lounge--015",
-      "obstacleId": 0,
-      "rect": {"x": 1404, "y": 763, "width": 135, "height": 314},
-      "sheetId": 0
-    },
     "bed--003 0": {
       "symbolKey": "bed--003",
       "obstacleId": 0,
-      "rect": {"x": 3939, "y": 8, "width": 125, "height": 310},
+      "rect": {"x": 1404, "y": 763, "width": 125, "height": 310},
       "sheetId": 0
     },
     "window--001 0": {
       "symbolKey": "window--001",
       "obstacleId": 0,
-      "rect": {"x": 2053, "y": 3897, "width": 310, "height": 67.5},
+      "rect": {"x": 3593, "y": 3712, "width": 310, "height": 67.5},
       "sheetId": 0
     },
     "extra--004--desk 0": {
       "symbolKey": "extra--004--desk",
       "obstacleId": 0,
-      "rect": {"x": 3899, "y": 2930, "width": 155, "height": 305},
+      "rect": {"x": 3939, "y": 8, "width": 155, "height": 305},
       "sheetId": 0
     },
     "extra--006--desk 0": {
       "symbolKey": "extra--006--desk",
       "obstacleId": 0,
-      "rect": {"x": 1404, "y": 1085, "width": 305, "height": 127.5},
+      "rect": {"x": 1404, "y": 1081, "width": 305, "height": 127.5},
       "sheetId": 0
     },
     "extra--021--shower 0": {
       "symbolKey": "extra--021--shower",
       "obstacleId": 0,
-      "rect": {"x": 3593, "y": 3712, "width": 180, "height": 292.5},
+      "rect": {"x": 3911, "y": 2930, "width": 180, "height": 292.5},
       "sheetId": 0
     },
     "shop--031 0": {
@@ -285,25 +279,31 @@
     "shop--035 0": {
       "symbolKey": "shop--035",
       "obstacleId": 0,
-      "rect": {"x": 3781, "y": 3712, "width": 268, "height": 146},
+      "rect": {"x": 3593, "y": 3788, "width": 268, "height": 146},
       "sheetId": 0
     },
-    "shop--037 0": {
-      "symbolKey": "shop--037",
+    "iris-valves--006 0": {
+      "symbolKey": "iris-valves--006",
       "obstacleId": 0,
-      "rect": {"x": 3781, "y": 3866, "width": 268, "height": 146},
+      "rect": {"x": 3869, "y": 3788, "width": 220, "height": 220},
+      "sheetId": 0
+    },
+    "office--074 0": {
+      "symbolKey": "office--074",
+      "obstacleId": 0,
+      "rect": {"x": 3855, "y": 712, "width": 212.5, "height": 212.5},
       "sheetId": 0
     },
     "extra--007--desk 0": {
       "symbolKey": "extra--007--desk",
       "obstacleId": 0,
-      "rect": {"x": 2371, "y": 3891, "width": 205, "height": 122.5},
+      "rect": {"x": 2053, "y": 3891, "width": 205, "height": 122.5},
       "sheetId": 0
     },
     "table--009 0": {
       "symbolKey": "table--009",
       "obstacleId": 0,
-      "rect": {"x": 2934, "y": 2145, "width": 181.43, "height": 181.43},
+      "rect": {"x": 3911, "y": 3231, "width": 181.43, "height": 181.43},
       "sheetId": 0
     },
     "extra--022--fresher 0": {
@@ -315,7 +315,7 @@
     "console--033 0": {
       "symbolKey": "console--033",
       "obstacleId": 0,
-      "rect": {"x": 3037, "y": 3452, "width": 135.5, "height": 162},
+      "rect": {"x": 3939, "y": 321, "width": 135.5, "height": 162},
       "sheetId": 0
     },
     "extra--002--fresher 0": {
@@ -327,25 +327,43 @@
     "console--051 0": {
       "symbolKey": "console--051",
       "obstacleId": 0,
-      "rect": {"x": 3899, "y": 3243, "width": 137.5, "height": 155},
+      "rect": {"x": 3939, "y": 491, "width": 137.5, "height": 155},
       "sheetId": 0
     },
     "console--019 1": {
       "symbolKey": "console--019",
       "obstacleId": 1,
-      "rect": {"x": 3899, "y": 3406, "width": 150, "height": 150},
+      "rect": {"x": 3937, "y": 933, "width": 150, "height": 150},
       "sheetId": 0
     },
     "extra--001--fresher 0": {
       "symbolKey": "extra--001--fresher",
       "obstacleId": 0,
-      "rect": {"x": 2584, "y": 3897, "width": 140, "height": 116},
+      "rect": {"x": 2266, "y": 3897, "width": 140, "height": 116},
+      "sheetId": 0
+    },
+    "lounge--015 0": {
+      "symbolKey": "lounge--015",
+      "obstacleId": 0,
+      "rect": {"x": 2414, "y": 3897, "width": 120, "height": 97},
+      "sheetId": 0
+    },
+    "lounge--015 1": {
+      "symbolKey": "lounge--015",
+      "obstacleId": 1,
+      "rect": {"x": 2542, "y": 3897, "width": 120, "height": 115},
+      "sheetId": 0
+    },
+    "lounge--015 2": {
+      "symbolKey": "lounge--015",
+      "obstacleId": 2,
+      "rect": {"x": 2670, "y": 3897, "width": 120, "height": 102},
       "sheetId": 0
     },
     "couch-and-chairs--006 0": {
       "symbolKey": "couch-and-chairs--006",
       "obstacleId": 0,
-      "rect": {"x": 3939, "y": 326, "width": 117.5, "height": 70},
+      "rect": {"x": 3593, "y": 3942, "width": 117.5, "height": 70},
       "sheetId": 0
     },
     "couch-and-chairs--006 1": {
@@ -369,7 +387,7 @@
     "extra--003--chair 0": {
       "symbolKey": "extra--003--chair",
       "obstacleId": 0,
-      "rect": {"x": 2732, "y": 3897, "width": 100, "height": 102.5},
+      "rect": {"x": 2798, "y": 3897, "width": 100, "height": 102.5},
       "sheetId": 0
     },
     "extra--005--chair 0": {
@@ -387,7 +405,7 @@
     "g-102--research-deck 0": {
       "symbolKey": "g-102--research-deck",
       "obstacleId": 0,
-      "rect": {"x": 2840, "y": 3897, "width": 92, "height": 92},
+      "rect": {"x": 1537, "y": 763, "width": 92, "height": 92},
       "sheetId": 0
     },
     "lab--012 0": {
@@ -456,24 +474,18 @@
       "rect": {"x": 1722, "y": 8, "width": 307, "height": 307},
       "sheetId": 1
     },
-    "iris-valves--006 0": {
-      "symbolKey": "iris-valves--006",
+    "shop--037 0": {
+      "symbolKey": "shop--037",
       "obstacleId": 0,
-      "rect": {"x": 1722, "y": 323, "width": 220, "height": 220},
-      "sheetId": 1
-    },
-    "office--074 0": {
-      "symbolKey": "office--074",
-      "obstacleId": 0,
-      "rect": {"x": 1722, "y": 551, "width": 212.5, "height": 212.5},
+      "rect": {"x": 1722, "y": 323, "width": 268, "height": 146},
       "sheetId": 1
     }
   },
   "symbolSheetDims": [
-    {"width": 4072, "height": 4023},
+    {"width": 4102, "height": 4023},
     {"width": 2037, "height": 1826}
   ],
-  "maxSymbolSheetDim": {"width": 4072, "height": 4023},
+  "maxSymbolSheetDim": {"width": 4102, "height": 4023},
   "decor": {
     "screen-graph": {
       "key": "screen-graph",

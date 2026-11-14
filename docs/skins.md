@@ -107,3 +107,5 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - The dev server rebuilds `manifest.json` on any skin png or svg change. A DEV World redraws the sheets.
 - Spawn the skin next to the player, in `sight`, to see it lit as it will be.
 - Load a DEV World before committing, so `sheet/skin.N.png` and `sheet/skin-slices.N.png` are current.
+- The dev server saves a sheet only when what it is drawn from changes: its layout, its skins' sources and meta, or the drawing code (`skin-sheet-hash.ts`). The hash is kept in the png. So another browser's rendering never rewrites it.
+- It saves only from this machine, over http. A self-signed https page (`USE_HTTPS`) may draw them wrongly when certificate invalid.

@@ -45,7 +45,9 @@ Pnpm monorepo. Key packages:
 **World**
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child. Anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
 - The core components mounted in `<World>` (e.g. `Floor`, `Decor`, `Doors`) avoid `w.e`. Data they need lives with its owner, e.g. a room's label meta in `w.gmsData.byKey[gmKey].roomMeta`. A few still use it, to be moved later.
-- To find npcs near one, go through those in their room or the rooms they can reach (`w.e.getNpcsInReach(npcKey)`, over `w.npc.roomToNpcs`). Don't scan every npc in `w.n` without good reason. That way a wall is never between the two.
+- Nearby npcs are found through `w.npc.near` (`use-nearby-npcs.ts`), never by scanning every npc in `w.n` without good reason. A test of one's own, e.g. a ray, runs over what it returns.
+  - `inRooms(rooms)` and `inReach(npcKey, doors)` go by room, over `w.npc.roomToNpcs`. That way a wall is never between the two.
+  - `atDoors(npcKey)` gives those near the same doors. `beside(npcKey, within)` gives the crowd's neighbours, which ignores walls.
 - `const.env.ts` and `const.npc.ts` hold constants only, no methods.
   - The npc tuning is split off so editing it doesn't rebuild the World. `World.tsx` refetches on its own HMR, and so does every importer of `const.env`, its hooks included.
   - So only npc modules import `const.npc`, including those drawing npcs or what surrounds them, e.g. `NpcRings`, `NpcBreath`. Never `World`, `WorldView` or their hooks.
@@ -162,12 +164,15 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Getting up** (`w.e.stepOff`, and jsh `act`'s `getUp`) lands beside the doable, in sight of it if possible, else anywhere in their room, else outside its door (`w.e.closestExitFrom`). At a doable on the navmesh they are let go where they stand. In a full room, either way, they fade out of its door.
 - A move onto a doable with nowhere beside it fades on from outside its room's door, not from wherever they are.
 - An npc at a doable on the navmesh, e.g. a sink's `do=stand`, is hard pinned (`npc.setHardPin`, set by `setNpcDo`). Neither the crowd nor a shove moves them, and sidestep leaves them be. An idle npc is only pinned softly (`pinTo`), so two spawned on top of one another slide apart.
+  - Walking off it, they turn along their way first (`turnBeforeMoving`'s `always`).
+- An edit that takes a doer's decor puts them back on a free doable within `reseatMetres` (0.25m), i.e. the one nudged. Else they stand up where they are (`w.e.standUpStrandedDoers`).
 - **Max walkers.** A room's first label may set `max-walkers=N`, read once into `maxWalkers` on its `w.gmRoomGraph` node. Its doors are in `w.gmRoomGraph.walkerRooms`.
   - At most N stand on its navmesh (`w.e.admitWalker`). Those at a doable don't count, unless it has `meta.as-walker`, e.g. a shower's (`do:as-walker` on its symbol instance).
   - A full room's door areas are refused to others, as a locked door's (`w.e.refusesWalker`, from `canPassNode`).
-  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. A doable further in fails `room full`.
+  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. For a doable further in, they walk up to its door, then fail `room full`. Leaving for a point just outside, e.g. in its doorway, they fade straight onto it.
   - Between its doables they hop, at most `doableLook` each, e.g. toilet, toilet, sink, then out.
   - A walk onto its floor is refused as at a locked door: it stops outside and fails `room full` (`docs/doors.md`). So do `spawn` and `warp` onto it.
+  - Refused, they shake their head (`w.e.roomFull`, which gives the error).
 - **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
   - `act park` records via `parked.mark`. A move, respawn or removal unparks.
 - `padded` beside it is the same for `act pad`: by npcKey, the room they were stood with to walk right round them (`by`, from walls and from others).

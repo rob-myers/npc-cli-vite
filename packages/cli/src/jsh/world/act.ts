@@ -193,7 +193,7 @@ const verbs: Record<string, Verb> = {
       return true;
     });
   },
-  /** Against a nearby wall, clear of its corners, the room's doorways and others parked — see `pred.ts` */
+  /** Against a nearby wall, clear of its corners, the room's doorways and others parked — see `pred.ts`. They back in, strafing */
   async park(ctx) {
     const { w } = ctx.ct;
     // those parked already stay as they are
@@ -202,7 +202,7 @@ const verbs: Record<string, Verb> = {
     const op = { key: "park", npcs: npcs.map((npc) => npcQuery(w, npc)), parked: parkedNow(w) } as const;
     const plans = await settled(ctx, requestDetached(w, op));
     await placeAll(ctx, "parked", npcs, plans, async (npc, { at, facing, seg }) => {
-      if ((await walkTo(ctx, npc, at)) === false) return false;
+      if ((await backInto(ctx, npc, at, facing)) === false) return false;
       // hurt, they cannot look: they stay facing the way they came
       if (npc.anim.hurt === null) await resumable(ctx, () => npc.look({ at: facing }));
       parked.mark(npc.key, seg);
@@ -456,6 +456,29 @@ async function walkTo(ctx: Ctx, npc: JshCli.Npc, at: Geom.VectJson) {
   return npc.distanceTo(at) <= standConfig.parkMinMove || (await goTo({ ...ctx, npcKey: npc.key }, at));
 }
 
+/** Walks them out in front of `at` unless near it already, turns them to `facing`, then strafes them back in: whether they got there */
+async function backInto(ctx: Ctx, npc: JshCli.Npc, at: Geom.VectJson, facing: Geom.VectJson) {
+  const { parkBackIn, parkBackInMin, parkMinMove } = standConfig;
+  if (npc.distanceTo(at) <= parkMinMove) return true;
+  const dir = Vect.from(facing).sub(at).normalize();
+  const poly = ctx.ct.w.npc.getClosestPoly(at);
+  const room = poly.success ? npc.roomAhead(at, poly.nodeRef, parkBackIn, dir, dir).room - 0.05 : 0;
+  // hurt, they cannot turn. With no room in front, they walk straight in
+  if (npc.anim.hurt !== null || room < parkBackInMin) return walkTo(ctx, npc, at);
+  /** In front of the spot and near it, they turn where they stand */
+  const near = dir.dot(Vect.from(npc.point).sub(at)) > 0 && npc.distanceTo(at) <= room + parkBackInMin;
+  if (near === false && (await walkTo(ctx, npc, Vect.from(at).addScaled(dir, room))) === false) return false;
+  /** Far along their facing, so its bearing holds as they back in */
+  const aim = { at: Vect.from(at).addScaled(dir, 100), rate: 1, untilRest: true };
+  await resumable(ctx, () => npc.look({ at: aim.at }));
+  npc.anim.face.aim = aim;
+  try {
+    return await goTo({ ...ctx, npcKey: npc.key }, at, true);
+  } finally {
+    if (npc.anim.face.aim === aim) npc.anim.face.aim = null;
+  }
+}
+
 /** `pad`'s room from `walls` and from `npcs`, else `by`: each defaults to `standConfig.padClearance` */
 function padBy(opts: Opts): { walls: number; npcs: number } {
   const { walls, npcs } = standConfig.padClearance;
@@ -514,7 +537,7 @@ async function hideFrom(ctx: Ctx, opts: Opts, strict: boolean) {
 async function hidingSpot(ctx: Ctx, opts: Opts, skip: string[], strict: boolean) {
   const { w } = ctx.ct;
   /** Only those within two doors: hiding spots are tried nearest first */
-  const others = w.e.getNpcsInReach(ctx.npcKey, 2);
+  const others = w.npc.near.inReach(ctx.npcKey, 2);
   const headed = others.flatMap((npc) => (npc.isMoving() ? [npc.last.dst] : []));
   const taken = await spotQuery(ctx.ct, [
     ...others.map((npc): WW.SpotQuery => ({ q: "of", npc: npc.key })),
@@ -592,14 +615,14 @@ async function getUp(c: Ctx) {
 }
 
 /**
- * Walks there, giving up once they stall or are stuck, e.g. blocked by the player. Resolves whether they arrived.
+ * Walks there, strafing if told, giving up once they stall or are stuck, e.g. blocked by the player. Resolves whether they arrived.
  * Stopped by a pause, they walk on once resumed
  */
-async function goTo(ctx: Ctx, at: Geom.VectJson) {
+async function goTo(ctx: Ctx, at: Geom.VectJson, strafe?: boolean) {
   const { api, w } = ctx.ct;
   const npc = w.npc.get(ctx.npcKey);
   const walk = () =>
-    w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y } }).then(
+    w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y }, strafe }).then(
       () => true as const,
       (e) => (e instanceof Error ? walkEnds[e.message] : undefined) ?? Promise.reject(e),
     );
@@ -679,6 +702,10 @@ const stall = { secs: 2, dist: 0.3 };
 export const standConfig = {
   /** Below this much of a move, `park` turns them on the spot instead */
   parkMinMove: 0.02,
+  /** How far out from the wall `park` turns them round, to back in */
+  parkBackIn: 0.8,
+  /** Below this much room in front of the spot, `park` walks them straight in */
+  parkBackInMin: 0.3,
   /** How far out `park` looks for a wall to stand against */
   parkQueryRange: 2,
   /** How much room `pad` wants round them by default, from walls and doorways, and from others */

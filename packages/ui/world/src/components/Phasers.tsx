@@ -96,8 +96,9 @@ export default function Phasers() {
           return;
         }
         if (w.n?.[npcKey]?.anim.hurt != null) return; // nor in pain, or pacified
-        const arm = state.ensure(npcKey);
         const at = opts.at ?? null;
+        if (at !== null && at !== npcKey && state.isDrawnIn(npcKey)) return; // no shot leaves `phaser_aim_avoid`
+        const arm = state.ensure(npcKey);
         arm.target =
           at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null, local: opts.local ?? null };
         if (arm.target !== null) state.takeCharge(arm); // fired
@@ -128,7 +129,8 @@ export default function Phasers() {
       },
       charge(npcKey) {
         const arm = state.arms.get(npcKey);
-        if (arm?.armed !== true || arm.charge != null || state.isCooling(npcKey)) return false;
+        if (arm?.armed !== true || arm.charge != null || state.isCooling(npcKey) || state.isDrawnIn(npcKey))
+          return false;
         arm.charge = { since: w.gameTime.now() };
         w.r3f?.invalidate();
         return true;
@@ -252,6 +254,7 @@ export default function Phasers() {
         return arm;
       },
       fireAlong(npcKey, end) {
+        if (state.isDrawnIn(npcKey)) return false; // no shot leaves `phaser_aim_avoid`
         if (state.isArmed(npcKey) === false) state.arm(npcKey);
         const arm = state.arms.get(npcKey);
         if (arm?.armed !== true) return false;
@@ -601,8 +604,8 @@ export default function Phasers() {
         /** Metres on the ground to the wall beyond */
         const reach = past === null ? phaserConfig.passMax : Math.hypot(past.x - tip.x, past.y - tip.z);
         // those within reach of whom it passes that its line meets short of the wall, in turn
-        const met = w.e
-          .getNpcsInReach(dst.key)
+        const met = w.npc.near
+          .inReach(dst.key)
           .flatMap((on) => {
             const hit = on.key === npc.key ? null : partOnRay(on, ray, hitBones); // shared, so copied
             if (hit === null || Math.hypot(hit.point.x - tip.x, hit.point.z - tip.z) > reach) return [];
@@ -683,6 +686,10 @@ export default function Phasers() {
         const free = armed === true && isFreeShot(arm.target) ? arm.target : null;
         state.recast(npc, arm, target, secs);
         const { avoid, swingHit } = state.wieldBlock(npc, arm, target, secs);
+        if (avoid === true && state.cancelCharge(npc.key) && npc.key === w.player.key) {
+          w.hud?.fireHint?.update(); // drawn in, it is called off: the fire hint stops pulsing
+          w.hud?.say("phaser blocked");
+        }
         state.wieldStance(npc, arm, state.wieldPose(npc, arm, avoid, swingHit));
         const heldAt = state.wieldFacing(npc, arm, target, free);
         state.wieldPitch(npc, arm, heldAt, delta, secs);
@@ -1082,7 +1089,7 @@ export type State = PhaserResources & {
   gunHeight(npcKey: string): number;
   /** Ends their charge into a cooldown, the phaser left raised: `false` if not charging */
   cancelCharge(npcKey: string): boolean;
-  /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling */
+  /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling, nor drawn in */
   charge(npcKey: string): boolean;
   /** Their charge so far, `0` to `1` over `chargeSecs` */
   chargeOf(npcKey: string): number;
@@ -1355,14 +1362,8 @@ function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: 
   const far = 1.5 * reach + npcDims.agentRadius + 2 * armWidth;
   /** The player gives way to no npc's arm */
   const player = npc.key === w.player.key;
-  /** Those near a door they are near, either side: the arm may reach through it */
-  const atDoors = [...(w.e.npcToDoors[npc.key]?.nearby ?? [])].flatMap((gdKey) => [
-    ...(w.e.doorToNpcs[gdKey]?.nearby ?? []),
-  ]);
-  const others = [
-    ...w.e.getNpcsInReach(npc.key, 0),
-    ...atDoors.flatMap((key) => (key === npc.key ? [] : (w.n[key] ?? []))),
-  ];
+  /** Those in their room, and those near a door they are near: the arm may reach through it */
+  const others = w.npc.near.atDoors(npc.key, w.npc.near.inReach(npc.key, 0));
   return others.some((other) => {
     const p = other.position;
     if (Math.abs(p.x - mx) > far || Math.abs(p.z - mz) > far) return false;

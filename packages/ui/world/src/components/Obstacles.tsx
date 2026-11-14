@@ -137,7 +137,7 @@ export default function Obstacles(_props: Props) {
               const roomId = roomIds[obstacleId];
               state.toInstanceId[gmId][obstacleId] = nextId;
               const room = roomId === null ? undefined : gm.rooms[roomId];
-              const clip = obstacleClip.clipLineOf(gm.obstacles[obstacleId], room, gm.matrix);
+              const clip = obstacleClip.clipOf(gm.obstacles[obstacleId], room, gm.matrix);
               clips.set(clip ?? obstacleClip.neverClipped, nextId * 4);
               state.fromInstanceId[nextId] = { gmId, obstacleId };
               const broadId = broadIds[obstacleId];
@@ -293,9 +293,10 @@ export default function Obstacles(_props: Props) {
               sId++; // counted past the cap too, for the warning
             }
 
-            // clipped at the wall it pokes into: a back across the cut, rather than a hole
-            const back = instanceId === null ? null : obstacleClip.clipBackOf(corners, clips, instanceId);
-            if (back !== null && sId < MAX_OBSTACLE_SKIRT_INSTANCES) {
+            // clipped at the walls it pokes into: a back across each cut, rather than a hole
+            const backs = instanceId === null ? [] : obstacleClip.clipBacksOf(corners, clips, instanceId);
+            for (const back of backs) {
+              if (sId >= MAX_OBSTACLE_SKIRT_INSTANCES) break;
               obstacleClip.writeSkirt(state, slots, sId++, back, {
                 ...skirt,
                 kind: 0,
@@ -533,7 +534,7 @@ export type State = {
   fromInstanceId: { gmId: number; obstacleId: number }[];
   /** Which room each instance stands in, worked out once per map — see `roomSlotOf` */
   roomSlotByInstanceId: number[];
-  /** By instance id: `(nx, nz, d)` in world space, past which neither material draws it. See `obstacle-clip` */
+  /** By instance id: `(cx, cz, a1, a2)` in world space, the walls past which neither material draws it. See `obstacle-clip` */
   clipTex: THREE.DataTexture;
   /** Dense instance ids (`0..instanceCount-1`), rebuilt whenever the obstacles can change */
   buildInstanceIds(): number;

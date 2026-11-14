@@ -1,5 +1,5 @@
 import { url } from "@npc-cli/media";
-import { useStateRef } from "@npc-cli/util";
+import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
 import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
@@ -54,6 +54,7 @@ import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
 import { emptyAnimationClip, NpcAnimation } from "./npc-animation";
+import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -83,6 +84,7 @@ export default function NPCs() {
       byPickId: {},
       config: npcConfig,
       doableToNpc: {},
+      near: null as any, // set below
       nextPickId: 0,
       npc: {},
       npcToDoable: {},
@@ -667,13 +669,13 @@ export default function NPCs() {
           npc.material.needsUpdate = true;
         }
       },
-      async turnBeforeMoving(npc) {
+      async turnBeforeMoving(npc, always = false) {
         if (npc.isMoving() === true || npc.anim.strafe === true) {
           return; // mid-path a turn reads as steering; strafing keeps their facing
         }
 
         const { agent } = npc;
-        if (agent === null || agent.neis.length === 0) {
+        if (agent === null || (agent.neis.length === 0 && always === false)) {
           return; // only turn if there's an agent nearby
         }
 
@@ -719,6 +721,7 @@ export default function NPCs() {
 
   w.npc = state;
   w.n = state.npc;
+  state.near = useNearbyNpcs(w);
 
   const queryData =
     useQuery({
@@ -855,6 +858,8 @@ export type State = {
   /** `const.npc`'s tuning, for World hooks, which must not import it */
   config: typeof npcConfig;
   doableToNpc: { [decorKey: string]: string | null };
+  /** Nearby-npc lookups */
+  near: UseStateRef<import("./use-nearby-npcs").State>;
   nextPickId: number;
   npc: Record<string, Npc>;
   npcToDoable: { [npcKey: string]: string | null };
@@ -970,9 +975,9 @@ export type State = {
   /**
    * Shuffle round before walking off, when the first leg is well behind them AND someone stands
    * near: avoidance can hold a walker near-still beside an idle npc, and facing follows velocity
-   * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot
+   * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot. `always` turns them anyway
    */
-  turnBeforeMoving(npc: Npc): Promise<void>;
+  turnBeforeMoving(npc: Npc, always?: boolean): Promise<void>;
   /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
   warmCrowd(): void;
 };
