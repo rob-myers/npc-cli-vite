@@ -431,6 +431,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           throw state.roomFull(npc); // inside it, e.g. getting up
         }
 
+        /** Off a doable on the navmesh: they turn along their way first, rather than slide round */
+        const turnFirst = npc.agentId !== null && w.npc.npcToDoable[npcKey] != null;
         if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
           // fade off the doable: onto the target if near, else beside it, walking on
           if (fades && npc.agentId === null) {
@@ -441,7 +443,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
-        await state.walkTo(npc, groundPoint, result, opts, moveId);
+        await state.walkTo(npc, groundPoint, result, { ...opts, turnFirst }, moveId);
       },
       moveFailed(npc, e) {
         if (e instanceof Error && e.message === "move again") {
@@ -1826,7 +1828,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       wait(secs) {
         return new Promise((resolve) => void state.after(secs, resolve));
       },
-      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }, moveId) {
+      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe, turnFirst }, moveId) {
         const { config } = w.npc;
 
         await npc.ensureLegalPosition();
@@ -1864,7 +1866,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             (npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config))));
           if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
-          if (dragged === false) await w.npc.turnBeforeMoving(npc); // a look throws "hurt"
+          if (dragged === false) await w.npc.turnBeforeMoving(npc, turnFirst); // a look throws "hurt"
           if (state.moveOverridden(npc, moveId)) return;
           npc.anim.startMoving(arrive);
 
@@ -2124,7 +2126,7 @@ export type State = {
     npc: Npc,
     groundPoint: Geom.VectJson,
     result: ReturnType<WorldState["npc"]["getClosestPoly"]>,
-    opts: JshCli.MoveOpts,
+    opts: JshCli.MoveOpts & { turnFirst?: boolean },
     /** From `getMoveId` in `move`: a newer move ends this one */
     moveId: number,
   ): Promise<void>;

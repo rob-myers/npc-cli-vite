@@ -669,13 +669,13 @@ export default function NPCs() {
           npc.material.needsUpdate = true;
         }
       },
-      async turnBeforeMoving(npc) {
+      async turnBeforeMoving(npc, always = false) {
         if (npc.isMoving() === true || npc.anim.strafe === true) {
           return; // mid-path a turn reads as steering; strafing keeps their facing
         }
 
         const { agent } = npc;
-        if (agent === null || agent.neis.length === 0) {
+        if (agent === null || (agent.neis.length === 0 && always === false)) {
           return; // only turn if there's an agent nearby
         }
 
@@ -975,9 +975,9 @@ export type State = {
   /**
    * Shuffle round before walking off, when the first leg is well behind them AND someone stands
    * near: avoidance can hold a walker near-still beside an idle npc, and facing follows velocity
-   * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot
+   * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot. `always` turns them anyway
    */
-  turnBeforeMoving(npc: Npc): Promise<void>;
+  turnBeforeMoving(npc: Npc, always?: boolean): Promise<void>;
   /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
   warmCrowd(): void;
 };
