@@ -1,10 +1,4 @@
-import {
-  edgeKey,
-  type GraphEdge,
-  type GraphEntry,
-  GraphEntrySchema,
-  type GraphNode,
-} from "@npc-cli/ui__world/scenario.schema";
+import { type GraphEdge, type GraphEntry, GraphEntrySchema, type GraphNode } from "@npc-cli/ui__world/scenario.schema";
 import { loadScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { toPrecision } from "@npc-cli/util/legacy/generic";
@@ -24,30 +18,30 @@ export const graphs = {
   },
   resolve,
   /** Nodes `n0`… at `points`, joined in turn, and back to the first if `cycle` */
-  async through(ct: JshCli.RunArg, points: unknown[], cycle: boolean, directed: boolean) {
+  async through(ct: JshCli.RunArg, points: unknown[], cycle: boolean) {
     const nodes = await toNodes(ct, points);
-    return { nodes, edges: edgesThrough(nodes, cycle, directed) };
+    return { nodes, edges: edgesThrough(nodes, cycle) };
   },
 };
 
-/** Edges through `nodes` in turn, and back to the first if `cycle`, each pair once */
-function edgesThrough(nodes: GraphNode[], cycle: boolean, directed: boolean): GraphEdge[] {
+/** Edges `e0`… through `nodes` in turn, and back to the first if `cycle`, skipping a node to itself */
+function edgesThrough(nodes: GraphNode[], cycle: boolean): GraphEdge[] {
   const count = cycle ? nodes.length : nodes.length - 1;
-  const byKey = new Map<string, GraphEdge>();
+  const edges: GraphEdge[] = [];
   for (let i = 0; i < count; i++) {
     const [from, to] = [nodes[i].id, nodes[(i + 1) % nodes.length].id];
-    const key = edgeKey(from, to, directed);
-    if (from !== to && !byKey.has(key)) byKey.set(key, { from, to, meta: {} });
+    if (from !== to) edges.push({ id: `e${edges.length}`, from, to, meta: {} });
   }
-  return [...byKey.values()];
+  return edges;
 }
 
 /**
  * Node ids walked round and round, crossing every edge: once each if every node is balanced, else there and back.
- * It starts at the first node. A directed graph must be balanced, and any graph connected
+ * It starts at the first node. A graph not undirected must be balanced, and any graph connected
  */
 function closedWalk(graph: GraphEntry): string[] {
-  const { nodes, edges, directed } = graph;
+  const { nodes, edges } = graph;
+  const directed = graph.undirected === false;
   const [start, name] = [nodes[0].id, graph.key || "graph"];
   /** Each node's edges, by index, both ways */
   const both = new Map(nodes.map((n) => [n.id, [] as Link[]]));

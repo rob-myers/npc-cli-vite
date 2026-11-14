@@ -1,6 +1,6 @@
 # Graphs
 
-A graph is nodes and edges on one map, with free-form `meta` on the graph, each node and each edge. It knows nothing of behaviour. jsh commands read graphs and act on them, e.g. `act patrol`. Graphs are made and edited in the Decorator, or by jsh `sc`.
+A graph is a directed multigraph on one map, with free-form `meta` on the graph, each node and each edge. Edges run `from` to `to`, and two may join the same nodes either way. An `undirected` graph is read as its symmetric closure: each edge may also be taken backwards. It knows nothing of behaviour. jsh commands read graphs and act on them, e.g. `act patrol`. Graphs are made and edited in the Decorator, or by jsh `sc`.
 
 ## The data
 
@@ -9,15 +9,15 @@ A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenar
 | Field | Default | |
 | --- | --- | --- |
 | `mapKey` | | The map its nodes are on |
-| `directed` | `false` | Edges go one way, `from` to `to` |
+| `undirected` | `false` | Each edge may also be taken backwards. A new graph has it, from the Decorator or `sc save` |
 | `meta` | `{}` | The graph's own |
 | `nodes` | | At least one: `{ id, at, spot?, meta }` |
-| `edges` | `[]` | `{ from, to, meta }`, by node id |
+| `edges` | `[]` | `{ id, from, to, meta }`, by node id |
 
-- **A node's id** is stable, e.g. `n3`, so edges survive edits. A new node takes the next free number.
+- **A node's id** is stable, e.g. `n3`, so edges survive edits. A new node takes the next free number. So does an edge's, e.g. `e2`, which tells parallel edges apart.
 - **A node's point** is `at`, `[x, y]` in metres, on the navmesh to the cm.
 - **A node on a spot** has `spot`, its alias or key, e.g. `g0r12-3`. Readers take the spot's point over `at`, so it follows the spot as spots are remade. A spot gone, they fall back to `at`. `at` is its point when last saved.
-- **Edges** must join two different nodes that exist. Two edges may not join the same pair, either way unless directed.
+- **Edges** must join two different nodes that exist. Any number may join the same pair, either way, each with its own meta.
 - **Meta** is any JSON object. Behaviours read the keys they know, e.g. `secs` on a node for `act patrol`. Nothing checks them.
 
 ## jsh `sc`
@@ -28,7 +28,7 @@ A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenar
 | --- | --- |
 | `sc ls graph` | This map's graphs, a line each. `--all` for every map's |
 | `sc get graph/my-path` | The entry, as a value |
-| `sc save graph/my-path path:$( pick 3 ) [directed] [name:…]` | Nodes `n0`… through the points, joined in turn. `cycle:<points>` joins the last to the first too. A pair is joined once, unless directed. Points are pick events, `[x, y]` or spot keys, which the nodes keep as `spot` |
+| `sc save graph/my-path path:$( pick 3 ) [directed] [name:…]` | Nodes `n0`… through the points, joined in turn by edges `e0`…. `cycle:<points>` joins the last to the first too. Undirected unless `directed`, else as saved. Points are pick events, `[x, y]` or spot keys, which the nodes keep as `spot` |
 | `sc walk graph/my-path` | Its closed walk, e.g. `n0 n1 n2 n1` |
 | `sc rm graph/my-path` | |
 
@@ -36,7 +36,7 @@ Saved over, a graph keeps what is not given. Its nodes and edges are replaced on
 
 ## In the Decorator
 
-The sidebar's **graph** tab (`GraphSidebar.tsx`) lists this map's graphs: name, node and edge counts, and ⇢ if directed. Other maps' graphs are listed below by mapKey, and a press on one shows it read-only, drawn, in a dialog inside the panel (`GraphDialog.tsx`). Choosing one draws it on the map (`GraphLayer.tsx`) and centres the map on it. Its nodes and edges are listed too, and a press on one selects it. A node on a spot is ringed, and drawn at the spot. Edges have arrows only when directed. The spots are fetched whilst a graph is chosen.
+The sidebar's **graph** tab (`GraphSidebar.tsx`) lists this map's graphs: name, node and edge counts, and ⇢ unless undirected. Other maps' graphs are listed below by mapKey, and a press on one shows it read-only, drawn, in a dialog inside the panel (`GraphDialog.tsx`). Choosing one draws it on the map (`GraphLayer.tsx`) and centres the map on it. Its nodes and edges are listed too, and a press on one selects it. A node on a spot is ringed, and drawn at the spot. Every edge has an arrow, faint when undirected. Edges joining the same pair bow apart (`edgeBows`, `arc` in `graph-edit.ts`). The spots are fetched whilst a graph is chosen.
 
 In DEV each edit saves its file (`saveScenarioEntry`). The pure edits are in `graph-edit.ts`.
 
@@ -50,8 +50,8 @@ In DEV each edit saves its file (`saveScenarioEntry`). The pure edits are in `gr
   | --- | --- |
   | Empty map | add node here |
   | A node | connect to…, attach to the nearest spot within 0.5 m (or detach from it), delete node and its edges (one is kept) |
-  | An edge | insert node here, reverse (directed), delete edge |
-  | Either | directed. Turned off, one edge of each pair is kept |
+  | An edge | insert node here, reverse, delete edge |
+  | Either | undirected. Only how it is read: no edge changes |
 
 - **Connect to…** draws a dashed line from the node to the pointer. A click on another node joins them. Escape or a click elsewhere cancels.
 - The trash beside the graph's key deletes it, on a second click.
@@ -71,9 +71,9 @@ A behaviour is jsh code reading a graph. `graphs` in `packages/cli/src/jsh/world
 
 Route strategies are written in jsh, beside the behaviour that uses them. As yet there is one, `closedWalk`:
 
-- **Every node balanced** (an even number of edges, or as many in as out if directed): an Euler circuit, crossing each edge once. A cycle is walked round.
+- **Every node balanced** (an even number of edges if undirected, else as many in as out, parallel edges each counted): an Euler circuit, crossing each edge once. A cycle is walked round.
 - **Else, undirected:** a depth-first walk crossing each edge there and back. A path is walked back and forth, and a tree is toured.
-- **Else, directed:** an error, as is a graph not connected. It starts at the first node.
+- **Else, not undirected:** an error, as is a graph not connected. It starts at the first node.
 
 ### Patrolling: `act patrol`
 

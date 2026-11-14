@@ -65,10 +65,10 @@ async function getEntry(key: undefined | string) {
   return entry;
 }
 
-/** One line, e.g. `graph/my-path 3 nodes 2 edges directed` */
+/** One line, e.g. `graph/my-path 3 nodes 2 edges undirected` */
 function summary(entry: ScenarioEntry, all: boolean) {
-  const directed = entry.directed ? " directed" : "";
-  return `${entry.key} ${entry.nodes.length} nodes ${entry.edges.length} edges${directed}${all ? ` on ${entry.mapKey}` : ""}`;
+  const undirected = entry.undirected ? " undirected" : "";
+  return `${entry.key} ${entry.nodes.length} nodes ${entry.edges.length} edges${undirected}${all ? ` on ${entry.mapKey}` : ""}`;
 }
 
 /**
@@ -88,15 +88,16 @@ async function saveGraph(ct: JshCli.RunArg, [key, ...args]: string[]) {
   const prev = (await loadScenarioEntries())[key] as undefined | GraphEntry;
   const given = Array.isArray(opts.cycle) ? opts.cycle : opts.path;
   if (given === undefined && prev === undefined) throw Error("expected path:<points> or cycle:<points>");
-  const directed = opts.directed ?? prev?.directed ?? false;
-  const made = given === undefined ? undefined : await graphs.through(ct, given, Array.isArray(opts.cycle), directed);
+  /** Undirected unless `directed` is given */
+  const undirected = opts.directed === undefined ? (prev?.undirected ?? true) : !opts.directed;
+  const made = given === undefined ? undefined : await graphs.through(ct, given, Array.isArray(opts.cycle));
   const entry = GraphEntrySchema.parse({
     ...prev,
     key,
     kind: "graph",
     name: opts.name ?? prev?.name ?? key.slice("graph/".length),
     mapKey: made === undefined ? prev?.mapKey : ct.w.mapKey,
-    directed,
+    undirected,
     nodes: made?.nodes ?? prev?.nodes,
     edges: made?.edges ?? prev?.edges,
   });

@@ -41,7 +41,7 @@ function GraphCard({ graph }: { graph: GraphEntry }) {
   const meta = (value: Record<string, unknown>) => (Object.keys(value).length === 0 ? "" : JSON.stringify(value));
   const rows: [string, string][] = [
     ["map", graph.mapKey],
-    ["edges", graph.directed ? "directed" : "undirected"],
+    ["edges", graph.undirected ? "undirected" : "directed"],
     ["meta", meta(graph.meta) || "none"],
   ];
   return (
@@ -69,10 +69,10 @@ function GraphCard({ graph }: { graph: GraphEntry }) {
       </div>
       <div className="text-zinc-500">edges</div>
       <div className="grid grid-cols-[auto_1fr] gap-x-3 font-mono">
-        {graph.edges.map((e, i) => (
-          <Fragment key={i}>
+        {graph.edges.map((e) => (
+          <Fragment key={e.id}>
             <span>
-              {e.from} {graph.directed ? "→" : "—"} {e.to}
+              {e.id} {e.from} → {e.to}
             </span>
             <span className="break-all text-zinc-500">{meta(e.meta)}</span>
           </Fragment>

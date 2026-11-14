@@ -49,7 +49,7 @@ export function GraphSidebar({
           <span className="truncate">{x.name || x.key}</span>
           <span className="ml-auto shrink-0 text-zinc-500">
             {x.nodes.length} · {x.edges.length}
-            {x.directed ? " ⇢" : ""}
+            {x.undirected ? "" : " ⇢"}
           </span>
         </button>
       ))}
@@ -167,7 +167,6 @@ function Parts({
       {label}
     </button>
   );
-  const arrow = graph.directed ? "→" : "—";
   return (
     <>
       <div className="text-zinc-500">nodes</div>
@@ -178,7 +177,7 @@ function Parts({
       </div>
       <div className="text-zinc-500">edges</div>
       <div className="flex flex-wrap gap-0.5">
-        {graph.edges.map((e, i) => row(`${i}`, `${e.from}${arrow}${e.to}`, i === edge, { edge: i }))}
+        {graph.edges.map((e) => row(e.id, `${e.from}→${e.to}`, e.id === edge, { edge: e.id }))}
       </div>
     </>
   );
@@ -243,15 +242,15 @@ function TextField(props: { label: string; value: string; readOnly: boolean; onC
   );
 }
 
-/** e.g. `node n3 on g0r2-1`, `edge n1 → n2` */
+/** e.g. `node n3 on g0r2-1`, `edge e2 n1 → n2` */
 function describe(graph: GraphEntry, target: GraphTarget) {
   if (target === null) return "graph";
   if ("node" in target) {
     const spot = graph.nodes.find((n) => n.id === target.node)?.spot;
     return `node ${target.node}${spot === undefined ? "" : ` on ${spot}`}`;
   }
-  const edge = graph.edges[target.edge];
-  return edge === undefined ? "edge" : `edge ${edge.from} ${graph.directed ? "→" : "—"} ${edge.to}`;
+  const edge = graph.edges.find((e) => e.id === target.edge);
+  return edge === undefined ? "edge" : `edge ${edge.id} ${edge.from} → ${edge.to}`;
 }
 
 function parseObject(text: string): null | Record<string, unknown> {

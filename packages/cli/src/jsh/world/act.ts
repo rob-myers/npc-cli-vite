@@ -213,8 +213,8 @@ const verbs: Record<string, Verb> = {
 
 /** A graph from `path:` or `cycle:` points, unsaved */
 async function unsavedGraph(ct: JshCli.RunArg, points: unknown[], cycle: boolean) {
-  const { nodes, edges } = await graphs.through(ct, points, cycle, false);
-  return GraphEntrySchema.parse({ key: "", kind: "graph", mapKey: ct.w.mapKey, nodes, edges });
+  const { nodes, edges } = await graphs.through(ct, points, cycle);
+  return GraphEntrySchema.parse({ key: "", kind: "graph", mapKey: ct.w.mapKey, undirected: true, nodes, edges });
 }
 
 type Stop = { secs: number; lookSecs: number; lookDeg: number };

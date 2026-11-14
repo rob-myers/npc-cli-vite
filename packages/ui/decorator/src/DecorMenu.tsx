@@ -29,7 +29,7 @@ import {
   reversedEdge,
   snapped,
   splitEdge,
-  withDirected,
+  withUndirected,
 } from "./graph-edit";
 import { mergeKey } from "./history";
 
@@ -76,7 +76,7 @@ export function DecorMenu({
       const node = graph.nodes.find((n) => n.id === id);
       const near = node === undefined || node.spot !== undefined ? null : spotNear({ x: node.at[0], y: node.at[1] });
       const edgeAttr = graphEl.getAttribute("data-graph-edge");
-      const edge = edgeAttr === null ? undefined : Number(edgeAttr);
+      const edge = edgeAttr ?? undefined;
       return setTarget({ key: null, at, nodeAt, graph: { node, edge, near } });
     }
     const el = (e.target as Element).closest?.("[data-decor], [data-handle]");
@@ -105,7 +105,7 @@ export function DecorMenu({
             {graph !== null && onGraph !== undefined && (
               <ContextMenu.Group>
                 <ContextMenu.GroupLabel className={labelCls}>
-                  {graph.key} · {node?.id ?? "edge"}
+                  {graph.key} · {node?.id ?? edge}
                 </ContextMenu.GroupLabel>
                 {edge !== undefined && (
                   <>
@@ -116,11 +116,9 @@ export function DecorMenu({
                     >
                       insert node here
                     </ContextMenu.Item>
-                    {graph.directed && (
-                      <ContextMenu.Item className={itemCls} onClick={() => onGraphCommit(reversedEdge(graph, edge))}>
-                        reverse
-                      </ContextMenu.Item>
-                    )}
+                    <ContextMenu.Item className={itemCls} onClick={() => onGraphCommit(reversedEdge(graph, edge))}>
+                      reverse
+                    </ContextMenu.Item>
                   </>
                 )}
                 {node !== undefined && (
@@ -150,15 +148,15 @@ export function DecorMenu({
                 )}
                 <ContextMenu.CheckboxItem
                   className={itemCls}
-                  checked={graph.directed}
-                  onCheckedChange={(directed) => onGraphCommit(withDirected(graph, directed))}
+                  checked={graph.undirected}
+                  onCheckedChange={(undirected) => onGraphCommit(withUndirected(graph, undirected))}
                 >
                   <span className="w-3">
                     <ContextMenu.CheckboxItemIndicator>
                       <CheckIcon className="size-3" />
                     </ContextMenu.CheckboxItemIndicator>
                   </span>
-                  directed
+                  undirected
                 </ContextMenu.CheckboxItem>
                 <ContextMenu.Separator className="my-1 border-t border-zinc-700" />
                 {node !== undefined && (
@@ -417,7 +415,7 @@ type Target = {
   at: Geom.VectJson;
   /** On the navmesh, where a node would go, if a graph is chosen */
   nodeAt: null | Pt;
-  graph?: { node?: GraphNode; edge?: number; near: null | { spot: string; at: Geom.VectJson } };
+  graph?: { node?: GraphNode; edge?: string; near: null | { spot: string; at: Geom.VectJson } };
 };
 
 const touchDevice = isTouchDevice();

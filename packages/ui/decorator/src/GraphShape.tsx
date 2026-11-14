@@ -1,6 +1,7 @@
 import type { GraphEntry } from "@npc-cli/ui__world/scenario.schema";
+import { arc, edgeBows } from "./graph-edit";
 
-/** A graph drawn to scale from its nodes' saved points, as the Decorator's map has it: y down. Arrows if directed */
+/** A graph drawn to scale from its nodes' saved points, as the Decorator's map has it: y down. Arrowed, faint if undirected */
 export function GraphShape({ graph }: { graph: GraphEntry }) {
   const at = new Map(graph.nodes.map((n) => [n.id, n.at]));
   const xs = graph.nodes.map((n) => n.at[0]);
@@ -11,23 +12,23 @@ export function GraphShape({ graph }: { graph: GraphEntry }) {
   const r = size * 0.06;
   const pad = r * 3;
   const viewBox = [minX - pad, minY - pad, Math.max(...xs) - minX + 2 * pad, Math.max(...ys) - minY + 2 * pad];
+  const bows = edgeBows(graph.edges);
 
   return (
     <svg viewBox={viewBox.join(" ")} className="w-full max-h-48 text-zinc-400" role="img" aria-label={graph.key}>
-      {graph.edges.map(({ from, to }, i) => {
+      {graph.edges.map(({ id, from, to }) => {
         const [a, b] = [at.get(from), at.get(to)];
         if (a === undefined || b === undefined) return null;
-        const angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+        const { d, mid, angle } = arc(a, b, (bows.get(id) ?? 0) * r * 2.5);
         return (
-          <g key={i} stroke="currentColor" fill="none" strokeWidth={1.5}>
-            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} vectorEffect="non-scaling-stroke" />
-            {graph.directed && (
-              <path
-                d={`M ${-r} ${-r * 0.7} L ${r * 0.4} 0 L ${-r} ${r * 0.7}`}
-                transform={`translate(${(a[0] + b[0]) / 2} ${(a[1] + b[1]) / 2}) rotate(${angle})`}
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
+          <g key={id} stroke="currentColor" fill="none" strokeWidth={1.5}>
+            <path d={d} vectorEffect="non-scaling-stroke" />
+            <path
+              d={`M ${-r} ${-r * 0.7} L ${r * 0.4} 0 L ${-r} ${r * 0.7}`}
+              transform={`translate(${mid[0]} ${mid[1]}) rotate(${angle})`}
+              opacity={graph.undirected ? 0.4 : undefined}
+              vectorEffect="non-scaling-stroke"
+            />
           </g>
         );
       })}

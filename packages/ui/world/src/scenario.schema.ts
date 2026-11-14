@@ -25,20 +25,22 @@ const GraphNodeSchema = z.object({
   meta: GraphMetaSchema,
 });
 
-const GraphEdgeSchema = z.object({ from: z.string(), to: z.string(), meta: GraphMetaSchema });
+const GraphEdgeSchema = z.object({
+  /** Stable, e.g. `e3`: parallel edges share their ends */
+  id: z.string(),
+  from: z.string(),
+  to: z.string(),
+  meta: GraphMetaSchema,
+});
 
-/** Two edges with one key are the same edge: either way round unless directed */
-export function edgeKey(from: string, to: string, directed: boolean) {
-  return directed || from < to ? `${from} ${to}` : `${to} ${from}`;
-}
-
-/** Nodes and edges on one map, read by jsh behaviours, e.g. `act patrol {slug}` — see `docs/npc-graphs.md` */
+/** A directed multigraph on one map, read by jsh behaviours, e.g. `act patrol {slug}` — see `docs/npc-graphs.md` */
 export const GraphEntrySchema = z
   .object({
     ...EntryBase,
     kind: z.literal("graph"),
     mapKey: z.string(),
-    directed: z.boolean().default(false),
+    /** Read as its symmetric closure: each edge may also be taken backwards */
+    undirected: z.boolean().default(false),
     meta: GraphMetaSchema,
     nodes: z.array(GraphNodeSchema).min(1),
     edges: z.array(GraphEdgeSchema).default([]),
@@ -46,13 +48,11 @@ export const GraphEntrySchema = z
   .superRefine((graph, ctx) => {
     const ids = new Set(graph.nodes.map((n) => n.id));
     if (ids.size < graph.nodes.length) ctx.addIssue({ code: "custom", message: "node ids repeat" });
-    const seen = new Set<string>();
-    for (const { from, to } of graph.edges) {
-      if (!ids.has(from) || !ids.has(to)) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: no such node` });
-      if (from === to) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: a loop` });
-      const key = edgeKey(from, to, graph.directed);
-      if (seen.has(key)) ctx.addIssue({ code: "custom", message: `edge ${from} ${to}: repeated` });
-      seen.add(key);
+    if (new Set(graph.edges.map((e) => e.id)).size < graph.edges.length)
+      ctx.addIssue({ code: "custom", message: "edge ids repeat" });
+    for (const { id, from, to } of graph.edges) {
+      if (!ids.has(from) || !ids.has(to)) ctx.addIssue({ code: "custom", message: `edge ${id}: no such node` });
+      if (from === to) ctx.addIssue({ code: "custom", message: `edge ${id}: a loop` });
     }
   });
 

@@ -295,7 +295,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         state.saveGraph(next);
       },
       saveGraph(next) {
-        if (next === state.graphOf(next.key)) return; // e.g. an edge already there
+        if (next === state.graphOf(next.key)) return; // e.g. an edge from a node to itself
         state.history.markGraph(next.key);
         state.writeGraph(next.key, next);
       },
