@@ -23,7 +23,7 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
   - Psi lowered, their room going unlit, or Cancel drops it.
 - **Anyone may focus**, through jsh: `psi rob on:kate`, `psi rob act:distract`, `psi rob --cancel`. No mark shows
   over whom they focus on.
-- **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
+- **A talk's reply can wait on it**: the `psi` need of jsh `comms` is met whilst psi is raised.
 
 ## Thoughts
 

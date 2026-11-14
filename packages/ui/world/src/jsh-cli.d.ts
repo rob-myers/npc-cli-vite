@@ -72,6 +72,26 @@ declare namespace JshCli {
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
+    | {
+        /** The npc said a line of a talk: started, answered or said again — see `WorldSpeech` */
+        key: "talk-line";
+        threadKey: string;
+        npcKey: string;
+        playerKey: string;
+        convKey: string;
+        nodeId: string;
+      }
+    | {
+        /** The player said reply `choice` of line `nodeId`, which leads `to` */
+        key: "talk-reply";
+        threadKey: string;
+        npcKey: string;
+        playerKey: string;
+        convKey: string;
+        nodeId: string;
+        choice: number;
+        to: string;
+      }
     | { key: "started-moving"; npcKey: string }
     | {
         /** Arrived, or the move was stopped — not one cut short by the next move */

@@ -1,10 +1,10 @@
-import type { Conversation, ConversationNode, TalkNeed } from "@npc-cli/ui__world/talk";
+import type { Conversation, ConversationNode } from "@npc-cli/ui__world/talk";
 
 /** A line, and each answer as `[text, to, needs?]` */
 const say = (
   topic: string,
   text: string,
-  ...choices: [text: string, to: string, needs?: TalkNeed[]][]
+  ...choices: [text: string, to: string, needs?: string[]][]
 ): ConversationNode => ({
   topic,
   text,
@@ -174,7 +174,7 @@ export const conversations: Conversation[] = [
     start: say(
       "hide",
       "Don't shout. Please.",
-      ["I won't.", "trust", ["facing"]],
+      ["I won't.", "trust", ["sees"]],
       ["Who are you?", "who"],
       ["Security!", "end-caught"],
     ),

@@ -1,5 +1,5 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { type Conversation, type OutlineRow, talkNeeds, toOutline, visibleRows } from "@npc-cli/ui__world/talk";
+import { type Conversation, type OutlineRow, toOutline, visibleRows } from "@npc-cli/ui__world/talk";
 import { Glyphed, Pips } from "@npc-cli/ui__world/talk-thread";
 import { cn } from "@npc-cli/util";
 import {
@@ -105,6 +105,7 @@ export function ConversationCard({ w, conv }: { w: WorldState | undefined; conv:
             key={row.key}
             row={row}
             text={conv.nodes[row.nodeId]?.text}
+            needDefs={w?.speech?.needDefs}
             flat={needle !== ""}
             open={open.has(row.key)}
             onFold={() =>
@@ -125,6 +126,7 @@ function OutlineRowView(props: {
   row: OutlineRow;
   /** What the npc says there */
   text: undefined | string;
+  needDefs: undefined | WorldState["speech"]["needDefs"];
   /** A search result: neither indented nor foldable */
   flat: boolean;
   open: boolean;
@@ -162,7 +164,7 @@ function OutlineRowView(props: {
         )}
       </span>
       <span className="ml-auto flex items-center gap-1 shrink-0 text-[10px] uppercase text-zinc-500">
-        <Pips pips={row.needs.map((need) => ({ label: talkNeeds[need].label }))} />
+        <Pips pips={row.needs.map((need) => ({ label: need, ...props.needDefs?.get(need) }))} />
         {row.ref === false && row.topic}
       </span>
     </div>

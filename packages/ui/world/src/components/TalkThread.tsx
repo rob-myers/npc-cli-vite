@@ -149,7 +149,13 @@ export function Pips({ pips }: { pips: TalkPip[] }) {
     pips.length > 0 && (
       <span className="flex gap-0.5" title={pips.map((pip) => pip.label).join(", ")}>
         {pips.map((pip, i) => (
-          <span key={i} className="talk-pip" data-met={pip.met === undefined ? undefined : String(pip.met)} />
+          <span
+            key={i}
+            className={pip.icon === undefined ? "talk-pip" : "talk-pip-icon"}
+            data-met={pip.met === undefined ? undefined : String(pip.met)}
+          >
+            {pip.icon}
+          </span>
         ))}
       </span>
     )
@@ -263,7 +269,7 @@ export type TalkLine = {
 export type TalkReply = { text: string; pips: TalkPip[]; seen?: boolean; onChoose(): void };
 
 /** `met` unknown draws it neutral, as a hint */
-export type TalkPip = { label: string; met?: boolean };
+export type TalkPip = { label: string; icon?: string; met?: boolean };
 
 /** An emoji whole: its variation selector, and whatever a joiner ties on */
 const emojiRe = /\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*/gu;

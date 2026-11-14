@@ -156,6 +156,19 @@
   background: #4ade80;
 }
 
+/* a pip drawn as its icon: greyed until met */
+.talk-pip-icon {
+  font-size: 0.6rem;
+  line-height: 1;
+  transition:
+    filter 200ms,
+    opacity 200ms;
+}
+.talk-pip-icon[data-met="false"] {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
 /* a thought, not said: an outline with no tail */
 .talk-thought {
   background: transparent;

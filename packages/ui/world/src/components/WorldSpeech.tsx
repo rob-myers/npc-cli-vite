@@ -7,7 +7,7 @@ import { npcDims } from "../const.both";
 import { psiKhandhas } from "../const.npc";
 
 import { getWorldStore } from "../service/storage";
-import { type Conversation, type ConversationChoice, talkNeeds, threadKeyOf } from "../service/talk";
+import { type Conversation, type ConversationChoice, threadKeyOf } from "../service/talk";
 import { demoThoughts, type ThoughtTag } from "../service/thoughts";
 import { NetBadge, NetMenu } from "./NetMenu";
 import { type TalkLine, type TalkPip, TalkThread } from "./TalkThread";
@@ -38,8 +38,8 @@ export function WorldSpeech() {
       resizing: false,
       talks: {},
       folded: new Set(),
-      needsSig: "",
-      needsSecs: 0,
+      needDefs: new Map(),
+      needsMet: new Map(),
 
       addMenuItem(item) {
         // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
@@ -60,6 +60,7 @@ export function WorldSpeech() {
         for (const talk of Object.values(state.talks)) w.bubble.release(talk.npcKey, talk.playerKey);
         state.history = [];
         state.talks = {};
+        state.needsMet.clear();
         state.folded.clear();
         state.update();
       },
@@ -72,6 +73,7 @@ export function WorldSpeech() {
           return false;
         });
         delete state.talks[threadKey];
+        state.needsMet.delete(threadKey);
         state.folded.delete(threadKey);
         w.bubble.release(...parties); // a line held for an answer has none coming
         state.update();
@@ -85,7 +87,8 @@ export function WorldSpeech() {
         const playerKey = w.player?.key;
         if (playerKey === undefined || playerKey === npcKey || !(playerKey in w.n) || !(npcKey in w.n)) return false;
         const at = conv.start;
-        state.talks[threadKeyOf([playerKey, npcKey])] = {
+        const threadKey = threadKeyOf([playerKey, npcKey]);
+        state.talks[threadKey] = {
           conv,
           npcKey,
           playerKey,
@@ -96,16 +99,28 @@ export function WorldSpeech() {
         state.set({ panelOpen: true, panelTab: "comms" });
         const hold = (conv.nodes[at]?.choices?.length ?? 0) > 0;
         state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at, hold });
+        state.talkLine(threadKey);
         return true;
       },
       chooseTalk(threadKey, index) {
         const talk = state.talks[threadKey];
         const choice = talk?.conv.nodes[talk.at]?.choices?.[index];
         if (talk === undefined || choice === undefined || talk.answer !== null) return;
-        if (state.getPips(talk, choice).some((pip) => pip.met === false)) return;
+        if (state.getPips(threadKey, choice).some((pip) => pip.met === false)) return;
         // they take a moment to answer, in world time — see `onTick`
         talk.answer = { nodeId: choice.to, secs: answerSecs };
         state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey], hold: true });
+        const { npcKey, playerKey } = talk;
+        w.events.next({
+          key: "talk-reply",
+          threadKey,
+          npcKey,
+          playerKey,
+          convKey: talk.conv.key,
+          nodeId: talk.at,
+          choice: index,
+          to: choice.to,
+        });
       },
       answerTalk(threadKey) {
         const talk = state.talks[threadKey];
@@ -119,6 +134,7 @@ export function WorldSpeech() {
         talk.seen.add(nodeId);
         const hold = (next.choices?.length ?? 0) > 0;
         state.say(talk.npcKey, next.text, undefined, { to: [talk.playerKey], nodeId, hold });
+        state.talkLine(threadKey);
       },
       revisitTalk(threadKey, entryId) {
         const talk = state.talks[threadKey];
@@ -130,16 +146,39 @@ export function WorldSpeech() {
         talk.at = nodeId;
         const hold = (node.choices?.length ?? 0) > 0;
         state.say(talk.npcKey, node.text, undefined, { to: [talk.playerKey], nodeId, hold });
+        state.talkLine(threadKey);
       },
-      getPips(talk, choice) {
-        const player = w.n[talk.playerKey];
-        const npc = w.n[talk.npcKey];
-        // nobody to talk to, or someone else is the player now
-        const able = player !== undefined && npc !== undefined && w.player?.key === talk.playerKey;
-        return (choice.needs ?? []).map((need) => ({
-          label: talkNeeds[need].label,
-          met: able && talkNeeds[need].met(w, player, npc),
-        }));
+      talkLine(threadKey) {
+        const talk = state.talks[threadKey];
+        if (talk === undefined) return;
+        const { npcKey, playerKey } = talk;
+        w.events.next({ key: "talk-line", threadKey, npcKey, playerKey, convKey: talk.conv.key, nodeId: talk.at });
+      },
+      defineNeeds(defs) {
+        for (const [key, def] of Object.entries(defs)) state.needDefs.set(key, def);
+        state.update();
+      },
+      removeNeeds(keys) {
+        for (const key of keys) state.needDefs.delete(key);
+        state.update();
+      },
+      setMet(byThread) {
+        let changed = false;
+        for (const [threadKey, met] of Object.entries(byThread)) {
+          const was = state.needsMet.get(threadKey);
+          if (was !== undefined && was.size === met.length && met.every((need) => was.has(need))) continue;
+          state.needsMet.set(threadKey, new Set(met));
+          changed = true;
+        }
+        changed && state.update();
+      },
+      getPips(threadKey, choice) {
+        const met = state.needsMet.get(threadKey);
+        return (choice.needs ?? []).map((need) => {
+          const def = state.needDefs.get(need);
+          // undefined until defined, e.g. by jsh `comms`: then never met
+          return { label: def?.label ?? need, icon: def?.icon, met: def !== undefined && met?.has(need) === true };
+        });
       },
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -214,15 +253,6 @@ export function WorldSpeech() {
         for (const [threadKey, talk] of Object.entries(state.talks)) {
           if (talk.answer !== null && (talk.answer.secs -= delta) <= 0) state.answerTalk(threadKey);
         }
-
-        // a reply's pips follow the player about, so are looked at again now and then
-        if (state.panelOpen === false || (state.needsSecs -= delta) > 0) return;
-        state.needsSecs = needsPollSecs;
-        const needsSig = Object.values(state.talks)
-          .flatMap((talk) => (talk.conv.nodes[talk.at]?.choices ?? []).map((c) => state.getPips(talk, c)))
-          .map((pips) => pips.map((pip) => Number(pip.met)).join(""))
-          .join();
-        if (needsSig !== state.needsSig) state.set({ needsSig });
       },
       say(npcKey, words, secs, opts) {
         const epochMs = Date.now();
@@ -480,7 +510,7 @@ function SpeechThread({ thread }: { thread: Thread }) {
       ? []
       : (node?.choices ?? []).map((choice, i) => ({
           text: choice.text,
-          pips: w.speech.getPips(talk, choice),
+          pips: w.speech.getPips(thread.key, choice),
           seen: talk.seen.has(choice.to),
           onChoose: () => w.speech.chooseTalk(thread.key, i),
         }));
@@ -701,9 +731,10 @@ export type State = {
   talks: Record<string, Talk>;
   /** Threads shown as their heading alone, by key */
   folded: Set<string>;
-  /** The pips last drawn, so a poll re-renders only on a change */
-  needsSig: string;
-  needsSecs: number;
+  /** What a reply's need is called, by key — defined by e.g. jsh `comms` */
+  needDefs: Map<string, NeedDef>;
+  /** The needs met, by thread — set by e.g. jsh `comms` */
+  needsMet: Map<string, Set<string>>;
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
@@ -718,7 +749,7 @@ export type State = {
   getClampedHistoryHeight(height: number): number;
   getMaxHistoryWidth(): number;
   getClampedHistoryWidth(width: number): number;
-  /** Answers fall due and pips are looked at again — called from `World`'s `onTick` while unpaused */
+  /** Answers fall due — called from `World`'s `onTick` while unpaused */
   onTick(delta: number): void;
   onResize(): void;
   /** A drag of `edge` resizes the panel until it is let go */
@@ -741,16 +772,22 @@ export type State = {
   answerTalk(threadKey: string): void;
   /** The npc says an earlier line again, at the foot, and it is replied to there: nothing is removed */
   revisitTalk(threadKey: string, entryId: number): void;
-  /** A reply's tests, as pips */
-  getPips(talk: Talk, choice: ConversationChoice): TalkPip[];
+  /** A reply's needs, as pips */
+  getPips(threadKey: string, choice: ConversationChoice): TalkPip[];
+  /** Emits `talk-line` for the line the thread's talk is at */
+  talkLine(threadKey: string): void;
+  defineNeeds(defs: Record<string, NeedDef>): void;
+  removeNeeds(keys: string[]): void;
+  /** The needs now met, by thread: only a change re-renders */
+  setMet(byThread: Record<string, string[]>): void;
 };
+
+export type NeedDef = { label: string; icon?: string };
 
 const speechPanelTabs = ["worlds", "comms"] as const;
 
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
-/** Seconds between looks at the replies' tests */
-const needsPollSecs = 0.2;
 /** Seconds of world time an npc takes to answer: none pass whilst paused */
 const answerSecs = 0.45;

@@ -1,6 +1,3 @@
-import type { Npc } from "../components/npc";
-import type { State as WorldState } from "../components/World";
-
 /**
  * A two-party conversation: the npc says a node's `text`, the player answers with one of its
  * `choices`. Played in `WorldSpeech`, outlined in the Scenario panel — see `docs/scenarios.md`
@@ -27,8 +24,8 @@ export type ConversationNode = {
 export type ConversationChoice = {
   text: string;
   to: string;
-  /** What the player must do before they can say it — see `talkNeeds` */
-  needs?: TalkNeed[];
+  /** Keys of what must hold before the player can say it, defined by e.g. jsh `comms` */
+  needs?: string[];
 };
 
 export type OutlineRow = {
@@ -37,7 +34,7 @@ export type OutlineRow = {
   depth: number;
   via: null | string;
   /** What `via` needs */
-  needs: TalkNeed[];
+  needs: string[];
   /** Unfolded elsewhere: a graph's node is drawn in full once, nearest the start */
   ref: boolean;
   /** No such node */
@@ -106,37 +103,7 @@ export function visibleRows(rows: OutlineRow[], open: ReadonlySet<string>): Outl
   });
 }
 
-export type TalkNeed = "near" | "facing" | "psi";
-
-/** Each test a reply may wait on: a pip in the speech history, green once `met` */
-export const talkNeeds: Record<TalkNeed, { label: string; met(w: WorldState, player: Npc, npc: Npc): boolean }> = {
-  near: {
-    label: "near them",
-    met: (_w, player, npc) =>
-      Math.hypot(npc.point.x - player.point.x, npc.point.y - player.point.y) <= talkConfig.nearDist,
-  },
-  facing: {
-    label: "facing them",
-    met(_w, player, npc) {
-      const look = -player.rotation.y - Math.PI / 2;
-      const bearing = Math.atan2(npc.point.y - player.point.y, npc.point.x - player.point.x);
-      return Math.abs(Math.atan2(Math.sin(bearing - look), Math.cos(bearing - look))) <= talkConfig.facingArc;
-    },
-  },
-  psi: {
-    label: "psi raised",
-    met: (w) => w.e.isPsiRaised(),
-  },
-};
-
 /** A thread of the speech history: whoever spoke in it, and to whom */
 export function threadKeyOf(parties: string[]) {
   return [...new Set(parties)].sort().join(" + ");
 }
-
-const talkConfig = {
-  /** Metres apart, at most, to be `near` */
-  nearDist: 1.6,
-  /** Radians either side of straight ahead still `facing` */
-  facingArc: Math.PI / 5,
-};

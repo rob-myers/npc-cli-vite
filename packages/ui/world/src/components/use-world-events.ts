@@ -1022,6 +1022,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "sidestep":
           case "speech":
           case "stopped-moving":
+          case "talk-line":
+          case "talk-reply":
             break;
           default:
             throw new ExhaustiveError(e);

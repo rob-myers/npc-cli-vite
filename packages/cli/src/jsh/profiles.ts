@@ -6,6 +6,7 @@ source /etc/alias.sh
 awaitWorld
 predicates
 inventory
+comms
 sidestep
 sounds
 spots auto
