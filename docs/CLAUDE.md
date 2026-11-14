@@ -169,7 +169,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Max walkers.** A room's first label may set `max-walkers=N`, read once into `maxWalkers` on its `w.gmRoomGraph` node. Its doors are in `w.gmRoomGraph.walkerRooms`.
   - At most N stand on its navmesh (`w.e.admitWalker`). Those at a doable don't count, unless it has `meta.as-walker`, e.g. a shower's (`do:as-walker` on its symbol instance).
   - A full room's door areas are refused to others, as a locked door's (`w.e.refusesWalker`, from `canPassNode`).
-  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. For a doable further in, they walk up to its door, then fail `room full`.
+  - Anyone else fades between outside its door (`w.e.closestExitFrom`) and a doable within `doableLook` (1.5m) of it, either way. For a doable further in, they walk up to its door, then fail `room full`. Leaving for a point just outside, e.g. in its doorway, they fade straight onto it.
   - Between its doables they hop, at most `doableLook` each, e.g. toilet, toilet, sink, then out.
   - A walk onto its floor is refused as at a locked door: it stops outside and fails `room full` (`docs/doors.md`). So do `spawn` and `warp` onto it.
   - Refused, they shake their head (`w.e.roomFull`, which gives the error).

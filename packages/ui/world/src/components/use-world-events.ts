@@ -1589,6 +1589,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // no room on its floor for them: out through a door they may pass, if near it, else they stay put
           const at = state.closestExitFrom(grKey, npc, npc.point);
           if (at === null) throw state.roomFull(npc);
+          // a target just outside, e.g. in its doorway, is faded onto at once rather than walked back to
+          const ahead = { x: 2 * toward.x - npc.point.x, y: 2 * toward.y - npc.point.y };
+          if (
+            w.findRoomContaining(toward)?.grKey !== grKey &&
+            Math.hypot(toward.x - at.x, toward.y - at.y) < 2 * doorwayOut
+          )
+            return void (await npc.fadeSpawn({ at: toward, facing: ahead }));
           return void (await npc.fadeSpawn({ at, facing: toward }));
         }
         if (npc.agentId !== null) return void w.npc.setNpcDo(npc.key, null); // on the navmesh already: they walk off
