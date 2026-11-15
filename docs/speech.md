@@ -122,7 +122,7 @@ An unknown need fails. `comms off` removes them. jsh `reply` says a reply withou
 
 ![what speech costs, many npcs](speech/cost.svg)
 
-Measured with 161 npcs in a DEV World (jsh-free, from an MCP `query`):
+Measured with 161 npcs in a DEV World, from an MCP `query`:
 - **Idle npcs** cost one early return a frame (`tickHead`). Nothing iterates them.
 - **Staggered talk**, 20 lines a second: 60fps, p99 16.8ms. Before bubbles were memoised it was 43fps: each line re-ran every bubble's ref, which placed and faded every bubble.
 - **All 161 starting in one tick** costs one 60 to 180ms frame: mounting their word spans and starting their turns. A scene does not do this.
