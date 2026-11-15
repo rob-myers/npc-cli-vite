@@ -2,7 +2,7 @@ import { type TalkChoice, threadKeyOf } from "@npc-cli/ui__world/talk";
 import { spotQueryDetached, unfaced } from "./perception.main";
 
 /**
- * What a conversation's replies wait on: each need defined on the World, and tested whilst a talk is held.
+ * What a reply waits on: each need defined on the World, and tested when the player presses it.
  * Idempotent, as `inventory` — see `docs/speech.md`
  * ```sh
  * comms
@@ -11,7 +11,6 @@ import { spotQueryDetached, unfaced } from "./perception.main";
  */
 export function comms({ args, w }: JshCli.RunArg) {
   if (args[0] === "off") {
-    w.e.keyedTick.delete(commsKey);
     w.e.keyedListener.delete(commsKey);
     w.speech.removeNeeds(Object.keys(commsNeeds));
     return;
@@ -21,94 +20,44 @@ export function comms({ args, w }: JshCli.RunArg) {
     Object.fromEntries(Object.entries(commsNeeds).map(([key, { label, icon }]) => [key, { label, icon }])),
   );
 
-  const s = {
-    /** A batch is awaiting the worker */
-    asking: false,
-    /** Threads to test once it answers */
-    again: new Set<string>(),
-    testedAt: Number.NEGATIVE_INFINITY,
-  };
-
-  /** Tests the threads' needs, the worker's in one query */
-  const test = async (w: JshCli.WorldState, threadKeys: Iterable<string>) => {
-    if (s.asking) {
-      for (const threadKey of threadKeys) s.again.add(threadKey);
-      return;
-    }
-
-    const tests: { threadKey: string; talk: JshCli.WorldState["speech"]["talks"][string]; met: string[] }[] = [];
-    const asked: { test: (typeof tests)[number]; need: string }[] = [];
-    const queries: WW.SpotQuery[] = [];
-
-    for (const threadKey of threadKeys) {
-      const talk = w.speech.talks[threadKey];
-      if (talk === undefined || talk.replies.length === 0) continue;
-      const needs = new Set(talk.replies.flatMap((choice) => choice.needs ?? []));
-      if (needs.size === 0) continue;
-      const test = { threadKey, talk, met: [] as string[] };
-      tests.push(test);
-      const player = w.n[talk.toKey];
-      const npc = w.n[talk.npcKey];
-      if (player === undefined || npc === undefined || repliesShown(w, threadKey) === false) continue;
-      for (const need of needs) {
-        const def = commsNeeds[need];
-        if (def === undefined || def.met(w, player, npc) === false) continue;
-        const query = def.ask?.(w, player, npc);
-        if (query === undefined) {
-          test.met.push(need);
-        } else {
-          asked.push({ test, need });
-          queries.push(query);
-        }
-      }
-    }
-    if (tests.length === 0) return;
-
-    s.asking = queries.length > 0;
-    try {
-      const answers = queries.length === 0 ? [] : await spotQueryDetached(w, queries).catch(() => []);
-      asked.forEach(({ test, need }, i) => {
-        if (commsNeeds[need].answered?.(answers[i]) === true) test.met.push(need);
-      });
-      // only where nothing changed whilst asked
-      const fresh = tests.filter(
-        ({ threadKey, talk }) => w.speech.talks[threadKey] === talk && talk.replies.length > 0,
-      );
-      w.speech.setMet(
-        Object.fromEntries(
-          fresh.map(({ threadKey, met }) => [threadKey, repliesShown(w, threadKey) ? met : []] as const),
-        ),
-      );
-    } finally {
-      s.asking = false;
-    }
-    if (s.again.size > 0) {
-      const again = [...s.again];
-      s.again.clear();
-      void test(w, again);
-    }
-  };
-
-  w.e.addKeyedTick(commsKey, (w) => {
-    const now = w.gameTime.now();
-    if (now - s.testedAt < commsConfig.everySecs) return;
-    s.testedAt = now;
-    void test(w, Object.keys(w.speech.talks));
-  });
-
   w.e.addKeyedListener(commsKey, (e, w) => {
-    if (e.key === "talk-ask") void test(w, [e.threadKey]);
+    if (e.key === "talk-choose") void decide(w, e);
   });
 }
 
-/** Whether the thread's replies may be drawn: the comms tab open on it unfolded, the player the one asked */
-function repliesShown(w: JshCli.WorldState, threadKey: string) {
-  return (
-    w.speech.panelOpen === true &&
-    w.speech.panelTab === "comms" &&
-    w.speech.folded.has(threadKey) === false &&
-    w.player?.key === w.speech.talks[threadKey]?.toKey
-  );
+/** Says the pressed reply, or refuses it with the needs that failed */
+async function decide(w: JshCli.WorldState, e: Extract<JshCli.Event, { key: "talk-choose" }>) {
+  const player = w.n[e.npcKey];
+  const npc = w.n[e.to];
+  const failed = player === undefined || npc === undefined ? e.needs : await unmet(w, e.needs, player, npc);
+  // too late, e.g. refused on timeout
+  if (w.speech.talks[e.threadKey]?.choosing !== e.choice) return;
+  if (failed.length === 0) w.speech.reply(e.threadKey, e.choice);
+  else w.speech.refuse(e.threadKey, e.choice, failed);
+}
+
+/** The needs not met between the one asked and the asker. Those asking the worker go in one query */
+async function unmet(w: JshCli.WorldState, needs: string[], player: JshCli.Npc, npc: JshCli.Npc) {
+  const failed: string[] = [];
+  const asked: string[] = [];
+  const queries: WW.SpotQuery[] = [];
+  for (const need of needs) {
+    const def = commsNeeds[need];
+    if (def === undefined || def.met(w, player, npc) === false) {
+      failed.push(need);
+      continue;
+    }
+    const query = def.ask?.(w, player, npc);
+    if (query !== undefined) {
+      asked.push(need);
+      queries.push(query);
+    }
+  }
+  if (queries.length > 0) {
+    const answers = await spotQueryDetached(w, queries).catch(() => []);
+    asked.forEach((need, i) => commsNeeds[need].answered?.(answers[i]) !== true && failed.push(need));
+  }
+  return failed;
 }
 
 /**
@@ -203,7 +152,7 @@ type TalkOpts = { with?: unknown; npc?: unknown; topic?: unknown } & Record<stri
 const talkOptKeys = new Set(["with", "npc", "topic"]);
 
 /**
- * Each need a reply may name: a pip in the speech history, green once `met`.
+ * Each need a reply may name: a pip on it, tested when pressed.
  * One that `ask`s the worker is met only if `answered` too
  */
 export const commsNeeds: Record<
@@ -248,6 +197,4 @@ const commsConfig = {
   nearDist: 1.6,
   /** Radians either side of straight ahead still `facing` */
   facingArc: Math.PI / 5,
-  /** Seconds of game time between tests */
-  everySecs: 0.2,
 };

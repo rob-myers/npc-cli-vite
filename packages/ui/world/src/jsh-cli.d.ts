@@ -83,6 +83,24 @@ declare namespace JshCli {
       }
     | { key: "talk-bye"; threadKey: string; npcKey: string; to: string }
     | {
+        /** The player pressed reply `choice` to the ask of `to`. Something, e.g. jsh `comms`, tests its `needs` */
+        key: "talk-choose";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        choice: string;
+        needs: string[];
+      }
+    | {
+        /** Reply `choice` was refused, its `failed` needs flashed */
+        key: "talk-refused";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        choice: string;
+        failed: string[];
+      }
+    | {
         /** `npcKey` answered the ask of `to` with reply `choice` */
         key: "talk-reply";
         threadKey: string;

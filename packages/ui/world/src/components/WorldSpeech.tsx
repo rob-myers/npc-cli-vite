@@ -39,7 +39,6 @@ export function WorldSpeech() {
       talks: {},
       folded: new Set(),
       needDefs: new Map(),
-      needsMet: new Map(),
 
       addMenuItem(item) {
         // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
@@ -60,7 +59,6 @@ export function WorldSpeech() {
         for (const talk of Object.values(state.talks)) w.bubble.release(talk.npcKey, talk.toKey);
         state.history = [];
         state.talks = {};
-        state.needsMet.clear();
         state.folded.clear();
         state.update();
       },
@@ -73,7 +71,6 @@ export function WorldSpeech() {
           return false;
         });
         delete state.talks[threadKey];
-        state.needsMet.delete(threadKey);
         state.folded.delete(threadKey);
         w.bubble.release(...parties); // a line held for an answer has none coming
         state.update();
@@ -86,7 +83,6 @@ export function WorldSpeech() {
       ask(npcKey, toKey, text, replies, opts) {
         const threadKey = threadKeyOf([npcKey, toKey]);
         state.talks[threadKey] = { npcKey, toKey, replies, topic: opts?.topic, ended: false };
-        state.needsMet.delete(threadKey);
         if (toKey === w.player?.key) state.set({ panelOpen: true, panelTab: "comms" });
         state.say(npcKey, text, undefined, { to: [toKey], hold: replies.length > 0, topic: opts?.topic });
         const keys = replies.map((choice) => choice.key);
@@ -96,7 +92,6 @@ export function WorldSpeech() {
         const threadKey = threadKeyOf([npcKey, toKey]);
         const topic = state.talks[threadKey]?.topic;
         state.talks[threadKey] = { npcKey, toKey, replies: [], topic, ended: true };
-        state.needsMet.delete(threadKey);
         w.bubble?.release(npcKey, toKey);
         state.update();
         w.events.next({ key: "talk-bye", threadKey, npcKey, to: toKey });
@@ -106,6 +101,7 @@ export function WorldSpeech() {
         const choice = talk?.replies.find((x) => x.key === key);
         if (talk === undefined || choice === undefined) return false;
         talk.replies = [];
+        talk.choosing = talk.refused = undefined;
         const { npcKey, toKey } = talk;
         state.say(toKey, choice.text, undefined, { to: [npcKey] });
         w.events.next({ key: "talk-reply", threadKey, npcKey: toKey, to: npcKey, choice: key });
@@ -114,9 +110,33 @@ export function WorldSpeech() {
       tell(npcKey, toKey, text) {
         const threadKey = threadKeyOf([npcKey, toKey]);
         const talk = state.talks[threadKey];
-        if (talk !== undefined) talk.replies = [];
+        if (talk !== undefined) {
+          talk.replies = [];
+          talk.choosing = talk.refused = undefined;
+        }
         state.say(npcKey, text, undefined, { to: [toKey] });
         w.events.next({ key: "talk-tell", threadKey, npcKey, to: toKey, text });
+      },
+      choose(threadKey, key) {
+        const talk = state.talks[threadKey];
+        const choice = talk?.replies.find((x) => x.key === key);
+        if (talk === undefined || choice === undefined || talk.choosing !== undefined) return;
+        const needs = choice.needs ?? [];
+        if (needs.length === 0) return void state.reply(threadKey, key);
+        talk.choosing = key;
+        state.update();
+        w.events.next({ key: "talk-choose", threadKey, npcKey: talk.toKey, to: talk.npcKey, choice: key, needs });
+        // a ui timeout: unanswered, it fails
+        setTimeout(() => state.talks[threadKey] === talk && state.refuse(threadKey, key, needs), chooseTimeoutMs);
+      },
+      refuse(threadKey, key, failed) {
+        const talk = state.talks[threadKey];
+        if (talk?.choosing !== key) return false;
+        talk.choosing = undefined;
+        talk.refused = { key, failed, count: (talk.refused?.count ?? 0) + 1 };
+        state.update();
+        w.events.next({ key: "talk-refused", threadKey, npcKey: talk.toKey, to: talk.npcKey, choice: key, failed });
+        return true;
       },
       defineNeeds(defs) {
         for (const [key, def] of Object.entries(defs)) state.needDefs.set(key, def);
@@ -126,22 +146,12 @@ export function WorldSpeech() {
         for (const key of keys) state.needDefs.delete(key);
         state.update();
       },
-      setMet(byThread) {
-        let changed = false;
-        for (const [threadKey, met] of Object.entries(byThread)) {
-          const was = state.needsMet.get(threadKey);
-          if (was !== undefined && was.size === met.length && met.every((need) => was.has(need))) continue;
-          state.needsMet.set(threadKey, new Set(met));
-          changed = true;
-        }
-        changed && state.update();
-      },
       getPips(threadKey, choice) {
-        const met = state.needsMet.get(threadKey);
+        const refused = state.talks[threadKey]?.refused;
+        const failed = refused?.key === choice.key ? refused.failed : [];
         return (choice.needs ?? []).map((need) => {
           const def = state.needDefs.get(need);
-          // undefined until defined, e.g. by jsh `comms`: then never met
-          return { label: def?.label ?? need, icon: def?.icon, met: def !== undefined && met?.has(need) === true };
+          return { label: def?.label ?? need, icon: def?.icon, failed: failed.includes(need) };
         });
       },
       getMaxY() {
@@ -458,10 +468,9 @@ function SpeechThread({ thread }: { thread: Thread }) {
       : talk.replies.map((choice) => ({
           text: choice.text,
           pips: w.speech.getPips(thread.key, choice),
-          onChoose: () => {
-            const pips = w.speech.getPips(thread.key, choice);
-            if (pips.every((pip) => pip.met !== false)) w.speech.reply(thread.key, choice.key);
-          },
+          disabled: talk.choosing !== undefined,
+          refused: talk.refused?.key === choice.key ? talk.refused.count : undefined,
+          onChoose: () => w.speech.choose(thread.key, choice.key),
         }));
 
   return (
@@ -644,6 +653,10 @@ export type Talk = {
   topic?: string;
   /** By `bye`, until the next ask */
   ended: boolean;
+  /** The reply pressed, awaiting its test */
+  choosing?: string;
+  /** The last reply refused: `count` changes with each refusal */
+  refused?: { key: string; failed: string[]; count: number };
 };
 
 type Thread = { key: string; parties: string[]; entries: SpeechEntry[] };
@@ -679,8 +692,6 @@ export type State = {
   folded: Set<string>;
   /** What a reply's need is called, by key — defined by e.g. jsh `comms` */
   needDefs: Map<string, NeedDef>;
-  /** The needs met, by thread — set by e.g. jsh `comms` */
-  needsMet: Map<string, Set<string>>;
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
@@ -716,12 +727,14 @@ export type State = {
   reply(threadKey: string, key: string): boolean;
   /** `npcKey` tells `toKey`, closing any open ask of the two. Emits `talk-tell` */
   tell(npcKey: string, toKey: string, text: string): void;
+  /** The player presses a reply. One with needs emits `talk-choose`, and fails unless answered within `chooseTimeoutMs` */
+  choose(threadKey: string, key: string): void;
+  /** The pressed reply `key` is refused, its `failed` needs flashed. False if not pressed. Emits `talk-refused` */
+  refuse(threadKey: string, key: string, failed: string[]): boolean;
   /** A reply's needs, as pips */
   getPips(threadKey: string, choice: TalkChoice): TalkPip[];
   defineNeeds(defs: Record<string, NeedDef>): void;
   removeNeeds(keys: string[]): void;
-  /** The needs now met, by thread: only a change re-renders */
-  setMet(byThread: Record<string, string[]>): void;
 };
 
 export type NeedDef = { label: string; icon?: string };
@@ -731,3 +744,5 @@ const speechPanelTabs = ["worlds", "comms"] as const;
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
+/** Real ms a pressed reply awaits its test before it fails */
+const chooseTimeoutMs = 1000;

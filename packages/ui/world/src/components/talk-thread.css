@@ -75,7 +75,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .talk-bubble,
-  .talk-choice {
+  .talk-choice,
+  .talk-choice.talk-shake {
     animation: none;
   }
 }
@@ -109,35 +110,64 @@
   opacity: 0.6;
 }
 
-/* one segment per test: grey until met, then green; outlined where nothing is tested */
+/* one segment per need, tested when pressed: flashed red when it failed */
 .talk-pip {
   display: inline-block;
   width: 0.55rem;
   height: 0.3rem;
   border-radius: 0.15rem;
   border: 1px solid var(--color-zinc-500);
-  transition: background-color 200ms;
 }
-.talk-pip[data-met="false"] {
-  border-color: transparent;
-  background: var(--color-zinc-600);
-}
-.talk-pip[data-met="true"] {
-  border-color: transparent;
-  background: #4ade80;
+.talk-pip[data-failed] {
+  animation: talk-pip-fail 1.2s ease-out;
 }
 
-/* a pip drawn as its icon: greyed until met */
+/* a pip drawn as its icon */
 .talk-pip-icon {
   font-size: 0.6rem;
   line-height: 1;
-  transition:
-    filter 200ms,
-    opacity 200ms;
+  opacity: 0.7;
 }
-.talk-pip-icon[data-met="false"] {
-  filter: grayscale(1);
-  opacity: 0.5;
+.talk-pip-icon[data-failed] {
+  animation: talk-pip-icon-fail 1.2s ease-out;
+}
+
+/* a reply refused: it shakes, its border red at first */
+.talk-choice.talk-shake {
+  animation: talk-shake 400ms ease-in-out;
+}
+
+@keyframes talk-pip-fail {
+  0%,
+  50% {
+    border-color: transparent;
+    background: #f87171;
+  }
+}
+@keyframes talk-pip-icon-fail {
+  0%,
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 2px #f87171);
+  }
+}
+@keyframes talk-shake {
+  0% {
+    border-color: #f87171;
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+    border-color: #f87171;
+  }
 }
 
 /* a thought, not said: an outline with no tail */

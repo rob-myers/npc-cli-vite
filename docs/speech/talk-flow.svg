@@ -37,8 +37,8 @@
     <text x="410" y="74" fill="#e6e6e6" font-weight="600">3  answered</text>
     <g fill="#9aa0a6" font-size="12">
       <text x="410" y="96">the player clicks one,</text>
-      <text x="410" y="112">once its pips are</text>
-      <text x="410" y="128">green. Or jsh says it:</text>
+      <text x="410" y="112">said once its needs</text>
+      <text x="410" y="128">pass. Or jsh says it:</text>
     </g>
     <text x="410" y="148" fill="#9aa0a6" font-size="11" font-family="ui-monospace, Menlo, monospace">reply friend npc:abe</text>
     <text x="410" y="176" fill="#5aa0f0" font-size="12">emits talk-reply</text>
@@ -80,12 +80,12 @@
   <rect x="48" y="316" width="140" height="28" rx="14" fill="#1b1d22" stroke="#3a404a"/>
   <text x="62" y="334" fill="#e6e6e6" font-size="12">Who goes there?</text>
   <text x="200" y="334" fill="#7a8290" font-size="11">also held over abe's head</text>
-  <rect x="320" y="356" width="120" height="26" rx="13" fill="none" stroke="#5aa0f0"/>
+  <rect x="320" y="356" width="120" height="26" rx="13" fill="none" stroke="#71717a" stroke-dasharray="3 3"/>
   <text x="334" y="373" fill="#e6e6e6" font-size="12">1  A friend</text>
-  <rect x="294" y="390" width="146" height="26" rx="13" fill="none" stroke="#3a404a" stroke-dasharray="3 3"/>
-  <text x="308" y="407" fill="#7a8290" font-size="12">2  Step aside</text>
-  <circle cx="424" cy="403" r="4" fill="#7a8290"/>
-  <text x="440" y="434" fill="#7a8290" font-size="11" text-anchor="end">a grey pip: near, not yet met</text>
+  <rect x="294" y="390" width="146" height="26" rx="13" fill="none" stroke="#71717a" stroke-dasharray="3 3"/>
+  <text x="308" y="407" fill="#e6e6e6" font-size="12">2  Step aside</text>
+  <rect x="414" y="400" width="11" height="6" rx="2" fill="none" stroke="#71717a"/>
+  <text x="440" y="434" fill="#7a8290" font-size="11" text-anchor="end">a pip: it needs near, tested when pressed</text>
 
   <!-- the events -->
   <rect x="480" y="256" width="450" height="190" rx="8" fill="#262a31" stroke="#3a404a"/>

@@ -34,7 +34,7 @@ The diagrams are in `docs/speech/`, hand-written SVG.
 
 A talk (`w.speech.talks`, by thread) is its last ask: who asked (`npcKey`), who was asked (`toKey`), and its open `replies` (`TalkChoice`, in `service/talk.ts`).
 - The replies close once one is said, or on the next `tell` or `bye` between the two.
-- Only the player sees them, under the thread, when they are the one asked. A click says it, once its pips are green.
+- Only the player sees them, under the thread, when they are the one asked. A click says it, once its needs pass (below).
 - `bye` leaves "the end" under the thread until the next ask.
 - A talk whose npc is gone keeps its history, and offers nothing.
 - Talks are the panel's own state, unsaved.
@@ -57,17 +57,20 @@ A long line is shown a page at a time (`pagesOf`): whole sentences, at most `pag
 
 ## Needs: jsh `comms`
 
-![needs, tested](speech/needs-loop.svg)
+![needs, tested on a press](speech/needs-press.svg)
 
-A reply waits on its `needs`, drawn as pips, green once met. A need is only a key to the World:
-- `w.speech.defineNeeds({ [key]: { label, icon? } })` names them.
-- `w.speech.setMet({ [threadKey]: keys })` says which are met.
-- One undefined is never met.
+A reply's `needs` are drawn as pips, and tested only when the player presses it, never in real time. A need is only a key to the World. `w.speech.defineNeeds({ [key]: { label, icon? } })` names them, for the pips.
 
-jsh `comms` (in the default profile, idempotent) defines and tests them (`commsNeeds`), between the one asked and the asker:
+A press (`w.speech.choose`) of a reply with no needs says it at once. Otherwise:
+1. The World emits `talk-choose` (`choice`, `needs`) and disables the thread's replies (`talk.choosing`).
+2. Whatever listens tests the needs, then calls `w.speech.reply` to say it, or `w.speech.refuse(threadKey, choice, failed)`.
+3. Refused, it emits `talk-refused` (`failed`). The reply shakes with a red border, and its failed pips flash red (`talk.refused`).
+4. Unanswered within `chooseTimeoutMs` (1s, real time), it is refused with every need failed, e.g. with `comms` off.
+
+jsh `comms` (in the default profile, idempotent) defines the needs (`commsNeeds`) and listens for `talk-choose`. It tests them between the one asked and the asker:
 - `near`: within `commsConfig.nearDist`;
 - `facing`: within `facingArc` of straight ahead;
 - `psi`: the player's psi raised;
-- `sees`: the player sees the npc, as jsh `sees`.
+- `sees`: the player sees the npc, as jsh `sees`. It asks the worker, its queries in one batch.
 
-A keyed tick tests the talks whose replies are drawn every `everySecs`, and its listener at once on a `talk-ask`. Their worker queries, e.g. `sees`, go in one batch, one at a time. A thread out of sight, e.g. folded, is cleared. `comms off` removes them.
+An unknown need fails. `comms off` removes them. jsh `reply` says a reply without testing it.

@@ -1024,6 +1024,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "stopped-moving":
           case "talk-ask":
           case "talk-bye":
+          case "talk-choose":
+          case "talk-refused":
           case "talk-reply":
           case "talk-tell":
             break;

@@ -98,17 +98,19 @@ export function TalkThread(props: {
       {props.replies.length > 0 && (
         <div key={props.repliesKey} className="flex flex-wrap justify-end gap-1.5">
           {props.replies.map((reply, i) => {
-            const ready = reply.pips.every((pip) => pip.met !== false);
+            const refused = reply.refused !== undefined;
             return (
               <button
-                key={i}
+                // a refusal remounts it, so it shakes each time
+                key={`${i}:${reply.refused ?? ""}`}
                 type="button"
-                disabled={ready === false}
-                title={
-                  ready ? undefined : reply.pips.map((pip) => `${pip.met === true ? "✓" : "·"} ${pip.label}`).join("\n")
-                }
-                className="talk-choice flex items-center gap-1.5 pl-1 pr-2.5 py-1 cursor-pointer"
-                style={{ animationDelay: `${i * choiceStaggerMs}ms` }}
+                disabled={reply.disabled === true}
+                title={reply.pips.length === 0 ? undefined : `needs ${reply.pips.map((pip) => pip.label).join(", ")}`}
+                className={cn(
+                  "talk-choice flex items-center gap-1.5 pl-1 pr-2.5 py-1 cursor-pointer",
+                  refused && "talk-shake",
+                )}
+                style={refused ? undefined : { animationDelay: `${i * choiceStaggerMs}ms` }}
                 onClick={reply.onChoose}
               >
                 <span className="grid place-items-center size-4 rounded-full bg-zinc-800 text-[10px] text-zinc-400">
@@ -128,16 +130,16 @@ export function TalkThread(props: {
   );
 }
 
-/** One segment per test a reply waits on: green once met, outlined when nothing is tested */
+/** One segment per need a reply is tested on when pressed: flashed red when it failed */
 function Pips({ pips }: { pips: TalkPip[] }) {
   return (
     pips.length > 0 && (
-      <span className="flex gap-0.5" title={pips.map((pip) => pip.label).join(", ")}>
+      <span className="flex gap-0.5">
         {pips.map((pip, i) => (
           <span
             key={i}
             className={pip.icon === undefined ? "talk-pip" : "talk-pip-icon"}
-            data-met={pip.met === undefined ? undefined : String(pip.met)}
+            data-failed={pip.failed === true ? "" : undefined}
           >
             {pip.icon}
           </span>
@@ -237,10 +239,17 @@ export type TalkLine = {
   who?: string;
 };
 
-export type TalkReply = { text: string; pips: TalkPip[]; onChoose(): void };
+export type TalkReply = {
+  text: string;
+  pips: TalkPip[];
+  /** Whilst a reply of the thread awaits its test */
+  disabled?: boolean;
+  /** Its latest refusal: a change shakes it */
+  refused?: number;
+  onChoose(): void;
+};
 
-/** `met` unknown draws it neutral, as a hint */
-export type TalkPip = { label: string; icon?: string; met?: boolean };
+export type TalkPip = { label: string; icon?: string; failed?: boolean };
 
 /** An emoji whole: its variation selector, and whatever a joiner ties on */
 const emojiRe = /\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*/gu;
