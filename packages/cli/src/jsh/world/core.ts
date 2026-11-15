@@ -1136,8 +1136,8 @@ export function play({ api, w }: JshCli.RunArg) {
  * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
  * A clip's own name shows it whole, releasing one in pain or pacified. A crouch, `crouch_half` or `crouch_cover`, is
  * kept, moving too, until another clip is shown.
- * `head` turns their head alone to an npc or point, their body left as it is, until a bare `pose` lets it go. With
- * `--track` it follows the npc, within the neck's reach, until killed or replaced
+ * `head` turns their head alone to an npc or point once, their body left as it is, until a bare `pose` lets it go.
+ * `look` follows an npc so, within the neck's reach, until killed or replaced
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
@@ -1145,21 +1145,25 @@ export function play({ api, w }: JshCli.RunArg) {
  * pose rob as:crouch_cover
  * pose npc-0 as:breathe
  * pose rob head:npc-0
- * pose rob head:npc-0 --track
+ * pose rob head:[3,0,4]
+ * pose rob look:npc-0
  * pose rob
  * ```
  */
-export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args, { "--track": "track" })) {
+export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args)) {
   const [npcKey] = api.getJsOperands(args, opts);
   if (npcKey === undefined)
-    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [--track]");
+    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [look:npcKey]");
   const npc = w.npc.get(npcKey);
   // bare, their head is let go
-  if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head) === undefined) return void poseHead(api, w, npc, null, false);
+  if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head ?? opts.look) === undefined)
+    return void poseHead(api, w, npc, null, false);
   if (opts.eyes !== undefined) poseEyes(npc, opts.eyes);
   if (opts.blink !== undefined) npc.anim.blink(opts.blink);
   await Promise.all([
-    opts.head === undefined ? undefined : poseHead(api, w, npc, opts.head, opts.track === true),
+    (opts.look ?? opts.head) === undefined
+      ? undefined
+      : poseHead(api, w, npc, opts.look ?? opts.head ?? null, opts.look !== undefined),
     opts.as === undefined ? undefined : poseAs(api, w, npc, opts.as, opts.at),
   ]);
 }
@@ -1170,7 +1174,7 @@ type PoseOpts = {
   eyes?: EyesKey;
   blink?: number;
   head?: null | string | Geom.VectJson;
-  track?: boolean;
+  look?: string;
 };
 
 /** Their eyes, apart from any pose — see `docs/skin-slices.md` */
@@ -1180,7 +1184,7 @@ function poseEyes(npc: JshCli.Npc, eyes: EyesKey) {
   npc.anim.setEyes(eyes);
 }
 
-/** `pose … head:`: their head alone turns to an npc or point. `track` follows the npc until killed or replaced */
+/** `pose … head:`: their head alone turns to an npc or point. `track`, from `look:`, follows the npc until killed or replaced */
 async function poseHead(
   api: JshCli.RunArg["api"],
   w: JshCli.WorldState,
@@ -1192,9 +1196,9 @@ async function poseHead(
   const target = typeof head === "string" ? w.npc.get(head) : null;
   const point = target === null && head !== null ? w.helper.parseGroundPoint(head as Geom.VectJson) : null;
   const at = () => (target === null ? point : { x: target.position.x, y: target.position.z });
+  if (track === true && target === null) throw Error("look: expected npcKey, else head: for a point");
   npc.anim.turnHeadTo(at());
-  if (track === false) return;
-  if (target === null) throw Error("--track: expected head:npcKey");
+  if (track === false || target === null) return;
 
   const task = new Task();
   let replaced = false;
@@ -1219,7 +1223,7 @@ async function poseHead(
   if (task.isCancelled && replaced === false) throw api.getKillError();
 }
 
-/** By npcKey, how to end their head's tracking: a new `head` replaces it */
+/** By npcKey, how to end their head's tracking: a new `head` or `look` replaces it */
 const heads = new Map<string, () => void>();
 
 /** `pose … as:`: a shake, a clip shown whole, else an upper-body pose held — see `poseUpper` */
