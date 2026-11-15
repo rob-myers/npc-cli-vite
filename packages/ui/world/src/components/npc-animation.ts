@@ -65,10 +65,12 @@ export class NpcAnimation {
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {
-    return this.hurry === true && this.backwards === false && this.crouched === false && this.nearWall !== "ahead";
+    return this.hurry === true && this.backwards === false && this.crouched === false && this.wallStops() === false;
   }
-  /** A wall close ahead: see `setNearWall`. `ahead` is square on, which a run's lean would reach, so they walk */
+  /** A wall close ahead: see `setNearWall`. `ahead` is square on, which a run's lean would reach, so they slow then walk */
   nearWall: false | "ahead" | "beside" = false;
+  /** Room to the wall ahead */
+  wallRoom = Infinity;
   /** The clip `setNearWall` drew their right arm in with, which it alone lets go */
   armIn: null | AnimationClipKey = null;
   /** Game time until which `armIn` is held, though the wall is no longer near */
@@ -543,7 +545,21 @@ export class NpcAnimation {
     if (this.dragged === true) return dragConfig.speed;
     if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
     if (this.strafe === true) return this.fast === true ? strafeSpeed.run_ahead : strafeSpeed.walk;
-    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
+    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? this.runSpeed() : maxSpeed.walk;
+  }
+
+  /** A straight run's top speed. A wall square ahead slows it to `runLeast` at `walkNear` */
+  runSpeed() {
+    const { run, runLeast } = agentConfig.maxSpeed;
+    if (this.nearWall !== "ahead") return run;
+    const { armInNear, walkNear } = npcConfig.dist;
+    const t = THREE.MathUtils.clamp((this.wallRoom - walkNear) / (armInNear.run - walkNear), 0, 1);
+    return runLeast + (run - runLeast) * t;
+  }
+
+  /** Whether a wall square ahead has them walk: strafing at once, else within `walkNear` */
+  wallStops() {
+    return this.nearWall === "ahead" && (this.strafe === true || this.wallRoom < npcConfig.dist.walkNear);
   }
 
   /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
@@ -603,8 +619,7 @@ export class NpcAnimation {
     this.idleClip = this.npc.clips[crouchIdleKeys[level]];
     if (this.moving === false) return this.setPose(this.restKey);
     this.showGait(); // mid-move, the other gaits
-    const { agent } = this.npc;
-    if (agent !== null && this.strafe === false && agent.maxSpeed > 0) agent.maxSpeed = this.maxSpeedFor();
+    this.syncMaxSpeed();
   }
 
   /** Their eyes take a look, whatever their pose */
@@ -629,10 +644,7 @@ export class NpcAnimation {
   /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
   setHurry(hurry: boolean) {
     this.hurry = hurry;
-    const { agent } = this.npc;
-    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
-    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
-      agent.maxSpeed = this.maxSpeedFor();
+    this.syncMaxSpeed();
   }
 
   /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
@@ -651,10 +663,12 @@ export class NpcAnimation {
 
   /**
    * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood, it draws their right arm in whilst free,
-   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side
+   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side. `room` is how far off the wall is
    */
-  setNearWall(next: false | "ahead" | "beside") {
+  setNearWall(next: false | "ahead" | "beside", room = Infinity) {
     this.nearWall = next;
+    this.wallRoom = room;
+    this.syncMaxSpeed();
     const now = this.w.gameTime.now();
     if (next !== false) this.armInUntil = now + npcConfig.time.armInHold;
     else if (this.armIn !== null && now < this.armInUntil) {
@@ -925,6 +939,13 @@ export class NpcAnimation {
     this.gaitSecs = 0;
     this.moveClip = this.npc.clips[next === false ? "walk" : this.strafe === true ? "run_ahead" : "run"];
     this.setPose(keyOf(this.moveClip));
+  }
+
+  /** Mid-move, the agent's top speed follows a change of intent. Not whilst pinned (`0`), nor strafing (`syncStrafe`'s) */
+  syncMaxSpeed() {
+    const { agent } = this.npc;
+    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
+      agent.maxSpeed = this.maxSpeedFor();
   }
 
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */

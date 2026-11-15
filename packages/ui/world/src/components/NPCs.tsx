@@ -381,7 +381,9 @@ export default function NPCs() {
             const { maxSpeed, walkIn } = agentConfig;
             const t = npc.anim.arrive === true ? (targetDist - walkIn.to) / (walkIn.from - walkIn.to) : 1;
             // strafing, as fast as this heading allows
-            const { walk, run } = npc.anim.strafing === true ? npc.anim.strafeTop : maxSpeed;
+            const strafing = npc.anim.strafing === true;
+            const walk = strafing ? npc.anim.strafeTop.walk : maxSpeed.walk;
+            const run = strafing ? npc.anim.strafeTop.run : npc.anim.runSpeed();
             agent.maxSpeed = walk + (run - walk) * Math.max(0, Math.min(1, t));
           }
 

@@ -576,6 +576,19 @@ export class Npc {
   }
 
   /**
+   * Whether rays to `postHalf` either side of `postMargin` past `depth` along `dir` both run clear.
+   * Then what lies `depth` along `dir` is narrow, e.g. a thin wall between doors
+   */
+  clearBeside(point: Geom.VectJson, nodeRef: NodeRef, dir: Geom.VectJson, depth: number) {
+    const { postHalf, postMargin } = npcConfig.dist;
+    const [x, y] = [point.x + dir.x * (depth + postMargin), point.y + dir.y * (depth + postMargin)];
+    return [postHalf, -postHalf].every((side) => {
+      const end: Vec3 = [x - side * dir.y, 0, y + side * dir.x];
+      return raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter).t > 1;
+    });
+  }
+
+  /**
    * Room from `point` to a wall `along` a way, up to `depth`, by one ray leant out to the hands on `heading`'s side, e.g. at a corner.
    * `square` is how squarely it faces the way: `1` head-on, `0` alongside, a doorway's jamb or none. Heading back: `depth`
    */
@@ -585,22 +598,26 @@ export class Npc {
     depth: number,
     along: Geom.VectJson,
     heading: Geom.VectJson,
-  ): { room: number; square: number } {
+  ): { room: number; square: number; dir: Geom.VectJson } {
     const unit = Math.hypot(along.x, along.y) || 1;
     const [sx, sz] = [along.x / unit, along.y / unit];
     const length = Math.hypot(heading.x, heading.y) || 1;
     const [ahead, right] = [(heading.x * sx + heading.y * sz) / length, (heading.y * sx - heading.x * sz) / length];
-    if (ahead < -Math.abs(right)) return { room: depth, square: 0 };
     const side = right * npcConfig.dist.strafeWallSpan;
-    const end: Vec3 = [point.x + sx * depth - side * sz, 0, point.y + sz * depth + side * sx];
+    const [dx, dz] = [sx * depth - side * sz, sz * depth + side * sx];
+    const ray = Math.hypot(dx, dz) || 1;
+    /** The ray's own way, leant */
+    const dir = { x: dx / ray, y: dz / ray };
+    if (ahead < -Math.abs(right)) return { room: depth, square: 0, dir };
+    const end: Vec3 = [point.x + dx, 0, point.y + dz];
     const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
-    if (hit.t > 1) return { room: depth, square: 0 };
+    if (hit.t > 1) return { room: depth, square: 0, dir };
     // a doorway's own side is a jamb, passed alongside: never square on
     const last = hit.path.at(-1);
     if (last !== undefined && isDoorAreaId(getNodeByRef(this.w.nav.navMesh, last).area))
-      return { room: hit.t * depth, square: 0 };
+      return { room: hit.t * depth, square: 0, dir };
     const [nx, , nz] = hit.hitNormal;
-    return { room: hit.t * depth, square: Math.abs(nx * sx + nz * sz) };
+    return { room: hit.t * depth, square: Math.abs(nx * sx + nz * sz), dir };
   }
 
   setBubbleHeight(y: number) {

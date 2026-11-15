@@ -29,6 +29,8 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 3.5,
+    /** A run's least, at `dist.walkNear` of a wall ahead. Just above `gait.runAbove`, so the run clip stays on */
+    runLeast: 2,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
     /** A shuffle's steady pace: near the target it eases as the root of the distance — see `NpcAnimation.shuffleSpeed` */
@@ -97,6 +99,12 @@ export const npcConfig = {
     armInNear: { walk: 1, run: 2.3 },
     /** A wall at least this square on (`roomAhead`'s `square`) has them walk too: a run's lean would put their head through */
     walkSquare: 0.7,
+    /** Within this of a wall square ahead they walk. Further, up to `armInNear.run`, a straight run slows instead */
+    walkNear: 1,
+    /** Rays this far either side of a square hit, both clear, make it a post, e.g. a thin wall between doors: they keep running */
+    postHalf: 0.6,
+    /** How far past a post's face those rays must run clear */
+    postMargin: 0.3,
     /** Not strafing, `roomAhead`'s ray leans this share of `strafeWallSpan` right of the way they go, the gun's side */
     armInLean: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */

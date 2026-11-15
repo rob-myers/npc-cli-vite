@@ -843,8 +843,10 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
     npc.isStrafing() === true
       ? [{ x: -Math.sin(ry), y: -Math.cos(ry) }, go]
       : [go, { x: go.x - armInLean * go.y, y: go.y + armInLean * go.x }];
-  const { room, square } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
-  npc.anim.setNearWall(room >= near ? false : square >= walkSquare ? "ahead" : "beside");
+  const { room, square, dir } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
+  /** Square on, and not a post, e.g. a thin wall between doors */
+  const ahead = square >= walkSquare && npc.clearBeside(npc.point, npc.nodeRef, dir, room) === false;
+  npc.anim.setNearWall(room >= near ? false : ahead ? "ahead" : "beside", room);
 }
 
 /**

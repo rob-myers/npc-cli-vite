@@ -54,7 +54,7 @@ Pnpm monorepo. Key packages:
   - What the World builds around an npc, `npcDims`, is in `const.env`.
 - **An npc's body never shows through a wall.** Keep to this when adding a pose or gait.
   - The navmesh stops `wallOutset` (0.25m) short of walls, room enough for an upright body.
-  - What reaches further gives way instead. A run at a wall square on walks, and any move near one draws the right arm in (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
+  - What reaches further gives way instead. A run at a wall square on slows, then walks, and any move near one draws the right arm in (`docs/npc-strafe.md`, Walls). A raised phaser draws both arms in (`docs/inventory.md`, Drawn in).
 
 **Decor**
 - Never scale a decor quad non-uniformly. To reshape one, e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`.
