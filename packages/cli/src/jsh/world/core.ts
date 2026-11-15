@@ -578,20 +578,18 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
-  function getNpcOrThrow() {
-    try {
-      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
-    } catch {
-      throw Error(`npc not found: ${opts.npcKey}`);
-    }
+  /** Throws if none, unless `force`: then `undefined`, e.g. `$( lastPicked )` before a pick, and the point is skipped */
+  function getNpc() {
+    const npc = getNpcOrUndefined();
+    if (npc === undefined && opts.force !== true) throw Error(`npc not found: ${opts.npcKey}`);
+    return npc;
   }
 
   const pendingMoves: JshCli.PointAnyFormat[] = [];
 
   return {
     pendingMoves,
-    getNpcOrUndefined,
-    getNpcOrThrow,
+    getNpc,
     /** Move, handling named errors and any pause the move deferred */
     async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
       await w.e
@@ -711,7 +709,7 @@ async function move_const(
 ) {
   const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -721,9 +719,11 @@ async function move_const(
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
+      const npc = getNpc();
+      if (npc === undefined) break;
       await movePausable({
         ...moveFlags(opts),
-        npcKey: getNpcOrThrow().key,
+        npcKey: npc.key,
         to: next,
         arrive: pendingMoves.length === 0,
       });
@@ -745,7 +745,7 @@ async function move_lazy(
 ) {
   const { api, w } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -759,7 +759,8 @@ async function move_lazy(
       if (dst === api.eof) break;
       if (readNext) pendingRead = api.read();
 
-      const npc = getNpcOrThrow();
+      const npc = getNpc();
+      if (npc === undefined) continue;
       /** Stopped short, e.g. at a door: none of what follows can be reached */
       const stopped = () => {
         pendingMoves.length = 0;
@@ -795,7 +796,7 @@ async function move_next(
 ) {
   const { api, w } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -805,7 +806,11 @@ async function move_next(
     let next: undefined | MaybeMeta<JshCli.PointAnyFormat>;
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
-      const npc = getNpcOrThrow();
+      const npc = getNpc();
+      if (npc === undefined) {
+        pendingRead = api.read();
+        continue;
+      }
       heedWalls(w, npc, next);
       const movePromise =
         next.meta?.look === true && npc.isStrafing() === false
