@@ -220,7 +220,13 @@ export function getDefaultPanes(): PersistedPanesLayout {
 
 /** A ui package since renamed or removed leaves its uis behind, and a Tabs still listing them */
 function withoutUnknownUis(toUi: PersistedPanesLayout["toUi"]): PersistedPanesLayout["toUi"] {
-  const known = Object.fromEntries(Object.entries(toUi).filter(([, meta]) => meta.uiKey in uiSchemas));
+  /** Old uiKeys of renamed ui packages, so their saved uis survive. Local: this runs as the store is made */
+  const renamedUiKeys: Record<string, UiRegistryKey> = { Scenario: "SkipNet" };
+  const known = Object.fromEntries(
+    Object.entries(toUi)
+      .map(([id, meta]) => [id, meta.uiKey in renamedUiKeys ? { ...meta, uiKey: renamedUiKeys[meta.uiKey] } : meta])
+      .filter(([, meta]) => (meta as UiInstanceMeta).uiKey in uiSchemas),
+  ) as PersistedPanesLayout["toUi"];
   for (const [id, meta] of Object.entries(known)) {
     if (!Array.isArray(meta.items)) continue;
     const items = meta.items.filter((itemId) => itemId in known);

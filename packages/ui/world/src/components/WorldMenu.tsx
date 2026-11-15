@@ -701,7 +701,7 @@ export function WorldMenu() {
                 }
                 const group =
                   item === "hud"
-                    ? [...hudDebugItems(w.hud?.debugItems ?? []), ...debugGroups.hud]
+                    ? [...hudDebugItems, ...debugGroups.hud]
                     : item in debugGroups
                       ? debugGroups[item as DebugGroup]
                       : null;
@@ -1676,11 +1676,8 @@ type DebugGroup = keyof typeof debugGroups;
 /** A "hud" option showing one of the bar's debug controls, by its key */
 const hudDebugPrefix = "hud debug ";
 
-/** The "hud" options showing the bar's debug controls: the phaser's shot badge, and each item mounted from outside */
-const hudDebugItems = (mounted: JshCli.HudDebugItem[]) => [
-  { key: "phaser", value: `${hudDebugPrefix}phaser`, section: "debug" },
-  ...mounted.map(({ key, title }) => ({ key: title, value: `${hudDebugPrefix}${key}`, section: "debug" })),
-];
+/** The "hud" options showing the bar's debug controls: the phaser's shot badge */
+const hudDebugItems = [{ key: "phaser", value: `${hudDebugPrefix}phaser`, section: "debug" }];
 
 /** Debug options that each open a modal, picked from "modals" */
 const modalItems = ["graphs", "room hit", "skins"].map((value) => ({ key: value, value }));

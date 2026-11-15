@@ -17,7 +17,7 @@ The diagrams are in `docs/sidestep/`. `diagrams.py` there regenerates heldUp's s
 
 `SidestepLookout` (`sidestep-lookout.ts`) decides who is in whose way, from its two methods' numbered stages. It is jsh's alone: `sidestep status` is the way in.
 
-**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, are passed over (`ownMove`): they make way, never ask for it, so one npc's step cannot set others off. Tick `chain` in the debug item, or `sidestep chain:true`, to let them look too, e.g. to watch how a crowd behaves.
+**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, are passed over (`ownMove`): they make way, never ask for it, so one npc's step cannot set others off. Tick `chain` in its pane, or `sidestep chain:true`, to let them look too, e.g. to watch how a crowd behaves.
 
 **Coming** (`coming`) runs over every walker each tick. Seen from above, with rob (`W`) walking right:
 
@@ -58,7 +58,7 @@ Like `coming`, it asks each npc once per approach. They are asked again once tha
 
 ![makeWay](sidestep/sidestep-makeway.svg)
 
-`makeWay` runs for each npc the lookout finds, once per approach. It marks them stepping, so the lookout passes them by until it is over. It sends one `sidestep` plan op to the `fast` nav worker (`worker/sidestep.ts`, `planSidestep`), with the kind and every kind's tuning (`tune`) as the hud's debug item says, and emits the plan as a `sidestep` World event. With a step, it pauses `reactSecs` (0.05 to 0.15s) so they seem to react, checks `whyNot` again, as they may have been moved or turned meanwhile, and if still free has them `perform` it. The walker walks on.
+`makeWay` runs for each npc the lookout finds, once per approach. It marks them stepping, so the lookout passes them by until it is over. It sends one `sidestep` plan op to the `fast` nav worker (`worker/sidestep.ts`, `planSidestep`), with the kind and every kind's tuning (`tune`) as its pane says, and emits the plan as a `sidestep` World event. With a step, it pauses `reactSecs` (0.05 to 0.15s) so they seem to react, checks `whyNot` again, as they may have been moved or turned meanwhile, and if still free has them `perform` it. The walker walks on.
 
 ## plan
 
@@ -145,17 +145,17 @@ Tuning is in metres, its defaults (`tuneDefaults`) in brackets:
 
 ![returnBack](sidestep/sidestep-return.svg)
 
-`returnBack` runs each tick, sending them back as the debug item's back picker says. Their first step aside notes where they stood: home. Each later step keeps it, noting where it began (`prev`) and ended (`last`), for whom, and how many. So `last` takes them back to where their latest step began, and `home` to where they first stood, however many steps aside they took. `stay` leaves them where they are.
+`returnBack` runs each tick, sending them back as its pane's back picker says. Their first step aside notes where they stood: home. Each later step keeps it, noting where it began (`prev`) and ended (`last`), for whom, and how many. So `last` takes them back to where their latest step began, and `home` to where they first stood, however many steps aside they took. `stay` leaves them where they are.
 
-- They go back once their latest walker has gone (`walkerGone`): `clear` (1.5m) of that spot, or `idle` (1m) of it once the walker has stopped, or gone from the World. Both are tuned in the debug item, under the back picker, or `sidestep clear:2 idle:1`.
+- They go back once their latest walker has gone (`walkerGone`): `clear` (1.5m) of that spot, or `idle` (1m) of it once the walker has stopped, or gone from the World. Both are tuned in its pane, under the back picker, or `sidestep clear:2 idle:1`.
 - They walk back (`returnTo`). A walk stops short, so a second move to the spot shuffles the rest, if more than `returnExact` (3cm) off. A return broken off keeps home, to try again, but only `returnTries` (2) in a row. One taken over by another move, e.g. a jsh `move`, forgets it (`npc-6 forgets home: moved on`), else the next tick would walk them back over that move, before it had them moving: then they give it up, said as `npc-6 forgets home: gave up after 2 tries`. A step aside starts the count afresh. So a shuffle into place that sticks, e.g. along an edge with someone close, stops retrying.
 - A return gives way: returning counts as free, neither `moving` nor `settling` between its walk and shuffle, so a walker coming at them is avoided as usual. A step that interrupts it keeps home's `prev`.
 - Whilst `last` or `home` is on, home is kept however far their steps take them, through doorways too. They forget it only on going back, or on being moved off their last step by anything else (`returnSlack`, 0.3m), e.g. a jsh `move`. `stay` clears it.
 - `--debug` says when and why they forget it, as `npc-0 forgets home: pushed 0.42m off` in faint yellow. `sidestep status` lists each home, how far off, after how many steps, and why they have not gone back yet (`due`, `returning`, `settling`, `rob 0.9m from it`...).
 
-## Config and the hud's debug item
+## Config and its SkipNet pane
 
-- Whilst **sidestep** is ticked under **debug** in the World menu's **hud** select, `sidestep` mounts `SidestepDebug` (`sidestep-debug.tsx`) past the end of the player's bar (`w.hud.addDebugItem`, see `docs/inventory.md`). It is one column, as wide as its widest row, both pickers stretched to it:
+- `sidestep` mounts `SidestepDebug` (`sidestep-debug.tsx`) on the World (`w.skipNet.add`), shown by a SkipNet pane whose kind is **sidestep** (`docs/skip-net.md`). It is one column, as wide as its widest row, both pickers stretched to it:
   - a picker of the kind every npc tries next: `aside`, `turn`, `shuffle`, `back`, `wall`, `doorway`, `stand`;
   - a number field for each of that kind's tuning, e.g. `wall`'s `reach`. Its keys stay out of the World, and Enter gives the World the keys back;
   - a picker of where they go back to once the walker has gone: `last` (the default), `home` or `stay`. Unless `stay`, a field each for `clear` and `idle` follows: when they go back (`returnDefaults`).

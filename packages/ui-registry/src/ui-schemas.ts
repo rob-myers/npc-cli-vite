@@ -1,10 +1,10 @@
 import { AudioUiMetaSchema } from "@npc-cli/ui__audio/schema";
 import { BlogUiMetaSchema } from "@npc-cli/ui__blog/schema";
 import { DecoratorUiMetaSchema } from "@npc-cli/ui__decorator/schema";
-import { TemplateUiMetaSchema as JobsUiMetaSchema } from "@npc-cli/ui__jobs/schema";
+import { JobsUiMetaSchema } from "@npc-cli/ui__jobs/schema";
 import { JshUiSchema } from "@npc-cli/ui__jsh/schema";
 import { MapEditUiMetaSchema } from "@npc-cli/ui__map-edit/schema";
-import { ScenarioUiMetaSchema } from "@npc-cli/ui__scenario/schema";
+import { SkipNetUiMetaSchema } from "@npc-cli/ui__skip-net/schema";
 import { TabsUiMetaSchema } from "@npc-cli/ui__tabs/schema";
 import { TemplateUiMetaSchema } from "@npc-cli/ui__template/schema";
 import { WorldUiSchema } from "@npc-cli/ui__world/schema";
@@ -21,7 +21,7 @@ export const uiSchemas = {
   Jobs: JobsUiMetaSchema,
   Jsh: JshUiSchema,
   MapEdit: MapEditUiMetaSchema,
-  Scenario: ScenarioUiMetaSchema,
+  SkipNet: SkipNetUiMetaSchema,
   Tabs: TabsUiMetaSchema,
   Template: TemplateUiMetaSchema,
   World: WorldUiSchema,

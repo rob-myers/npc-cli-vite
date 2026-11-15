@@ -4,7 +4,7 @@ import Decorator from "@npc-cli/ui__decorator";
 import Jobs from "@npc-cli/ui__jobs";
 import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
-import Scenario from "@npc-cli/ui__scenario";
+import SkipNet from "@npc-cli/ui__skip-net";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
@@ -22,7 +22,7 @@ export type UiRegistry = {
   Jobs: typeof Jobs;
   Jsh: typeof Jsh;
   MapEdit: typeof MapEdit;
-  Scenario: typeof Scenario;
+  SkipNet: typeof SkipNet;
   Tabs: typeof Tabs;
   Template: typeof Template;
   World: typeof World;
@@ -36,7 +36,7 @@ export const uiRegistryFactory = (): UiRegistry =>
     Jobs,
     Jsh,
     MapEdit,
-    Scenario,
+    SkipNet,
     Tabs,
     Template,
     World,

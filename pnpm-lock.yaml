@@ -535,9 +535,9 @@ importers:
       '@npc-cli/ui__map-edit':
         specifier: workspace:^
         version: link:../ui/map-edit
-      '@npc-cli/ui__scenario':
+      '@npc-cli/ui__skip-net':
         specifier: workspace:^
-        version: link:../ui/scenario
+        version: link:../ui/skip-net
       '@npc-cli/ui__tabs':
         specifier: workspace:^
         version: link:../ui/tabs
@@ -701,12 +701,6 @@ importers:
       '@phosphor-icons/react':
         specifier: 'catalog:'
         version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.90.12(react@19.2.1)
-      allotment:
-        specifier: 'catalog:'
-        version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       debounce:
         specifier: 'catalog:'
         version: 3.0.0
@@ -814,14 +808,23 @@ importers:
         specifier: 'catalog:'
         version: 2.1.5
 
-  packages/ui/scenario:
+  packages/ui/skip-net:
     dependencies:
       '@base-ui/react':
         specifier: 'catalog:'
         version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@npc-cli/cli':
+        specifier: workspace:^
+        version: link:../../cli
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
+      '@npc-cli/ui__jobs':
+        specifier: workspace:^
+        version: link:../jobs
+      '@npc-cli/ui__jsh':
+        specifier: workspace:^
+        version: link:../jsh
       '@npc-cli/ui__world':
         specifier: workspace:^
         version: link:../world
@@ -831,6 +834,9 @@ importers:
       '@phosphor-icons/react':
         specifier: 'catalog:'
         version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.12(react@19.2.1)
       allotment:
         specifier: 'catalog:'
         version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -843,6 +849,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.1.13
+      zustand:
+        specifier: 'catalog:'
+        version: 5.0.9(@types/react@19.2.14)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
 
   packages/ui/tabs:
     dependencies:
@@ -1073,12 +1082,12 @@ importers:
       '@npc-cli/media':
         specifier: workspace:^
         version: link:../packages/media
-      '@npc-cli/ui__jobs':
-        specifier: workspace:^
-        version: link:../packages/ui/jobs
       '@npc-cli/ui__map-edit':
         specifier: workspace:^
         version: link:../packages/ui/map-edit
+      '@npc-cli/ui__skip-net':
+        specifier: workspace:^
+        version: link:../packages/ui/skip-net
       '@npc-cli/ui__world':
         specifier: workspace:^
         version: link:../packages/ui/world

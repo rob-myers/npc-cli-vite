@@ -27,10 +27,7 @@ nor phasers are mirrored.
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
-The World menu's **hud** select has two sections: **debug** (`phaser`, then each mounted item, any number ticked) and **layout** (`bar`, `left` or `right`, exactly one). Debug items mounted from outside the World sit past the bar's end, after the player's buttons, each whilst its title
-is ticked under **debug** in the World menu's **hud** select (`w.debug.hudDebugShown`, by key, persisted per World). They stack out of the bar's flow, level with its foot and rising above it, so they never grow the bar, scrolling past 60vh. With no room past the bar's end they sit above it instead (`watchDebug`). In a column they sit under it, flush with its side towards the World, so they stay in the World. A hud remount loses them: re-run what mounted them. Each is a component, e.g. jsh `sidestep`'s
-(`w.hud.addDebugItem({ key, title, Component })`, the title over it, keyed, `removeDebugItem`, `JshCli.HudDebugItem`). An error in one shows in its
-place, cleared by a new item with its key. The shot's badge sits on the phaser slot instead (`docs/engagements.md`).
+The World menu's **hud** select has two sections: **debug** (`phaser`) and **layout** (`bar`, `left` or `right`, exactly one). The shot's badge sits on the phaser slot (`docs/engagements.md`). Debug uis mounted from outside the World, e.g. jsh `sidestep`'s, are SkipNet panes (`docs/skip-net.md`).
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 

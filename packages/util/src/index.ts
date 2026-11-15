@@ -11,6 +11,8 @@ export * from "./hooks/use-update";
 export * from "./service/broadcaster";
 export * from "./service/json-parser";
 export * from "./service/observable-to-async-it";
+export type { PaneEdge, PaneLeaf, PaneNode, PanePosition } from "./service/pane-tree";
+export * as paneTree from "./service/pane-tree";
 export * from "./service/QueryClientApi";
 export * from "./service/tailwind-cn";
 export * from "./service/task";

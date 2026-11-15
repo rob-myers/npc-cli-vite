@@ -1,18 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { jobsExamplesApiPath, jobsExamplesChangedEvent } from "@npc-cli/ui__jobs/const";
+import { jobsExamplesApiPath, jobsExamplesChangedEvent } from "@npc-cli/ui__skip-net/const";
 import type { Plugin } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
 
-const EXAMPLES_DIR = path.join(PROJECT_ROOT, "packages/ui/jobs/src/examples");
+const EXAMPLES_DIR = path.join(PROJECT_ROOT, "packages/ui/skip-net/src/library/examples");
 const VIRTUAL_ID = "virtual:jobs-examples";
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 const DEBOUNCE_MS = 100;
 
 /**
- * Provides `packages/ui/jobs/src/examples/*.md` to `<JobsLibrary>`.
+ * Provides `packages/ui/skip-net/src/library/examples/*.md` to `<JobsLibrary>`.
  *
  * They are bundled for production, but fetched during development,
  * so adding or renaming one need not trigger a full reload

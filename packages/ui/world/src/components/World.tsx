@@ -65,6 +65,7 @@ import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
+import useWorldSkipNet from "./use-world-skip-net";
 import Walls from "./Walls";
 import WorldHud from "./WorldHud";
 import { WorldMenu } from "./WorldMenu";
@@ -198,6 +199,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npcFocus: null as any,
       pickMenu: null as any,
       shields: null as any,
+      skipNet: null as any,
       spots: null as any,
       roomLabels: null as any,
       shadows: null as any,
@@ -445,6 +447,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useWorldEvents(state);
   useWorldPlayer(state);
   useWorldNet(state);
+  useWorldSkipNet(state);
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
@@ -670,6 +673,7 @@ export type State = {
   npcFocus: UseStateRef<import("./NpcFocus").State>;
   pickMenu: UseStateRef<import("./PickMenu").State>;
   shields: UseStateRef<import("./Shields").State>;
+  skipNet: UseStateRef<import("./use-world-skip-net").State>;
   /** The spots overlay, mounted by `Debug` */
   spots: UseStateRef<import("./SpotOverlay").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;

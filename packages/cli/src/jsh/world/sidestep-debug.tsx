@@ -4,7 +4,7 @@ import { tw } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { useState } from "react";
 
-/** Sidestep's item on the hud, whilst hud debug is on: the kind npcs try next, its limits, and where and when they go back */
+/** Sidestep's SkipNet pane: the kind npcs try next, its limits, and where and when they go back */
 export function SidestepDebug({ w, s, kinds, backs }: Props) {
   const [, setTick] = useState(0);
   /** Redraws, and gives the keys back to the World */

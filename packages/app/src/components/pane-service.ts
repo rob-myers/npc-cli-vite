@@ -1,9 +1,13 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { getDefaultPanes, uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
+import { type PaneNode as GenericPaneNode, paneTree } from "@npc-cli/util";
 
-export type PaneNode =
-  | { type: "leaf"; id: number; uiId?: string }
-  | { type: "split"; id: number; vertical: boolean; children: PaneNode[]; sizes?: number[]; hiddenIds?: number[] };
+export type { PanePosition } from "@npc-cli/util";
+
+const { findNode, removeNode, swapChild, toggleParentOrientation, transformNode } = paneTree;
+export const { countPanes, findPanePosition } = paneTree;
+
+export type PaneNode = GenericPaneNode<{ uiId?: string }>;
 
 let nextId = 1;
 
@@ -44,10 +48,6 @@ export function splitPane(targetId: number, vertical: boolean) {
     })),
   );
   persistPanesToUi();
-}
-
-export function countPanes(node: PaneNode): number {
-  return node.type === "leaf" ? 1 : node.children.reduce((sum, child) => sum + countPanes(child), 0);
 }
 
 export function closePane(targetId: number) {
@@ -133,39 +133,8 @@ export function findLeafByUiId(node: PaneNode, uiId: string): Extract<PaneNode, 
   return null;
 }
 
-export type PanePosition = { vertical: boolean; index: number; siblingCount: number };
-
-export function findPanePosition(root: PaneNode, targetId: number): PanePosition | null {
-  return findPanePositionInner(root, targetId);
-}
-
-function findPanePositionInner(node: PaneNode, targetId: number): PanePosition | null {
-  if (node.type !== "split") return null;
-  const idx = node.children.findIndex((c) => c.id === targetId);
-  if (idx !== -1) {
-    return { vertical: node.vertical, index: idx, siblingCount: node.children.length };
-  }
-  for (const child of node.children) {
-    const found = findPanePositionInner(child, targetId);
-    if (found) return found;
-  }
-  return null;
-}
-
 function collectLeafUiIds(node: PaneNode): string[] {
-  if (node.type === "leaf") return node.uiId ? [node.uiId] : [];
-  return node.children.flatMap(collectLeafUiIds);
-}
-
-function findNode(node: PaneNode, targetId: number): PaneNode | null {
-  if (node.id === targetId) return node;
-  if (node.type === "split") {
-    for (const child of node.children) {
-      const found = findNode(child, targetId);
-      if (found) return found;
-    }
-  }
-  return null;
+  return paneTree.leaves(node).flatMap((leaf) => (leaf.uiId ? [leaf.uiId] : []));
 }
 
 export function swapPane(targetId: number, direction: -1 | 1) {
@@ -174,36 +143,8 @@ export function swapPane(targetId: number, direction: -1 | 1) {
 }
 
 export function toggleOrientation(targetId: number) {
-  setRoot((prev) => toggleOrientationInner(prev, targetId));
+  setRoot((prev) => toggleParentOrientation(prev, targetId));
   persistPanesToUi();
-}
-
-function toggleOrientationInner(node: PaneNode, targetId: number): PaneNode {
-  if (node.type !== "split") return node;
-  if (node.children.some((c) => c.id === targetId)) {
-    return { ...node, vertical: !node.vertical };
-  }
-  return { ...node, children: node.children.map((c) => toggleOrientationInner(c, targetId)) };
-}
-
-function swapChild(node: PaneNode, targetId: number, direction: -1 | 1): PaneNode {
-  if (node.type !== "split") return node;
-
-  const idx = node.children.findIndex((c) => c.id === targetId);
-  if (idx !== -1) {
-    const swapIdx = idx + direction;
-    if (swapIdx < 0 || swapIdx >= node.children.length) return node;
-    const newChildren = [...node.children];
-    [newChildren[idx], newChildren[swapIdx]] = [newChildren[swapIdx], newChildren[idx]];
-    let newSizes = node.sizes;
-    if (newSizes) {
-      newSizes = [...newSizes];
-      [newSizes[idx], newSizes[swapIdx]] = [newSizes[swapIdx], newSizes[idx]];
-    }
-    return { ...node, children: newChildren, sizes: newSizes };
-  }
-
-  return { ...node, children: node.children.map((c) => swapChild(c, targetId, direction)) };
 }
 
 export function setSizes(splitId: number, sizes: number[]) {
@@ -264,29 +205,6 @@ export function showPane(splitId: number, childId: number) {
 
   const child = findNode(uiStore.getState().persistedPanes.root, childId);
   if (child) markPaneUisSeen(child);
-}
-
-export function transformNode(node: PaneNode, targetId: number, fn: (node: PaneNode) => PaneNode): PaneNode {
-  if (node.id === targetId) return fn(node);
-  if (node.type === "split") {
-    return { ...node, children: node.children.map((c) => transformNode(c, targetId, fn)) };
-  }
-  return node;
-}
-
-export function removeNode(node: PaneNode, targetId: number): PaneNode | null {
-  if (node.id === targetId) return null;
-  if (node.type === "split") {
-    const remaining = node.children.map((c) => removeNode(c, targetId)).filter((c): c is PaneNode => c !== null);
-    if (remaining.length === 0) return null;
-    if (remaining.length === 1) {
-      const promoted = remaining[0];
-      if (promoted.type === "split") return { ...promoted, sizes: undefined };
-      return promoted;
-    }
-    return { ...node, children: remaining };
-  }
-  return node;
 }
 
 export function persistPanesToUi() {
