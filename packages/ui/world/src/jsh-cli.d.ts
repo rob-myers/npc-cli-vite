@@ -73,25 +73,24 @@ declare namespace JshCli {
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
     | {
-        /** The npc said a line of a talk: started, answered or said again — see `WorldSpeech` */
-        key: "talk-line";
+        /** `npcKey` asked `to` something, offering `replies` by key — see `WorldSpeech` */
+        key: "talk-ask";
         threadKey: string;
         npcKey: string;
-        playerKey: string;
-        convKey: string;
-        nodeId: string;
+        to: string;
+        text: string;
+        replies: string[];
       }
+    | { key: "talk-bye"; threadKey: string; npcKey: string; to: string }
     | {
-        /** The player said reply `choice` of line `nodeId`, which leads `to` */
+        /** `npcKey` answered the ask of `to` with reply `choice` */
         key: "talk-reply";
         threadKey: string;
         npcKey: string;
-        playerKey: string;
-        convKey: string;
-        nodeId: string;
-        choice: number;
         to: string;
+        choice: string;
       }
+    | { key: "talk-tell"; threadKey: string; npcKey: string; to: string; text: string }
     | { key: "started-moving"; npcKey: string }
     | {
         /** Arrived, or the move was stopped — not one cut short by the next move */

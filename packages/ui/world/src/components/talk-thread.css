@@ -30,22 +30,6 @@
   clip-path: polygon(0 0, 0 100%, 100% 100%);
 }
 
-.talk-dots span {
-  display: inline-block;
-  width: 0.3rem;
-  height: 0.3rem;
-  margin: 0 0.1rem;
-  border-radius: 50%;
-  background: currentColor;
-  animation: talk-dot 900ms infinite;
-}
-.talk-dots span:nth-child(2) {
-  animation-delay: 150ms;
-}
-.talk-dots span:nth-child(3) {
-  animation-delay: 300ms;
-}
-
 /* an answer not yet given: a bubble in outline, filled once it is leant on */
 .talk-choice {
   /* its own ground, should what it lies on be see-through */
@@ -89,22 +73,9 @@
     transform: scale(0.6) translateY(0.4rem);
   }
 }
-@keyframes talk-dot {
-  0%,
-  60%,
-  100% {
-    opacity: 0.25;
-    transform: none;
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-0.15rem);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .talk-bubble,
-  .talk-choice,
-  .talk-dots span {
+  .talk-choice {
     animation: none;
   }
 }

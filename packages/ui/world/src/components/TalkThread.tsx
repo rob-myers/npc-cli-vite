@@ -1,5 +1,5 @@
 import { cn } from "@npc-cli/util";
-import { CaretUpIcon, CheckIcon, DotsThreeIcon, XIcon } from "@phosphor-icons/react";
+import { CaretUpIcon, DotsThreeIcon, XIcon } from "@phosphor-icons/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import "./talk-thread.css";
@@ -14,8 +14,6 @@ export function TalkThread(props: {
   replies: TalkReply[];
   /** Changes with the line replied to, so its replies pop in afresh */
   repliesKey: string;
-  /** The answer is on its way */
-  typing?: boolean;
   /** Under the replies, or instead of them */
   footer?: React.ReactNode;
   /** Given, each topic's rule clears its run of lines: theirs by `id` */
@@ -30,13 +28,9 @@ export function TalkThread(props: {
   useEffect(() => {
     if (mounted.current) foot.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     mounted.current = true;
-  }, [props.lines.length, props.repliesKey, props.typing]);
+  }, [props.lines.length, props.repliesKey]);
 
   const rows = toRows(props.lines);
-  const last = rows.at(-1);
-  if (props.typing === true && last !== undefined && last.left === undefined) {
-    last.left = { id: "typing", side: "left", text: "" };
-  }
 
   /** Enough rows that folding hides more than the pill it costs */
   const foldable = rows.length - 2 >= minFolded;
@@ -96,20 +90,12 @@ export function TalkThread(props: {
               onClick={piled ? () => setSpread(true) : piles ? () => setSpread(false) : undefined}
             >
               {row.right !== undefined && <Bubble line={row.right} faded={latest === false} />}
-              {row.left !== undefined && (
-                <Bubble
-                  line={row.left}
-                  faded={latest === false}
-                  typing={row.left.id === "typing"}
-                  // a piled one only spreads the rest
-                  active={piled === false}
-                />
-              )}
+              {row.left !== undefined && <Bubble line={row.left} faded={latest === false} />}
             </div>
           </Fragment>
         );
       })}
-      {props.typing !== true && props.replies.length > 0 && (
+      {props.replies.length > 0 && (
         <div key={props.repliesKey} className="flex flex-wrap justify-end gap-1.5">
           {props.replies.map((reply, i) => {
             const ready = reply.pips.every((pip) => pip.met !== false);
@@ -130,7 +116,6 @@ export function TalkThread(props: {
                 </span>
                 <Glyphed text={reply.text} />
                 <Pips pips={reply.pips} />
-                {reply.seen === true && <CheckIcon className="size-3 shrink-0 text-zinc-500" />}
               </button>
             );
           })}
@@ -144,7 +129,7 @@ export function TalkThread(props: {
 }
 
 /** One segment per test a reply waits on: green once met, outlined when nothing is tested */
-export function Pips({ pips }: { pips: TalkPip[] }) {
+function Pips({ pips }: { pips: TalkPip[] }) {
   return (
     pips.length > 0 && (
       <span className="flex gap-0.5" title={pips.map((pip) => pip.label).join(", ")}>
@@ -178,21 +163,18 @@ export function Glyphed({ text }: { text: string }) {
 }
 
 /** A line said, in a bubble with a tail at its speaker's corner */
-function Bubble(props: { line: TalkLine; faded: boolean; typing?: boolean; active?: boolean }) {
+function Bubble(props: { line: TalkLine; faded: boolean }) {
   const { line } = props;
   const hue = line.topic === undefined ? undefined : topicHue(line.topic);
   const tint = hue === undefined ? undefined : `hsl(${hue} 60% 55% / 0.22)`;
-  const onClick = props.active === false ? undefined : line.onClick;
   return (
     <div
-      title={props.active === false ? undefined : line.title}
       data-side={line.side}
       className={cn(
         "talk-bubble max-w-[85%] px-2.5 py-1 select-text",
         line.thought !== undefined && "talk-thought italic",
         line.side === "left" ? "mr-auto mt-3 bg-zinc-900" : "bg-zinc-300 text-zinc-950",
         props.faded ? "brightness-75 hover:brightness-100" : line.side === "left" && "text-zinc-100",
-        onClick !== undefined && "cursor-pointer",
       )}
       style={
         line.thought !== undefined
@@ -201,21 +183,12 @@ function Bubble(props: { line: TalkLine; faded: boolean; typing?: boolean; activ
             ? undefined
             : { background: `linear-gradient(${tint}, ${tint}), var(--color-zinc-900)` }
       }
-      onClick={onClick}
     >
       {line.who !== undefined && <div className="text-[10px] opacity-60">{line.who}</div>}
       {line.thought !== undefined && (
         <div className="text-[10px] uppercase not-italic opacity-70">{line.thought.khandha}</div>
       )}
-      {props.typing === true ? (
-        <span className="talk-dots">
-          <span />
-          <span />
-          <span />
-        </span>
-      ) : (
-        <Glyphed text={line.text} />
-      )}
+      <Glyphed text={line.text} />
     </div>
   );
 }
@@ -230,7 +203,7 @@ function runIds(rows: ReturnType<typeof toRows>, at: number) {
   return rows
     .slice(from, to + 1)
     .flatMap((row) => [row.right, row.left])
-    .flatMap((line) => (line === undefined || line.id === "typing" ? [] : [line.id]));
+    .flatMap((line) => (line === undefined ? [] : [line.id]));
 }
 
 /** A reply and the answer to it share a row */
@@ -252,7 +225,7 @@ function topicHue(topic: string) {
 }
 
 export type TalkLine = {
-  id: number | string;
+  id: number;
   /** The player's on the right */
   side: "left" | "right";
   text: string;
@@ -262,11 +235,9 @@ export type TalkLine = {
   thought?: { khandha: string; color: string };
   /** Who says it, where more than two talk */
   who?: string;
-  title?: string;
-  onClick?(): void;
 };
 
-export type TalkReply = { text: string; pips: TalkPip[]; seen?: boolean; onChoose(): void };
+export type TalkReply = { text: string; pips: TalkPip[]; onChoose(): void };
 
 /** `met` unknown draws it neutral, as a hint */
 export type TalkPip = { label: string; icon?: string; met?: boolean };

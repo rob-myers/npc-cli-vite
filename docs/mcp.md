@@ -195,8 +195,8 @@ Whilst "mcp testing" is up, the page logs the user's `pointerdown`, `keydown` an
 
 ### Speech
 
-- **`say` takes the npc last**: `say nominal as always bot1`. Otherwise a quoted first word is taken for the npc.
-- **Escape an apostrophe**: `say captain\'s orders bot1`. An open quote leaves the tty at a `>` prompt,
+- **`say` names the npc by `with:`**: `say nominal as always with:bot1`. Without it the player speaks.
+- **Escape an apostrophe**: `say captain\'s orders with:bot1`. An open quote leaves the tty at a `>` prompt,
   though `jsh` reports `exitCode: 0`. `interrupt` it.
 
 ## Recovering

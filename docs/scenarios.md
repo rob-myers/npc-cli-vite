@@ -1,14 +1,14 @@
 # Scenarios
 
-Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Also the conversations they use, listed in the Scenario panel. Their graphs are in the Decorator (`docs/npc-graphs.md`).
+Scenarios in which two or more npcs interact, directed by queries over spots (`docs/spots.md`) and live npc state. Their conversations are in `docs/speech.md`. Their graphs are in the Decorator (`docs/npc-graphs.md`).
 
 A query becomes an interaction when it is asked again, on a tick or an event, and its npcs act on the change.
 
 ## The panel: `ui/scenario`
 
-`@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
+`@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), unused until a scenario runs. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
-On the left is one list in two sections: **scenarios** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
+On the left is the list of **scenarios**. Beside it is the one chosen (`meta.entryKey`, `scenario/{key}`). Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
 ## The scenarios
 
@@ -108,7 +108,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 ## Entry files
 
-Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`: `graph` (`docs/npc-graphs.md`) and `conversation` (below).
+Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph` (`docs/npc-graphs.md`).
 
 `scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -128,24 +128,4 @@ Nodes and edges on one map, with meta, made and edited in the Decorator. jsh beh
 
 ## Conversations
 
-None are saved as yet: a jsh API for conversations, in `comms`, is to come. Lines are short, at most 8 words, the player's too.
-
-A conversation is a scenario entry of kind `conversation` (`ConversationEntrySchema`, typed `Conversation` in `ui/world/src/service/talk.ts`): `packages/media/src/scenario/conversation/{slug}.json`, hand-written. It is two-party: `nodes` by id, each the npc's `text` and `topic`, and the player's `choices` (`text`, `to`, `needs`). None is an ending, by convention `end-…`. It is a graph, as choices may lead back. A `source` credits lines taken from elsewhere, shown on its card.
-
-A conversation's card (`ConversationCard.tsx`) outlines its tree (`toOutline`). Each node is unfolded once, under the parent a breadth-first walk meets it by, so nearest the start. Elsewhere it is a reference. A row is the choice, then what is said back, with its needs as neutral pips. The box finds a line, topic or id. The count flags a choice leading nowhere, or a line nothing leads to. **the player talks to** an npc starts it in the World: `w.speech.startTalk(conv, npcKey)`.
-
-### Played in the World: `WorldSpeech`
-
-`WorldSpeech` is a button, marked when something was said since its history was last open, and that history, grouped into threads by who spoke and to whom (`threadKeyOf`). A plain `w.speech.say` is a thread of one; a talk is the player's and the npc's. `say` takes `to`, which the `speech` event carries, so a client's history groups alike. A thread is drawn by `TalkThread` (`@npc-cli/ui__world/talk-thread`, styled by `talk-thread.css`): speech bubbles, the player's on the right, an npc's tinted by topic (`topicHue`) with a rule naming each topic turned to. A reply and its answer share a row. Only the latest row and the one before, dimmed, show; the rest fold into an ellipsis until clicked, and a click on the latest folds them again.
-
-Every line said also shows over the speaker's head: ONE click-through bubble per npc (`NpcBubbles`), pinned over them each frame. Their menu (room, pose, items, and for the player `BreathControls`) is a `PickMenu`. It opens on right-click with the debug **context menu** on, or from the speech menu's **debug** (`w.pickMenu.toggle`). A talk's line awaiting an answer is `hold`: it stays until someone it addresses speaks (`release`), then runs `lineSecsOf` of world time, as any other line does.
-
-A long line is shown a page at a time (`pagesOf`): whole sentences, at most `pageChars` (120) a page, with a counter, e.g. `2/3`. Each page runs its own `lineSecsOf`, and only the last fades. A held line stays on its last page. Pages turn by writing to the DOM from `onTick` (`showPage`), never by a render. The speech history shows the line whole.
-
-A talk (`talks`, by thread) offers the replies of the line replied to, under it. Each waits on its `needs`, drawn as pips, green once met. A need is only a key to the conversation code: `w.speech.defineNeeds({ [key]: { label, icon? } })` names them, and `w.speech.setMet({ [threadKey]: keys })` says which are met. One undefined is never met. Not all green, the reply cannot be said. A reply said, the npc answers after `answerSecs` of world time, so never whilst paused.
-
-jsh `comms` (`cli/src/jsh/world/comms.ts`, in the default profile, idempotent) defines and tests them (`commsNeeds`): `near` (within `commsConfig.nearDist`), `facing` (within `facingArc` of straight ahead), `psi` (the player's psi raised), `sees` (the player sees the npc, as `sees`). A keyed tick tests the talks whose replies are drawn every `everySecs`, and its listener at once on a `talk-line`. Their worker queries, e.g. `sees`, go in one batch, one at a time. A thread out of sight, e.g. folded, is cleared. `comms off` removes them. The speech history emits `talk-line` (the npc said a line) and `talk-reply` (the player chose one), for effects to hang on.
-
-A thread may also hold THOUGHTS, an npc's and not said: see `docs/psi.md`.
-
-Nothing is lost going back: a click on an earlier line of the npc's has them say it again, at the foot of the thread, to be answered there. A talk whose npc is gone keeps its history, and offers nothing. Talks are the panel's own state, unsaved, with no variables as yet.
+Made on the fly by jsh `ask`, `tell`, `bye` and `reply`: see `docs/speech.md`.

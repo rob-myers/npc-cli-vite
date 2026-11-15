@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" width="960" height="440" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+  </defs>
+  <rect width="960" height="440" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600"><tspan fill="#d8b46a">with:</tspan> speaks to <tspan fill="#5aa0f0">npc:</tspan>, either one the player unless given</text>
+  <text x="24" y="54" fill="#7a8290" font-size="12">Here the player is rob.</text>
+
+  <g fill="#7a8290" font-size="12">
+    <text x="30" y="84">the line</text>
+    <text x="600" y="84" fill="#d8b46a">speaks</text>
+    <text x="790" y="84" fill="#5aa0f0">spoken to</text>
+  </g>
+
+  <!-- stripes -->
+  <g fill="#20232a">
+    <rect x="20" y="96" width="920" height="40" rx="6"/>
+    <rect x="20" y="184" width="920" height="40" rx="6"/>
+    <rect x="20" y="272" width="920" height="40" rx="6"/>
+    <rect x="20" y="360" width="920" height="40" rx="6"/>
+  </g>
+
+  <!-- lines -->
+  <g fill="#9aa0a6" font-size="12" font-family="ui-monospace, Menlo, monospace">
+    <text x="30" y="120">say hi</text>
+    <text x="30" y="164">say hi <tspan fill="#d8b46a">with:abe</tspan></text>
+    <text x="30" y="208">ask "Who goes there?" <tspan fill="#d8b46a">with:abe</tspan> friend:"A friend"</text>
+    <text x="30" y="252">ask <tspan fill="#5aa0f0">npc:bob</tspan> "Who goes there?" <tspan fill="#d8b46a">with:abe</tspan> …</text>
+    <text x="30" y="296">tell <tspan fill="#5aa0f0">npc:abe</tspan> "Move along"</text>
+    <text x="30" y="340">reply friend <tspan fill="#5aa0f0">npc:abe</tspan> <tspan fill="#d8b46a">with:bob</tspan></text>
+    <text x="30" y="384">bye <tspan fill="#d8b46a">with:abe</tspan></text>
+  </g>
+
+  <!-- who speaks -->
+  <g font-size="12">
+    <circle cx="610" cy="116" r="9" fill="#3a404a" stroke="#e6e6e6"/><text x="626" y="120" fill="#e6e6e6">rob <tspan fill="#7a8290">(player)</tspan></text>
+    <circle cx="610" cy="160" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="626" y="164" fill="#e6e6e6">abe</text>
+    <circle cx="610" cy="204" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="626" y="208" fill="#e6e6e6">abe</text>
+    <circle cx="610" cy="248" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="626" y="252" fill="#e6e6e6">abe</text>
+    <circle cx="610" cy="292" r="9" fill="#3a404a" stroke="#e6e6e6"/><text x="626" y="296" fill="#e6e6e6">rob <tspan fill="#7a8290">(player)</tspan></text>
+    <circle cx="610" cy="336" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="626" y="340" fill="#e6e6e6">bob</text>
+    <circle cx="610" cy="380" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="626" y="384" fill="#e6e6e6">abe</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)">
+    <line x1="712" y1="204" x2="784" y2="204"/>
+    <line x1="712" y1="248" x2="784" y2="248"/>
+    <line x1="712" y1="292" x2="784" y2="292"/>
+    <line x1="712" y1="336" x2="784" y2="336"/>
+    <line x1="712" y1="380" x2="784" y2="380"/>
+  </g>
+  <g fill="#7a8290" font-size="11" text-anchor="middle">
+    <text x="748" y="198">asks</text>
+    <text x="748" y="242">asks</text>
+    <text x="748" y="286">tells</text>
+    <text x="748" y="330">answers</text>
+    <text x="748" y="374">ends it</text>
+  </g>
+
+  <!-- who is spoken to -->
+  <g font-size="12">
+    <text x="800" y="120" fill="#7a8290">no one</text>
+    <text x="800" y="164" fill="#7a8290">no one</text>
+    <circle cx="800" cy="204" r="9" fill="#3a404a" stroke="#e6e6e6"/><text x="816" y="208" fill="#e6e6e6">rob <tspan fill="#7a8290">(player)</tspan></text>
+    <circle cx="800" cy="248" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="816" y="252" fill="#e6e6e6">bob</text>
+    <circle cx="800" cy="292" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="816" y="296" fill="#e6e6e6">abe</text>
+    <circle cx="800" cy="336" r="9" fill="#262a31" stroke="#9aa0a6"/><text x="816" y="340" fill="#e6e6e6">abe</text>
+    <circle cx="800" cy="380" r="9" fill="#3a404a" stroke="#e6e6e6"/><text x="816" y="384" fill="#e6e6e6">rob <tspan fill="#7a8290">(player)</tspan></text>
+  </g>
+</svg>

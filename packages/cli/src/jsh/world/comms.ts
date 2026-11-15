@@ -1,8 +1,9 @@
+import { type TalkChoice, threadKeyOf } from "@npc-cli/ui__world/talk";
 import { spotQueryDetached, unfaced } from "./perception.main";
 
 /**
  * What a conversation's replies wait on: each need defined on the World, and tested whilst a talk is held.
- * Idempotent, as `inventory` — see `docs/scenarios.md`
+ * Idempotent, as `inventory` — see `docs/speech.md`
  * ```sh
  * comms
  * comms off
@@ -41,14 +42,14 @@ export function comms({ args, w }: JshCli.RunArg) {
 
     for (const threadKey of threadKeys) {
       const talk = w.speech.talks[threadKey];
-      // its replies are hidden until they answer, so its pips are left be
-      if (talk === undefined || talk.answer !== null) continue;
+      if (talk === undefined || talk.replies.length === 0) continue;
+      const needs = new Set(talk.replies.flatMap((choice) => choice.needs ?? []));
+      if (needs.size === 0) continue;
       const test = { threadKey, talk, met: [] as string[] };
       tests.push(test);
-      const player = w.n[talk.playerKey];
+      const player = w.n[talk.toKey];
       const npc = w.n[talk.npcKey];
       if (player === undefined || npc === undefined || repliesShown(w, threadKey) === false) continue;
-      const needs = new Set((talk.conv.nodes[talk.at]?.choices ?? []).flatMap((choice) => choice.needs ?? []));
       for (const need of needs) {
         const def = commsNeeds[need];
         if (def === undefined || def.met(w, player, npc) === false) continue;
@@ -70,7 +71,9 @@ export function comms({ args, w }: JshCli.RunArg) {
         if (commsNeeds[need].answered?.(answers[i]) === true) test.met.push(need);
       });
       // only where nothing changed whilst asked
-      const fresh = tests.filter(({ threadKey, talk }) => w.speech.talks[threadKey] === talk && talk.answer === null);
+      const fresh = tests.filter(
+        ({ threadKey, talk }) => w.speech.talks[threadKey] === talk && talk.replies.length > 0,
+      );
       w.speech.setMet(
         Object.fromEntries(
           fresh.map(({ threadKey, met }) => [threadKey, repliesShown(w, threadKey) ? met : []] as const),
@@ -94,19 +97,110 @@ export function comms({ args, w }: JshCli.RunArg) {
   });
 
   w.e.addKeyedListener(commsKey, (e, w) => {
-    if (e.key === "talk-line") void test(w, [e.threadKey]);
+    if (e.key === "talk-ask") void test(w, [e.threadKey]);
   });
 }
 
-/** Whether the thread's replies may be drawn: the comms tab open on it unfolded, its player the player */
+/** Whether the thread's replies may be drawn: the comms tab open on it unfolded, the player the one asked */
 function repliesShown(w: JshCli.WorldState, threadKey: string) {
   return (
     w.speech.panelOpen === true &&
     w.speech.panelTab === "comms" &&
     w.speech.folded.has(threadKey) === false &&
-    w.player?.key === w.speech.talks[threadKey]?.playerKey
+    w.player?.key === w.speech.talks[threadKey]?.toKey
   );
 }
+
+/**
+ * `with:` asks `npc:`, each the player unless given. Each other `key:"text"` is a reply, its needs first in brackets
+ * ```sh
+ * ask "Who goes there?" with:abe friend:"A friend" foe:"[near] Step aside"
+ * ask npc:bob "Who goes there?" with:abe friend:"A friend"
+ * ask npc:abe "Got a light?" yes:Sure no:Sorry topic:smoke
+ * ```
+ */
+export function ask({ api, args, w }: JshCli.RunArg) {
+  const opts = api.jsArg(args) as TalkOpts;
+  const [npcKey, toKey] = partiesOf(w, opts);
+  const operands = api.getJsOperands(args, opts);
+  const replies = Object.entries(opts).flatMap(([key, value]) =>
+    talkOptKeys.has(key) || operands.includes(key) ? [] : [toChoice(key, String(value))],
+  );
+  const topic = opts.topic === undefined ? undefined : String(opts.topic);
+  w.speech.ask(npcKey, toKey, lineOf(operands), replies, { topic });
+}
+
+/**
+ * `with:` ends their talk with `npc:`, each the player unless given
+ * ```sh
+ * bye with:abe
+ * bye npc:abe
+ * ```
+ */
+export function bye({ api, args, w }: JshCli.RunArg) {
+  const [npcKey, toKey] = partiesOf(w, api.jsArg(args) as TalkOpts);
+  w.speech.bye(npcKey, toKey);
+}
+
+/**
+ * `with:` answers the ask of `npc:` with a reply's key, each the player unless given
+ * ```sh
+ * reply friend npc:abe with:bob
+ * reply friend npc:abe
+ * ```
+ */
+export function reply({ api, args, w }: JshCli.RunArg) {
+  const opts = api.jsArg(args) as TalkOpts;
+  const [npcKey, toKey] = partiesOf(w, opts);
+  const [key] = api.getJsOperands(args, opts);
+  const threadKey = threadKeyOf([npcKey, toKey]);
+  if (w.speech.talks[threadKey]?.toKey !== npcKey || w.speech.reply(threadKey, key) === false) {
+    throw Error(`${toKey} offers ${npcKey} no reply: ${key}`);
+  }
+}
+
+/**
+ * `with:` tells `npc:`, each the player unless given
+ * ```sh
+ * tell "Move along" with:abe
+ * tell npc:bob "Move along" with:abe
+ * tell npc:abe "Move along"
+ * ```
+ */
+export function tell({ api, args, w }: JshCli.RunArg) {
+  const opts = api.jsArg(args) as TalkOpts;
+  const [npcKey, toKey] = partiesOf(w, opts);
+  w.speech.tell(npcKey, toKey, lineOf(api.getJsOperands(args, opts)));
+}
+
+/** The bare words, as a line */
+function lineOf(operands: string[]) {
+  const line = operands.join(" ");
+  if (line === "") throw Error("nothing to say");
+  return line;
+}
+
+/** Who speaks (`with:`) and who is spoken to (`npc:`), each the player unless given */
+function partiesOf(w: JshCli.WorldState, opts: TalkOpts): [string, string] {
+  const playerKey = w.player?.key;
+  const from = opts.with ?? playerKey;
+  const to = opts.npc ?? playerKey;
+  if (from === undefined || to === undefined) throw Error("no player");
+  if (from === to) throw Error(`${from} cannot talk to themself`);
+  return [w.npc.get(String(from)).key, w.npc.get(String(to)).key];
+}
+
+/** `"[near,psi] Step aside"` as a reply needing `near` and `psi` */
+function toChoice(key: string, value: string): TalkChoice {
+  const [, needs, text] = value.match(/^\[([^\]]*)\]\s*(.*)$/) ?? [];
+  if (needs === undefined) return { key, text: value };
+  return { key, text, needs: needs.split(",").flatMap((need) => need.trim() || []) };
+}
+
+type TalkOpts = { with?: unknown; npc?: unknown; topic?: unknown } & Record<string, unknown>;
+
+/** Options of `ask` that are not replies */
+const talkOptKeys = new Set(["with", "npc", "topic"]);
 
 /**
  * Each need a reply may name: a pip in the speech history, green once `met`.

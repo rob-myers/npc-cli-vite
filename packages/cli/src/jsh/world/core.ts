@@ -1485,31 +1485,24 @@ export function revoke(
 }
 
 /**
+ * The player says something, or `with:` does (`npc:` too)
  * ```sh
- * # say something
- * say hi npc:rob
- * say npc:rob hi
+ * say hi
+ * say hi with:rob
+ * say with:rob hi
  * say hi npc:rob secs:5
- * say hi npc:rob for:10
- * say hi npc:rob for:Infinity
- * say hi rob for:1
+ * say hi with:rob for:10
+ * say hi with:rob for:Infinity
  * ```
  */
 export function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { npcKey: string; words?: string; secs?: number } = api.jsArg(args, { npc: "npcKey", for: "secs" }),
+  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { npc: "with", for: "secs" }),
 ) {
-  /** support `say hi rob` where lastWord is npcKey */
-  let lastWord: undefined | string;
-  opts.npcKey ??= (lastWord = getLastUnknownNaked(opts)) as string;
-
-  const npc = w.npc.get(opts.npcKey);
-  const words =
-    opts.words ??
-    api
-      .getJsOperands(args, opts)
-      .slice(0, lastWord === undefined ? undefined : -1)
-      .join(" ");
+  const npcKey = opts.with ?? w.player?.key;
+  if (npcKey === undefined) throw Error("no player");
+  const npc = w.npc.get(`${npcKey}`);
+  const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
     w.speech.say(npc.key, words, opts.secs);

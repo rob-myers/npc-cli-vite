@@ -295,7 +295,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
         state.e.postNpcTick();
-        state.speech?.onTick(delta);
         state.bubble?.onTick(delta);
         state.view.followPlayer(realDelta);
       },

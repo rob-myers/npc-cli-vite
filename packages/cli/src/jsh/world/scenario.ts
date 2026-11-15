@@ -65,9 +65,8 @@ async function getEntry(key: undefined | string) {
   return entry;
 }
 
-/** One line, e.g. `graph/my-path 3 nodes 2 edges undirected` or `conversation/scp-049 12 nodes` */
+/** One line, e.g. `graph/my-path 3 nodes 2 edges undirected` */
 function summary(entry: ScenarioEntry, all: boolean) {
-  if (entry.kind === "conversation") return `${entry.key} ${Object.keys(entry.nodes).length} nodes`;
   const undirected = entry.undirected ? " undirected" : "";
   return `${entry.key} ${entry.nodes.length} nodes ${entry.edges.length} edges${undirected}${all ? ` on ${entry.mapKey}` : ""}`;
 }
