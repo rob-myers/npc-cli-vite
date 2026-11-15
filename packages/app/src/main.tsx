@@ -15,6 +15,10 @@ if (import.meta.env.DEV) {
   (window as unknown as { __devMcpLoad(): Promise<unknown> }).__devMcpLoad = () => import("./dev-mcp-hooks");
 }
 
+if ("modelContext" in document) {
+  void import("./web-mcp-tools");
+}
+
 const router = createRouter({
   routeTree,
 });
