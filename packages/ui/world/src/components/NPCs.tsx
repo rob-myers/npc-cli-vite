@@ -250,7 +250,8 @@ export default function NPCs() {
         return currentDecorKey !== null && meta.npcKey === npcKey && state.npcToDoable[npcKey] !== null
           ? // can respawn onto self whilst doing
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
-          : { type: "none", meta };
+          : // not the picked meta, e.g. a switch's `y` and `decorKey`, which would be taken for a doable's
+            { type: "none", meta: emptyMeta };
       },
       findFreeDoPoint(points, npcKey, near) {
         const free = points.filter((d) => {
