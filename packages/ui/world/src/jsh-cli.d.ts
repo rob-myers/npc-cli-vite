@@ -71,7 +71,11 @@ declare namespace JshCli {
       }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
-    | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
+    | { key: "speech"; id: number; npcKey: string; words: string; epochMs: number; to?: string[] }
+    /** Line `id` of `npcKey` is said: the chunks each heard, by npcKey — see `docs/speech.md` */
+    | { key: "speech-heard"; id: number; npcKey: string; heard: Record<string, number[]> }
+    /** The player, `npcKey`, asks `to` to say line `id` again. Something, e.g. jsh `comms`, answers */
+    | { key: "speech-repeat"; id: number; npcKey: string; to: string }
     | {
         /** `npcKey` asked `to` something, offering `replies` by key — see `WorldSpeech` */
         key: "talk-ask";

@@ -6,6 +6,7 @@ import { type ReactNode, useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
 import { psiKhandhas } from "../const.npc";
 
+import { speechConfig, utteranceOf } from "../service/speech";
 import { getWorldStore } from "../service/storage";
 import { type TalkChoice, threadKeyOf } from "../service/talk";
 import { demoThoughts, type ThoughtTag } from "../service/thoughts";
@@ -39,6 +40,7 @@ export function WorldSpeech() {
       talks: {},
       folded: new Set(),
       needDefs: new Map(),
+      uttering: new Map(),
 
       addMenuItem(item) {
         // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
@@ -88,6 +90,17 @@ export function WorldSpeech() {
         const keys = replies.map((choice) => choice.key);
         w.events.next({ key: "talk-ask", threadKey, npcKey, to: toKey, text, replies: keys });
       },
+      askRepeat(id) {
+        const entry = state.history.find((x) => x.id === id);
+        const playerKey = w.player?.key;
+        if (entry === undefined || playerKey === undefined || entry.repeat?.pending === true) return;
+        if (!(entry.npcKey in w.n)) return;
+        entry.repeat = { pending: true, refused: entry.repeat?.refused ?? 0 };
+        state.say(playerKey, "Say again?", undefined, { to: [entry.npcKey] });
+        w.events.next({ key: "speech-repeat", id, npcKey: playerKey, to: entry.npcKey });
+        // a ui timeout: unanswered, it fails
+        setTimeout(() => entry.repeat?.pending === true && state.refuseRepeat(id), chooseTimeoutMs);
+      },
       bye(npcKey, toKey) {
         const threadKey = threadKeyOf([npcKey, toKey]);
         const topic = state.talks[threadKey]?.topic;
@@ -129,6 +142,49 @@ export function WorldSpeech() {
         // a ui timeout: unanswered, it fails
         setTimeout(() => state.talks[threadKey] === talk && state.refuse(threadKey, key, needs), chooseTimeoutMs);
       },
+      faceTo(speaker, toKey) {
+        const to = w.n?.[toKey];
+        const { anim } = speaker;
+        // the player turns as they are steered, and one lying stays put
+        if (to === undefined || speaker.key === w.player?.key || anim.posture === "lie") return null;
+        if (speaker.isMoving() === false && anim.posture === "stand" && w.npc.npcToDoable[speaker.key] == null) {
+          // they stay facing them. A look under way, e.g. a jsh process's, is left be
+          if (anim.face.turn === null) void speaker.look({ at: toKey }).catch(() => {});
+          return null;
+        }
+        if (anim.turn.head === true || anim.turn.target !== 0) return null; // a turn of another's, e.g. jsh `pose … look:`
+        anim.turnHeadTo(to.point);
+        return () => anim.turnHeadTo(null);
+      },
+      hearChunk(entry, chunk, forPlayer, hearers = state.hearersOf(entry.npcKey)) {
+        const playerKey = w.player?.key;
+        if (forPlayer === true && playerKey !== undefined) hearers.add(playerKey);
+        for (const npcKey of hearers) {
+          const chunks = entry.heard?.get(npcKey) ?? new Set();
+          entry.heard?.set(npcKey, chunks.add(chunk));
+        }
+        entry.said = Math.max(entry.said ?? 0, chunk + 1);
+        // heard, with the history shut: the button says so
+        const unseen = state.panelOpen === false || state.panelTab !== "comms";
+        if (playerKey !== undefined && hearers.has(playerKey) && unseen) state.unread = true;
+        const missed = playerKey !== undefined && hearers.has(playerKey) === false;
+        if (missed && state.uttering.get(entry.npcKey)?.id === entry.id) w.bubble?.missChunk(entry.npcKey, chunk);
+        if (state.isHeard(entry)) state.update(); // else not in the history
+      },
+      isHeard(entry) {
+        const playerKey = w.player?.key;
+        return entry.chunks === undefined || playerKey === undefined || (entry.heard?.get(playerKey)?.size ?? 0) > 0;
+      },
+      hearersOf(npcKey) {
+        const speaker = w.n?.[npcKey];
+        if (speaker === undefined) return new Set();
+        const hearers = new Set([npcKey]);
+        for (const npc of w.npc.near.inReach(npcKey)) {
+          const dist = Math.hypot(npc.point.x - speaker.point.x, npc.point.y - speaker.point.y);
+          if (dist <= speechConfig.hearMetres) hearers.add(npc.key);
+        }
+        return hearers;
+      },
       refuse(threadKey, key, failed) {
         const talk = state.talks[threadKey];
         if (talk?.choosing !== key) return false;
@@ -141,6 +197,13 @@ export function WorldSpeech() {
       defineNeeds(defs) {
         for (const [key, def] of Object.entries(defs)) state.needDefs.set(key, def);
         state.update();
+      },
+      refuseRepeat(id) {
+        const entry = state.history.find((x) => x.id === id);
+        if (entry?.repeat?.pending !== true) return false;
+        entry.repeat = { pending: false, refused: entry.repeat.refused + 1 };
+        state.update();
+        return true;
       },
       removeNeeds(keys) {
         for (const key of keys) state.needDefs.delete(key);
@@ -228,24 +291,80 @@ export function WorldSpeech() {
         // those addressed have been answered, so their lines may go
         if (to !== undefined) w.bubble?.release(...to);
         const parties = [npcKey, ...(to ?? [])];
-        const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs, parties, topic: opts?.topic };
+        const entry: SpeechEntry = {
+          id: state.nextId++,
+          npcKey,
+          words,
+          epochMs,
+          parties,
+          topic: opts?.topic,
+          heard: new Map(),
+        };
 
         state.history.push(entry);
         if (state.history.length > maxHistory) state.history.shift();
-
-        // unseen, with the history shut: the button says so
-        if (state.panelOpen === false || state.panelTab !== "comms") state.unread = true;
         state.update();
 
-        // over their head
-        w.bubble?.say(npcKey, words, { secs, hold: opts?.hold });
-
-        w.events.next({ key: "speech", npcKey, words, epochMs, to });
+        state.utter(entry, { secs, hold: opts?.hold });
+        w.events.next({ key: "speech", id: entry.id, npcKey, words, epochMs, to });
+      },
+      repeat(id) {
+        const entry = state.history.find((x) => x.id === id);
+        if (entry?.repeat?.pending !== true || !(entry.npcKey in w.n)) return false;
+        entry.repeat = undefined;
+        state.utter(entry, { toPlayer: true });
+        return true;
       },
       readThought(npcKey) {
         if (w.n?.[npcKey] === undefined) return;
         const { khandha, text } = demoThoughts[state.thoughtAt++ % demoThoughts.length];
         state.think(npcKey, text, { khandha, color: psiKhandhas[khandha].color });
+      },
+      utter(entry, { secs, hold, toPlayer = false } = {}) {
+        const { npcKey } = entry;
+        state.uttering.get(npcKey)?.cancel(); // cut off: what is left unsaid is unheard
+        const playerKey = w.player?.key;
+        const utt = utteranceOf(entry.words);
+        entry.chunks = utt.chunks.map((chunk) => chunk.text);
+        const forPlayer = playerKey !== undefined && (toPlayer || (entry.parties ?? []).includes(playerKey));
+        const near = state.hearersOf(npcKey);
+        entry.via = forPlayer && playerKey !== undefined && near.has(playerKey) === false ? "comms" : undefined;
+        /** Whom it is said to: the player for a repeat, else the first it addresses */
+        const toKey = toPlayer ? playerKey : entry.parties?.[1];
+        /** Said into a mic, to someone out of earshot: they neither turn nor gesture */
+        const miked = toKey !== undefined && near.has(toKey) === false;
+
+        // over their head, which moves as they speak, facing whom they speak to
+        w.bubble?.say(npcKey, utt, { secs, hold, forPlayer, comms: entry.via === "comms" });
+        const speaker = w.n?.[npcKey];
+        speaker?.anim.talk(utt.spokenSecs, miked === false);
+        const unface = speaker === undefined || toKey === undefined || miked ? null : state.faceTo(speaker, toKey);
+
+        let done = false;
+        const end = () => {
+          if (done === true) return;
+          done = true;
+          // one event however many heard it
+          const heard: Record<string, number[]> = {};
+          for (const [hearer, chunks] of entry.heard ?? []) heard[hearer] = [...chunks].sort((a, b) => a - b);
+          w.events.next({ key: "speech-heard", id: entry.id, npcKey, heard });
+          if (state.uttering.get(npcKey)?.id === entry.id) state.uttering.delete(npcKey);
+          unface?.();
+          if (state.isHeard(entry)) state.update();
+        };
+        // in game time, each chunk heard by those in earshot as it starts
+        const cancels = utt.chunks.map((chunk, i) =>
+          w.e.after(chunk.at, () => state.hearChunk(entry, i, forPlayer, i === 0 ? near : undefined)),
+        );
+        cancels.push(w.e.after(utt.spokenSecs, end));
+        state.uttering.set(npcKey, {
+          id: entry.id,
+          cancel() {
+            for (const cancel of cancels) cancel();
+            w.n?.[npcKey]?.anim.talk(0);
+            end();
+          },
+        });
       },
       think(npcKey, words, tag) {
         const playerKey = w.player?.key;
@@ -280,6 +399,7 @@ export function WorldSpeech() {
   if (unread === false) state.unread = false;
 
   const y = useMotionValue(state.getClampedY(state.y));
+  const threads = toThreads(state.history, state.isHeard);
   const dragControls = useDragControls();
 
   return (
@@ -377,10 +497,8 @@ export function WorldSpeech() {
                   )}
                   style={{ height: state.historyHeight }}
                 >
-                  {state.history.length === 0 && (
-                    <div className="px-1 py-2 text-slate-500 italic">nothing said yet</div>
-                  )}
-                  {toThreads(state.history).map((thread) => (
+                  {threads.length === 0 && <div className="px-1 py-2 text-slate-500 italic">nothing heard yet</div>}
+                  {threads.map((thread) => (
                     <SpeechThread key={thread.key} thread={thread} />
                   ))}
                 </div>
@@ -415,10 +533,12 @@ export function WorldSpeech() {
   );
 }
 
-/** The history by who spoke in it and to whom, the latest spoken in first */
-function toThreads(history: SpeechEntry[]) {
+/** What the player heard, by who spoke in it and to whom, the latest spoken in first */
+function toThreads(history: SpeechEntry[], isHeard: (entry: SpeechEntry) => boolean) {
   const byKey = new Map<string, Thread>();
   for (const entry of history) {
+    // a line wholly out of their earshot is not theirs to know of
+    if (isHeard(entry) === false) continue;
     const parties = entry.parties ?? [entry.npcKey];
     const key = threadKeyOf(parties);
     const thread = byKey.get(key) ?? { key, parties: [...new Set(parties)].sort(), entries: [] };
@@ -450,6 +570,7 @@ function SpeechThread({ thread }: { thread: Thread }) {
 
   const lines = thread.entries.map(
     (entry): TalkLine => ({
+      ...heardOf(w, entry),
       id: entry.id,
       // the player's on the right; between npcs, the first of them on the left
       side:
@@ -514,6 +635,25 @@ function SpeechThread({ thread }: { thread: Thread }) {
       )}
     </div>
   );
+}
+
+/** What of a line the player heard so far, a missed chunk as "…", and a press to have it said again */
+function heardOf(w: import("./World").State, entry: SpeechEntry): Pick<TalkLine, "chunks" | "comms" | "repeat"> {
+  const playerKey = w.player?.key;
+  if (entry.chunks === undefined || playerKey === undefined) return {};
+  const heard = entry.heard?.get(playerKey);
+  const chunks = entry.chunks.slice(0, entry.said ?? 0).map((text, i) => ({ text, heard: heard?.has(i) === true }));
+  const missed = chunks.length === entry.chunks.length && chunks.some((chunk) => chunk.heard === false);
+  const speaking = w.speech.uttering.get(entry.npcKey)?.id === entry.id;
+  const repeat =
+    missed && speaking === false && entry.npcKey !== playerKey && entry.npcKey in w.n
+      ? {
+          disabled: entry.repeat?.pending === true,
+          refused: entry.repeat?.refused ?? 0,
+          onPress: () => w.speech.askRepeat(entry.id),
+        }
+      : undefined;
+  return { chunks, comms: entry.via === "comms", repeat };
 }
 
 /**
@@ -640,6 +780,16 @@ export type SpeechEntry = {
   topic?: string;
   /** Thought, not said: read by psi */
   thought?: ThoughtTag;
+  /** Its words, heard or missed together — see `utteranceOf` */
+  chunks?: string[];
+  /** How many chunks are said */
+  said?: number;
+  /** The chunks each heard, by npcKey */
+  heard?: Map<string, Set<number>>;
+  /** To or from the player, out of their earshot */
+  via?: "comms";
+  /** The player asked for it again: awaiting an answer, and how many times it was refused */
+  repeat?: { pending: boolean; refused: number };
 };
 
 /** The talk in a thread of two: its last ask, and the replies still open */
@@ -692,6 +842,8 @@ export type State = {
   folded: Set<string>;
   /** What a reply's need is called, by key — defined by e.g. jsh `comms` */
   needDefs: Map<string, NeedDef>;
+  /** The line each is saying, by npcKey, and how to cut it off */
+  uttering: Map<string, { id: number; cancel(): void }>;
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
@@ -735,6 +887,22 @@ export type State = {
   getPips(threadKey: string, choice: TalkChoice): TalkPip[];
   defineNeeds(defs: Record<string, NeedDef>): void;
   removeNeeds(keys: string[]): void;
+  /** The player asks for line `id` again. Emits `speech-repeat`, and fails unless answered within `chooseTimeoutMs` */
+  askRepeat(id: number): void;
+  /** Its speaker says line `id` again to the player, filling in what they missed. False unless asked for */
+  repeat(id: number): boolean;
+  /** Line `id` is not said again: its press shakes. False unless asked for */
+  refuseRepeat(id: number): boolean;
+  /** Turns `speaker` to `toKey`: stood still, their body, which stays. Else their head, and returns how to turn it back */
+  faceTo(speaker: import("./npc").Npc, toKey: string): null | (() => void);
+  /** Those in earshot of `npcKey`, else `hearers`, hear `chunk` of `entry`, and the player too when `forPlayer` */
+  hearChunk(entry: SpeechEntry, chunk: number, forPlayer: boolean, hearers?: Set<string>): void;
+  /** Whether the player heard some of `entry`, so it is in the history */
+  isHeard(entry: SpeechEntry): boolean;
+  /** `npcKey` and those within `hearMetres` of them, through open doors */
+  hearersOf(npcKey: string): Set<string>;
+  /** `entry` is said over their head, a chunk at a time in game time. The last line they were saying is cut off */
+  utter(entry: SpeechEntry, opts?: { secs?: number; hold?: boolean; toPlayer?: boolean }): void;
 };
 
 export type NeedDef = { label: string; icon?: string };

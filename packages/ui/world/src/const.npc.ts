@@ -324,6 +324,12 @@ export const supportConfig = { grip: [0, -0.44, 0], secs: 0.25 } as const;
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
 
 /**
+ * Whilst they speak the head moves, eased in and out over `easeSecs`: it dips up to `pitch` about `hz` times a second,
+ * as words come, and sways up to `sway` either way
+ */
+export const talkConfig = { pitch: 0.12, sway: 0.08, hz: 2.5, swayHz: 0.6, easeSecs: 0.25 } as const;
+
+/**
  * A shot armour took jolts them: radians the struck part turns at most, and seconds to that and in all.
  * Each bone it hangs from turns `falloff` as far as the one below.
  */

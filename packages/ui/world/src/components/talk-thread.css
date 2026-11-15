@@ -76,7 +76,8 @@
 @media (prefers-reduced-motion: reduce) {
   .talk-bubble,
   .talk-choice,
-  .talk-choice.talk-shake {
+  .talk-choice.talk-shake,
+  .talk-again.talk-shake {
     animation: none;
   }
 }
@@ -134,6 +135,33 @@
 
 /* a reply refused: it shakes, its border red at first */
 .talk-choice.talk-shake {
+  animation: talk-shake 400ms ease-in-out;
+}
+
+/* a chunk of a line the player missed */
+.talk-unheard {
+  opacity: 0.5;
+}
+/* under a line missed in part: the player asks for it again */
+.talk-again {
+  display: block;
+  margin-top: 0.25rem;
+  padding: 0 0.5rem;
+  border: 1px dashed var(--color-zinc-600);
+  border-radius: 9999px;
+  font-size: 10px;
+  color: var(--color-zinc-400);
+  cursor: pointer;
+}
+.talk-again:not(:disabled):hover {
+  border-style: solid;
+  color: var(--color-zinc-100);
+}
+.talk-again:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.talk-again.talk-shake {
   animation: talk-shake 400ms ease-in-out;
 }
 

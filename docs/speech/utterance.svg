@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" width="960" height="430" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+  </defs>
+  <rect width="960" height="430" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">a line as said: a word each 0.4s, heard 3 words at a time, then read</text>
+
+  <!-- axis: 150px a second, from x=140 -->
+  <line x1="140" y1="150" x2="900" y2="150" stroke="#3a404a"/>
+  <path d="M890,150 L900,150" stroke="#7a8290" marker-end="url(#next)"/>
+  <g fill="#5aa0f0" font-size="11">
+    <text x="140" y="166">0s</text>
+    <text x="320" y="166">1.2s</text>
+    <text x="500" y="166">2.4s</text>
+    <text x="560" y="166">2.8s</text>
+    <text x="860" y="166">4.8s</text>
+  </g>
+
+  <!-- words -->
+  <text x="24" y="82" fill="#9aa0a6" font-size="12">words</text>
+  <g font-size="12">
+    <rect x="140" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="148" y="83" fill="#e6e6e6">Meet</text>
+    <rect x="200" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="208" y="83" fill="#e6e6e6">me</text>
+    <rect x="260" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="268" y="83" fill="#e6e6e6">at</text>
+    <rect x="320" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="328" y="83" fill="#e6e6e6">the</text>
+    <rect x="380" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="388" y="83" fill="#e6e6e6">lift</text>
+    <rect x="440" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="448" y="83" fill="#e6e6e6">by</text>
+    <rect x="500" y="66" width="58" height="24" rx="4" fill="#262a31" stroke="#3a404a"/><text x="508" y="83" fill="#e6e6e6">six.</text>
+    <rect x="560" y="66" width="300" height="24" rx="4" fill="none" stroke="#3a404a" stroke-dasharray="4 3"/>
+    <text x="574" y="83" fill="#9aa0a6">read, 2s: then the next page, or a 1s fade</text>
+  </g>
+
+  <!-- chunks -->
+  <text x="24" y="122" fill="#9aa0a6" font-size="12">chunks</text>
+  <g fill="none" stroke="#d8b46a">
+    <path d="M142,108 v8 h174 v-8"/>
+    <path d="M322,108 v8 h174 v-8"/>
+    <path d="M502,108 v8 h54 v-8"/>
+  </g>
+  <g fill="#d8b46a" font-size="11">
+    <text x="200" y="134">chunk 0</text>
+    <text x="380" y="134">chunk 1</text>
+    <text x="504" y="134">chunk 2</text>
+  </g>
+  <line x1="558" y1="56" x2="558" y2="176" stroke="#5aa0f0" stroke-dasharray="3 3"/>
+  <text x="566" y="186" fill="#5aa0f0" font-size="11">spokenSecs: being said until here. Earshot is judged as each chunk starts</text>
+
+  <!-- the bubble at 1.6s -->
+  <text x="24" y="232" fill="#e6e6e6" font-weight="600">over their head at 1.6s</text>
+  <g font-size="13">
+    <rect x="140" y="250" width="250" height="34" rx="14" fill="#000" stroke="#555"/>
+    <text x="156" y="272" fill="#f2f2f2">Meet me at the lift</text>
+    <text x="300" y="272" fill="#6b6f76"> by six.</text>
+    <text x="410" y="264" fill="#9aa0a6" font-size="12">to or from the player: words not yet said show faintly ahead</text>
+    <text x="410" y="280" fill="#9aa0a6" font-size="12">any other line: they are hidden until said</text>
+
+    <rect x="140" y="300" width="250" height="34" rx="14" fill="#000" stroke="#555"/>
+    <text x="156" y="322" fill="#7a8290">…</text>
+    <text x="172" y="322" fill="#f2f2f2">the lift</text>
+    <text x="410" y="314" fill="#9aa0a6" font-size="12">walked up during chunk 1: chunk 0 shows as "…"</text>
+    <text x="410" y="330" fill="#9aa0a6" font-size="12">heard by no one near, every chunk is "…", lit in turn</text>
+  </g>
+
+  <g fill="#9aa0a6" font-size="12">
+    <text x="24" y="372">Each word rises into place as it is said, and the bubble swells a little (sayWord). Pages and words are written to the DOM, never by a render.</text>
+    <text x="24" y="392">Only a line to or from the player is kept inside the World's edges. Any other goes off screen with its speaker.</text>
+  </g>
+  <text x="24" y="416" fill="#5aa0f0" font-size="12">utteranceOf (service/speech.ts) · speechConfig { wordSecs 0.4, readSecs 2, chunkWords 3, hearMetres 8 }</text>
+</svg>

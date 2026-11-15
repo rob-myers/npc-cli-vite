@@ -2,7 +2,7 @@ import { type TalkChoice, threadKeyOf } from "@npc-cli/ui__world/talk";
 import { spotQueryDetached, unfaced } from "./perception.main";
 
 /**
- * What a reply waits on: each need defined on the World, and tested when the player presses it.
+ * What a reply waits on: each need defined on the World, and tested when the player presses it. A "Say again?" is said again.
  * Idempotent, as `inventory` — see `docs/speech.md`
  * ```sh
  * comms
@@ -22,6 +22,8 @@ export function comms({ args, w }: JshCli.RunArg) {
 
   w.e.addKeyedListener(commsKey, (e, w) => {
     if (e.key === "talk-choose") void decide(w, e);
+    // as yet, always said again
+    if (e.key === "speech-repeat") w.speech.repeat(e.id);
   });
 }
 
@@ -92,14 +94,14 @@ export function bye({ api, args, w }: JshCli.RunArg) {
 }
 
 /**
- * `with:` answers the ask of `npc:` with a reply's key, each the player unless given
+ * `with:` answers the ask of `npc:` with a reply's key, each the player unless given. `to:` is an alias of `npc:`
  * ```sh
+ * reply friend to:abe
  * reply friend npc:abe with:bob
- * reply friend npc:abe
  * ```
  */
 export function reply({ api, args, w }: JshCli.RunArg) {
-  const opts = api.jsArg(args) as TalkOpts;
+  const opts = api.jsArg(args, { to: "npc" }) as TalkOpts;
   const [npcKey, toKey] = partiesOf(w, opts);
   const [key] = api.getJsOperands(args, opts);
   const threadKey = threadKeyOf([npcKey, toKey]);

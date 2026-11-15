@@ -1021,6 +1021,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "psi-action":
           case "sidestep":
           case "speech":
+          case "speech-heard":
+          case "speech-repeat":
           case "stopped-moving":
           case "talk-ask":
           case "talk-bye":

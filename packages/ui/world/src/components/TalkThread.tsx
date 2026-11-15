@@ -1,5 +1,5 @@
 import { cn } from "@npc-cli/util";
-import { CaretUpIcon, DotsThreeIcon, XIcon } from "@phosphor-icons/react";
+import { CaretUpIcon, DotsThreeIcon, MicrophoneIcon, XIcon } from "@phosphor-icons/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import "./talk-thread.css";
@@ -190,7 +190,29 @@ function Bubble(props: { line: TalkLine; faded: boolean }) {
       {line.thought !== undefined && (
         <div className="text-[10px] uppercase not-italic opacity-70">{line.thought.khandha}</div>
       )}
-      <Glyphed text={line.text} />
+      {line.comms === true && <MicrophoneIcon weight="bold" className="mr-1 inline size-3 align-[-1px] opacity-60" />}
+      {line.chunks === undefined ? (
+        <Glyphed text={line.text} />
+      ) : (
+        line.chunks.map((chunk, i) => (
+          <Fragment key={i}>
+            {i > 0 && " "}
+            {chunk.heard ? <Glyphed text={chunk.text} /> : <span className="talk-unheard">…</span>}
+          </Fragment>
+        ))
+      )}
+      {line.repeat !== undefined && (
+        <button
+          // a refusal remounts it, so it shakes each time
+          key={line.repeat.refused}
+          type="button"
+          disabled={line.repeat.disabled}
+          className={cn("talk-again", line.repeat.refused > 0 && "talk-shake")}
+          onClick={line.repeat.onPress}
+        >
+          say again?
+        </button>
+      )}
     </div>
   );
 }
@@ -237,6 +259,12 @@ export type TalkLine = {
   thought?: { khandha: string; color: string };
   /** Who says it, where more than two talk */
   who?: string;
+  /** What of it the player heard so far, else `text` whole */
+  chunks?: { text: string; heard: boolean }[];
+  /** Heard over comms, out of earshot */
+  comms?: boolean;
+  /** Missed in part: a press asks for it again */
+  repeat?: { disabled: boolean; refused: number; onPress(): void };
 };
 
 export type TalkReply = {

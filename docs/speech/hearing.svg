@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+  </defs>
+  <rect width="960" height="400" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">a line is heard by chunks: whoever is in earshot as each starts</text>
+
+  <!-- time axis -->
+  <text x="30" y="72" fill="#9aa0a6" font-size="12">bob says</text>
+  <line x1="150" y1="92" x2="900" y2="92" stroke="#3a404a"/>
+  <path d="M890,92 L900,92" stroke="#7a8290" marker-end="url(#next)"/>
+  <text x="904" y="96" fill="#7a8290" font-size="11">t</text>
+
+  <!-- chunks -->
+  <g>
+    <rect x="150" y="54" width="230" height="28" rx="6" fill="#262a31" stroke="#3a404a"/>
+    <text x="164" y="73" fill="#e6e6e6">Meet me at</text>
+    <text x="150" y="110" fill="#5aa0f0" font-size="11">0s</text>
+
+    <rect x="390" y="54" width="230" height="28" rx="6" fill="#262a31" stroke="#3a404a"/>
+    <text x="404" y="73" fill="#e6e6e6">the lift by</text>
+    <text x="390" y="110" fill="#5aa0f0" font-size="11">1.2s</text>
+
+    <rect x="630" y="54" width="90" height="28" rx="6" fill="#262a31" stroke="#3a404a"/>
+    <text x="644" y="73" fill="#e6e6e6">six</text>
+    <text x="630" y="110" fill="#5aa0f0" font-size="11">2.4s</text>
+    <text x="730" y="73" fill="#9aa0a6" font-size="12">then read, 2s</text>
+  </g>
+
+  <!-- listeners -->
+  <text x="30" y="152" fill="#e6e6e6" font-weight="600">kate</text>
+  <text x="30" y="168" fill="#9aa0a6" font-size="11">beside him</text>
+  <g>
+    <rect x="150" y="138" width="230" height="26" rx="6" fill="#23402e" stroke="#3f7a52"/>
+    <rect x="390" y="138" width="230" height="26" rx="6" fill="#23402e" stroke="#3f7a52"/>
+    <rect x="630" y="138" width="90" height="26" rx="6" fill="#23402e" stroke="#3f7a52"/>
+    <text x="164" y="156" fill="#cde8d4" font-size="12">heard</text>
+    <text x="404" y="156" fill="#cde8d4" font-size="12">heard</text>
+    <text x="644" y="156" fill="#cde8d4" font-size="12">heard</text>
+  </g>
+
+  <text x="30" y="210" fill="#e6e6e6" font-weight="600">the player</text>
+  <text x="30" y="226" fill="#9aa0a6" font-size="11">walks up late</text>
+  <g>
+    <rect x="150" y="196" width="230" height="26" rx="6" fill="#262a31" stroke="#3a404a" stroke-dasharray="4 3"/>
+    <rect x="390" y="196" width="230" height="26" rx="6" fill="#262a31" stroke="#3a404a" stroke-dasharray="4 3"/>
+    <rect x="630" y="196" width="90" height="26" rx="6" fill="#23402e" stroke="#3f7a52"/>
+    <text x="164" y="214" fill="#7a8290" font-size="12">out of earshot</text>
+    <text x="404" y="214" fill="#7a8290" font-size="12">out of earshot</text>
+    <text x="644" y="214" fill="#cde8d4" font-size="12">heard</text>
+    <line x1="625" y1="186" x2="625" y2="232" stroke="#d8b46a" stroke-dasharray="3 3"/>
+    <text x="560" y="248" fill="#d8b46a" font-size="11">within 8m, through open doors</text>
+  </g>
+
+  <!-- what the player sees -->
+  <text x="30" y="300" fill="#e6e6e6" font-weight="600">they see</text>
+  <g>
+    <rect x="150" y="280" width="170" height="32" rx="14" fill="#18181b" stroke="#3a404a"/>
+    <text x="166" y="301" fill="#7a8290">…</text>
+    <text x="186" y="301" fill="#7a8290">…</text>
+    <text x="206" y="301" fill="#e6e6e6">six</text>
+    <rect x="166" y="320" width="84" height="20" rx="10" fill="none" stroke="#52525b" stroke-dasharray="4 3"/>
+    <text x="176" y="334" fill="#a1a1aa" font-size="10">say again?</text>
+
+    <path d="M340,300 L400,300" stroke="#7a8290" marker-end="url(#next)"/>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="414" y="288">a press: the player says "Say again?", and</text>
+      <text x="414" y="304">speech-repeat is emitted. comms answers, and</text>
+      <text x="414" y="320">bob says it again to them, over comms if far.</text>
+      <text x="414" y="336">The same line fills in. Unanswered in 1s, it shakes</text>
+    </g>
+    <text x="414" y="364" fill="#5aa0f0" font-size="12">w.speech.askRepeat → repeat / refuseRepeat</text>
+    <text x="150" y="364" fill="#7a8290" font-size="11">heard none of it: not in</text>
+    <text x="150" y="378" fill="#7a8290" font-size="11">the history, only "…" over them</text>
+  </g>
+</svg>
