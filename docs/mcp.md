@@ -15,8 +15,7 @@ what works as TypeScript, run it, and see what happened.
   - Unlike Chrome for Testing, it can sign in to Google, so Gemini in Chrome works there.
   - A second usual Chrome shares its app with yours, so the Dock and Cmd-Tab bring yours forward.
   - Its launch flags stop Chrome throttling the page whilst its window is hidden or covered.
-  - They also turn on WebMCP (`document.modelContext`), which production gets from its origin trial.
-    In another Chrome, enable "WebMCP for testing" in `chrome://flags`.
+  - WebMCP is on in its profile, set by hand once: see [WebMCP](#webmcp).
 - A windowless Chrome may still hold the port, e.g. one relaunched with `--no-startup-window --restart`.
   Quitting its windows leaves it running, and the MCP attaches to it again. Find it and end it:
   `pgrep -fl remote-debugging-port=9382`.
@@ -27,7 +26,7 @@ curl -s http://127.0.0.1:9382/json/version
 # If MCP not started, do what `openPage` in `cdp.ts` does
 "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary" --remote-debugging-port=9382 \
   --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --disable-background-timer-throttling \
-  --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --enable-blink-features=WebMCP \
+  --disable-backgrounding-occluded-windows --disable-renderer-backgrounding \
   --window-size=1400,900 http://localhost:5173/ &
 
 # If one is running but has no window, ask it for one on the dev page:
@@ -35,6 +34,31 @@ curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
 ```
 - Canary and the usual Chrome share the profile `$TMPDIR/npc-cli-mcp-chrome`, so its saved data and sign-in carry over.
   Canary, being newer, upgrades it, and the usual Chrome then warns.
+
+## WebMCP
+
+`packages/app/src/web-mcp-tools.ts` offers the jsh terminals to a browser agent through WebMCP
+(`document.modelContext`). `main.tsx` loads it only where that exists, in DEV and production.
+
+- `list_terminals` gives each open tty's key, and whether it is shown or busy.
+- `write_to_terminal {line, tty?, waitMs?}` types a line into a tty, by default the one shown, and returns what it printed.
+  It refuses a busy tty, and says if the line is still running after `waitMs` (10s).
+
+Where it is on:
+
+- **Production**: by the origin trial, whose token goes in `index.html` as `<meta http-equiv="origin-trial" content="…">`.
+- **localhost**: by the flag `chrome://flags/#enable-webmcp-testing` ("WebMCP for testing"), set once per profile.
+  - For the MCP's Canary, set it, then quit Canary and let the next MCP call relaunch it.
+    Chrome's own Relaunch button keeps its old command line.
+  - It is not a launch flag (`--enable-blink-features=WebMCP`), which shows an "unsupported flag" banner.
+  - The profile lives in `$TMPDIR`, so set it again if macOS clears it.
+
+Who calls the tools:
+
+- Not yet the Gemini panel in Chrome. Google has said it will support WebMCP, with no date.
+- The Model Context Tool Inspector extension lists and runs them, by hand or through Gemini with an API key
+  (free from Google AI Studio).
+- Only Chromium browsers have WebMCP. Firefox and Safari have not committed to it.
 
 ## The page side
 

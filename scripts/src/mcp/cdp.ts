@@ -180,7 +180,6 @@ export class Cdp {
           "--disable-background-timer-throttling",
           "--disable-backgrounding-occluded-windows",
           "--disable-renderer-backgrounding",
-          "--enable-blink-features=WebMCP", // `document.modelContext` on localhost, outside the origin trial
           "--window-size=1400,900",
           this.devUrl,
         ],
