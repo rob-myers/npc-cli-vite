@@ -578,20 +578,18 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
-  function getNpcOrThrow() {
-    try {
-      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
-    } catch {
-      throw Error(`npc not found: ${opts.npcKey}`);
-    }
+  /** Throws if none, unless `force`: then `undefined`, e.g. `$( lastPicked )` before a pick, and the point is skipped */
+  function getNpc() {
+    const npc = getNpcOrUndefined();
+    if (npc === undefined && opts.force !== true) throw Error(`npc not found: ${opts.npcKey}`);
+    return npc;
   }
 
   const pendingMoves: JshCli.PointAnyFormat[] = [];
 
   return {
     pendingMoves,
-    getNpcOrUndefined,
-    getNpcOrThrow,
+    getNpc,
     /** Move, handling named errors and any pause the move deferred */
     async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
       await w.e
@@ -711,7 +709,7 @@ async function move_const(
 ) {
   const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -721,9 +719,11 @@ async function move_const(
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
+      const npc = getNpc();
+      if (npc === undefined) break;
       await movePausable({
         ...moveFlags(opts),
-        npcKey: getNpcOrThrow().key,
+        npcKey: npc.key,
         to: next,
         arrive: pendingMoves.length === 0,
       });
@@ -745,7 +745,7 @@ async function move_lazy(
 ) {
   const { api, w } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -759,7 +759,8 @@ async function move_lazy(
       if (dst === api.eof) break;
       if (readNext) pendingRead = api.read();
 
-      const npc = getNpcOrThrow();
+      const npc = getNpc();
+      if (npc === undefined) continue;
       /** Stopped short, e.g. at a door: none of what follows can be reached */
       const stopped = () => {
         pendingMoves.length = 0;
@@ -795,7 +796,7 @@ async function move_next(
 ) {
   const { api, w } = ct;
 
-  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
+  const { getNpc, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
   });
@@ -805,7 +806,11 @@ async function move_next(
     let next: undefined | MaybeMeta<JshCli.PointAnyFormat>;
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
-      const npc = getNpcOrThrow();
+      const npc = getNpc();
+      if (npc === undefined) {
+        pendingRead = api.read();
+        continue;
+      }
       heedWalls(w, npc, next);
       const movePromise =
         next.meta?.look === true && npc.isStrafing() === false
@@ -843,8 +848,10 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
     npc.isStrafing() === true
       ? [{ x: -Math.sin(ry), y: -Math.cos(ry) }, go]
       : [go, { x: go.x - armInLean * go.y, y: go.y + armInLean * go.x }];
-  const { room, square } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
-  npc.anim.setNearWall(room >= near ? false : square >= walkSquare ? "ahead" : "beside");
+  const { room, square, dir } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
+  /** Square on, and not a post, e.g. a thin wall between doors */
+  const ahead = square >= walkSquare && npc.clearBeside(npc.point, npc.nodeRef, dir, room) === false;
+  npc.anim.setNearWall(room >= near ? false : ahead ? "ahead" : "beside", room);
 }
 
 /**
@@ -1131,33 +1138,39 @@ export function play({ api, w }: JshCli.RunArg) {
 
 /**
  * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
- * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
+ * that arm, or it is killed. Drawn in whilst another npc is too close. `talk_left` gestures with the left arm, beside
+ * a right arm's pose. `shake` is a one-off "no" of the head.
  * A clip's own name shows it whole, releasing one in pain or pacified. A crouch, `crouch_half` or `crouch_cover`, is
  * kept, moving too, until another clip is shown.
- * `head` turns their head alone to an npc or point, their body left as it is, until a bare `pose` lets it go. With
- * `--track` it follows the npc, within the neck's reach, until killed or replaced
+ * `head` turns their head alone to an npc or point once, their body left as it is, until a bare `pose` lets it go.
+ * `look` follows an npc so, within the neck's reach, until killed or replaced
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
+ * pose rob as:talk_left at:npc-0
  * pose rob as:shake
  * pose rob as:crouch_cover
  * pose npc-0 as:breathe
  * pose rob head:npc-0
- * pose rob head:npc-0 --track
+ * pose rob head:[3,0,4]
+ * pose rob look:npc-0
  * pose rob
  * ```
  */
-export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args, { "--track": "track" })) {
+export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args)) {
   const [npcKey] = api.getJsOperands(args, opts);
   if (npcKey === undefined)
-    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [--track]");
+    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [look:npcKey]");
   const npc = w.npc.get(npcKey);
   // bare, their head is let go
-  if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head) === undefined) return void poseHead(api, w, npc, null, false);
+  if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head ?? opts.look) === undefined)
+    return void poseHead(api, w, npc, null, false);
   if (opts.eyes !== undefined) poseEyes(npc, opts.eyes);
   if (opts.blink !== undefined) npc.anim.blink(opts.blink);
   await Promise.all([
-    opts.head === undefined ? undefined : poseHead(api, w, npc, opts.head, opts.track === true),
+    (opts.look ?? opts.head) === undefined
+      ? undefined
+      : poseHead(api, w, npc, opts.look ?? opts.head ?? null, opts.look !== undefined),
     opts.as === undefined ? undefined : poseAs(api, w, npc, opts.as, opts.at),
   ]);
 }
@@ -1168,7 +1181,7 @@ type PoseOpts = {
   eyes?: EyesKey;
   blink?: number;
   head?: null | string | Geom.VectJson;
-  track?: boolean;
+  look?: string;
 };
 
 /** Their eyes, apart from any pose — see `docs/skin-slices.md` */
@@ -1178,7 +1191,7 @@ function poseEyes(npc: JshCli.Npc, eyes: EyesKey) {
   npc.anim.setEyes(eyes);
 }
 
-/** `pose … head:`: their head alone turns to an npc or point. `track` follows the npc until killed or replaced */
+/** `pose … head:`: their head alone turns to an npc or point. `track`, from `look:`, follows the npc until killed or replaced */
 async function poseHead(
   api: JshCli.RunArg["api"],
   w: JshCli.WorldState,
@@ -1190,9 +1203,9 @@ async function poseHead(
   const target = typeof head === "string" ? w.npc.get(head) : null;
   const point = target === null && head !== null ? w.helper.parseGroundPoint(head as Geom.VectJson) : null;
   const at = () => (target === null ? point : { x: target.position.x, y: target.position.z });
+  if (track === true && target === null) throw Error("look: expected npcKey, else head: for a point");
   npc.anim.turnHeadTo(at());
-  if (track === false) return;
-  if (target === null) throw Error("--track: expected head:npcKey");
+  if (track === false || target === null) return;
 
   const task = new Task();
   let replaced = false;
@@ -1217,7 +1230,7 @@ async function poseHead(
   if (task.isCancelled && replaced === false) throw api.getKillError();
 }
 
-/** By npcKey, how to end their head's tracking: a new `head` replaces it */
+/** By npcKey, how to end their head's tracking: a new `head` or `look` replaces it */
 const heads = new Map<string, () => void>();
 
 /** `pose … as:`: a shake, a clip shown whole, else an upper-body pose held — see `poseUpper` */
@@ -1236,7 +1249,7 @@ function poseClip(npc: JshCli.Npc, clip: keyof JshCli.WorldState["npc"]["clips"]
   npc.anim.setPose(clip);
 }
 
-/** An upper-body pose, facing and pointing at `target`, held until they move, are armed, or it is killed or replaced */
+/** An upper-body pose of one arm, facing and pointing at `target`, held until they move, are armed, or it is killed or replaced */
 async function poseUpper(
   api: JshCli.RunArg["api"],
   w: JshCli.WorldState,
@@ -1244,15 +1257,18 @@ async function poseUpper(
   as: PoseKey,
   target: undefined | JshCli.Npc,
 ) {
-  const { upper: clipKey, avoid } = poseConfig.poses[as];
-  const { upper, face } = npc.anim;
+  const { upper: clipKey, avoid, side } = poseConfig.poses[as];
+  const { face } = npc.anim;
+  const upper = npc.anim.upperOf(side);
   const mine = () => upper.target === 1 && (upper.key === clipKey || upper.key === avoid);
   /** A gun held up whilst crouched, not raised, gives way */
   const tucked = upper.key === "phaser_aim_avoid" && w.phasers.isArmed(npc.key) === false;
   if (upper.target === 1 && mine() === false && tucked === false)
-    throw Error(`${npc.key}: their upper body is taken: ${upper.key}`);
+    throw Error(`${npc.key}: their ${side} arm is taken: ${upper.key}`);
 
-  posing.get(npc.key)?.("replaced");
+  /** Each arm's pose is apart */
+  const poseKey = `${npc.key}:${side}`;
+  posing.get(poseKey)?.("replaced");
   let ended: undefined | "killed" | "moved" | "replaced";
   let end = (_why: NonNullable<typeof ended>) => {};
   const done = new Promise<void>((resolve) => {
@@ -1261,12 +1277,12 @@ async function poseUpper(
       resolve();
     };
   });
-  posing.set(npc.key, end);
+  posing.set(poseKey, end);
   const sub = w.events.subscribe({
     next(e) {
       if (e.key === "started-moving" && e.npcKey === npc.key) end("moved");
       if (e.key === "phasers" && e.armed === true && e.npcKeys.includes(npc.key)) {
-        if (mine()) npc.anim.setUpper(null); // at once, for theirs to take
+        if (mine()) npc.anim.setUpper(null, { side }); // at once, for theirs to take
         end("replaced");
       }
     },
@@ -1280,21 +1296,23 @@ async function poseUpper(
   let secs = w.gameTime.now();
   try {
     if (npc.isMoving()) end("moved");
-    else npc.anim.setUpper(clipKey);
+    else npc.anim.setUpper(clipKey, { side });
     while (ended === undefined && w.n[npc.key] === npc && mine()) {
       const delta = w.gameTime.now() - secs;
       secs += delta;
-      if (w.npc.near.beside(npc.key, poseConfig.near).length > 0) holdUntil = secs + poseConfig.holdSecs;
-      const next = holdUntil > secs ? avoid : clipKey;
+      if (avoid !== null && w.npc.near.beside(npc.key, poseConfig.near).length > 0)
+        holdUntil = secs + poseConfig.holdSecs;
+      const next = avoid !== null && holdUntil > secs ? avoid : clipKey;
       if (upper.key !== next) {
-        npc.anim.setUpper(next, { swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
+        npc.anim.setUpper(next, { side, swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
       }
 
       const aimed = target !== undefined && w.n[target.key] === target;
       if (aimed && (face.aim === null || face.aim === ownAim)) {
         face.aim = ownAim = { at: target.point, rate: 1, untilRest: false };
       }
-      if (aimed && (upper.aim === null || upper.aim === armAim)) {
+      // the arm aims from the right forearm's frame
+      if (aimed && side === "right" && (upper.aim === null || upper.aim === armAim)) {
         const { x, y, z } = target.position;
         armAim.at.set(x, y + target.anim.headY, z);
         const step = delta / poseConfig.aimSecs;
@@ -1304,17 +1322,17 @@ async function poseUpper(
       await Promise.race([w.npc.nextTick(), done]); // a tick never comes whilst paused
     }
   } finally {
-    if (ended !== "replaced" && mine()) npc.anim.setUpper(null);
+    if (ended !== "replaced" && mine()) npc.anim.setUpper(null, { side });
     if (face.aim === ownAim) face.aim = null;
     if (upper.aim === armAim) upper.aim = null;
-    if (posing.get(npc.key) === end) posing.delete(npc.key);
+    if (posing.get(poseKey) === end) posing.delete(poseKey);
     sub.unsubscribe();
     handlers.dispose();
   }
   if (ended === "killed") throw api.getKillError();
 }
 
-/** By npcKey, how to end their pose: a new one replaces it */
+/** By npcKey and arm, how to end their pose: a new one replaces it */
 const posing = new Map<string, (why: "replaced") => void>();
 
 /**
@@ -1485,31 +1503,24 @@ export function revoke(
 }
 
 /**
+ * The player says something, or `with:` does (`npc:` too)
  * ```sh
- * # say something
- * say hi npc:rob
- * say npc:rob hi
+ * say hi
+ * say hi with:rob
+ * say with:rob hi
  * say hi npc:rob secs:5
- * say hi npc:rob for:10
- * say hi npc:rob for:Infinity
- * say hi rob for:1
+ * say hi with:rob for:10
+ * say hi with:rob for:Infinity
  * ```
  */
 export function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { npcKey: string; words?: string; secs?: number } = api.jsArg(args, { npc: "npcKey", for: "secs" }),
+  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { npc: "with", for: "secs" }),
 ) {
-  /** support `say hi rob` where lastWord is npcKey */
-  let lastWord: undefined | string;
-  opts.npcKey ??= (lastWord = getLastUnknownNaked(opts)) as string;
-
-  const npc = w.npc.get(opts.npcKey);
-  const words =
-    opts.words ??
-    api
-      .getJsOperands(args, opts)
-      .slice(0, lastWord === undefined ? undefined : -1)
-      .join(" ");
+  const npcKey = opts.with ?? w.player?.key;
+  if (npcKey === undefined) throw Error("no player");
+  const npc = w.npc.get(`${npcKey}`);
+  const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
 
   if (words) {
     w.speech.say(npc.key, words, opts.secs);

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+    <marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/>
+    </marker>
+    <marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#f87171"/>
+    </marker>
+  </defs>
+  <rect width="960" height="420" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">a reply's needs: tested only when pressed, never in real time</text>
+
+  <g>
+    <rect x="30" y="52" width="168" height="150" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="44" y="74" fill="#e6e6e6" font-weight="600">1  press</text>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="44" y="96">the player presses a</text>
+      <text x="44" y="112">reply. One needing</text>
+      <text x="44" y="128">nothing is said at once.</text>
+      <text x="44" y="148">Its thread's replies</text>
+      <text x="44" y="164">disable meanwhile</text>
+    </g>
+    <text x="44" y="190" fill="#5aa0f0" font-size="12">w.speech.choose</text>
+
+    <rect x="213" y="52" width="168" height="150" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="227" y="74" fill="#e6e6e6" font-weight="600">2  talk-choose</text>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="227" y="96">the World emits the</text>
+      <text x="227" y="112">reply's key and its</text>
+      <text x="227" y="128">needs, then waits at</text>
+      <text x="227" y="144">most 1s of real time</text>
+      <text x="227" y="160">for an answer</text>
+    </g>
+    <text x="227" y="190" fill="#5aa0f0" font-size="12">talk.choosing</text>
+
+    <rect x="396" y="52" width="168" height="150" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="410" y="74" fill="#e6e6e6" font-weight="600">3  comms tests</text>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="410" y="96">between the one asked</text>
+      <text x="410" y="112">and the asker:</text>
+      <text x="410" y="132"><tspan fill="#e6e6e6">near</tspan> within 1.6m</text>
+      <text x="410" y="148"><tspan fill="#e6e6e6">facing</tspan> within 36°</text>
+      <text x="410" y="164"><tspan fill="#e6e6e6">psi</tspan> raised</text>
+    </g>
+    <text x="410" y="190" fill="#5aa0f0" font-size="12">commsNeeds[k].met</text>
+
+    <rect x="579" y="52" width="168" height="150" rx="8" fill="#262a31" stroke="#3a404a" stroke-dasharray="5 4"/>
+    <text x="593" y="74" fill="#e6e6e6" font-weight="600">4  the worker</text>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="593" y="96"><tspan fill="#e6e6e6">sees</tspan> asks the nav</text>
+      <text x="593" y="112">worker too, every</text>
+      <text x="593" y="128">such query in one</text>
+      <text x="593" y="144">batch</text>
+    </g>
+    <text x="593" y="190" fill="#5aa0f0" font-size="12">spotQueryDetached</text>
+
+    <rect x="762" y="52" width="168" height="150" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="776" y="74" fill="#e6e6e6" font-weight="600">5  the outcome</text>
+    <g fill="#9aa0a6" font-size="12">
+      <text x="776" y="96"><tspan fill="#e6e6e6">all met</tspan>: reply, said</text>
+      <text x="776" y="112">as jsh reply says it</text>
+      <text x="776" y="132"><tspan fill="#e6e6e6">else</tspan> refuse: it</text>
+      <text x="776" y="148">shakes, and its failed</text>
+      <text x="776" y="164">pips flash red</text>
+    </g>
+    <text x="776" y="190" fill="#5aa0f0" font-size="12">talk-reply, talk-refused</text>
+  </g>
+  <g stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)">
+    <line x1="198" y1="127" x2="211" y2="127"/>
+    <line x1="381" y1="127" x2="394" y2="127"/>
+    <line x1="564" y1="127" x2="577" y2="127"/>
+    <line x1="747" y1="127" x2="760" y2="127"/>
+  </g>
+  <path d="M480,202 L480,224 L826,224 L826,205" fill="none" stroke="#d8b46a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#yellow)"/>
+  <text x="653" y="240" fill="#d8b46a" font-size="12" text-anchor="middle">no query needed: straight to the outcome</text>
+  <path d="M297,202 L297,256 L866,256 L866,205" fill="none" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#red)"/>
+  <text x="581" y="272" fill="#f87171" font-size="12" text-anchor="middle">nothing answered within 1s, e.g. comms off: refused, every need failed</text>
+
+  <!-- a refusal, as drawn -->
+  <rect x="30" y="296" width="900" height="100" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="48" y="320" fill="#7a8290" font-size="12">a refusal, as drawn</text>
+  <rect x="48" y="338" width="150" height="28" rx="14" fill="none" stroke="#f87171"/>
+  <text x="62" y="357" fill="#e6e6e6" font-size="12">1  Let me try</text>
+  <rect x="160" y="349" width="11" height="6" rx="2" fill="#f87171"/>
+  <rect x="175" y="349" width="11" height="6" rx="2" fill="none" stroke="#71717a"/>
+  <g fill="#9aa0a6" font-size="12">
+    <text x="224" y="350">It needed psi and near. psi failed, so its pip flashes red and near's stays as it was.</text>
+    <text x="224" y="368">The reply shakes with a red border, then may be pressed again.</text>
+  </g>
+</svg>

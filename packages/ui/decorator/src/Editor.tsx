@@ -6,14 +6,11 @@ import {
   deleteScenarioEntry,
   loadScenarioEntries,
   saveScenarioEntry,
-  scenarioShared,
-  useScenarioCharacters,
   useScenarioGraphs,
-  useScenarioShared,
 } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom";
+import { Mat, Vect } from "@npc-cli/util/geom";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
   ArrowUUpLeftIcon,
@@ -26,7 +23,6 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import { CharacterLayer } from "./CharacterLayer";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
@@ -45,9 +41,10 @@ import {
 } from "./decor-edit";
 import { GraphLayer } from "./GraphLayer";
 import { GraphSidebar } from "./GraphSidebar";
-import { addedEdge, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
+import { addedEdge, copiedGraph, type GraphTarget, newGraph, type Pt, snapped } from "./graph-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { SpawnErrorTip } from "./SpawnErrorTip";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import { type DecoratorUiMeta, type NavMapLayer, sidebarTabs } from "./schema";
@@ -57,13 +54,10 @@ import { nearestSpot, parseSpotPick, type SpotPick, spotPointOf, spotWorldPoint,
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const { w, meta } = props;
   const map = useRef<NavMap2dApi>(null);
-  /** What a Scenario panel on this World shows, should there be one: its character is drawn on the map */
-  const shared = useScenarioShared(meta.worldKey);
-  const character = shared.entry;
-  /** Each can be spawned, with their skin and their doors */
-  const characters = useScenarioCharacters(character);
-  /** This map's graphs, as their files have them */
-  const graphs = useScenarioGraphs(w.mapKey);
+  /** This map's graphs, as their files have them, and every other map's */
+  const { here: graphs, others: otherGraphs } = useScenarioGraphs(w.mapKey);
+  /** At least the tabs' width, whatever was saved */
+  const sidebarWidth = Math.max(minSidebarWidth, meta.sidebarWidth);
   const { uiStoreApi } = useContext(UiContext);
   /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
   const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
@@ -82,7 +76,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     const m = revealMarginPx;
     // choosing a spot opens the sidebar, so it is kept clear of where the sidebar will be
     const [left, right, top, bottom] = [
-      shown.left + meta.sidebarWidth + m,
+      shown.left + sidebarWidth + m,
       shown.right - m,
       shown.top + m,
       shown.bottom - m,
@@ -94,7 +88,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     map.current?.centreOn(at.x, at.y, 0, { x: to.x - centre.x, y: to.y - centre.y });
   };
   /** On screen, the centre of the map left clear by the sidebar, from the map's own centre. A chosen spot opens it */
-  const sidebarOffset = () => ({ x: meta.sidebarWidth / 2, y: 0 });
+  const sidebarOffset = () => ({ x: sidebarWidth / 2, y: 0 });
 
   const state = useStateRef(
     (): State => ({
@@ -173,7 +167,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         e.stopPropagation();
         e.preventDefault(); // else the drag selects text across the list
         const startX = e.clientX;
-        const startWidth = meta.sidebarOpen ? meta.sidebarWidth : 0;
+        const startWidth = meta.sidebarOpen ? sidebarWidth : 0;
         const onMove = (ev: MouseEvent) => {
           const width = startWidth + ev.clientX - startX;
           // dragged in past its narrowest it closes; dragged out again it opens, at that width
@@ -196,21 +190,34 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       isMenuBlocked() {
         return performance.now() < state.menuBlockedUntil;
       },
+      doableAt(at) {
+        const r = doableReach;
+        const dist = (d: Geomorph.DecorPoint) => Math.hypot(d.x - at.x, d.y - at.y);
+        const [near] = w.decor
+          .queryRect({ x: at.x - r, y: at.y - r, width: 2 * r, height: 2 * r })
+          .filter((d): d is Geomorph.DecorPoint => d.type === "point" && typeof d.meta.do === "string" && dist(d) <= r)
+          .sort((a, b) => dist(a) - dist(b));
+        if (near !== undefined) return { x: near.x, y: near.y, meta: near.meta };
+        const gmId = w.findGmIdContaining(at);
+        if (gmId === null) return null;
+        const gm = w.gms[gmId];
+        const local = gm.inverseMatrix.transformPoint({ ...at });
+        const obstacleId = gm.obstacles.findIndex(
+          (o) => o.meta.decorIds && o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).contains(local),
+        );
+        // the World takes its free point nearest `at`
+        return obstacleId === -1
+          ? null
+          : { ...at, meta: { ...gm.obstacles[obstacleId].meta, obstacle: true, gmId, obstacleId } };
+      },
       async spawnNpc(npcKey, at) {
-        // theirs, should a character be theirs: its skin and its doors
-        const { skin, maps } = characters.find((x) => x.npcKey === npcKey) ?? {};
         try {
-          const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
-          await w.npc.spawn({ npcKey, at, as: hasSkin ? skin : undefined });
-          if (hasSkin) w.n[npcKey]?.setSkin(skin); // a respawn keeps the old one
-          for (const gdKey of maps?.[w.mapKey]?.doors ?? []) {
-            if (gdKey in w.door.byKey) w.e.setAccess(npcKey, gdKey as Geomorph.GmDoorKey, true);
-          }
+          await w.npc.spawn({ npcKey, at: state.doableAt(at) ?? at });
           w.view.forceUpdate();
           if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
           state.set({ spawning: null, spawnError: null });
         } catch (e) {
-          state.set({ spawnError: e instanceof Error ? e.message : String(e) });
+          state.set({ spawnError: { message: e instanceof Error ? e.message : String(e), at } });
         }
       },
       onMapClick(at) {
@@ -279,6 +286,26 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         const { x, y } = Vect.average(nodes.map(({ at: [x, y] }) => ({ x, y })));
         map.current?.centreOn(x, y, locateZoom, sidebarOffset());
       },
+      async copyGraph(src) {
+        const c = state.viewCentre();
+        if (c === null) return;
+        const from = Vect.average(src.nodes.map(({ at: [x, y] }) => ({ x, y })));
+        const to: Record<string, Pt> = {};
+        const off: string[] = [];
+        for (const { id, at } of src.nodes) {
+          const moved = { x: at[0] - from.x + c.x, y: at[1] - from.y + c.y };
+          const onMesh = snapped(w, moved);
+          if (onMesh === null) off.push(id);
+          to[id] = onMesh ?? [moved.x, moved.y];
+        }
+        const keys = await loadScenarioEntries();
+        const slug = src.key.slice("graph/".length);
+        let [key, n] = [`graph/${slug}`, 1];
+        while (key in keys) key = `graph/${slug}-${++n}`;
+        state.chooseGraph(key);
+        state.saveGraph(copiedGraph(src, key, w.mapKey, to));
+        if (off.length > 0) state.set({ graphError: `off the navmesh: ${off.join(" ")}. Drag them on` });
+      },
       connectGraph(to) {
         const [graph, from] = [state.graphOf(state.graph), state.graphConnect];
         state.set({ graphConnect: null });
@@ -293,12 +320,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return state.graphDraft?.key === key ? state.graphDraft.graph : (graphs[key] ?? null);
       },
       async newGraph() {
-        const view = map.current?.getViewRect();
-        const shownWidth = state.mapEl?.getBoundingClientRect().width;
-        if (view === undefined || shownWidth === undefined) return;
-        // the centre of what the sidebar leaves clear
-        const clear = meta.sidebarOpen ? meta.sidebarWidth / shownWidth : 0;
-        const c = { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
+        const c = state.viewCentre();
+        if (c === null) return;
         const [a, b] = [snapped(w, { x: c.x - 1, y: c.y }), snapped(w, { x: c.x + 1, y: c.y })];
         if (a === null || b === null) return state.set({ graphError: "no navmesh at the map's centre" });
         const keys = await loadScenarioEntries();
@@ -308,8 +331,15 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         state.chooseGraph(next.key);
         state.saveGraph(next);
       },
+      viewCentre() {
+        const view = map.current?.getViewRect();
+        const shownWidth = state.mapEl?.getBoundingClientRect().width;
+        if (view === undefined || shownWidth === undefined) return null;
+        const clear = meta.sidebarOpen ? sidebarWidth / shownWidth : 0;
+        return { x: view.x + view.width * (0.5 + clear / 2), y: view.y + view.height / 2 };
+      },
       saveGraph(next) {
-        if (next === state.graphOf(next.key)) return; // e.g. an edge already there
+        if (next === state.graphOf(next.key)) return; // e.g. an edge from a node to itself
         state.history.markGraph(next.key);
         state.writeGraph(next.key, next);
       },
@@ -338,7 +368,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters, graphs], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, graphs], reset: { history: false } },
   );
 
   /** Fetched for the spots layer, and for a chosen graph's nodes on spots */
@@ -359,26 +389,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     [graph, spots, w],
   );
 
-  /** The characters first, then whoever else is in the World */
-  const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
-
-  // a Scenario panel shows the character of whoever was last chosen here
-  const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1] ?? null;
-  useEffect(() => {
-    scenarioShared.set(meta.worldKey, { npcKey: mapNpcKey });
-  }, [meta.worldKey, mapNpcKey]);
-
-  // ...and asks for the map to be centred on its entry's npc, else its first room
-  useEffect(() => {
-    if (shared.locate !== null) map.current?.centreOn(shared.locate.x, shared.locate.y, locateZoom);
-  }, [shared.locate]);
-
-  // ...and whoever it renames is followed here under their new key
-  useEffect(() => {
-    const { renamed } = shared;
-    if (renamed === null || meta.npcKeys.includes(renamed.from) === false) return;
-    state.setNpcKeys(meta.npcKeys.flatMap((key) => (key !== renamed.from ? key : (renamed.to ?? []))));
-  }, [shared.renamed]);
+  /** Whoever is in the World, then those shown who are not, to spawn again */
+  const npcKeys = [...new Set([...Object.keys(w.n ?? {}), ...meta.npcKeys])];
 
   /** The latest, for the World's events */
   const reveal = useRef(revealSpot);
@@ -411,12 +423,17 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       tabIndex={0}
       onKeyDown={state.onKeyDown}
     >
+      <SpawnErrorTip
+        error={state.spawnError}
+        container={state.mapEl}
+        toClient={(x, y) => map.current?.toClient(x, y)}
+        onClose={() => state.set({ spawnError: null })}
+      />
       {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
       <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap select-none *:shrink-0">
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
-        {state.spawnError !== null && <span className="text-red-400">{state.spawnError}</span>}
         {/* the tool: select, or add one of a type where the map is clicked */}
         <Picker
           title={
@@ -509,7 +526,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           // over the map: dark smoked glass, the map behind blurred and greyed
           <div
             className="absolute inset-y-0 left-0 z-10 flex flex-col bg-neutral-900/45 text-zinc-300 backdrop-blur-sm backdrop-saturate-0"
-            style={{ width: meta.sidebarWidth }}
+            style={{ width: sidebarWidth }}
           >
             <div className="shrink-0 flex items-center gap-1 m-1.5">
               {/* a segmented control: the chosen tab a raised pill */}
@@ -592,12 +609,14 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             {meta.sidebarTab === "graph" && (
               <GraphSidebar
                 graphs={graphs}
+                others={otherGraphs}
                 chosen={graph}
                 target={state.graphTarget}
                 editable={graphsEditable}
                 error={state.graphError}
                 onChoose={state.chooseGraph}
                 onNew={state.newGraph}
+                onCopy={state.copyGraph}
                 onDelete={state.deleteGraph}
                 onCommit={state.saveGraph}
                 onTarget={(graphTarget) => state.set({ graphTarget })}
@@ -618,7 +637,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
         <div
           className="absolute inset-y-0 z-10 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
-          style={{ left: meta.sidebarOpen ? meta.sidebarWidth : 0 }}
+          style={{ left: meta.sidebarOpen ? sidebarWidth : 0 }}
           onMouseDown={state.onSidebarResizeStart}
         />
         <DecorMenu
@@ -658,7 +677,6 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
-            {character !== null && <CharacterLayer w={w} entry={character} />}
             {graph !== null && (
               <GraphLayer
                 w={w}
@@ -716,7 +734,7 @@ function ToolButton(props: {
 }
 
 /**
- * The characters and whoever else is in the World. A name centres on them, staying open, else arms a spawn
+ * Whoever is in the World, and whoever the map shows. A name in the World centres on them, staying open, else arms a spawn
  * where the map is next clicked. The eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
@@ -801,8 +819,11 @@ type State = {
   tool: "select" | DecorType;
   /** The npc who goes where the map is next clicked */
   spawning: null | string;
-  spawnError: null | string;
-  /** Spawns them there, or respawns them, as their character has them if they have one */
+  /** Why the last spawn failed, and where: shown there */
+  spawnError: null | { message: string; at: Geom.VectJson };
+  /** A doable decor point near `at`, else a doable obstacle under it, as a point the World spawns onto */
+  doableAt(at: Geom.VectJson): null | MaybeMeta<Geom.VectJson>;
+  /** Spawns them there, or respawns them: onto a doable there, doing it */
   spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;
@@ -846,6 +867,10 @@ type State = {
   graphConnect: null | string;
   /** Chooses a graph, and centres the map on it */
   chooseGraph(key: string): void;
+  /** DEV: a copy of another map's graph, centred in the view, as a new graph here */
+  copyGraph(src: GraphEntry): Promise<void>;
+  /** In map metres, the centre of what the sidebar leaves clear */
+  viewCentre(): null | Geom.VectJson;
   /** Ends an edge being drawn, at node `to` */
   connectGraph(to: string): void;
   /** DEV */
@@ -875,7 +900,11 @@ const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static", "
 const tools: ("select" | DecorType)[] = ["select", "point", "rect", "circle", "quad"];
 type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };
-const minSidebarWidth = 120;
+/** The tabs' width */
+const minSidebarWidth = 192;
+/** Metres from a drop within which a doable point is taken */
+const doableReach = 0.4;
+const tmpMat = new Mat();
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
 /** Screen px a chosen spot must be clear of the map's visible edges, else the map glides to it */

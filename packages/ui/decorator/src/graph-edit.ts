@@ -1,5 +1,5 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { edgeKey, type GraphEntry, type GraphNode } from "@npc-cli/ui__world/scenario.schema";
+import type { GraphEdge, GraphEntry, GraphNode } from "@npc-cli/ui__world/scenario.schema";
 import { toPrecision } from "@npc-cli/util/legacy/generic";
 
 /** `at` on the navmesh, to the cm, else `null` if none is near */
@@ -15,14 +15,19 @@ export function newGraph(key: string, mapKey: string, a: Pt, b: Pt): GraphEntry 
     name: key.slice("graph/".length),
     kind: "graph",
     mapKey,
-    directed: false,
+    undirected: true,
     meta: {},
     nodes: [
       { id: "n0", at: a, meta: {} },
       { id: "n1", at: b, meta: {} },
     ],
-    edges: [{ from: "n0", to: "n1", meta: {} }],
+    edges: [{ id: "e0", from: "n0", to: "n1", meta: {} }],
   };
+}
+
+/** A copy as `key` on map `mapKey`, each node at `to[id]`, off any spot */
+export function copiedGraph(graph: GraphEntry, key: string, mapKey: string, to: Record<string, Pt>): GraphEntry {
+  return { ...movedNodes(graph, to), key, mapKey };
 }
 
 /** With each node named in `to` there, off any spot */
@@ -51,73 +56,104 @@ export function removedNode(graph: GraphEntry, id: string): GraphEntry {
   };
 }
 
-/** With `from` joined to `to`, unless they are one or already joined */
+/** With a new edge from `from` to `to`, unless they are one node */
 export function addedEdge(graph: GraphEntry, from: string, to: string): GraphEntry {
-  if (from === to || hasEdge(graph, from, to)) return graph;
-  return { ...graph, edges: [...graph.edges, { from, to, meta: {} }] };
+  if (from === to) return graph;
+  return { ...graph, edges: [...graph.edges, { id: nextEdgeId(graph), from, to, meta: {} }] };
 }
 
-/** Without edge `i` */
-export function removedEdge(graph: GraphEntry, i: number): GraphEntry {
-  return { ...graph, edges: graph.edges.toSpliced(i, 1) };
+/** Without edge `id` */
+export function removedEdge(graph: GraphEntry, id: string): GraphEntry {
+  return { ...graph, edges: graph.edges.filter((e) => e.id !== id) };
 }
 
-/** With edge `i` split by a node at `at`, each half keeping its meta */
-export function splitEdge(graph: GraphEntry, i: number, at: Pt): GraphEntry {
+/** With edge `id` split by a node at `at`, each half keeping its meta */
+export function splitEdge(graph: GraphEntry, id: string, at: Pt): GraphEntry {
+  const i = graph.edges.findIndex((e) => e.id === id);
+  if (i === -1) return graph;
   const { from, to, meta } = graph.edges[i];
-  const id = nextNodeId(graph);
+  const node = nextNodeId(graph);
+  const halves = [
+    { id, from, to: node, meta },
+    { id: nextEdgeId(graph), from: node, to, meta: { ...meta } },
+  ];
   return {
     ...graph,
-    nodes: [...graph.nodes, { id, at, meta: {} }],
-    edges: graph.edges.toSpliced(i, 1, { from, to: id, meta }, { from: id, to, meta: { ...meta } }),
+    nodes: [...graph.nodes, { id: node, at, meta: {} }],
+    edges: graph.edges.toSpliced(i, 1, ...halves),
   };
 }
 
-/** With edge `i` the other way, unless that edge exists */
-export function reversedEdge(graph: GraphEntry, i: number): GraphEntry {
-  const { from, to, meta } = graph.edges[i];
-  if (hasEdge(graph, to, from)) return graph;
-  return { ...graph, edges: graph.edges.toSpliced(i, 1, { from: to, to: from, meta }) };
+/** With edge `id` the other way */
+export function reversedEdge(graph: GraphEntry, id: string): GraphEntry {
+  return { ...graph, edges: graph.edges.map((e) => (e.id === id ? { ...e, from: e.to, to: e.from } : e)) };
 }
 
-/** With directed set, keeping one edge of any pair made one by it */
-export function withDirected(graph: GraphEntry, directed: boolean): GraphEntry {
-  if (directed) return { ...graph, directed };
-  const seen = new Set<string>();
-  const edges = graph.edges.filter(({ from, to }) => {
-    const key = edgeKey(from, to, false);
-    return seen.has(key) ? false : (seen.add(key), true);
-  });
-  return { ...graph, directed, edges };
+export function withUndirected(graph: GraphEntry, undirected: boolean): GraphEntry {
+  return { ...graph, undirected };
 }
 
 /** With the meta of what `target` names replaced */
 export function withMeta(graph: GraphEntry, target: GraphTarget, meta: Record<string, unknown>): GraphEntry {
   if (target === null) return { ...graph, meta };
   if ("node" in target) return { ...graph, nodes: graph.nodes.map((n) => (n.id === target.node ? { ...n, meta } : n)) };
-  return { ...graph, edges: graph.edges.map((e, i) => (i === target.edge ? { ...e, meta } : e)) };
+  return { ...graph, edges: graph.edges.map((e) => (e.id === target.edge ? { ...e, meta } : e)) };
 }
 
 /** The meta of what `target` names, if it exists */
 export function metaOf(graph: GraphEntry, target: GraphTarget): undefined | Record<string, unknown> {
   if (target === null) return graph.meta;
   if ("node" in target) return graph.nodes.find((n) => n.id === target.node)?.meta;
-  return graph.edges[target.edge]?.meta;
+  return graph.edges.find((e) => e.id === target.edge)?.meta;
 }
 
-/** The next free id, e.g. `n4` */
+/** The next free node id, e.g. `n4` */
 function nextNodeId(graph: GraphEntry) {
-  const used = graph.nodes.map((n) => Number(n.id.match(/^n(\d+)$/)?.[1] ?? -1));
-  return `n${Math.max(-1, ...used) + 1}`;
+  return nextId("n", graph.nodes);
 }
 
-function hasEdge(graph: GraphEntry, from: string, to: string) {
-  const key = edgeKey(from, to, graph.directed);
-  return graph.edges.some((e) => edgeKey(e.from, e.to, graph.directed) === key);
+/** The next free edge id, e.g. `e4` */
+function nextEdgeId(graph: GraphEntry) {
+  return nextId("e", graph.edges);
 }
 
-/** The graph itself (`null`), a node by id, or an edge by index */
-export type GraphTarget = null | { node: string } | { edge: number };
+function nextId(prefix: string, items: { id: string }[]) {
+  const used = items.map(({ id }) => (id.startsWith(prefix) ? Number(id.slice(prefix.length)) : -1));
+  return `${prefix}${Math.max(-1, ...used.filter(Number.isInteger)) + 1}`;
+}
+
+/** Each edge's bow by id: 0 when alone, else parallel and reverse edges spread to either side */
+export function edgeBows(edges: GraphEdge[]): Map<string, number> {
+  const byPair = new Map<string, GraphEdge[]>();
+  for (const e of edges) {
+    const pair = e.from < e.to ? `${e.from} ${e.to}` : `${e.to} ${e.from}`;
+    byPair.set(pair, [...(byPair.get(pair) ?? []), e]);
+  }
+  const bows = new Map<string, number>();
+  for (const group of byPair.values()) {
+    // one side for the pair, whichever way each edge runs
+    group.forEach((e, k) => bows.set(e.id, (k - (group.length - 1) / 2) * (e.from < e.to ? 1 : -1)));
+  }
+  return bows;
+}
+
+/** A curve from `a` to `b` whose middle is `bow` off the straight line: its path, its middle, and its heading there */
+export function arc(a: Pt, b: Pt, bow: number) {
+  const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+  const len = Math.hypot(dx, dy) || 1;
+  const [nx, ny] = [-dy / len, dx / len];
+  const [mx, my] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const mid: Pt = [mx + nx * bow, my + ny * bow];
+  // a quadratic's middle is halfway to its control point
+  const d =
+    bow === 0
+      ? `M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`
+      : `M ${a[0]} ${a[1]} Q ${mx + 2 * nx * bow} ${my + 2 * ny * bow} ${b[0]} ${b[1]}`;
+  return { d, mid, angle: (Math.atan2(dy, dx) * 180) / Math.PI };
+}
+
+/** The graph itself (`null`), a node by id, or an edge by id */
+export type GraphTarget = null | { node: string } | { edge: string };
 
 export type Pt = [number, number];
 

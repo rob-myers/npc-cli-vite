@@ -1,44 +1,63 @@
 # TODO
 
-- 🚧 return to Scenario and start acting them out
-  - ✅ support `act {npcKey}` format
-    - `act kate count:3 down` or `act count kate from:3`
-    - `act kate avoid:rob`
-  - ✅ hide-and-seek sketch
-    - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by rob
-    - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
-    - can `act kate count:3 down`
-    - can `act count kate from:3 to:0`
-  - 🚧 guard-and-intruder sketch
-    - ✅ `act guard room:{grKey}`
-    - ❌ try provide structure via dfas with synchronising words
-    - ✅ `sc save patrol/patrol-route path:[[17.5,10.4],[17.5,11.4],[16.5,10.4]] npc:guard-0`
-    - `act patrol test-patrol`
-    - `act patrol path:[[17.5,10.4],[17.5,11.4],[16.5,10.2]] g1,g2 watch:nobody`
-    - ✅ patrols -> graphs
-      - `sc save graph/test ...`
-  - meeting-in-secret sketch
-  - breach-and-clear sketch
-
-- JobsLibrary -> Scenarios
+- 🚧 JobsLibrary -> Scenarios -> NpcBehave
+  - ✅ remove characters
+  - ✅ move graphs into Decorator
+    - modal shows graphs from other levels
+  - 🚧 graphs always directed
+  - 🚧 graphs from other maps can be instantiated
+  - Decorator drag spawn supports doables
+  - change conversations to SCP e.g. extract from site
+    - abstract extra ui e.g. can see npc
   - Scenarios include low-level behaviours e.g. npc-inventory?
-    - can `give rob item:book` but `take` ...
+    - ✅ can `give rob item:book` and `take book from:rob`
+  - move sidestep debug ui here
   - tldr only contains most common
   - label only (code viewable by running)
   - individual persisted params with history
-- clarify Blog component
+  - move
+  - 🚧 return to Scenario and start acting them out
+    - ✅ support `act {npcKey}` format
+      - `act kate count:3 down` or `act count kate from:3`
+      - `act kate avoid:rob`
+    - ✅ hide-and-seek sketch
+      - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by rob
+      - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
+      - can `act kate count:3 down`
+      - can `act count kate from:3 to:0`
+    - 🚧 guard-and-intruder sketch
+      - ✅ `act guard room:{grKey}`
+      - ❌ try provide structure via dfas with synchronising words
+      - ✅ `sc save patrol/patrol-route path:[[17.5,10.4],[17.5,11.4],[16.5,10.4]] npc:guard-0`
+      - `act patrol test-patrol`
+      - `act patrol path:[[17.5,10.4],[17.5,11.4],[16.5,10.2]] g1,g2 watch:nobody`
+      - ✅ patrols -> graphs
+        - `sc save graph/test ...`
+    - meeting-in-secret sketch
+    - breach-and-clear sketch
+- Blog component is list of videos
 - narrator ui
 
-- sidestep now too sensitive (own PR)
-  - multiple sidestep strategies
-- fix long corridor aim issue i.e. large difference between nearby npc and wall
+After vid:
 
+- improve hmr on edit tty related files e.g. BaseTty theme and const
+  - currently the component remounts, losing all state
+- tethered mode
+  - double-r to turn off too
+  - can tether to other npc
+- directional wasd: l , . /
+  - overrides existing keys , . /
+  - easier approach to phaser
+- crouch strafes by default
+- saw phaser lowered through closed door when nearly entered
+- initial World load slowdown so allotment responsive
+- sidestep responsiveness?
 
 ## World
 
 ### Animation and Npc
 
-- fix lowered phaser going through a closed door
+- ✅ fix lowered phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
 - ❌ refine psi breathing
@@ -181,13 +200,6 @@
 ## Jsh and Jobs
 
 - Jobs: indicate stale processes after hmr
-
-## Scenario panel
-
-- World applies a character's door keys on their npc's first spawn, whoever spawned them
-  - today only the Decorator's spawn does: jsh `spawn` and the player's restore give none
-  - first spawn per map only, so a `revoke` sticks
-
 
 ## MapEdit
 

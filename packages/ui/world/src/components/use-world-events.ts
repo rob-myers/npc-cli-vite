@@ -1021,7 +1021,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "psi-action":
           case "sidestep":
           case "speech":
+          case "speech-heard":
+          case "speech-repeat":
           case "stopped-moving":
+          case "talk-ask":
+          case "talk-bye":
+          case "talk-choose":
+          case "talk-refused":
+          case "talk-reply":
+          case "talk-tell":
             break;
           default:
             throw new ExhaustiveError(e);

@@ -2,10 +2,10 @@ import type { WorldState } from "@npc-cli/ui__world";
 import type { GraphEntry } from "@npc-cli/ui__world/scenario.schema";
 import { useEffect, useRef } from "react";
 import { isPress, snap, stepOf, toMap } from "./decor-edit";
-import { type GraphTarget, movedNodes, type Pt, snapped } from "./graph-edit";
+import { arc, edgeBows, type GraphTarget, movedNodes, type Pt, snapped } from "./graph-edit";
 
 /**
- * On the map, the chosen graph: its edges, an arrow on each if directed, and a handle per node, ringed on a spot.
+ * On the map, the chosen graph: its edges, each arrowed and parallel ones bowed apart, and a handle per node, ringed on a spot.
  * Editable, a handle drags its node off any spot, and an edge the whole graph, snapped onto the navmesh on release.
  * A click selects either, or ends a connect begun from a node's menu
  */
@@ -90,7 +90,7 @@ export function GraphLayer({
     });
   }
 
-  function onEdgePointerDown(e: React.PointerEvent<SVGLineElement>, i: number) {
+  function onEdgePointerDown(e: React.PointerEvent<SVGPathElement>, id: string) {
     let [dx, dy] = [0, 0];
     follow(e, {
       move(x, y, step) {
@@ -100,7 +100,7 @@ export function GraphLayer({
       end(commit, dragged) {
         ref.current?.removeAttribute("transform"); // React redraws it where it ends
         if (commit === false) return;
-        if (dragged === false) return onSelect({ edge: i });
+        if (dragged === false) return onSelect({ edge: id });
         const to = graph.nodes.map(({ id }) => {
           const [x, y] = pointOf.get(id) as Pt;
           return [id, snapped(w, { x: x + dx, y: y + dy })] as const;
@@ -115,46 +115,55 @@ export function GraphLayer({
   const selectedNode = selected !== null && "node" in selected ? selected.node : undefined;
   const selectedEdge = selected !== null && "edge" in selected ? selected.edge : undefined;
   const connectFrom = connecting === null ? undefined : pointOf.get(connecting);
+  const bows = edgeBows(graph.edges);
   return (
     <g ref={ref} data-graph={graph.key}>
-      {graph.edges.map(({ from, to }, i) => {
+      {graph.edges.map(({ id, from, to }) => {
         const [a, b] = [pointOf.get(from) as Pt, pointOf.get(to) as Pt];
-        const angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
-        const ink = i === selectedEdge ? inks.selected : inks.graph;
-        const ends = {
-          "data-graph-a": from,
-          "data-graph-b": to,
-          x1: a[0],
-          y1: a[1],
-          x2: b[0],
-          y2: b[1],
-          vectorEffect: "non-scaling-stroke",
-        } as const;
+        const bow = (bows.get(id) ?? 0) * bowMetres;
+        const { d, mid, angle } = arc(a, b, bow);
+        const ink = id === selectedEdge ? inks.selected : inks.graph;
         return (
-          <g key={i} pointerEvents={editable ? undefined : "none"}>
+          <g
+            key={id}
+            data-graph-a={from}
+            data-graph-b={to}
+            data-graph-arc={`${a.join(" ")} ${b.join(" ")} ${bow}`}
+            pointerEvents={editable ? undefined : "none"}
+          >
             {/* wide and clear, so a press finds the edge: a drag moves the graph, a right click opens the menu */}
-            <line
-              {...ends}
-              data-graph-edge={i}
+            <path
+              d={d}
+              data-graph-line
+              data-graph-edge={id}
               data-no-pan={editable ? true : undefined}
               className={editable ? "cursor-move" : undefined}
-              onPointerDown={(e) => onEdgePointerDown(e, i)}
+              onPointerDown={(e) => onEdgePointerDown(e, id)}
+              fill="none"
               stroke="transparent"
               strokeWidth={12}
+              vectorEffect="non-scaling-stroke"
             />
-            <line {...ends} stroke={ink} strokeWidth={2} pointerEvents="none" />
-            {graph.directed && (
-              <path
-                data-graph-arrow={`${from} ${to}`}
-                d="M -0.12 -0.08 L 0.04 0 L -0.12 0.08"
-                transform={`translate(${(a[0] + b[0]) / 2} ${(a[1] + b[1]) / 2}) rotate(${angle})`}
-                fill="none"
-                stroke={ink}
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-                pointerEvents="none"
-              />
-            )}
+            <path
+              d={d}
+              data-graph-line
+              fill="none"
+              stroke={ink}
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
+            <path
+              data-graph-arrow
+              d="M -0.12 -0.08 L 0.04 0 L -0.12 0.08"
+              transform={`translate(${mid[0]} ${mid[1]}) rotate(${angle})`}
+              fill="none"
+              stroke={ink}
+              strokeWidth={2}
+              opacity={graph.undirected ? undirectedArrowOpacity : undefined}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
           </g>
         );
       })}
@@ -206,13 +215,15 @@ export function GraphLayer({
 
 /** Node `id`'s handle at `to`, and the ends of its edges. Their arrows are hidden whilst `dragging` */
 function place(svg: SVGSVGElement, id: string, to: Pt, dragging: boolean) {
-  const [x, y] = to.map(String);
-  svg.querySelector(`[data-graph-node="${id}"]`)?.setAttribute("transform", `translate(${x} ${y})`);
-  for (const el of svg.querySelectorAll(`[data-graph-a="${id}"]`)) el.setAttribute("x1", x), el.setAttribute("y1", y);
-  for (const el of svg.querySelectorAll(`[data-graph-b="${id}"]`)) el.setAttribute("x2", x), el.setAttribute("y2", y);
-  for (const el of svg.querySelectorAll<SVGElement>("[data-graph-arrow]")) {
-    const ends = el.getAttribute("data-graph-arrow")?.split(" ") ?? [];
-    el.style.visibility = dragging && ends.includes(id) ? "hidden" : "";
+  svg.querySelector(`[data-graph-node="${id}"]`)?.setAttribute("transform", `translate(${to[0]} ${to[1]})`);
+  for (const el of svg.querySelectorAll<SVGGElement>(`[data-graph-a="${id}"], [data-graph-b="${id}"]`)) {
+    // as last rendered, so a drag's end puts them back
+    const [ax, ay, bx, by, bow] = (el.dataset.graphArc ?? "").split(" ").map(Number);
+    const a: Pt = el.dataset.graphA === id ? to : [ax, ay];
+    const b: Pt = el.dataset.graphB === id ? to : [bx, by];
+    const { d } = arc(a, b, bow);
+    for (const line of el.querySelectorAll("[data-graph-line]")) line.setAttribute("d", d);
+    el.querySelector<SVGElement>("[data-graph-arrow]")?.style.setProperty("visibility", dragging ? "hidden" : "");
   }
 }
 
@@ -242,6 +253,9 @@ type Props = {
 
 /** Metres */
 const handleRadius = 0.16;
+/** Between parallel edges' middles */
+const bowMetres = 0.3;
+const undirectedArrowOpacity = 0.4;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
 const inks = { graph: "var(--deco-graph)", selected: "var(--deco-graph-selected)", text: "var(--deco-graph-text)" };

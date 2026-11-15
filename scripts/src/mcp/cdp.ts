@@ -176,7 +176,10 @@ export class Cdp {
           `--remote-debugging-port=${this.port}`,
           `--user-data-dir=${path.join(os.tmpdir(), "npc-cli-mcp-chrome")}`,
           "--no-first-run",
-          "--disable-infobars", // hides Chrome for Testing's banner
+          // keep the page running at full speed whilst hidden or covered
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
           "--window-size=1400,900",
           this.devUrl,
         ],
@@ -204,21 +207,14 @@ export function sleep(ms: number) {
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ansi escapes
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 
-/** Where `npx @puppeteer/browsers install chrome@stable --path ~/.cache/npc-cli-mcp` puts Chrome for Testing */
-const testChromeDir = path.join(os.homedir(), ".cache/npc-cli-mcp/chrome");
+const canaryPath = "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary";
 
 /**
- * The newest Chrome for Testing installed, else the usual Chrome.
- * Its own app has its own Dock icon, so Cmd-Tab reaches its window.
+ * Chrome Canary if installed, else the usual Chrome.
+ * Canary has its own Dock icon, so Cmd-Tab reaches its window.
  */
 function getChromePath() {
-  const versions = fs.existsSync(testChromeDir) ? fs.readdirSync(testChromeDir) : [];
-  const newest = versions.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
-  const app = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing";
-  const testPath = newest === undefined ? null : path.join(testChromeDir, newest, app);
-  return testPath !== null && fs.existsSync(testPath)
-    ? testPath
-    : "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  return fs.existsSync(canaryPath) ? canaryPath : "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 }
 
 type CdpTarget = { type: string; url: string; webSocketDebuggerUrl: string };

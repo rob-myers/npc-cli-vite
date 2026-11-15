@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" width="1040" height="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+  </defs>
+  <rect width="1040" height="420" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">exporting a smooth curve: a sample within one interval of a keyframe is dropped</text>
+
+  <!-- axis: 0 to 0.25s over x 180..780 -->
+  <g fill="#5aa0f0" font-size="11">
+    <text x="176" y="68">0</text>
+    <text x="368" y="68">1/12s</text>
+    <text x="568" y="68">2/12s</text>
+    <text x="768" y="68">3/12s</text>
+  </g>
+
+  <!-- keyframes -->
+  <text x="24" y="98" fill="#9aa0a6" font-size="12">keyframes</text>
+  <path d="M180,104 C260,64 300,64 380,84 S500,124 580,104 S700,74 780,94" fill="none" stroke="#3f7a52" stroke-width="2"/>
+  <g fill="#d8b46a">
+    <path d="M180,96 l8,8 l-8,8 l-8,-8 z"/>
+    <path d="M380,76 l8,8 l-8,8 l-8,-8 z"/>
+    <path d="M580,96 l8,8 l-8,8 l-8,-8 z"/>
+    <path d="M780,86 l8,8 l-8,8 l-8,-8 z"/>
+  </g>
+  <text x="800" y="98" fill="#9aa0a6" font-size="12">the curve, as Blockbench previews it</text>
+
+  <!-- 24 fps -->
+  <text x="24" y="168" fill="#e6e6e6" font-weight="600">24 fps</text>
+  <text x="24" y="184" fill="#9aa0a6" font-size="11">the default</text>
+  <polyline points="180,174 380,154 580,174 780,164" fill="none" stroke="#f87171" stroke-width="2"/>
+  <g fill="#d8b46a">
+    <path d="M180,166 l8,8 l-8,8 l-8,-8 z"/><path d="M380,146 l8,8 l-8,8 l-8,-8 z"/>
+    <path d="M580,166 l8,8 l-8,8 l-8,-8 z"/><path d="M780,156 l8,8 l-8,8 l-8,-8 z"/>
+  </g>
+  <g stroke="#f87171" stroke-width="2">
+    <path d="M274,154 l12,12 M286,154 l-12,12"/>
+    <path d="M474,154 l12,12 M486,154 l-12,12"/>
+    <path d="M674,154 l12,12 M686,154 l-12,12"/>
+  </g>
+  <text x="800" y="160" fill="#f87171" font-size="12">every sample is one interval</text>
+  <text x="800" y="176" fill="#f87171" font-size="12">from a keyframe: all dropped,</text>
+  <text x="800" y="192" fill="#f87171" font-size="12">so straight lines</text>
+
+  <!-- 48 fps -->
+  <text x="24" y="248" fill="#e6e6e6" font-weight="600">48 fps</text>
+  <text x="24" y="264" fill="#9aa0a6" font-size="11">set in Settings, Export</text>
+  <path d="M180,254 C260,214 300,214 380,234 S500,274 580,254 S700,224 780,244" fill="none" stroke="#3f7a52" stroke-width="2"/>
+  <g fill="#d8b46a">
+    <path d="M180,246 l8,8 l-8,8 l-8,-8 z"/><path d="M380,226 l8,8 l-8,8 l-8,-8 z"/>
+    <path d="M580,246 l8,8 l-8,8 l-8,-8 z"/><path d="M780,236 l8,8 l-8,8 l-8,-8 z"/>
+  </g>
+  <g fill="#cde8d4">
+    <circle cx="280" cy="224" r="5"/><circle cx="480" cy="250" r="5"/><circle cx="680" cy="232" r="5"/>
+  </g>
+  <g stroke="#7a8290" stroke-width="1.5">
+    <path d="M226,262 l8,8 M234,262 l-8,8"/><path d="M326,262 l8,8 M334,262 l-8,8"/>
+    <path d="M426,262 l8,8 M434,262 l-8,8"/><path d="M526,262 l8,8 M534,262 l-8,8"/>
+    <path d="M626,262 l8,8 M634,262 l-8,8"/><path d="M726,262 l8,8 M734,262 l-8,8"/>
+  </g>
+  <text x="800" y="240" fill="#cde8d4" font-size="12">each 1/24s sample is kept:</text>
+  <text x="800" y="256" fill="#cde8d4" font-size="12">the curve, as previewed</text>
+
+  <!-- pipeline -->
+  <g>
+    <rect x="24" y="306" width="180" height="56" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="38" y="330" fill="#e6e6e6">current.gltf</text>
+    <text x="38" y="348" fill="#9aa0a6" font-size="12">exported, DEV loads it</text>
+    <path d="M206,334 L262,334" stroke="#7a8290" marker-end="url(#next)"/>
+    <rect x="266" y="306" width="330" height="56" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="280" y="330" fill="#e6e6e6">gen-current-glb</text>
+    <text x="280" y="348" fill="#9aa0a6" font-size="12">dedup, prune, resample to within about 2°</text>
+    <path d="M598,334 L654,334" stroke="#7a8290" marker-end="url(#next)"/>
+    <rect x="658" y="306" width="350" height="56" rx="8" fill="#262a31" stroke="#3a404a"/>
+    <text x="672" y="330" fill="#e6e6e6">current.glb</text>
+    <text x="672" y="348" fill="#9aa0a6" font-size="12">production loads it: about 77KB brotlied</text>
+  </g>
+  <text x="24" y="396" fill="#5aa0f0" font-size="12">Blockbench js/formats/standards/gltf.js · scripts/src/bins/gen-current-glb.ts (resampleTolerance 5e-4)</text>
+</svg>

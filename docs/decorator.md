@@ -8,12 +8,6 @@ Decor is made two ways, both ending in `w.decor.create(def)`: placed on the pane
 in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
 neither the panel nor a terminal.
 
-Characters are edited in a panel of their own, the Scenario panel (`docs/scenarios.md`). The two neither
-import nor contain each other: on the same World they talk through `scenarioShared`
-(`ui/world/src/service/scenario-shared.ts`). The map outlines the shown character (`CharacterLayer.tsx`),
-centres where it asks, and tells it which npc was last chosen. The map loads the characters for its npcs
-menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
-
 | file | what it holds |
 |---|---|
 | `ui/decorator/src/Decorator.tsx` | the panel: finds the World (`useWorld`, from `ui/world`) |
@@ -22,7 +16,8 @@ menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
 | `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor, edit the chosen graph; `HeightInput` |
 | `ui/decorator/src/GraphLayer.tsx` | the chosen graph: its edges and nodes, draggable and selectable |
-| `ui/decorator/src/GraphSidebar.tsx` | the graph tab: this map's graphs, new, delete, and the selected meta |
+| `ui/decorator/src/GraphSidebar.tsx` | the graph tab: this map's graphs, new, delete, the chosen one's nodes, edges and selected meta, and other maps' graphs |
+| `ui/decorator/src/GraphDialog.tsx` | another map's graph, read-only and drawn (`GraphShape.tsx`), in a dialog inside the panel |
 | `ui/decorator/src/graph-edit.ts` | pure helpers over a graph: `snapped`, `movedNode`, `addedEdge`, `splitEdge`, `withMeta`... |
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
@@ -69,7 +64,7 @@ shows behind its graphs — so it is where things really are:
 
 `meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m, on by default) and `static` — the map's
 own decor, faint, for context (off by default). The sidebar's width and whether it is out (not by default)
-are `meta.sidebarWidth` / `sidebarOpen`. The panel re-renders on
+are `meta.sidebarWidth` / `sidebarOpen`. It is never narrower than its tabs (`minSidebarWidth`). The panel re-renders on
 `map-settled`, `nav-updated`, `decor-ready` and the door events.
 
 ## Npcs are opt-in
@@ -80,6 +75,11 @@ next time it opens, and draws nothing meanwhile. `meta.npcKeys` keeps the choice
 
 A chosen npc is a dot with its key, moved straight through its ref on the World's own frames
 (`w.e.addFrameCallback`) rather than by rendering — and only whilst at least one is chosen.
+
+A dot dragged and dropped, or an npc placed by a click, is respawned there (`spawnNpc`). Onto a doable they
+do it: the nearest decor point with `meta.do` within `doableReach` (0.4m), else a doable obstacle under the
+drop, e.g. a bed, whose free point nearest the drop is taken (`doableAt`). A spawn that fails, e.g. `occupied`, says so in a
+tooltip over where it was tried, for a few seconds (`SpawnErrorTip`).
 
 ## Type-checking
 

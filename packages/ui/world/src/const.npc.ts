@@ -29,6 +29,8 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 3.5,
+    /** A run's least, at `dist.walkNear` of a wall ahead. Just above `gait.runAbove`, so the run clip stays on */
+    runLeast: 2,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
     /** A shuffle's steady pace: near the target it eases as the root of the distance — see `NpcAnimation.shuffleSpeed` */
@@ -97,6 +99,12 @@ export const npcConfig = {
     armInNear: { walk: 1, run: 2.3 },
     /** A wall at least this square on (`roomAhead`'s `square`) has them walk too: a run's lean would put their head through */
     walkSquare: 0.7,
+    /** Within this of a wall square ahead they walk. Further, up to `armInNear.run`, a straight run slows instead */
+    walkNear: 1,
+    /** Rays this far either side of a square hit, both clear, make it a post, e.g. a thin wall between doors: they keep running */
+    postHalf: 0.6,
+    /** How far past a post's face those rays must run clear */
+    postMargin: 0.3,
     /** Not strafing, `roomAhead`'s ray leans this share of `strafeWallSpan` right of the way they go, the gun's side */
     armInLean: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
@@ -237,6 +245,7 @@ export const fromAnimationClipKey = {
   sit_shrug: true,
   strafe_left: true,
   strafe_right: true,
+  talk_left: true,
   phaser_aim: true,
   phaser_aim_avoid: true,
   walk: true,
@@ -313,6 +322,12 @@ export const supportConfig = { grip: [0, -0.44, 0], secs: 0.25 } as const;
 
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
+
+/**
+ * Whilst they speak the head moves, eased in and out over `easeSecs`: it dips up to `pitch` about `hz` times a second,
+ * as words come, and sways up to `sway` either way
+ */
+export const talkConfig = { pitch: 0.12, sway: 0.08, hz: 2.5, swayHz: 0.6, easeSecs: 0.25 } as const;
 
 /**
  * A shot armour took jolts them: radians the struck part turns at most, and seconds to that and in all.
@@ -489,6 +504,7 @@ export const fadeSecs: Record<
   sit_shrug: {},
   strafe_left: {},
   strafe_right: {},
+  talk_left: {},
   phaser_aim: { shuffle: 0.15 },
   phaser_aim_avoid: {},
   walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25 },
@@ -567,11 +583,15 @@ export const breathConfig = {
 /** What an npc may be posed as — see jsh `pose` */
 export type PoseKey = keyof typeof poseConfig.poses;
 
-/** jsh `pose`: each one's upper clip, and the one drawn in to whilst a crowd neighbour is within `near` metres */
+/**
+ * jsh `pose`: each one's upper clip, its arm, and the one drawn in to whilst a crowd neighbour is within `near` metres.
+ * A right arm's pose also points at whom it is `at`
+ */
 export const poseConfig = {
   poses: {
-    point: { upper: "point", avoid: "point_avoid" },
-    check_wrist: { upper: "check_wrist", avoid: "check_wrist_avoid" },
+    point: { upper: "point", avoid: "point_avoid", side: "right" },
+    check_wrist: { upper: "check_wrist", avoid: "check_wrist_avoid", side: "right" },
+    talk_left: { upper: "talk_left", avoid: null, side: "left" },
   },
   near: 0.65,
   /** Seconds they stay drawn in at least, and take to draw in */

@@ -17,7 +17,7 @@ demo_npc_ui npc:rob
 
 # log speech to console
 demo_log_speech &
-say Hello! rob
+say Hello! with:rob
 ```
 
 # npc interaction

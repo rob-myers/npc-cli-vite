@@ -31,6 +31,7 @@ import {
   strafeEaseSecs,
   strafeSpeed,
   supportConfig,
+  talkConfig,
   upperFadeSecs,
 } from "../const.npc";
 import { helper } from "../service/helper";
@@ -65,10 +66,12 @@ export class NpcAnimation {
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {
-    return this.hurry === true && this.backwards === false && this.crouched === false && this.nearWall !== "ahead";
+    return this.hurry === true && this.backwards === false && this.crouched === false && this.wallStops() === false;
   }
-  /** A wall close ahead: see `setNearWall`. `ahead` is square on, which a run's lean would reach, so they walk */
+  /** A wall close ahead: see `setNearWall`. `ahead` is square on, which a run's lean would reach, so they slow then walk */
   nearWall: false | "ahead" | "beside" = false;
+  /** Room to the wall ahead */
+  wallRoom = Infinity;
   /** The clip `setNearWall` drew their right arm in with, which it alone lets go */
   armIn: null | AnimationClipKey = null;
   /** Game time until which `armIn` is held, though the wall is no longer near */
@@ -160,6 +163,8 @@ export class NpcAnimation {
   };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
+  /** Whilst they speak: seconds left, seconds in, how far the head's motion is eased in, and whether `talk_left` is ours */
+  talking = { secs: 0, t: 0, weight: 0, gesture: false };
   /** A jolt from a shot armour took, easing out, else `null` — see `flinch` */
   flinchAt = null as null | { secs: number; bones: FlinchBone[] };
   /** Their eyes, ticked only whilst `busy`: blinking, or shifty — see `docs/skin-slices.md` */
@@ -543,7 +548,21 @@ export class NpcAnimation {
     if (this.dragged === true) return dragConfig.speed;
     if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
     if (this.strafe === true) return this.fast === true ? strafeSpeed.run_ahead : strafeSpeed.walk;
-    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
+    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? this.runSpeed() : maxSpeed.walk;
+  }
+
+  /** A straight run's top speed. A wall square ahead slows it to `runLeast` at `walkNear` */
+  runSpeed() {
+    const { run, runLeast } = agentConfig.maxSpeed;
+    if (this.nearWall !== "ahead") return run;
+    const { armInNear, walkNear } = npcConfig.dist;
+    const t = THREE.MathUtils.clamp((this.wallRoom - walkNear) / (armInNear.run - walkNear), 0, 1);
+    return runLeast + (run - runLeast) * t;
+  }
+
+  /** Whether a wall square ahead has them walk: strafing at once, else within `walkNear` */
+  wallStops() {
+    return this.nearWall === "ahead" && (this.strafe === true || this.wallRoom < npcConfig.dist.walkNear);
   }
 
   /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
@@ -603,8 +622,7 @@ export class NpcAnimation {
     this.idleClip = this.npc.clips[crouchIdleKeys[level]];
     if (this.moving === false) return this.setPose(this.restKey);
     this.showGait(); // mid-move, the other gaits
-    const { agent } = this.npc;
-    if (agent !== null && this.strafe === false && agent.maxSpeed > 0) agent.maxSpeed = this.maxSpeedFor();
+    this.syncMaxSpeed();
   }
 
   /** Their eyes take a look, whatever their pose */
@@ -629,10 +647,7 @@ export class NpcAnimation {
   /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
   setHurry(hurry: boolean) {
     this.hurry = hurry;
-    const { agent } = this.npc;
-    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
-    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
-      agent.maxSpeed = this.maxSpeedFor();
+    this.syncMaxSpeed();
   }
 
   /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
@@ -651,10 +666,12 @@ export class NpcAnimation {
 
   /**
    * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood, it draws their right arm in whilst free,
-   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side
+   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side. `room` is how far off the wall is
    */
-  setNearWall(next: false | "ahead" | "beside") {
+  setNearWall(next: false | "ahead" | "beside", room = Infinity) {
     this.nearWall = next;
+    this.wallRoom = room;
+    this.syncMaxSpeed();
     const now = this.w.gameTime.now();
     if (next !== false) this.armInUntil = now + npcConfig.time.armInHold;
     else if (this.armIn !== null && now < this.armInUntil) {
@@ -735,6 +752,7 @@ export class NpcAnimation {
       restUpper.action.fadeOut(Math.max(fade, minFadeSecs));
       this.restUpper = null;
     }
+    const crouchMove = isCrouch(this.pose) || isCrouch(next); // their label glides
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
@@ -744,7 +762,7 @@ export class NpcAnimation {
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
-    this.npc.setLabelYShift(labelYShiftForClip(next));
+    this.npc.setLabelYShift(labelYShiftForClip(next), crouchMove);
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
@@ -776,6 +794,7 @@ export class NpcAnimation {
     } = {},
   ) {
     const u = this.upperOf(side);
+    if (side === "left") this.talking.gesture = false; // whoever sets it last owns it, e.g. a pose
     u.fadeSecs = fadeSecs;
     if (key !== null) Object.assign(u, { past, onHead });
     if (byWall !== undefined) u.byWall = byWall;
@@ -787,6 +806,37 @@ export class NpcAnimation {
     }
     if (key !== null) u.key = key;
     u.target = key === null ? 0 : 1;
+  }
+
+  /**
+   * Their head moves for `secs` as they speak, over any pose or shake. `0` stops it.
+   * With `gesture`, their left arm talks too whilst it may — see `canGesture`
+   */
+  talk(secs: number, gesture = false) {
+    const { talking } = this;
+    if (talking.weight === 0) talking.t = 0;
+    talking.secs = secs;
+    if (secs > 0 && gesture === true && this.canGesture()) {
+      if (this.upperLeft.key !== "talk_left") this.setUpper("talk_left", { side: "left" });
+      talking.gesture = true;
+    } else this.endGesture();
+    this.w.r3f?.invalidate();
+  }
+
+  /** Whether their left arm may talk: free or already ours, stood or sat, and no wall near */
+  canGesture() {
+    const { key } = this.upperLeft;
+    const free = key === null || (key === "talk_left" && this.talking.gesture === true);
+    const upright = this.posture === "stand" || this.posture === "sit";
+    return free && upright && this.support.on === false && this.nearWall === false && this.hurt === null;
+  }
+
+  /** Lets go of `talk_left` if we set it, e.g. not a pose's */
+  endGesture() {
+    const { talking, upperLeft } = this;
+    if (talking.gesture === true && upperLeft.key === "talk_left" && upperLeft.target === 1)
+      this.setUpper(null, { side: "left" });
+    talking.gesture = false;
   }
 
   /** A "no": they shake their head, over whatever pose or upper clip has it */
@@ -926,6 +976,13 @@ export class NpcAnimation {
     this.setPose(keyOf(this.moveClip));
   }
 
+  /** Mid-move, the agent's top speed follows a change of intent. Not whilst pinned (`0`), nor strafing (`syncStrafe`'s) */
+  syncMaxSpeed() {
+    const { agent } = this.npc;
+    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
+      agent.maxSpeed = this.maxSpeedFor();
+  }
+
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
   syncStrafe(delta: number) {
     const { clips, agent, rotation } = this.npc;
@@ -989,7 +1046,7 @@ export class NpcAnimation {
     }
     this.tickLieLook(delta);
     this.tickUpper(delta);
-    this.tickHeadShake(delta);
+    this.tickHead(delta);
     this.tickTurn(delta);
     this.tickAimArm();
     this.tickSupport(delta);
@@ -1174,22 +1231,50 @@ export class NpcAnimation {
     this.w.r3f?.invalidate();
   }
 
-  tickHeadShake(delta: number) {
+  /** Turns the head over its pose: a shake, then talk. Nearly always nothing to do */
+  tickHead(delta: number) {
     const { entry } = this.upperHead;
-    if (this.headShake === null || entry === null) return;
+    const { talking } = this;
+    if ((this.headShake === null && talking.secs === 0 && talking.weight === 0) || entry === null) return;
     const { bone, base, written } = entry;
     // with no upper clip, `tickUpper` has not put the head back to its pose
     if (this.upper.key === null && this.upperLeft.key === null) {
       if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
       else base.copy(bone.quaternion);
     }
+    this.turnHeadShake(bone.quaternion, delta);
+    this.turnHeadTalk(bone.quaternion, delta);
+    written.copy(bone.quaternion);
+  }
+
+  /** Adds a shake's turn of the head to `q`, whilst one is under way */
+  turnHeadShake(q: THREE.Quaternion, delta: number) {
+    if (this.headShake === null) return;
     const { secs, slowing, turns, rad } = headShakeConfig;
     const p = Math.min(1, (this.headShake += delta) / secs);
     const t = 1 - (1 - p) ** slowing;
     /** Nought at either end */
     const angle = rad * Math.sin(2 * Math.PI * turns * t) * Math.sin(Math.PI * t);
-    written.copy(bone.quaternion.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle)));
+    q.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle));
     if (p === 1) this.headShake = null;
+  }
+
+  /** Adds talk's dip and sway to `q`, eased in and out. Once the words are said, the gesture is let go */
+  turnHeadTalk(q: THREE.Quaternion, delta: number) {
+    const { talking } = this;
+    if (talking.secs === 0 && talking.weight === 0) return;
+    const { pitch, sway, hz, swayHz, easeSecs } = talkConfig;
+    if (talking.secs > 0 && talking.secs <= delta) this.endGesture();
+    talking.secs = Math.max(0, talking.secs - delta);
+    talking.t += delta;
+    const step = delta / easeSecs;
+    talking.weight = THREE.MathUtils.clamp(talking.weight + (talking.secs > 0 ? step : -step), 0, 1);
+    const { t, weight } = talking;
+    /** Mostly downward, uneven as words are */
+    const dip = 0.5 + 0.3 * Math.sin(2 * Math.PI * hz * t) + 0.2 * Math.sin(2 * Math.PI * hz * 1.7 * t + 1);
+    q.multiply(tmpQuat.setFromAxisAngle(talkAxis, pitch * weight * dip));
+    q.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, sway * weight * Math.sin(2 * Math.PI * swayHz * t)));
+    this.w.r3f?.invalidate();
   }
 
   tickHurt(delta: number) {
@@ -1656,6 +1741,8 @@ const headTurnRate = 10;
 const tmpHeadGoal = new THREE.Quaternion();
 const tmpChain = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
+/** The head bone's side axis, which it dips about as they speak */
+const talkAxis = new THREE.Vector3(1, 0, 0);
 const tmpParentQuat = new THREE.Quaternion();
 const tmpLever = new THREE.Vector3();
 const tmpPivot = new THREE.Vector3();
@@ -1777,7 +1864,8 @@ function bubbleHeightForClip(clipName: AnimationClipKey): number {
 }
 
 /** Stood, yet about as low as one sat: collapsed on the floor, or crouched */
-const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || clipName.startsWith("crouch");
+const isCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch");
+const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || isCrouch(clipName);
 /** Crouched half: the head lower than stood, higher than sat */
 const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
 

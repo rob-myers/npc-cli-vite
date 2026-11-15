@@ -3,7 +3,7 @@
   "name": "test-patrol",
   "kind": "graph",
   "mapKey": "101-only",
-  "directed": false,
+  "undirected": true,
   "meta": {},
   "nodes": [
     {"id": "n0", "at": [18.55, 11.35], "meta": {}},
@@ -12,8 +12,8 @@
     {"id": "n3", "at": [12.5, 11.5], "meta": {}}
   ],
   "edges": [
-    {"from": "n1", "to": "n2", "meta": {}},
-    {"from": "n2", "to": "n0", "meta": {}},
-    {"from": "n1", "to": "n3", "meta": {}}
+    {"id": "e0", "from": "n1", "to": "n2", "meta": {}},
+    {"id": "e1", "from": "n2", "to": "n0", "meta": {}},
+    {"id": "e2", "from": "n1", "to": "n3", "meta": {}}
   ]
 }

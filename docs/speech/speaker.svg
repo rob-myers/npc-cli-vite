@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs>
+    <marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/>
+    </marker>
+    <marker id="face" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/>
+    </marker>
+  </defs>
+  <rect width="960" height="420" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">whilst the words are said: the speaker turns to whom they address, gestures, and their head moves</text>
+
+  <!-- in earshot -->
+  <rect x="24" y="50" width="440" height="200" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="40" y="74" fill="#e6e6e6" font-weight="600">in earshot</text>
+  <circle cx="110" cy="160" r="22" fill="#2f3a4a" stroke="#5aa0f0"/>
+  <text x="98" y="165" fill="#e6e6e6">abe</text>
+  <path d="M132,160 L182,160" stroke="#d8b46a" stroke-width="2" marker-end="url(#face)"/>
+  <path d="M110,138 a22,22 0 0,1 22,22" fill="none" stroke="#d8b46a" stroke-dasharray="3 3"/>
+  <text x="118" y="128" fill="#d8b46a" font-size="11">turns</text>
+  <circle cx="330" cy="160" r="22" fill="#2f3a4a" stroke="#7a8290"/>
+  <text x="318" y="165" fill="#e6e6e6">rob</text>
+  <rect x="180" y="96" width="120" height="26" rx="12" fill="#000" stroke="#555"/>
+  <text x="192" y="114" fill="#f2f2f2">Who goes there?</text>
+  <g fill="#9aa0a6" font-size="12">
+    <text x="40" y="208">head: dips and sways (anim.talk)</text>
+    <text x="40" y="224">left arm: talk_left, eased out after the last word</text>
+    <text x="40" y="240">body: turns to face them (w.speech.faceTo)</text>
+  </g>
+
+  <!-- over comms -->
+  <rect x="496" y="50" width="440" height="200" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="512" y="74" fill="#e6e6e6" font-weight="600">over comms: to someone out of earshot</text>
+  <circle cx="580" cy="160" r="22" fill="#2f3a4a" stroke="#5aa0f0"/>
+  <text x="568" y="165" fill="#e6e6e6">abe</text>
+  <path d="M580,138 L580,118" stroke="#7a8290" stroke-width="2" marker-end="url(#next)"/>
+  <text x="620" y="150" fill="#7a8290" font-size="12">· · · beyond 8m, or a shut door · · ·</text>
+  <circle cx="880" cy="160" r="22" fill="#2f3a4a" stroke="#7a8290"/>
+  <text x="868" y="165" fill="#e6e6e6">rob</text>
+  <rect x="610" y="96" width="140" height="26" rx="12" fill="#000" stroke="#555"/>
+  <g fill="none" stroke="#9aa0a6" stroke-width="1.5"><rect x="621" y="101" width="6" height="10" rx="3"/><path d="M618,108 a6,6 0 0,0 12,0 M624,114 v3"/></g>
+  <text x="640" y="114" fill="#f2f2f2">Who goes there?</text>
+  <g fill="#9aa0a6" font-size="12">
+    <text x="512" y="208">head: dips and sways, as into a mic</text>
+    <text x="512" y="224">no turn, and no gesture</text>
+    <text x="512" y="240">the player gets it whole, a mic glyph on it</text>
+  </g>
+
+  <!-- rules -->
+  <text x="24" y="282" fill="#e6e6e6" font-weight="600">turning (faceTo)</text>
+  <g fill="#9aa0a6" font-size="12">
+    <text x="24" y="302">stood still: the body turns, and stays facing them</text>
+    <text x="24" y="318">moving or sat: the head alone turns, back once the words are said</text>
+    <text x="24" y="334">lying, or the player: no turn</text>
+    <text x="24" y="350">a look under way, or another's head turn (pose … look:), is left be</text>
+  </g>
+  <text x="496" y="282" fill="#e6e6e6" font-weight="600">gesturing (canGesture)</text>
+  <g fill="#9aa0a6" font-size="12">
+    <text x="496" y="302">stood or sat, and no wall near (nearWall)</text>
+    <text x="496" y="318">the left arm free: no psi, item, or steadying a phaser</text>
+    <text x="496" y="334">whoever sets the left arm last owns it: a pose's talk_left</text>
+    <text x="496" y="350">is the pose's, and speech never lets it go</text>
+  </g>
+  <text x="24" y="392" fill="#5aa0f0" font-size="12">w.speech.utter → anim.talk(spokenSecs, gesture) · faceTo(speaker, toKey) · talkConfig in const.npc</text>
+</svg>

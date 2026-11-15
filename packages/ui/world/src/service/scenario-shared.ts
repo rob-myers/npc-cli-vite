@@ -1,55 +1,15 @@
 import "./virtual-scenario.d";
 import bundledEntries from "virtual:scenario";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import z from "zod";
 import {
-  type CharacterEntry,
   type GraphEntry,
   isGraphEntry,
-  isScenarioCharacter,
-  type ScenarioCharacter,
   type ScenarioEntry,
   ScenarioEntrySchema,
   scenarioApiPath,
   scenarioChangedEvent,
 } from "../scenario.schema";
-
-/**
- * What a Scenario panel and another panel on the same World tell each other, e.g. the Decorator's map.
- * Neither imports the other, and either may be absent
- */
-export type ScenarioShared = {
-  /** The entry the Scenario panel shows, as edited, for the map to outline */
-  entry: null | CharacterEntry;
-  /** The npc last chosen on the map, whose entry the Scenario panel then shows */
-  npcKey: null | string;
-  /** A world point the Scenario panel asks the map to centre on: a new object each time */
-  locate: null | Geom.VectJson;
-  /** An npc the Scenario panel gave a new key, or with no `to` removed: a new object each time */
-  renamed: null | { from: string; to: undefined | string };
-};
-
-const none: ScenarioShared = { entry: null, npcKey: null, locate: null, renamed: null };
-const byWorld: Record<string, ScenarioShared> = {};
-const listeners = new Set<() => void>();
-
-export const scenarioShared = {
-  get(worldKey: string): ScenarioShared {
-    return byWorld[worldKey] ?? none;
-  },
-  set(worldKey: string, patch: Partial<ScenarioShared>) {
-    byWorld[worldKey] = { ...scenarioShared.get(worldKey), ...patch };
-    for (const listener of listeners) listener();
-  },
-  subscribe(listener: () => void) {
-    listeners.add(listener);
-    return () => void listeners.delete(listener);
-  },
-};
-
-export function useScenarioShared(worldKey: string): ScenarioShared {
-  return useSyncExternalStore(scenarioShared.subscribe, () => scenarioShared.get(worldKey));
-}
 
 /** Every entry by key, loaded from the files so no Scenario panel need be open, and reloaded as they change */
 export function useScenarioEntries(): Record<string, ScenarioEntry> {
@@ -72,29 +32,16 @@ export function useScenarioEntries(): Record<string, ScenarioEntry> {
   return entries;
 }
 
-/** Every character with an npc. `shown`, the one being edited, stands in for its saved self */
-export function useScenarioCharacters(shown: null | CharacterEntry): ScenarioCharacter[] {
+/** The graphs on map `mapKey` by key, and every other map's */
+export function useScenarioGraphs(mapKey: string): { here: Record<string, GraphEntry>; others: GraphEntry[] } {
   const entries = useScenarioEntries();
-  // kept whilst neither changes: a caller may depend on its identity
-  return useMemo(
-    () => Object.values(shown === null ? entries : { ...entries, [shown.key]: shown }).filter(isScenarioCharacter),
-    [entries, shown],
-  );
-}
-
-/** The graphs on map `mapKey`, by key */
-export function useScenarioGraphs(mapKey: string): Record<string, GraphEntry> {
-  const entries = useScenarioEntries();
-  return useMemo(
-    () =>
-      Object.fromEntries(
-        Object.values(entries)
-          .filter(isGraphEntry)
-          .filter((x) => x.mapKey === mapKey)
-          .map((x) => [x.key, x]),
-      ),
-    [entries, mapKey],
-  );
+  return useMemo(() => {
+    const graphs = Object.values(entries).filter(isGraphEntry);
+    return {
+      here: Object.fromEntries(graphs.filter((x) => x.mapKey === mapKey).map((x) => [x.key, x])),
+      others: graphs.filter((x) => x.mapKey !== mapKey),
+    };
+  }, [entries, mapKey]);
 }
 
 const ScenarioEntriesSchema = z.record(z.string(), ScenarioEntrySchema);

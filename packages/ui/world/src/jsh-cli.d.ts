@@ -71,7 +71,48 @@ declare namespace JshCli {
       }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
-    | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
+    | { key: "speech"; id: number; npcKey: string; words: string; epochMs: number; to?: string[] }
+    /** Line `id` of `npcKey` is said: the chunks each heard, by npcKey — see `docs/speech.md` */
+    | { key: "speech-heard"; id: number; npcKey: string; heard: Record<string, number[]> }
+    /** The player, `npcKey`, asks `to` to say line `id` again. Something, e.g. jsh `comms`, answers */
+    | { key: "speech-repeat"; id: number; npcKey: string; to: string }
+    | {
+        /** `npcKey` asked `to` something, offering `replies` by key — see `WorldSpeech` */
+        key: "talk-ask";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        text: string;
+        replies: string[];
+      }
+    | { key: "talk-bye"; threadKey: string; npcKey: string; to: string }
+    | {
+        /** The player pressed reply `choice` to the ask of `to`. Something, e.g. jsh `comms`, tests its `needs` */
+        key: "talk-choose";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        choice: string;
+        needs: string[];
+      }
+    | {
+        /** Reply `choice` was refused, its `failed` needs flashed */
+        key: "talk-refused";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        choice: string;
+        failed: string[];
+      }
+    | {
+        /** `npcKey` answered the ask of `to` with reply `choice` */
+        key: "talk-reply";
+        threadKey: string;
+        npcKey: string;
+        to: string;
+        choice: string;
+      }
+    | { key: "talk-tell"; threadKey: string; npcKey: string; to: string; text: string }
     | { key: "started-moving"; npcKey: string }
     | {
         /** Arrived, or the move was stopped — not one cut short by the next move */
