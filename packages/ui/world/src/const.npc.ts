@@ -245,6 +245,7 @@ export const fromAnimationClipKey = {
   sit_shrug: true,
   strafe_left: true,
   strafe_right: true,
+  talk_left: true,
   phaser_aim: true,
   phaser_aim_avoid: true,
   walk: true,
@@ -497,6 +498,7 @@ export const fadeSecs: Record<
   sit_shrug: {},
   strafe_left: {},
   strafe_right: {},
+  talk_left: {},
   phaser_aim: { shuffle: 0.15 },
   phaser_aim_avoid: {},
   walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25 },
@@ -575,11 +577,15 @@ export const breathConfig = {
 /** What an npc may be posed as — see jsh `pose` */
 export type PoseKey = keyof typeof poseConfig.poses;
 
-/** jsh `pose`: each one's upper clip, and the one drawn in to whilst a crowd neighbour is within `near` metres */
+/**
+ * jsh `pose`: each one's upper clip, its arm, and the one drawn in to whilst a crowd neighbour is within `near` metres.
+ * A right arm's pose also points at whom it is `at`
+ */
 export const poseConfig = {
   poses: {
-    point: { upper: "point", avoid: "point_avoid" },
-    check_wrist: { upper: "check_wrist", avoid: "check_wrist_avoid" },
+    point: { upper: "point", avoid: "point_avoid", side: "right" },
+    check_wrist: { upper: "check_wrist", avoid: "check_wrist_avoid", side: "right" },
+    talk_left: { upper: "talk_left", avoid: null, side: "left" },
   },
   near: 0.65,
   /** Seconds they stay drawn in at least, and take to draw in */

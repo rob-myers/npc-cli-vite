@@ -1133,7 +1133,8 @@ export function play({ api, w }: JshCli.RunArg) {
 
 /**
  * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
- * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
+ * that arm, or it is killed. Drawn in whilst another npc is too close. `talk_left` gestures with the left arm, beside
+ * a right arm's pose. `shake` is a one-off "no" of the head.
  * A clip's own name shows it whole, releasing one in pain or pacified. A crouch, `crouch_half` or `crouch_cover`, is
  * kept, moving too, until another clip is shown.
  * `head` turns their head alone to an npc or point once, their body left as it is, until a bare `pose` lets it go.
@@ -1141,6 +1142,7 @@ export function play({ api, w }: JshCli.RunArg) {
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
+ * pose rob as:talk_left at:npc-0
  * pose rob as:shake
  * pose rob as:crouch_cover
  * pose npc-0 as:breathe
@@ -1242,7 +1244,7 @@ function poseClip(npc: JshCli.Npc, clip: keyof JshCli.WorldState["npc"]["clips"]
   npc.anim.setPose(clip);
 }
 
-/** An upper-body pose, facing and pointing at `target`, held until they move, are armed, or it is killed or replaced */
+/** An upper-body pose of one arm, facing and pointing at `target`, held until they move, are armed, or it is killed or replaced */
 async function poseUpper(
   api: JshCli.RunArg["api"],
   w: JshCli.WorldState,
@@ -1250,15 +1252,18 @@ async function poseUpper(
   as: PoseKey,
   target: undefined | JshCli.Npc,
 ) {
-  const { upper: clipKey, avoid } = poseConfig.poses[as];
-  const { upper, face } = npc.anim;
+  const { upper: clipKey, avoid, side } = poseConfig.poses[as];
+  const { face } = npc.anim;
+  const upper = npc.anim.upperOf(side);
   const mine = () => upper.target === 1 && (upper.key === clipKey || upper.key === avoid);
   /** A gun held up whilst crouched, not raised, gives way */
   const tucked = upper.key === "phaser_aim_avoid" && w.phasers.isArmed(npc.key) === false;
   if (upper.target === 1 && mine() === false && tucked === false)
-    throw Error(`${npc.key}: their upper body is taken: ${upper.key}`);
+    throw Error(`${npc.key}: their ${side} arm is taken: ${upper.key}`);
 
-  posing.get(npc.key)?.("replaced");
+  /** Each arm's pose is apart */
+  const poseKey = `${npc.key}:${side}`;
+  posing.get(poseKey)?.("replaced");
   let ended: undefined | "killed" | "moved" | "replaced";
   let end = (_why: NonNullable<typeof ended>) => {};
   const done = new Promise<void>((resolve) => {
@@ -1267,12 +1272,12 @@ async function poseUpper(
       resolve();
     };
   });
-  posing.set(npc.key, end);
+  posing.set(poseKey, end);
   const sub = w.events.subscribe({
     next(e) {
       if (e.key === "started-moving" && e.npcKey === npc.key) end("moved");
       if (e.key === "phasers" && e.armed === true && e.npcKeys.includes(npc.key)) {
-        if (mine()) npc.anim.setUpper(null); // at once, for theirs to take
+        if (mine()) npc.anim.setUpper(null, { side }); // at once, for theirs to take
         end("replaced");
       }
     },
@@ -1286,21 +1291,23 @@ async function poseUpper(
   let secs = w.gameTime.now();
   try {
     if (npc.isMoving()) end("moved");
-    else npc.anim.setUpper(clipKey);
+    else npc.anim.setUpper(clipKey, { side });
     while (ended === undefined && w.n[npc.key] === npc && mine()) {
       const delta = w.gameTime.now() - secs;
       secs += delta;
-      if (w.npc.near.beside(npc.key, poseConfig.near).length > 0) holdUntil = secs + poseConfig.holdSecs;
-      const next = holdUntil > secs ? avoid : clipKey;
+      if (avoid !== null && w.npc.near.beside(npc.key, poseConfig.near).length > 0)
+        holdUntil = secs + poseConfig.holdSecs;
+      const next = avoid !== null && holdUntil > secs ? avoid : clipKey;
       if (upper.key !== next) {
-        npc.anim.setUpper(next, { swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
+        npc.anim.setUpper(next, { side, swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
       }
 
       const aimed = target !== undefined && w.n[target.key] === target;
       if (aimed && (face.aim === null || face.aim === ownAim)) {
         face.aim = ownAim = { at: target.point, rate: 1, untilRest: false };
       }
-      if (aimed && (upper.aim === null || upper.aim === armAim)) {
+      // the arm aims from the right forearm's frame
+      if (aimed && side === "right" && (upper.aim === null || upper.aim === armAim)) {
         const { x, y, z } = target.position;
         armAim.at.set(x, y + target.anim.headY, z);
         const step = delta / poseConfig.aimSecs;
@@ -1310,17 +1317,17 @@ async function poseUpper(
       await Promise.race([w.npc.nextTick(), done]); // a tick never comes whilst paused
     }
   } finally {
-    if (ended !== "replaced" && mine()) npc.anim.setUpper(null);
+    if (ended !== "replaced" && mine()) npc.anim.setUpper(null, { side });
     if (face.aim === ownAim) face.aim = null;
     if (upper.aim === armAim) upper.aim = null;
-    if (posing.get(npc.key) === end) posing.delete(npc.key);
+    if (posing.get(poseKey) === end) posing.delete(poseKey);
     sub.unsubscribe();
     handlers.dispose();
   }
   if (ended === "killed") throw api.getKillError();
 }
 
-/** By npcKey, how to end their pose: a new one replaces it */
+/** By npcKey and arm, how to end their pose: a new one replaces it */
 const posing = new Map<string, (why: "replaced") => void>();
 
 /**

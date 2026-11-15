@@ -19,7 +19,9 @@ const glbPath = join(dir, "current.glb");
 /** Separate attributes, as the gltf has: three cannot merge an interleaved one with the label quad's */
 const io = new NodeIO().setVertexLayout(VertexLayout.SEPARATE);
 const doc = await io.read(gltfPath);
-await doc.transform(dedup(), resample(), prune());
+/** Drops keyframes their neighbours' line matches to within about 2°. The default, 1e-4, keeps 40% more for 0.2° */
+const resampleTolerance = 5e-4;
+await doc.transform(dedup(), resample({ tolerance: resampleTolerance }), prune());
 const glb = Buffer.from(await io.writeBinary(doc));
 
 /** Only a changed glb is written, so neither the watcher nor the hook makes a spurious diff */
