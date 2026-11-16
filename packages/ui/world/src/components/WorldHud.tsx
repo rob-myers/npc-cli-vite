@@ -87,8 +87,8 @@ export default function WorldHud() {
         else if (w.player.gaze || framed)
           kept.push({ label: "look", title: "stop looking: r", end: () => w.player.stopLooking() });
         // aiming strafes them anyway: shown only if on before, its "x" greyed. Off, shown whilst latched: see `watchStrafe`
-        if (armed && w.player.strafe && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
-        else if (!armed && w.player.strafe && stood)
+        if (armed && w.player.strafe) kept.push({ label: "strafe", title: "strafing whilst aiming" });
+        else if (!armed && w.player.strafe)
           kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
         else if (!armed && stood) kept.push({ label: "strafe", title: "strafing on until the move keys change" });
         if (w.view?.follow === true)
@@ -211,6 +211,7 @@ export default function WorldHud() {
           shown = strafe || (latched && shown);
           el.classList.toggle("gone", !shown);
           el.classList.toggle("latched", latched && shown);
+          el.classList.toggle("blocked", w.player.get()?.posture !== "stand");
         });
       },
     }),
@@ -1321,6 +1322,6 @@ export type State = {
   watchFollow(el: null | HTMLDivElement): undefined | (() => void);
   /** The one hud-toast of looking: "drawn" (or "aim") and the red dot's range whilst raised, else "gaze" or "focal" and the cap's reach. Its number eases between them */
   watchLook(el: null | HTMLDivElement): undefined | (() => void);
-  /** The strafe hud-toast: half transparent whilst strafe mode is off but latched, a move key still held, else hidden whilst off */
+  /** The strafe hud-toast: half transparent whilst strafe mode is off but latched, a move key still held, else hidden whilst off. Greyed whilst sat or lain */
   watchStrafe(el: null | HTMLDivElement): undefined | (() => void);
 };
