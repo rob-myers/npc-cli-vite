@@ -305,9 +305,8 @@ export function Jobs(props: Props) {
                     transition={{ duration: 0.3 }}
                     className="min-w-32 flex flex-col w-full rounded text-term-running font-mono"
                   >
-                    {/* never wraps: a src too wide for the row truncates instead */}
-                    {/* dark mode has too little contrast between the cells to separate them by fill alone */}
-                    <div className="flex items-stretch dark:border-b dark:border-term-border-subtle">
+                    {/* under 160px, the source wraps onto its own line. Dark mode borders the cells, its fills too alike */}
+                    <div className="flex flex-wrap items-stretch dark:border-b dark:border-term-border-subtle">
                       {/* fixed width so cards align */}
                       <div className="relative flex shrink-0 bg-term-inset dark:border-r dark:border-term-border-subtle">
                         <div className="w-12 px-1 flex items-center justify-center text-sm text-term-accent">
@@ -364,7 +363,7 @@ export function Jobs(props: Props) {
                       </div>
 
                       {/* `data-more` whilst the source scrolls on below, which the fade shows */}
-                      <div className="group relative grow min-w-0 flex">
+                      <div className="group relative grow basis-40 min-w-0 flex">
                         <div
                           title={p.src}
                           data-uid={p.uid}
