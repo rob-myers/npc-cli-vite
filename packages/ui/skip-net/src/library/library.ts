@@ -171,7 +171,7 @@ function trimBlankEnds(lines: string[]): string[] {
  * an INDENTED comment being part of the command, e.g. inside a `while` body.
  * Leading `#` lines become the example's comment.
  */
-function splitExamples(blockKey: string, lines: string[]): Example[] {
+export function splitExamples(blockKey: string, lines: string[]): Example[] {
   const chunks: { lines: string[]; blankBefore: number }[] = [];
   let chunk: string[] = [];
   let sawCode = false;

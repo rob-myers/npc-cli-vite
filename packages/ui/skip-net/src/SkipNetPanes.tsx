@@ -3,6 +3,7 @@ import { Picker } from "@npc-cli/util/picker";
 import { DotsSixVerticalIcon, SquareSplitHorizontalIcon, SquareSplitVerticalIcon, XIcon } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
 import { useContext } from "react";
+import { ArticlePane } from "./article/ArticlePane";
 import { SkipNetContext } from "./context";
 import { ItemPane } from "./ItemPane";
 import { JobsPane } from "./JobsPane";
@@ -103,6 +104,8 @@ function PaneBody(props: { leaf: SkipNetPaneLeaf; options: PaneOption[]; choose(
       return <LibraryPane leaf={leaf} paneId={leaf.id} />;
     case "jobs":
       return <JobsPane leaf={leaf} paneId={leaf.id} />;
+    case "article":
+      return <ArticlePane leaf={leaf} paneId={leaf.id} />;
     case "item":
       return (
         <ItemPane
@@ -135,7 +138,7 @@ function toValue(leaf: SkipNetLeaf): string {
 
 function toLeaf(value: string): SkipNetLeaf {
   if (value.startsWith(itemPrefix)) return { kind: "item", itemKey: value.slice(itemPrefix.length) };
-  return { kind: value === "library" || value === "jobs" ? value : null };
+  return { kind: paneKinds.find((x) => x === value) ?? null };
 }
 
 type SkipNetPaneLeaf = PaneLeaf<SkipNetLeaf>;
@@ -144,10 +147,10 @@ const emptyValue = "";
 const itemPrefix = "item:";
 type PaneOption = { value: string; label: string };
 
+const paneKinds = ["library", "jobs", "article"] as const;
 const kindOptions: PaneOption[] = [
   { value: emptyValue, label: "empty" },
-  { value: "library", label: "library" },
-  { value: "jobs", label: "jobs" },
+  ...paneKinds.map((kind) => ({ value: kind, label: kind })),
 ];
 /** Allotment snaps no pane narrower than this */
 const minPanePx = 60;

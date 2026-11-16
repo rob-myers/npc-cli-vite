@@ -19,6 +19,8 @@ import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 
+const skipNetArticles = /\/skip-net\/src\/articles\/[^/]+\.mdx$/;
+
 // https://vite.dev/config/
 export default defineConfig({
   define: {
@@ -32,10 +34,13 @@ export default defineConfig({
       routesDirectory: "src/routes",
     }),
     mdx({
+      exclude: skipNetArticles,
       rehypePlugins: [
         [rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false, langs: ["tsx", "sh"] }],
       ],
     }),
+    /** SkipNet's fences stay raw, so its own components can run them */
+    mdx({ include: skipNetArticles }),
     react(),
     tailwindcss(),
     mapEditApiPlugin(),

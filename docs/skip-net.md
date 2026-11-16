@@ -19,7 +19,19 @@ SkipNet lays out its own panes, saved in its meta (`meta.panes`). The layout is 
 - Each split is an Allotment. Its sizes are saved once a sash is let go.
 - A pane is remounted when it moves in the tree. What it keeps, it keeps in its leaf or in localStorage by `{uiId}:{paneId}`.
 
-What a pane shows is its leaf (`SkipNetLeaf`): `kind` is `null` (empty), `library`, `jobs` or `item`. A library or jobs pane runs in one session (`usePaneSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the leaf's `sessionKey`. A picked session since removed gives way to the default.
+What a pane shows is its leaf (`SkipNetLeaf`): `kind` is `null` (empty), `library`, `jobs`, `article` or `item`. A library, jobs or article pane runs in one session (`usePaneSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the leaf's `sessionKey`. A picked session since removed gives way to the default.
+
+## Articles
+
+An article is an mdx file, `src/articles/npc-*.mdx`, e.g. `npc-spawn`. They will replace the library and items.
+
+- Each is a chunk of its own, loaded when first shown (`getArticle` in `articles.ts`). The picker lists them by key, in `articleOrder`. A stale `articleKey` gives way to the first.
+- A second `@mdx-js/rollup` in `packages/app/vite.config.ts` compiles them without Shiki, so their fences stay raw.
+- `articleComponents` are in scope in each:
+  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands as the library's are (`splitExamples`). A click runs one in the pane's session (`useSessionRunner`), and its left column copies it.
+  - A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), for amendments to attach to later.
+  - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
+- Adding or renaming one reloads the page.
 
 ## Library
 

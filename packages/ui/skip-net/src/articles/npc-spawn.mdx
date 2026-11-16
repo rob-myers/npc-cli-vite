@@ -1,0 +1,38 @@
+# Spawning
+
+Place npcs where you pick, and remove them again.
+
+## spawn
+
+```sh
+# spawn rob at pick
+spawn npc:rob at:$( pick 1 )
+
+# spawn at pick, facing 2nd pick
+spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
+
+# spawn with skin ra-0
+spawn npc:rob at:$( pick 1 ) as:ra-0
+
+# spawn npcs foo-0, foo-1 etc.
+pick | spawn npc:foo- as:postdoc-0
+
+# two picks per spawn (at, facing)
+pick | spawn npc:test as:postdoc-0 --facing
+```
+
+## remove
+
+```sh
+# remove npc rob
+remove npc:rob
+
+# remove all npcs
+remove npcs
+
+# remove all decor
+remove decor
+
+# remove named npcs or decor
+remove test{0..5}
+```

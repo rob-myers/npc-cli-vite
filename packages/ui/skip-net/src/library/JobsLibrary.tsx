@@ -19,7 +19,7 @@ import {
   toEditedSrc,
   toSegments,
 } from "./library";
-import type { TokenKind } from "./shell-highlight";
+import { tokenCss } from "./shell-highlight";
 
 const touchDevice = isTouchDevice();
 
@@ -478,19 +478,6 @@ const copyColumnCss = cn(
 const copyIconCss = "size-3.5";
 
 const headerButtonCss = "flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground";
-
-/** Muted, so the block reads as grey with only a hint of hue */
-const tokenCss: Record<TokenKind, string> = {
-  command: "text-sh-command",
-  comment: "text-sh-comment",
-  flag: "text-sh-flag",
-  keyword: "text-sh-keyword",
-  number: "text-sh-number",
-  operator: "text-sh-operator",
-  string: "text-sh-string",
-  text: "text-sh-text",
-  variable: "text-sh-variable",
-};
 
 const iconCss = cn(
   "shrink-0 cursor-pointer text-term-faint transition-colors hover:text-term-foreground",

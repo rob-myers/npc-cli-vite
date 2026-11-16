@@ -1,0 +1,26 @@
+# Sidestep
+
+`sidestep` has idle npcs make way for a walker coming at them, or held up by them. It is a keyed tick on the World, not a process.
+
+```sh
+# start it, or retune it
+sidestep
+
+# the kind of step, and where they go back to
+sidestep kind:turn back:home
+
+# a kind, tuned
+sidestep kind:wall reach:2
+
+# whom the lookout tested since last asked
+sidestep status
+
+# stop it
+sidestep off
+```
+
+## Tuning
+
+Whilst it runs, the kind npcs try next, its limits, and where and when they go back:
+
+<Item itemKey="sidestep" />

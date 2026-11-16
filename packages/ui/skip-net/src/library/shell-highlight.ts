@@ -141,3 +141,16 @@ export type ShellToken = {
   end: number;
   kind: TokenKind;
 };
+
+/** Muted, so the block reads as grey with only a hint of hue */
+export const tokenCss: Record<TokenKind, string> = {
+  command: "text-sh-command",
+  comment: "text-sh-comment",
+  flag: "text-sh-flag",
+  keyword: "text-sh-keyword",
+  number: "text-sh-number",
+  operator: "text-sh-operator",
+  string: "text-sh-string",
+  text: "text-sh-text",
+  variable: "text-sh-variable",
+};
