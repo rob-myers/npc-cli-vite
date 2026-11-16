@@ -49,7 +49,7 @@ The whole session lifecycle:
 - Dev console handle: `__worldNet["world-1"]`.
 
 ### `packages/ui/world/src/components/NetMenu.tsx`
-The join UI, rendered in `WorldSpeech`'s panel: joinable Worlds (same-page via `uiStore`, other tabs via the ws roster; worlds that are themselves clients excluded), connection status + leave, and the reconnect searching / not-found rows (dismiss clears `netParent`). Also `NetBadge` — a dot on the speech toggle icon (green connected/serving, yellow in-flight, red not found), so connection state shows without opening the panel.
+The join UI, rendered in `WorldSpeech`'s worlds tab, in a bordered box the panel's height. The other Worlds (same-page via `uiStore`, other tabs via the ws roster) are a tab each, showing its map, where it runs, its status and (same-page) its npc count, with **connect**, or **disconnect** (a red "confirm" on the first click) for the one joined. A world that is itself a client, or not live in its tab, cannot be connected to. A same-page world's details are read when the menu draws, never polled: the strip's refresh button reads them again. Above the tabs, a "serving N clients" row and the reconnect searching / not-found rows (dismiss clears `netParent`). Also `NetBadge` — a dot on the speech toggle icon (green connected/serving, yellow in-flight, red not found), so connection state shows without opening the panel.
 
 ### `scripts/src/vite-plugin-world-rtc.ts`
 Dev signaling relay on Vite's HMR websocket: announce → roster broadcast, signal → relay to the target uid, heartbeat expiry for closed tabs. Registered in `packages/app/vite.config.ts`, exported from `scripts/package.json`.

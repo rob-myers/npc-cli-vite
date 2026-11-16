@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { Tooltip } from "@base-ui/react/tooltip";
+import { Popover } from "@base-ui/react/popover";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
@@ -487,19 +487,27 @@ export default function WorldHud() {
           <AnimatePresence initial={false} mode="popLayout">
             {w.wasReadyFor.size === 0 && (
               <motion.div key="disconnected" {...toastMotion}>
-                <Tooltip.Root>
-                  <Tooltip.Trigger className="pointer-events-auto flex cursor-default items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 text-sky-300">
+                {/* a popover, opened by a click or tap */}
+                <Popover.Root>
+                  <Popover.Trigger
+                    className="pointer-events-auto flex cursor-help items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 text-sky-300"
+                    onClick={() => w.view.focus()}
+                  >
                     <PlugsIcon className="size-4" />
                     <span>disconnected</span>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal container={w.rootEl}>
-                    <Tooltip.Positioner side="bottom" sideOffset={4} className="z-50">
-                      <Tooltip.Popup className="rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-sky-100">
-                        connect a tty
-                      </Tooltip.Popup>
-                    </Tooltip.Positioner>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
+                  </Popover.Trigger>
+                  <Popover.Portal container={w.rootEl}>
+                    <Popover.Positioner side="bottom" sideOffset={4} className="z-50">
+                      <Popover.Popup
+                        initialFocus={false}
+                        finalFocus={false}
+                        className="rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-sky-100"
+                      >
+                        connect a tty or world
+                      </Popover.Popup>
+                    </Popover.Positioner>
+                  </Popover.Portal>
+                </Popover.Root>
               </motion.div>
             )}
           </AnimatePresence>

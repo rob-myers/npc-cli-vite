@@ -486,23 +486,24 @@ export function WorldSpeech() {
                 </div>
               </div>
 
-              {state.panelTab === "worlds" && <NetMenu />}
-
-              {state.panelTab === "comms" && (
-                <div
-                  // its own ink: the panel is dark in either theme
-                  className={cn(
-                    "flex flex-col gap-3 px-2 pb-2 overflow-y-auto scrollbar-thin text-xs text-slate-300",
-                    big && "text-sm",
-                  )}
-                  style={{ height: state.historyHeight }}
-                >
-                  {threads.length === 0 && <div className="px-1 py-2 text-slate-500 italic">nothing heard yet</div>}
-                  {threads.map((thread) => (
-                    <SpeechThread key={thread.key} thread={thread} />
-                  ))}
-                </div>
-              )}
+              {/* both tabs are this height, so one resize sizes both. Its own ink: the panel is dark in either theme */}
+              <div
+                className={cn("px-2 pb-2 text-xs text-slate-300", big && "text-sm")}
+                style={{ height: state.historyHeight }}
+              >
+                {state.panelTab === "worlds" ? (
+                  <div className="size-full overflow-y-auto scrollbar-thin rounded border border-slate-700">
+                    <NetMenu />
+                  </div>
+                ) : (
+                  <div className="flex size-full flex-col gap-3 overflow-y-auto scrollbar-thin">
+                    {threads.length === 0 && <div className="px-1 py-2 text-slate-500 italic">nothing heard yet</div>}
+                    {threads.map((thread) => (
+                      <SpeechThread key={thread.key} thread={thread} />
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* drag a side to move it alone: each clear of the corner, which sets two */}
               {resizeEdges.map(([edge, className]) => (

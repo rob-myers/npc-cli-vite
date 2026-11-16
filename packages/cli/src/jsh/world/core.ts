@@ -1515,7 +1515,7 @@ export function revoke(
  */
 export function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { npc: "with", for: "secs" }),
+  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { as: "with", npc: "with", for: "secs" }),
 ) {
   const npcKey = opts.with ?? w.player?.key;
   if (npcKey === undefined) throw Error("no player");
