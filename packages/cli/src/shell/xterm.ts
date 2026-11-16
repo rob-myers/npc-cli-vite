@@ -703,7 +703,8 @@ export class TtyXterm {
     let numLines = 0;
     this.nextPrintId = null;
 
-    while ((command = this.commandBuffer.shift()) && numLines <= this.linesPerUpdate) {
+    // the limit is tested first, so no command is taken off and then dropped
+    while (numLines < this.linesPerUpdate && (command = this.commandBuffer.shift())) {
       // console.log({ command });
       switch (command.key) {
         case "await-prompt": {
@@ -727,16 +728,19 @@ export class TtyXterm {
           break;
         }
         case "line": {
-          if (this.promptReady === true || (this.readyForInput === true && this.input !== "")) {
-            // a line whilst idle or typed ahead, e.g. from a background job, goes above the input
-            const input = this.input;
-            this.clearInput();
-            this.xterm.writeln(command.line);
-            this.setInput(input);
-          } else {
-            this.xterm.writeln(command.line);
+          // a run of lines is one write, so any input below them is redrawn once
+          let text = `${command.line}\r\n`;
+          let next = this.commandBuffer[0];
+          for (numLines++; next?.key === "line" && numLines < this.linesPerUpdate; numLines++) {
+            text += `${next.line}\r\n`;
+            this.commandBuffer.shift();
+            next = this.commandBuffer[0];
           }
-          numLines++;
+          // whilst idle or typed ahead, e.g. a background job's, they go above the input
+          const input = this.promptReady || (this.readyForInput && this.input !== "") ? this.input : null;
+          if (input !== null) this.clearInput();
+          this.xterm.write(text);
+          if (input !== null) this.setInput(input);
           break;
         }
         case "newline": {
