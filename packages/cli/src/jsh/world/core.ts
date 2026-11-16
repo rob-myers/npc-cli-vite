@@ -1503,7 +1503,8 @@ export function revoke(
 }
 
 /**
- * The player says something, or `with:` does (`npc:` too)
+ * The player says something, or `with:` does (`npc:` too). It ends once every word is said, in game time.
+ * Suspended, they pause mid-line. A kill cuts them off. Another line from them ends it early
  * ```sh
  * say hi
  * say hi with:rob
@@ -1511,9 +1512,10 @@ export function revoke(
  * say hi npc:rob secs:5
  * say hi with:rob for:10
  * say hi with:rob for:Infinity
+ * say hi with:kate &  # carries on without waiting
  * ```
  */
-export function say(
+export async function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
   opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { as: "with", npc: "with", for: "secs" }),
 ) {
@@ -1521,9 +1523,32 @@ export function say(
   if (npcKey === undefined) throw Error("no player");
   const npc = w.npc.get(`${npcKey}`);
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
+  if (!words) return;
 
-  if (words) {
-    w.speech.say(npc.key, words, opts.secs);
+  const id = w.speech.say(npc.key, words, opts.secs);
+  /** Whether this line is still being said */
+  const saying = () => w.speech.uttering.get(npc.key)?.id === id;
+  let suspended = api.isRunning() === false;
+  const task = new Task();
+  /** Suspended, they stop mid-line, and pick up where they left off */
+  const hold = (paused: boolean) => {
+    suspended = paused;
+    if (saying()) w.speech.setPaused(npc.key, paused);
+    return true;
+  };
+  const handlers = api.handleStatus({
+    onSuspend: () => hold(true),
+    onResume: () => hold(false),
+    cleanup: () => task.cancel(),
+  });
+  try {
+    await task.run(() => task.until(() => suspended === false && saying() === false));
+  } finally {
+    handlers.dispose();
+  }
+  if (task.isCancelled === true) {
+    w.speech.cutOff(npc.key, id);
+    throw api.getKillError();
   }
 }
 

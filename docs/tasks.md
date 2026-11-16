@@ -41,7 +41,8 @@ try {
 if (task.isCancelled === true) throw api.getKillError(); // after letting go of what it started
 ```
 
-`aimAtPart` (jsh `phaser kate at:rob`), `wSleep` in `core.ts` and `act` in `act.ts` are examples. A paused World
+`aimAtPart` (jsh `phaser kate at:rob`), `wSleep` and `say` in `core.ts`, and `act` in `act.ts` are examples. `say` waits
+until its line leaves `w.speech.uttering`, and a kill cuts the speaker off. A paused World
 ticks nothing, so the state does not change and the wait goes on.
 
 **The World code keeps the task** only when it runs async steps of its own, which a kill must stop. Its owner makes

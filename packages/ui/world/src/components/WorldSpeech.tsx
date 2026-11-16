@@ -235,6 +235,9 @@ export function WorldSpeech() {
       getClampedHistoryWidth(width: number) {
         return Math.min(state.getMaxHistoryWidth(), Math.max(minHistoryWidth, width));
       },
+      onTick(delta) {
+        for (const uttering of [...state.uttering.values()]) uttering.tick(delta);
+      },
       onResize() {
         y.set(state.getClampedY(y.get()));
         state.historyHeight = state.getClampedHistoryHeight(state.historyHeight);
@@ -307,6 +310,16 @@ export function WorldSpeech() {
 
         state.utter(entry, { secs, hold: opts?.hold });
         w.events.next({ key: "speech", id: entry.id, npcKey, words, epochMs, to });
+        return entry.id;
+      },
+      cutOff(npcKey, id) {
+        const uttering = state.uttering.get(npcKey);
+        if (uttering?.id !== id) return;
+        uttering.cancel();
+        w.bubble?.dropLine(npcKey);
+      },
+      setPaused(npcKey, paused) {
+        state.uttering.get(npcKey)?.setPaused(paused);
       },
       repeat(id) {
         const entry = state.history.find((x) => x.id === id);
@@ -352,17 +365,34 @@ export function WorldSpeech() {
           unface?.();
           if (state.isHeard(entry)) state.update();
         };
-        // in game time, each chunk heard by those in earshot as it starts
-        const cancels = utt.chunks.map((chunk, i) =>
-          w.e.after(chunk.at, () => state.hearChunk(entry, i, forPlayer, i === 0 ? near : undefined)),
-        );
-        cancels.push(w.e.after(utt.spokenSecs, end));
+        /** Seconds said so far, in game time */
+        let t = 0;
+        /** The next chunk to be heard */
+        let next = 0;
+        let paused = false;
         state.uttering.set(npcKey, {
           id: entry.id,
+          get paused() {
+            return paused;
+          },
           cancel() {
-            for (const cancel of cancels) cancel();
             w.n?.[npcKey]?.anim.talk(0);
             end();
+          },
+          setPaused(to) {
+            if (to === paused) return;
+            paused = to;
+            w.bubble?.setPaused(npcKey, paused);
+            w.n?.[npcKey]?.anim.talk(paused ? 0 : utt.spokenSecs - t, miked === false);
+          },
+          tick(delta) {
+            if (paused) return;
+            t += delta;
+            // each chunk heard by those in earshot as it starts
+            for (; next < utt.chunks.length && utt.chunks[next].at <= t; next++) {
+              state.hearChunk(entry, next, forPlayer, next === 0 ? near : undefined);
+            }
+            if (t >= utt.spokenSecs) end();
           },
         });
       },
@@ -845,9 +875,15 @@ export type State = {
   folded: Set<string>;
   /** What a reply's need is called, by key — defined by e.g. jsh `comms` */
   needDefs: Map<string, NeedDef>;
-  /** The line each is saying, by npcKey, and how to cut it off */
-  uttering: Map<string, { id: number; cancel(): void }>;
+  /** The line each is saying, by npcKey */
+  uttering: Map<string, Uttering>;
   addMenuItem(item: SpeechMenuItem): void;
+  /** Line `id` of theirs stops at once, its bubble gone, if they are still saying it */
+  cutOff(npcKey: string, id: number): void;
+  /** Each line said runs on, by game time — see `World`'s `onTick` */
+  onTick(delta: number): void;
+  /** Holds or resumes the line they are saying, its bubble and their mouth too */
+  setPaused(npcKey: string, paused: boolean): void;
   removeMenuItem(key: string): void;
   clear(): void;
   /** Some lines of the history, e.g. a talk's run about one topic — the talk carries on */
@@ -866,8 +902,11 @@ export type State = {
   onResizeDown(e: React.PointerEvent<HTMLElement>, edge: ResizeEdge): void;
   persistY(): void;
   persistHistorySize(): void;
-  /** Into the history, and over their head for `secs` — or, on `hold`, until someone it addresses answers */
-  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; topic?: string; hold?: boolean }): void;
+  /**
+   * Into the history, and over their head for `secs`, or on `hold` until someone it addresses answers.
+   * Returns its id, which `uttering` holds whilst it is said
+   */
+  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; topic?: string; hold?: boolean }): number;
   /** Which of `demoThoughts` is next */
   thoughtAt: number;
   /** Reads their next thought, as psi does — see `docs/psi.md` */
@@ -911,6 +950,16 @@ export type State = {
 export type NeedDef = { label: string; icon?: string };
 
 const speechPanelTabs = ["worlds", "comms"] as const;
+
+/** A line being said: its own clock, ticked by game time unless `paused` */
+type Uttering = {
+  id: number;
+  readonly paused: boolean;
+  /** Cuts it off: what is left unsaid is unheard */
+  cancel(): void;
+  setPaused(paused: boolean): void;
+  tick(delta: number): void;
+};
 
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
