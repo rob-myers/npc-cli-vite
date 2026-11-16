@@ -8,12 +8,12 @@ import { uiSchemas } from "./ui-schemas";
 export function getDefaultTabs() {
   const uid = () => `ui-${crypto.randomUUID()}`;
 
-  const jobsKey = "jobs-0";
+  const skipNetKey = "skipnet-0";
   const profileKey: ProfileKey = "default_profile";
   const ttyKey = "tty-0";
   const worldKey = "world-0";
 
-  const jobsMeta = uiSchemas.Jobs.decode({ id: uid(), title: jobsKey, uiKey: "Jobs" });
+  const skipNetMeta = uiSchemas.SkipNet.decode({ id: uid(), title: skipNetKey, uiKey: "SkipNet" });
 
   const jshMeta = uiSchemas.Jsh.decode({
     id: uid(),
@@ -43,16 +43,16 @@ export function getDefaultTabs() {
       id: uid(),
       title: "tabs-0",
       uiKey: "Tabs",
-      items: [worldMeta.id, jobsMeta.id, jshMeta.id, mapEditMeta.id],
+      items: [worldMeta.id, skipNetMeta.id, jshMeta.id, mapEditMeta.id],
       currentTabId: worldMeta.id,
     });
     worldMeta.parentId = tabsMeta.id;
     jshMeta.parentId = tabsMeta.id;
-    jobsMeta.parentId = tabsMeta.id;
+    skipNetMeta.parentId = tabsMeta.id;
     mapEditMeta.parentId = tabsMeta.id;
     return {
       tabs: [tabsMeta],
-      toUi: Object.fromEntries([jshMeta, jobsMeta, worldMeta, mapEditMeta, tabsMeta].map((meta) => [meta.id, meta])),
+      toUi: Object.fromEntries([jshMeta, skipNetMeta, worldMeta, mapEditMeta, tabsMeta].map((meta) => [meta.id, meta])),
     };
   } else {
     const tabs0Meta = uiSchemas.Tabs.decode({
@@ -77,16 +77,16 @@ export function getDefaultTabs() {
       id: uid(),
       title: "tabs-2",
       uiKey: "Tabs",
-      items: [jobsMeta.id, mapEditMeta.id],
-      currentTabId: jobsMeta.id,
+      items: [skipNetMeta.id, mapEditMeta.id],
+      currentTabId: skipNetMeta.id,
     });
-    jobsMeta.parentId = tabs2Meta.id;
+    skipNetMeta.parentId = tabs2Meta.id;
     mapEditMeta.parentId = tabs2Meta.id;
 
     return {
       tabs: [tabs0Meta, tabs1Meta, tabs2Meta],
       toUi: Object.fromEntries(
-        [jshMeta, jobsMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta, tabs2Meta].map((meta) => [meta.id, meta]),
+        [jshMeta, skipNetMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta, tabs2Meta].map((meta) => [meta.id, meta]),
       ),
     };
   }
