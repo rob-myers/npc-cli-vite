@@ -169,6 +169,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       // gltf is pending from the outset, else the first map could settle without npcs
       pending: { gltf: true },
       settledMapKey: null,
+      wasReadyFor: new Set(),
       r3f: null as any,
       r3fStore: null as any,
 
@@ -269,8 +270,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       isMapChanging() {
         return state.settledMapKey !== state.mapKey;
       },
-      isReady(_connectionKey) {
-        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+      isReady(connectionKey) {
+        const ready = !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+        if (ready && connectionKey !== undefined && !state.wasReadyFor.has(connectionKey)) {
+          state.wasReadyFor.add(connectionKey);
+          state.hud?.update();
+        }
+        return ready;
       },
       async loadDecorImages() {
         return await Promise.all(
@@ -698,6 +704,8 @@ export type State = {
 
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
+  /** The connectionKeys `isReady` has said yes to */
+  wasReadyFor: Set<string>;
 
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
@@ -708,6 +716,7 @@ export type State = {
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;
   isPlaygroundMap(): boolean;
+  /** Provide connectionKey to dismiss "disconnected" toast */
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
   /** Announce the map once its pending keys stop changing */

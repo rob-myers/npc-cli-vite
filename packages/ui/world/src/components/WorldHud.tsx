@@ -1,4 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
+import { Tooltip } from "@base-ui/react/tooltip";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
@@ -6,6 +7,7 @@ import {
   BinocularsIcon,
   FingerprintIcon,
   GearSixIcon,
+  PlugsIcon,
   SpeakerHighIcon,
   SpeakerSlashIcon,
   UserFocusIcon,
@@ -482,6 +484,25 @@ export default function WorldHud() {
             {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
             <span>{muted ? "muted" : "unmuted"}</span>
           </motion.button>
+          <AnimatePresence initial={false}>
+            {w.wasReadyFor.size === 0 && (
+              <motion.div key="disconnected" {...toastMotion}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger className="pointer-events-auto flex cursor-default items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 text-sky-300">
+                    <PlugsIcon className="size-4" />
+                    <span>disconnected</span>
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal container={w.rootEl}>
+                    <Tooltip.Positioner side="bottom" sideOffset={4} className="z-50">
+                      <Tooltip.Popup className="rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-sky-100">
+                        connect a tty
+                      </Tooltip.Popup>
+                    </Tooltip.Positioner>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <AnimatePresence>
           {state.notice !== null && (
