@@ -1,6 +1,6 @@
 import { cn, tw } from "@npc-cli/util";
-import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
-import { useContext } from "react";
+import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
+import { useContext, useEffect, useState } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { SkipNetContext } from "../context";
 import { ItemPane } from "../ItemPane";
@@ -38,29 +38,25 @@ export function Window(props: {
         }
       >
         {front && <span className="absolute inset-x-1 inset-y-0.75" style={stripesStyle} />}
-        <button
-          type="button"
-          title="close"
-          className={cn(boxClass, !boxes && "invisible")}
-          onClick={() => state.close(win.id)}
-        />
+        <CloseBox hidden={!boxes} onClose={() => state.close(win.id)} />
         <span className={cn("relative min-w-0 px-2 truncate bg-mac-title", front ? "font-bold" : "text-mac-muted")}>
           {title}
         </span>
         {stack && (
           <span className="relative ml-auto flex gap-1">
-            {moveBoxes.map(({ by, Icon, title }) => (
-              <button
-                key={by}
-                type="button"
-                title={title}
-                disabled={by === -1 ? stack.first : stack.last}
-                className={moveBoxClass}
-                onClick={() => state.moveInStack(win.id, by)}
-              >
-                <Icon weight="fill" className="size-2.5" />
-              </button>
-            ))}
+            {moveBoxes
+              .filter(({ by }) => !(by === -1 ? stack.first : stack.last))
+              .map(({ by, Icon, title }) => (
+                <button
+                  key={by}
+                  type="button"
+                  title={title}
+                  className={moveBoxClass}
+                  onClick={() => state.moveInStack(win.id, by)}
+                >
+                  <Icon weight="fill" className="size-2.5" />
+                </button>
+              ))}
           </span>
         )}
         <button
@@ -69,7 +65,7 @@ export function Window(props: {
           className={cn(boxClass, "flex flex-col justify-center", !boxes && "invisible")}
           onClick={() => state.toggleShade(win.id)}
         >
-          <span className="h-px mx-px bg-mac-edge" />
+          <span className="h-px mx-px bg-mac-edge dark:bg-mac-text" />
         </button>
       </header>
       {!shaded && (
@@ -83,6 +79,32 @@ export function Window(props: {
         </div>
       )}
     </div>
+  );
+}
+
+/** Its first press arms it red, a second within `confirmMs` closes the window */
+function CloseBox({ hidden, onClose }: { hidden: boolean; onClose(): void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const timeoutId = window.setTimeout(() => setArmed(false), confirmMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [armed]);
+  return (
+    <button
+      type="button"
+      title={armed ? "press again to close" : "close"}
+      className={cn(
+        boxClass,
+        "grid place-items-center text-mac-text",
+        armed && "bg-red-600 border-red-700 dark:border-red-400 text-white",
+        hidden && "invisible",
+      )}
+      onClick={() => (armed ? onClose() : setArmed(true))}
+      onBlur={() => setArmed(false)}
+    >
+      <XIcon weight="bold" className="size-2" />
+    </button>
   );
 }
 
@@ -120,15 +142,17 @@ function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
 }
 
 const boxClass = tw(
-  "skip-net-no-drag relative size-2.75 shrink-0 border border-mac-edge bg-mac-title cursor-pointer active:bg-mac-select",
+  "skip-net-no-drag relative size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title cursor-pointer active:bg-mac-select",
 );
+/** How long a close box stays armed */
+const confirmMs = 2500;
 /** The front window's title bar is pinstriped */
 const stripesStyle = {
   backgroundImage: "repeating-linear-gradient(to bottom, var(--color-mac-stripe) 0 1px, transparent 1px 2px)",
 };
 /** A stacked bar's up or down box, wider than tall for a finger */
 const moveBoxClass = tw(
-  "skip-net-no-drag grid place-items-center h-3.5 w-5 border border-mac-edge bg-mac-title cursor-pointer active:bg-mac-select active:text-mac-on-select disabled:opacity-30 disabled:cursor-default",
+  "skip-net-no-drag grid place-items-center h-3.5 w-5 border border-mac-edge bg-mac-title cursor-pointer dark:border-mac-text active:bg-mac-select active:text-mac-on-select",
 );
 const moveBoxes = [
   { by: -1, Icon: CaretUpIcon, title: "move up" },
