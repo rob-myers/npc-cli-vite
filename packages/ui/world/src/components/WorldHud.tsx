@@ -429,7 +429,7 @@ export default function WorldHud() {
       <div className={noticesClass}>
         {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
         <div className="flex items-center gap-1">
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="popLayout">
             {kept.map(({ label, title, end }) => (
               <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
                 <div
@@ -484,7 +484,7 @@ export default function WorldHud() {
             {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
             <span>{muted ? "muted" : "unmuted"}</span>
           </motion.button>
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="popLayout">
             {w.wasReadyFor.size === 0 && (
               <motion.div key="disconnected" {...toastMotion}>
                 <Tooltip.Root>
