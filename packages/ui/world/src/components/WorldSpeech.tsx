@@ -669,6 +669,7 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
   const npc = w.n[npcKey];
   // `setNpcLit` refuses the player, so the item would silently do nothing for them
   const canLightOrDelete = npc !== undefined && npc.key !== w.player?.key;
+  const hasPhaser = w.e.hasItem(npcKey, "phaser");
 
   return (
     <Menu.Root
@@ -729,9 +730,10 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
               <Menu.Item
                 className={speechMenuItemClassName}
                 closeOnClick={false}
+                disabled={hasPhaser === false}
                 onClick={() => w.npcFocus.setLaser(npcKey)}
               >
-                <MenuToggle on={w.npcFocus.lasers.has(npcKey)}>laser</MenuToggle>
+                <MenuToggle on={hasPhaser && w.npcFocus.lasers.has(npcKey)}>sight</MenuToggle>
               </Menu.Item>
             )}
             {canLightOrDelete && (

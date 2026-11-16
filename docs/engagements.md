@@ -171,8 +171,9 @@ does one with a laser.
   follows them until killed, a tilt, a cancel or lowering, and firing keeps her targeting. Either pauses with the
   World. The ray still decides what is met, so a forearm in front takes it. `shoot:` names a part with no ray at
   all.
-- **A laser** gives an npc the player's laser dot (`showsDot`): "laser" in their speech menu or bubble, or jsh
-  `phaser kate --laser` (`laser:false` takes it). Theirs then targets whilst raised, and stays after firing, as the
-  player's does (`w.npcFocus.setLaser`, `lasers`). It is not saved.
+- **A laser** gives an npc the player's laser dot (`showsDot`): a target icon in their menu (`PickMenu`, joined to
+  "phaser") or "sight" in their speech menu, disabled without a phaser. Or jsh `phaser kate --laser`
+  (`laser:false` takes it). Theirs then targets whilst raised, and stays after firing, as the player's does
+  (`w.npcFocus.setLaser`, `lasers`). It is not saved.
 
 **Psi** focuses on someone to act on them: see `docs/psi.md`.

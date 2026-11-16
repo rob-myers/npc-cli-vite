@@ -1,6 +1,6 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
-import { PushPinIcon } from "@phosphor-icons/react";
+import { PushPinIcon, TargetIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
 import * as THREE from "three/webgpu";
 import { doorHeight } from "../const.env";
@@ -440,6 +440,20 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
   if (npc === undefined) return null;
   const grKey = w.npc.npcToRoom.get(npcKey)?.grKey;
   const act = (fn: () => void) => () => (fn(), touch());
+  const itemToggle = (name: "psi" | "phaser", className?: string) => {
+    const had = w.e.hasItem(npcKey, name);
+    return (
+      <Toggle
+        on={had}
+        className={className}
+        title={`${had ? "take away" : "give"} ${name}`}
+        onClick={act(() => (had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name)))}
+      >
+        {name}
+      </Toggle>
+    );
+  };
+  const hasPhaser = w.e.hasItem(npcKey, "phaser");
 
   return (
     <>
@@ -459,19 +473,24 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
             touch();
           }}
         />
-        {(["psi", "phaser"] as const).map((name) => {
-          const had = w.e.hasItem(npcKey, name);
-          return (
+        {itemToggle("psi")}
+        {npcKey === w.player?.key ? (
+          itemToggle("phaser")
+        ) : (
+          // sight is the phaser's laser dot, so joined to it
+          <span className="flex">
+            {itemToggle("phaser", "rounded-r-none")}
             <Toggle
-              key={name}
-              on={had}
-              title={`${had ? "take away" : "give"} ${name}`}
-              onClick={act(() => (had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name)))}
+              on={hasPhaser && w.npcFocus.lasers.has(npcKey)}
+              disabled={hasPhaser === false}
+              className="flex items-center rounded-l-none border-l border-white/20"
+              title="sight: their phaser's laser dot"
+              onClick={act(() => w.npcFocus.setLaser(npcKey))}
             >
-              {name}
+              <TargetIcon className="size-3" weight="bold" aria-label="sight" />
             </Toggle>
-          );
-        })}
+          </span>
+        )}
         <Toggle
           on={npc.anim.breath.on}
           title={`${npc.anim.breath.on ? "stop" : "start"} breathing`}
@@ -482,11 +501,6 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
         {npcKey !== w.player?.key && (
           <Toggle on={npc.lit} onClick={act(() => w.e.setNpcLit(npc))}>
             lit
-          </Toggle>
-        )}
-        {npcKey !== w.player?.key && (
-          <Toggle on={w.npcFocus.lasers.has(npcKey)} onClick={act(() => w.npcFocus.setLaser(npcKey))}>
-            laser
           </Toggle>
         )}
         {/* the speech menu's added items e.g. picked */}
@@ -571,9 +585,11 @@ function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & { ref?: React.R
 /** A menu's button: amber whilst `on`, dim whilst off, plain if neither */
 function Toggle({
   on,
+  className,
   ...props
 }: {
   on?: boolean;
+  className?: string;
   disabled?: boolean;
   title?: string;
   onClick(): void;
@@ -586,6 +602,7 @@ function Toggle({
         "opacity-100 disabled:cursor-default disabled:opacity-40",
         on === true && "text-amber-200 ring-1 ring-amber-300/60",
         on === false && "text-white/50 hover:text-white/80",
+        className,
       )}
       {...props}
     />
