@@ -4,7 +4,7 @@ import { Component, type ReactNode } from "react";
 export function ItemPane(props: { item?: JshCli.SkipNetItem; itemKey?: string; worldKey: string }) {
   const { item, itemKey, worldKey } = props;
   if (item === undefined) {
-    return <div className="p-2 text-zinc-500">{`run \`${itemKey}\` in a ${worldKey} session`}</div>;
+    return <div className="p-2 text-mac-muted">{`run \`${itemKey}\` in a ${worldKey} session`}</div>;
   }
   return (
     <div className="size-full overflow-auto p-2">

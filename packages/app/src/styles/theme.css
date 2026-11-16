@@ -39,6 +39,19 @@
   --color-sh-string: #4a6b2f;
   --color-sh-text: #3a3a3a;
   --color-sh-variable: #7a6224;
+
+  /* SkipNet's classic desktop, in greys */
+  --color-mac-desk: #a3a3a3;
+  --color-mac-desk-dot: #959595;
+  --color-mac-window: #fbfbfb;
+  --color-mac-edge: #1c1c1c;
+  --color-mac-shadow: #1c1c1c;
+  --color-mac-title: #f0f0f0;
+  --color-mac-stripe: #9a9a9a;
+  --color-mac-text: #111111;
+  --color-mac-muted: #6b6b6b;
+  --color-mac-select: #1c1c1c;
+  --color-mac-on-select: #ffffff;
 }
 
 .theme-dark {
@@ -76,4 +89,16 @@
   --color-sh-string: #aec09a;
   --color-sh-text: #c2c2c2;
   --color-sh-variable: #cebf92;
+
+  --color-mac-desk: #262626;
+  --color-mac-desk-dot: #2e2e2e;
+  --color-mac-window: #161616;
+  --color-mac-edge: #5c5c5c;
+  --color-mac-shadow: #000000;
+  --color-mac-title: #222222;
+  --color-mac-stripe: #3a3a3a;
+  --color-mac-text: #d6d6d6;
+  --color-mac-muted: #8a8a8a;
+  --color-mac-select: #d6d6d6;
+  --color-mac-on-select: #000000;
 }

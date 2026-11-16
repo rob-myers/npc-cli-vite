@@ -18,9 +18,9 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
-    "allotment": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-grid-layout": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   }

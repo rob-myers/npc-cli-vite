@@ -1,48 +1,38 @@
-import type { PaneEdge, UseStateRef } from "@npc-cli/util";
-import type React from "react";
+import type { UseStateRef } from "@npc-cli/util";
 import { createContext } from "react";
-import type { SkipNetLeaf, SkipNetPaneNode, SkipNetUiMeta } from "./schema";
+import type { Layout } from "react-grid-layout";
+import type { SkipNetContent, SkipNetUiMeta, SkipNetWindow } from "./schema";
 
 export type State = {
-  /** Clear was pressed once, so a second press clears */
-  clearArmed: boolean;
-  clearTimeoutId: number;
-  /** The pane dragged by its grip, where it would land, and where the drag began */
-  drag: null | {
-    sourceId: number;
-    targetId: null | number;
-    /** `center` swaps, dropped on the other's grip */
-    edge: null | PaneEdge;
-    /** It has moved `dragStartPx` from `x`, `y` */
-    moved: boolean;
-    x: number;
-    y: number;
-  };
-  /** Shows where a dragged pane would land */
-  dropEl: null | HTMLDivElement;
-  /** What jsh mounted on our World, read once for every pane */
+  /** The alert asking to clear the desktop is open */
+  clearAsked: boolean;
+  /** What jsh mounted on our World, read once for every window */
   items: JshCli.SkipNetItem[];
   meta: SkipNetUiMeta;
+  /** The panel is narrower than `stackPx`, so its windows are stacked */
+  narrow: boolean;
   rootEl: null | HTMLDivElement;
-  /** Ends a drag without a drop */
-  cancelDrag(): void;
-  /** Every pane gone but one empty, on a second press */
+  /** Stacks it over every other */
+  bringToFront(id: string): void;
+  /** Compacts the windows upwards, once */
+  cleanUp(): void;
+  /** Closes every window */
   clear(): void;
-  close(paneId: number): void;
-  endDrag(): void;
-  /** Adds a jobs pane and a library pane, unless there are some */
-  ensureJobs(): void;
-  moveDrag(e: React.PointerEvent): void;
-  /** Escape cancels a drag */
-  onDragKey(e: KeyboardEvent): void;
-  setLeaf(paneId: number, leaf: SkipNetLeaf): void;
-  setPanes(panes: SkipNetPaneNode): void;
-  setSizes(splitId: number, sizes: number[]): void;
-  split(paneId: number, edge: "right" | "bottom"): void;
-  startDrag(e: React.PointerEvent, paneId: number): void;
+  close(id: string): void;
+  /** Swaps it with its neighbour in the stack, above on `-1`, below on `1` */
+  moveInStack(id: string, by: -1 | 1): void;
+  /** A new window, else fronts the one already showing that folder, article or item */
+  open(content: SkipNetContent): void;
+  /** Keeps where each window was dragged or resized to */
+  saveLayout(layout: Layout): void;
+  setArrange(arrange: SkipNetUiMeta["arrange"]): void;
+  setClearAsked(clearAsked: boolean): void;
+  /** Each stacked window's share of the height, by id */
+  setStackFlex(flexById: Record<string, number>): void;
+  setWindow(id: string, patch: Partial<SkipNetWindow>): void;
+  setWindows(windows: SkipNetWindow[]): void;
+  /** Rolls it up to its title bar, or back down */
+  toggleShade(id: string): void;
 };
-
-/** Where a pane is dropped beside another */
-export type SplitEdge = Exclude<PaneEdge, "center">;
 
 export const SkipNetContext = createContext<UseStateRef<State>>(null as never);

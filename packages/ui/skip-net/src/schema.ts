@@ -1,29 +1,49 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
-import type { PaneNode } from "@npc-cli/util";
 import z from "zod";
 
-/** What a pane shows: nothing yet, the jobs library, the process leaders, an article, or an item jsh mounted on the World */
-export type SkipNetLeaf = {
-  kind: null | "library" | "jobs" | "article" | "item";
-  /** The article's key, e.g. `npc-spawn` */
-  articleKey?: string;
+/** What a window shows: the npc folder, an article, the process leaders, the jobs library, or an item jsh mounted on the World */
+export type SkipNetKind = "folder" | "article" | "jobs" | "library" | "item";
+
+/** A window's kind, and what it shows */
+export type SkipNetContent = {
+  kind: SkipNetKind;
   /** The session its commands run in, else the first whose World is ours */
   sessionKey?: `tty-${number}`;
+  /** The article's key, e.g. `npc-spawn` */
+  articleKey?: string;
   /** The item's key, e.g. `sidestep` */
   itemKey?: string;
 };
 
-export type SkipNetPaneNode = PaneNode<SkipNetLeaf>;
+/** A window on the desktop, placed in grid cells. A higher `z` stacks it over others */
+export type SkipNetWindow = SkipNetContent & {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  z: number;
+  /** Its height to restore, whilst windowshaded to its title bar */
+  shadedH?: number;
+  /** Its share of a stack's height, once a bar was dragged there. Else its `h` */
+  stackFlex?: number;
+  /** Its place in a stack, once moved there. Else after those placed, in the desktop's reading order */
+  stackOrder?: number;
+};
 
 export const SkipNetUiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
   uiKey: z.literal("SkipNet"),
   /** The World it is aligned with */
   worldKey: z.templateLiteral(["world-", z.number()]).default("world-0"),
-  /** Its own layout of panes */
-  panes: z
-    .custom<SkipNetPaneNode>((x) => typeof x === "object" && x !== null && "type" in x && "id" in x)
-    .default((): SkipNetPaneNode => ({ type: "leaf", id: 1, kind: null })),
+  /** Windows overlap freely, else stay compacted upwards */
+  arrange: z.enum(["free", "tidy"]).default("free"),
+  windows: z
+    .custom<SkipNetWindow[]>((x) => Array.isArray(x))
+    .default((): SkipNetWindow[] => [
+      { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
+      { id: "w2", kind: "jobs", x: 21, y: 1, w: 32, h: 14, z: 2 },
+    ]),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;

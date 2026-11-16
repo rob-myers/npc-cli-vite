@@ -1,34 +1,60 @@
 # SkipNet
 
-SkipNet is the intranet holding SCPs. As a panel, `packages/ui/skip-net` (uiKey `SkipNet`), it is aligned with one World (`meta.worldKey`, default `world-0`), whose key its header shows. It replaced the Scenario panel. A saved `Scenario` ui is read as a `SkipNet` (`renamedUiKeys` in `ui.store.ts`).
+SkipNet is the intranet holding SCPs. As a panel, `packages/ui/skip-net` (uiKey `SkipNet`), it is a classic desktop aligned with one World (`meta.worldKey`, default `world-0`). It replaced the Scenario panel. A saved `Scenario` ui is read as a `SkipNet` (`renamedUiKeys` in `ui.store.ts`).
 
-## Panes
+## Desktop
 
-SkipNet lays out its own panes, saved in its meta (`meta.panes`). The layout is a tree: a split lays out its children one way, and a leaf is a pane.
+A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid out by `react-grid-layout`.
 
-- Its header's **jobs** adds a jobs pane and a library pane, unless there are some (`ensureJobs`). An empty pane takes each, else jobs goes above the library.
-- Its header's **clear** leaves one empty pane, on a second press within 3s (`clearArmed`).
+- **Grid.** The desk is `desktopCols` (80) cells of `cellPx` (20px), wider than most panels, so it scrolls both ways. Its rows grow with the windows.
+- **Arranging.** In `meta.arrange` `free` (the default), nothing compacts (`getCompactor(null, true)`), so windows overlap. In `tidy` they compact upwards (`verticalCompactor`). **Clean Up** compacts them once.
+- **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes and its boxes.
+- **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
+- **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **npc**, **jobs**, **library**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
+- **The npc folder** (`FolderWindow`) shows an icon per article. Opening one fronts the window already showing it, else opens a new one.
 
-- The tree's functions are shared with the app's own layout (`paneTree` in `@npc-cli/util`, `service/pane-tree.ts`), each generic over what a leaf holds. A new node's id is one more than the tree's largest (`maxPaneId`).
-- Each pane has a header:
-  - a grip to drag it by
-  - a picker of what it shows
-  - split right and split down, which add an empty pane beside it
-  - close. Closing the last pane leaves an empty one.
-- **Drag to split.** A grip drags once moved `dragStartPx`. Near the middle of a pane's edge (`toEdge`), it shows where it would land: that half of the pane (`moveNode`). Over another pane's grip (`data-pane-grip`), that pane's header shows amber, and a drop swaps the two. Elsewhere nothing shows, and a drop does nothing. Dropped on its own edge, it moves to that side and an empty pane takes the rest. Escape cancels it (`onDragKey`). A pane joins its neighbour's split when that lies the same way (`splitNode`).
-- Each split is an Allotment. Its sizes are saved once a sash is let go.
-- A pane is remounted when it moves in the tree. What it keeps, it keeps in its leaf or in localStorage by `{uiId}:{paneId}`.
+## Windows
 
-What a pane shows is its leaf (`SkipNetLeaf`): `kind` is `null` (empty), `library`, `jobs`, `article` or `item`. A library, jobs or article pane runs in one session (`usePaneSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the leaf's `sessionKey`. A picked session since removed gives way to the default.
+`meta.windows` holds each window (`SkipNetWindow`): its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `jobs`, `library` or `item`.
+
+- **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`).
+- **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`.
+- **Grow box.** A window resizes from its bottom-right corner, larger on touch.
+- **Info bar.** Under the title, double-ruled (`infoBarClass`): "N items" in the folder, else the window's session (`SessionBar`).
+- **Opening.** A new window is cascaded from the last opened (`newWindow`).
+- **Sessions.** An article, jobs or library window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
+
+## Menu bar
+
+Base-ui `Menubar` menus, portalled into SkipNet (`desktop/MenuBar.tsx`):
+
+- **◆**: the World's key
+- **File**: open the npc folder, new jobs or library windows, open each World item, close the front window
+- **View**: Clean Up, Free or Tidy
+- **Special**: Clear Desktop…, which asks first in a classic alert box (`ClearAlert`)
+
+## Stack
+
+A panel narrower than `stackPx` (640) shows its windows stacked instead (`desktop/Stack.tsx`, `state.narrow` from a `ResizeObserver`). Nothing about the desktop changes, so widening the panel restores it.
+
+- Windows are in `stackOrder`, then any without one in the desktop's reading order, by `y` then `x` (`stackOrdered`). Each bar's up and down boxes swap it with its neighbour (`moveInStack`), which numbers every window's `stackOrder`. The desktop's places are untouched.
+- A window is open unless windowshaded, so a fold in one layout is a fold in the other. Open windows share the height, the rest are bars.
+- A tap on a bar folds or unfolds it. Every bar has its boxes.
+- **Resizing.** A bar dragged (`dragStartPx`) moves the boundary between the open windows either side of it, each at least `stackMinPx` tall. Each open window's share is saved as `stackFlex`, apart from its desktop height. Until dragged, its share is its `h`.
+- With no windows, the desktop icons show in a row.
+
+## Light and dark
+
+The chrome is greyscale, in `mac-*` colour tokens in `packages/app/src/styles/theme.css`: light (the classic white look) and `.theme-dark`. Window bodies keep their `term-*` colours. An article's `prose` is inverted only in the dark theme.
 
 ## Articles
 
 An article is an mdx file, `src/articles/npc-*.mdx`, e.g. `npc-spawn`. They will replace the library and items.
 
-- Each is a chunk of its own, loaded when first shown (`getArticle` in `articles.ts`). The picker lists them by key, in `articleOrder`. A stale `articleKey` gives way to the first.
+- Each is a chunk of its own, loaded when first shown (`getArticle` in `articles.ts`). The folder lists them in `articleOrder`. A stale `articleKey` gives way to the first.
 - A second `@mdx-js/rollup` in `packages/app/vite.config.ts` compiles them without Shiki, so their fences stay raw.
 - `articleComponents` are in scope in each:
-  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands as the library's are (`splitExamples`). A click runs one in the pane's session (`useSessionRunner`), and its left column copies it.
+  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands as the library's are (`splitExamples`). A click runs one in the window's session (`useSessionRunner`), and its left column copies it.
   - A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), for amendments to attach to later.
   - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
 - Adding or renaming one reloads the page.
@@ -45,11 +71,11 @@ The jobs library (`library/JobsLibrary.tsx`), formerly in `Jobs`, whose examples
 
 ## Jobs
 
-The process leaders of a session: the `Jobs` ui itself, imported lazily by subpath (`@npc-cli/ui__jobs/Jobs`), so it is also a ui of its own. Within SkipNet it is given the pane's session (`sessionKey`) and reports a pick (`onSessionKey`). On its own it keeps its first session. It connects by itself once its tty is mounted, e.g. by a library run, unless the user disconnected it (`optedOut`).
+The process leaders of a session: the `Jobs` ui itself, imported lazily by subpath (`@npc-cli/ui__jobs/Jobs`), so it is also a ui of its own. Within SkipNet it is given the window's session (`sessionKey`) and reports a pick (`onSessionKey`). On its own it keeps its first session. It connects by itself once its tty is mounted, e.g. by a library run, unless the user disconnected it (`optedOut`).
 
 ## Items
 
-An item is a component jsh mounts on the World: `w.skipNet.add({ key, title, Component })`, keyed, and `w.skipNet.remove(key)` (`use-world-skip-net.ts`, `JshCli.SkipNetItem`). A pane of kind `item` shows one by its key (`ItemPane`), and the picker offers each one mounted (`useSkipNetItems`). An error in one shows in its place, cleared by a new item with its key.
+An item is a component jsh mounts on the World: `w.skipNet.add({ key, title, Component })`, keyed, and `w.skipNet.remove(key)` (`use-world-skip-net.ts`, `JshCli.SkipNetItem`). A window of kind `item` shows one by its key (`ItemPane`). The desktop icons and File menu offer each one mounted (`useSkipNetItems`). An error in one shows in its place, cleared by a new item with its key.
 
 - jsh `sidestep` mounts **sidestep** (`docs/sidestep.md`).
 - A World remount loses them: re-run what mounted them.

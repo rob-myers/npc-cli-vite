@@ -110,46 +110,64 @@ devMcp.setState({
   },
 });
 
-/** Ends the World's busy overlay, whilst it is up */
-let endBusy: null | (() => void) = null;
-
-/** Runs a call with "mcp testing" in the World's busy overlay, up until Claude's turn ends */
+/** Runs a call with "mcp testing" up over the page, until Claude's turn ends */
 async function driving<T>(call: () => Promise<T>): Promise<T> {
-  const view = getView();
-  if (endBusy === null) {
-    userInput.length = 0;
-    const ended = new Promise<void>((resolve) => (endBusy = () => resolve()));
-    void view?.runBusy(mcpBusyText, () => ended);
-  } else if (view !== undefined && view.busy !== mcpBusyText) {
-    relabelBusy(mcpBusyText); // back from compacting
-  }
+  if (getBanner() === null) userInput.length = 0;
+  setBanner(mcpBusyText); // also back from compacting
   return call();
 }
 
-function getView() {
-  const w = queryClientApi.get(["world-0"]) as
-    | undefined
-    | {
-        view?: {
-          busy: null | string;
-          runBusy(text: string, task: () => Promise<void>): Promise<void>;
-          update(): void;
-        };
-      };
-  return w?.view;
+/** The page's "mcp testing" banner, unless it is gone or fading out */
+function getBanner(): null | HTMLElement {
+  const el = document.getElementById(bannerId);
+  return el === null || el.dataset.leaving === "true" ? null : el;
+}
+
+/** Shows the banner saying `text`, else fades it out on `null`. Found by id, so an hmr keeps it */
+function setBanner(text: null | string) {
+  let el = document.getElementById(bannerId);
+  if (text === null) {
+    if (el === null) return;
+    el.dataset.leaving = "true";
+    el.style.opacity = "0";
+    window.setTimeout(() => el?.dataset.leaving === "true" && el.remove(), bannerFadeMs);
+    return;
+  }
+  if (el === null) {
+    el = document.createElement("div");
+    el.id = bannerId;
+    el.className = bannerClass;
+    el.innerHTML = `<div class="${spinnerClass}"></div><span class="min-w-0 truncate"></span>`;
+    el.style.opacity = "0";
+    document.body.append(el);
+    placeBanner();
+    void el.offsetWidth; // a reflow, so the fade runs even in a background tab, where no frame comes
+    el.style.opacity = "1";
+  } else {
+    delete el.dataset.leaving;
+    el.style.opacity = "1";
+  }
+  (el.lastElementChild as HTMLElement).textContent = text;
+}
+
+/** Centres the banner in the visual viewport, so a pinch zoom, the keyboard or a notch never hides it */
+function placeBanner() {
+  const el = document.getElementById(bannerId);
+  if (el === null) return;
+  const vv = window.visualViewport;
+  const [x, y, width] = vv === null ? [0, 0, window.innerWidth] : [vv.offsetLeft, vv.offsetTop, vv.width];
+  el.style.left = `${x + width / 2}px`;
+  el.style.top = `calc(${y}px + env(safe-area-inset-top) + 4rem)`;
+  el.style.maxWidth = `calc(${width}px - 1rem)`;
 }
 
 /** Changes the text of "mcp testing", whilst it is up */
 function relabelBusy(text: string) {
-  const view = getView();
-  if (endBusy === null || view === undefined || view.busy === null) return;
-  view.busy = text;
-  view.update();
+  if (getBanner() !== null) setBanner(text);
 }
 
 function stopBusy() {
-  endBusy?.();
-  endBusy = null;
+  setBanner(null);
 }
 
 /** The user's input whilst "mcp testing" is up, told to Claude with its next result */
@@ -158,13 +176,15 @@ const userInput: string[] = [];
 let ownInputUntil = 0;
 
 function noteInput(e: Event) {
-  if (endBusy === null || performance.now() < ownInputUntil) return;
+  if (getBanner() === null || performance.now() < ownInputUntil) return;
   const what = e instanceof KeyboardEvent ? `keydown ${e.key}` : e.type;
   if (userInput.at(-1) !== what && userInput.length < 20) userInput.push(what);
 }
 
 const inputTypes = ["pointerdown", "keydown", "wheel"];
 for (const type of inputTypes) window.addEventListener(type, noteInput, { capture: true, passive: true });
+window.visualViewport?.addEventListener("resize", placeBanner);
+window.visualViewport?.addEventListener("scroll", placeBanner);
 
 /** Per tty, the io tapped and how to stop — a tab closed and reopened has a new io */
 const taps = new Map<string, { io: unknown; off(): void }>();
@@ -285,6 +305,12 @@ const ansiRegex = /\x1b\[[0-9;]*m/g;
 const maxEntries = 2000;
 const mcpBusyText = "mcp testing";
 const mcpCompactingText = "mcp compacting";
+const bannerId = "dev-mcp-banner";
+const bannerFadeMs = 200;
+/** Top-centre of the page, over every ui. Informative only, so it takes no pointer events */
+const bannerClass =
+  "fixed -translate-x-1/2 z-9999 pointer-events-none select-none flex items-center gap-4 px-6 py-2.5 rounded border border-yellow-200/30 bg-black/75 font-mono text-sm uppercase tracking-[0.25em] sm:tracking-[0.4em] whitespace-nowrap text-yellow-200/80 transition-opacity duration-200";
+const spinnerClass = "size-4 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin";
 
 (window as unknown as { __devMcp: typeof devMcp }).__devMcp = devMcp;
 
@@ -298,6 +324,8 @@ import.meta.hot?.accept();
 import.meta.hot?.dispose(() => {
   for (const { off } of taps.values()) off();
   for (const type of inputTypes) window.removeEventListener(type, noteInput, { capture: true });
+  window.visualViewport?.removeEventListener("resize", placeBanner);
+  window.visualViewport?.removeEventListener("scroll", placeBanner);
   stopBusy();
 });
 

@@ -171,13 +171,13 @@ The Claude Code CLI shows the input inline, and `claude --resume` opens the same
 
 ### "mcp testing"
 
-The World's busy overlay says "mcp testing" from Claude's first call in a turn until the turn ends
-(`driving` in `dev-mcp-hooks.ts`).
+A banner at the top of the page says "mcp testing" from Claude's first call in a turn until the turn ends
+(`driving` in `dev-mcp-hooks.ts`). It is a plain element on `document.body` (`#dev-mcp-banner`), apart from any World.
 
 - Every call starts it, except `console`, `shot` and a `click` at client coordinates.
 - A `Stop` hook in `.claude/settings.local.json` ends it. The hook posts to `/api/dev-mcp/turn-end`, and
   `vite-plugin-dev-mcp` passes that to the page as the HMR event `dev-mcp:turn-end`.
-- A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the overlay says "mcp compacting" until
+- A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the banner says "mcp compacting" until
   Claude's next call or the turn's end.
 
 ### The user's own input
@@ -238,7 +238,7 @@ view). So check with `query` what is actually stale before reaching for a reload
 | A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
 | `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
 | `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |
-| Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => { w.view.busy = null; w.view.update(); }` hides the overlay. Ask the user to reload |
+| Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => document.getElementById("dev-mcp-banner")?.remove()` hides the banner. Ask the user to reload |
 
 Touching a file does not help: Vite sends no update for a file whose content is unchanged. So touching
 `NPCs.tsx` does not bump its query key.
