@@ -124,7 +124,7 @@ const defaultWorldSettings: WorldSettings = {
   timeScale: 1,
   timeSliderOpen: false,
   warningsOpen: false,
-  roomLabelsShown: true,
+  roomLabelsShown: false,
   breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,
