@@ -121,10 +121,11 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
       });
       for (const look of changed.sort((u, v) => Number(v.sees) - Number(u.sees))) yield sayLook(api.ansi, look);
 
-      const rays = new Set(looks.flatMap((look) => drawRays(w, look)));
-      for (const key of drawn) if (rays.has(key) === false) w.debug.removePolyline(key);
-      drawn = rays;
-      w.view.forceUpdate();
+      const rays = new Map(looks.flatMap(raysOf));
+      const gone = [...drawn].filter((key) => rays.has(key) === false).map((key) => [key, null] as const);
+      w.debug.setPolylines([...rays, ...gone]);
+      drawn = new Set(rays.keys());
+      w.r3f?.invalidate();
       // rays from their eyes follow every turn of the head
       const next = drawn.size > 0 ? w.npc.nextTick() : w.e.wait(watchSecs);
       if ((await Promise.race([next.then(() => true), stopped.then(() => false)])) === false) {
@@ -133,8 +134,8 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
     }
   } finally {
     handlers.dispose();
-    for (const key of drawn) w.debug.removePolyline(key);
-    w.view.forceUpdate();
+    w.debug.setPolylines([...drawn].map((key) => [key, null] as const));
+    w.r3f?.invalidate();
   }
 }
 
@@ -166,8 +167,8 @@ function sayLook(ansi: JshCli.RunArg["api"]["ansi"], { pair: [a, b], sees, reaso
   return `${ansi.White}${a} ${arrow}${ansi.Reset} ${ansi.White}${b} ${ansi.GreenBright}${reason}${ansi.Reset}`;
 }
 
-/** Draws the rays a verdict needed, at the heights the worker tested, and gives their keys */
-function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
+/** The rays a verdict needed by key, at the heights the worker tested */
+function raysOf({ pair: [a, b], x }: Look): [string, Polyline][] {
   if (x?.settled !== "lines") return [];
   const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
   return needed.map(({ from, to, hit }, k) => {
@@ -176,7 +177,7 @@ function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
     // so a stopped ray ends on what stopped it
     const t =
       hit === null ? 1 : Math.hypot(end.x - from.x, end.y - from.y) / (Math.hypot(to.x - from.x, to.y - from.y) || 1);
-    w.debug.setPolyline(key, {
+    const polyline: Polyline = {
       points: [
         [from.x, from.y, x.eye],
         [end.x, end.y, x.eye + (x.top - x.eye) * t],
@@ -184,13 +185,15 @@ function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
       // amber where low cover stopped one, yet another got over it
       color: hit === null ? "#40d080" : hit.kind === "low" && x.sees ? "#f0a030" : "#e04040",
       ...rayStyle,
-    });
-    return key;
+    };
+    return [key, polyline];
   });
 }
 
 /** One pair's verdict: whether the first sees the second, why, and the worker's account if it was asked */
 type Look = { pair: [string, string]; sees: boolean; reason: string; x: null | Explained };
+/** A debug polyline */
+type Polyline = Parameters<JshCli.WorldState["debug"]["setPolyline"]>[1];
 /** The worker's `explain` answer */
 type Explained = Extract<WW.SpotAnswer, { lines: unknown }>;
 
