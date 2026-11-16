@@ -82,7 +82,7 @@ function footfallOf(npc: JshCli.Npc, side: Side): Footfall {
 }
 
 /** Each gait's step level, out of the steps' fader */
-const stepLevels = { crouched: 0.07, turning: 0.15, walking: 0.35, strafing: 0.3, running: 0.5 };
+const stepLevels = { crouched: 0.12, turning: 0.15, walking: 0.35, strafing: 0.3, running: 0.5 };
 
 const feetConfig = {
   /** How far above its floor a foot must rise to be lifted, and come back within to land, in metres */
@@ -214,7 +214,7 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     if (chosen !== null) {
       if (psi === null) {
         const choir = chosen === "choir" || (chosen === "random" && Math.random() < hearConfig.choirShare);
-        const want = chosen === "monk" ? "monk" : choir ? "choir" : "chant";
+        const want = choir ? "choir" : "chant";
         const pick = chantOf(chosen) ?? getAudio().pickIndex("psi", lastChant);
         psi = { chosen, want, pick, held: null };
         if (want === "chant") lastChant = pick;
@@ -358,7 +358,7 @@ const hearConfig = {
 };
 
 /** What may sing whilst psi is raised */
-type PsiKey = "choir" | "monk" | "chant";
+type PsiKey = "choir" | "chant";
 
 /** Whose sounds are heard, and which doors, found every `everySecs` */
 type Hearing = {

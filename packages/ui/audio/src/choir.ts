@@ -3,15 +3,15 @@ import type { SampleBank } from "./samples";
 import type { HeldVoice, HoldParams } from "./sfx";
 import { sfxLevel } from "./synth";
 
-/** What sings whilst psi is raised, chosen on the desk: the choir, the monk, a chant (`psi`'s, in order), else any */
-export const psiVoices = ["random", "choir", "monk", "low-d", "low-chant", "drone", "eerie"] as const;
+/** What sings whilst psi is raised, chosen on the desk: the choir, a chant (`psi`'s, in order), else any */
+export const psiVoices = ["random", "choir", "low-chant", "eerie"] as const;
 export type PsiVoice = (typeof psiVoices)[number];
 
 export const isPsiVoice = (voice: unknown): voice is PsiVoice => psiVoices.includes(voice as PsiVoice);
 
 /** A chant's place in the `psi` bank, else `null` for the choir or random */
 export function chantOf(voice: PsiVoice) {
-  const at = psiVoices.indexOf(voice) - psiVoices.indexOf("low-d");
+  const at = psiVoices.indexOf(voice) - psiVoices.indexOf("low-chant");
   return at >= 0 ? at : null;
 }
 
@@ -193,111 +193,6 @@ function strikeBowl(ctx: AudioContext, at: number, out: AudioNode) {
   }
 }
 
-/**
- * A monk chanting, held whilst the player's psi is raised: one low voice in a vast stone hall, in phrases of "aum",
- * its overtones whistling above it, and a bowl struck now and then.
- */
-export function monkVoice(ctx: AudioContext, dest: AudioNode): HeldVoice {
-  const out = gain(ctx, 0);
-  out.connect(dest);
-  // mostly the hall, after a moment: the voice is far off in it
-  const room = gain(ctx, 1);
-  room.connect(gain(ctx, monkDry)).connect(out);
-  const delay = ctx.createDelay(1);
-  delay.delayTime.value = preDelaySecs;
-  room.connect(delay).connect(gain(ctx, monkHallWet)).connect(hall(ctx)).connect(out);
-  const sources: AudioScheduledSourceNode[] = [];
-  const start = <T extends AudioScheduledSourceNode>(source: T) => {
-    source.start();
-    sources.push(source);
-    return source;
-  };
-  /** Noise, slowly wandering, from a different place each time */
-  const wander = (hz: number) => {
-    const noise = ctx.createBufferSource();
-    noise.buffer = getPinkNoise(ctx);
-    noise.loop = true;
-    noise.start(0, Math.random() * 0.9);
-    sources.push(noise);
-    return noise.connect(filter(ctx, "lowpass", hz));
-  };
-
-  // the voice, holding its note a little unsteadily
-  const voice = start(osc(ctx, "sine", voiceHz));
-  voice.setPeriodicWave(getThroat(ctx));
-  wander(driftHz).connect(gain(ctx, driftCents)).connect(voice.detune);
-  const vibrato = start(osc(ctx, "sine", vibratoHz));
-  vibrato.connect(gain(ctx, voiceHz * vibratoDepth)).connect(voice.frequency);
-  const throat = gain(ctx, 1);
-  voice.connect(throat);
-  wander(8000).connect(gain(ctx, breathiness)).connect(throat);
-  const phrase = gain(ctx, phraseRest);
-  phrase.connect(room);
-
-  // the mouth, shaping "aa", "oo" and "mm" in turn
-  const mouth = gain(ctx, formantLift);
-  const bands = vowels.a.map(([hz, q, share]) => {
-    const band = filter(ctx, "bandpass", hz, q);
-    throat.connect(band).connect(gain(ctx, share)).connect(mouth);
-    return band;
-  });
-  const lips = filter(ctx, "lowpass", lipsHz.a);
-  mouth.connect(lips).connect(phrase);
-
-  // overtones, a narrow resonance drifting over the voice, heard through closed lips too
-  const overtone = filter(ctx, "bandpass", (overtoneHz[0] + overtoneHz[1]) / 2, overtoneQ);
-  const drift = start(osc(ctx, "sine", overtoneDriftHz));
-  drift.connect(gain(ctx, (overtoneHz[1] - overtoneHz[0]) / 2)).connect(overtone.frequency);
-  throat.connect(overtone).connect(gain(ctx, overtoneShare)).connect(phrase);
-
-  /** One "aum": a breath in, a scoop up onto the note, "aa" closing through "oo" to "mm", then easing for a breath */
-  const sing = (at: number) => {
-    const inhale = gain(ctx, 0);
-    const breath = ctx.createBufferSource();
-    breath.buffer = getPinkNoise(ctx);
-    breath
-      .connect(filter(ctx, "lowpass", 1200))
-      .connect(inhale)
-      .connect(phrase);
-    inhale.gain.setTargetAtTime(inhaleLevel, at - inhaleSecs, inhaleSecs / 3);
-    inhale.gain.setTargetAtTime(0, at, 0.1);
-    breath.start(Math.max(ctx.currentTime, at - inhaleSecs), Math.random() * 0.3);
-    breath.stop(at + 0.5);
-    breath.onended = () => inhale.disconnect();
-    voice.detune.setValueAtTime(-scoopCents, at);
-    voice.detune.setTargetAtTime(0, at, scoopSecs);
-    for (const [vowel, after, secs] of aum) {
-      vowels[vowel].forEach(([hz], i) => bands[i].frequency.setTargetAtTime(hz, at + after, secs));
-      lips.frequency.setTargetAtTime(lipsHz[vowel], at + after, secs);
-    }
-    phrase.gain.setTargetAtTime(1, at, 0.25);
-    phrase.gain.setTargetAtTime(phraseRest, at + phraseSecs - breathSecs, 0.4);
-  };
-  const timers = { phrase: 0, bowl: 0 };
-  const chant = (at: number) => {
-    sing(at);
-    const next = at + phraseSecs;
-    timers.phrase = window.setTimeout(() => chant(next), (next - ctx.currentTime - 1) * 1000);
-  };
-  const ring = (at: number) => {
-    strikeBowl(ctx, at, room);
-    const next = at + bowlSecs * (0.8 + 0.4 * Math.random());
-    timers.bowl = window.setTimeout(() => ring(next), (next - ctx.currentTime - 0.5) * 1000);
-  };
-  chant(ctx.currentTime + inhaleSecs);
-  timers.bowl = window.setTimeout(() => ring(ctx.currentTime + 0.5), firstBowlSecs * 1000);
-
-  const voiceOut = held(ctx, out, sources, monkLevel);
-  return {
-    set: voiceOut.set,
-    stop(at) {
-      window.clearTimeout(timers.phrase);
-      window.clearTimeout(timers.bowl);
-      voiceOut.stop(at);
-    },
-  };
-}
-
 const throats = new WeakMap<BaseAudioContext, Map<number, PeriodicWave>>();
 
 /** A voice's source, as its folds pulse: each harmonic softer than the last, falling as a throat's do */
@@ -376,12 +271,6 @@ function held(ctx: AudioContext, out: GainNode, sources: AudioScheduledSourceNod
   };
 }
 
-/** The monk's note, D2 */
-const voiceHz = 73.42;
-/** The hall's share of the monk, and the monk's own, and how long before the hall answers */
-const monkHallWet = 1.4;
-const monkDry = 0.35;
-const preDelaySecs = 0.04;
 /** The hall's share of the choir, beside its own voices */
 const choirHallWet = 1;
 /** The choir's chord, in Hz: D2, A2, D3 */
@@ -502,9 +391,8 @@ const breathiness = 0.15;
 /** Seconds to swell in once raised, and to die away once lowered */
 const fadeInSecs = 1.5;
 const fadeOutSecs = 1;
-/** The choir at full, and the monk, out of the world fader */
+/** The choir at full, out of the world fader */
 const choirLevel = 0.35;
-const monkLevel = 0.5;
 /** A recorded chant at full */
 const chantLevel = 0.6;
 /** Seconds skipped at each end of a chant, past an mp3's padding */

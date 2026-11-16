@@ -141,7 +141,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         const audio = getAudio();
         const { psiVoice } = audio;
         const choir = psiVoice === "choir" || (psiVoice === "random" && Math.random() < 0.5);
-        const want = psiVoice === "monk" ? "monk" : choir ? "choir" : "chant";
+        const want = choir ? "choir" : "chant";
         const pick = chantOf(psiVoice) ?? audio.pickIndex("psi");
         const from = performance.now();
         let held: null | typeof want = null;

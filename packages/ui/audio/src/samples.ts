@@ -19,7 +19,7 @@ export const sampleFiles = {
   zap: numbered("sfx/zap-", 6),
   shock: numbered("sfx/shock-", 1),
   static: numbered("sfx/static-", 1),
-  psi: numbered("sfx/psi-", 4),
+  psi: ["sfx/psi-1", "sfx/psi-3"],
 };
 
 export type SampleBank = keyof typeof sampleFiles;
