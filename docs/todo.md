@@ -5,10 +5,12 @@
   - ✅ move sidestep debug ui here
   - ✅ move JobsLibrary into SkipNet
   - ✅ can instantiate Jobs in SkipNet
-  - start npc-docs
-    - use mdx
-    - e.g. npc-controls, npc-player, npc-inventory
-    - e.g. npc-hide-n-seek, npc-patrol, npc-sidestep
+  - 🚧 start npc-docs
+    - 🚧 use mdx
+    - 🚧 e.g. npc-controls, npc-player, npc-inventory
+    - 🚧 e.g. npc-hide-n-seek, npc-patrol, npc-sidestep
+    - restyle SkipNet to look separate
+      - https://scipnet-terminal.web.app/
   - ❌ tldr only contains most common
     - label only (code viewable by running)
     - individual persisted params with history
@@ -35,7 +37,6 @@
   - change command `sc`
 
 - Blog component is list of videos
-- ✅ smaller room labels
 
 After vid:
 
@@ -60,15 +61,6 @@ After vid:
 
 ### Animation and Npc
 
-- ✅ fix lowered phaser going through a closed door
-  - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
-
-- ❌ refine psi breathing
-  - do lungs/diaphragm actually move like that?
-- ❌ skin remapping
-  - currently only have skinIndex
-  - could support mix-and-match body parts
-
 ### Camera
 
 - improve fov based on dimension
@@ -88,8 +80,6 @@ After vid:
   - ✅ demo_back_off
 
 - NpcAnimation has too many properties
-
-- ❌ clean up unused parts of WorldMenu theme (textarea)
 
 ### Decor
 
@@ -142,12 +132,7 @@ After vid:
 
 ### Unorganised Bugs
 
-- ❌ npc labels should be invisible during object-pick
-
 ### Worker
-
-- 🚧 consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
-  - ✅ demo_back_off
 
 ### WorldSpeech
 
@@ -171,21 +156,6 @@ After vid:
   - 🚧 brighter (1x global, 0.7x npc)
 
 ## Decorator
-
-- 🚧 Decorator refinements
-  - ✅ can tilt e.g. screen, switch
-  - ✅ Decorator can resize rect/circle/points
-  - ✅ Decorator has better icon for points
-  - ✅ Decorator dynamic decor has meta.shown
-  - ✅ improve default decor point icon (not warn)
-  - ✅ contextmenu
-    - ✅ for background (create)
-    - ✅ decor (edit)
-  - ✅ key to select tool: Esc, p, r, c, q
-  - ✅ can set 3d height 
-    - live update of control
-  - 🚧 book, box, key
-    - ✅ `book`, `box`, `keycard`, `phaser` decor, carried via `meta.item`
 
 ## Inventory
 

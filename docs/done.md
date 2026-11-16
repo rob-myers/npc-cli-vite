@@ -14,6 +14,15 @@
 
 ### Animation and Npc
 
+- ✅ fix lowered phaser going through a closed door
+  - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
+
+- ❌ refine psi breathing
+  - do lungs/diaphragm actually move like that?
+- ❌ skin remapping
+  - currently only have skinIndex
+  - could support mix-and-match body parts
+
 - ✅ npc key thin font flickers
 
 - ❌ consider improve turning animation
@@ -116,6 +125,11 @@
 
 ### Cleanliness
 
+- ❌ clean up unused parts of WorldMenu theme (textarea)
+
+- ❌ consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
+  - ✅ demo_back_off
+
 - ✅ simplify `npc.agent`
 
 - ✅ predicates -> preds
@@ -151,6 +165,8 @@
 - ✅ wasd look towards wall should be suppressed while strafe
 
 ### Decor
+
+- ✅ smaller room labels
 
 - ✅ chairs can specify forbidden exit direction e.g. back of sofa
   - decor point do=sit supports meta.front-only
@@ -410,6 +426,8 @@
 
 ### Unorganised Bugs
 
+- ❌ npc labels should be invisible during object-pick
+
 - ✅ why don't we see any floor wires in 102
 - ✅ pause World while `move` then resume is jerky
 - ✅ BUG only some room labels shown when change to map 301-101-301
@@ -419,6 +437,8 @@
 - ✅ can select text in WorldSpeech toast and modal
 
 ## Audio
+
+- ✅ louder footsteps etc.
 
 - ✅ phaser hit uses deep hum fx, also for walls
 - ✅ muted by default with toggle in World
@@ -455,6 +475,21 @@
 - ✅ rewrite README.md
 
 ## Decorator
+
+- ✅ Decorator refinements
+  - ✅ can tilt e.g. screen, switch
+  - ✅ Decorator can resize rect/circle/points
+  - ✅ Decorator has better icon for points
+  - ✅ Decorator dynamic decor has meta.shown
+  - ✅ improve default decor point icon (not warn)
+  - ✅ contextmenu
+    - ✅ for background (create)
+    - ✅ decor (edit)
+  - ✅ key to select tool: Esc, p, r, c, q
+  - ✅ can set 3d height 
+    - live update of control
+  - ✅ book, box, key
+    - ✅ `book`, `box`, `keycard`, `phaser` decor, carried via `meta.item`
 
 - ✅ route commands (jsh) `route_add` `route_rm` `route_init`
   - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
