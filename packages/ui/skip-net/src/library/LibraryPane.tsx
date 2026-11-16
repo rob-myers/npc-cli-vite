@@ -38,7 +38,7 @@ export function LibraryPane({ leaf, paneId }: { leaf: SkipNetLeaf; paneId: numbe
           <span className="text-term-paused truncate">runs once {runner.awaitedWorldKey} is open</span>
         )}
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col">
         <JobsLibrary
           uiId={`${meta.id}:${paneId}`}
           copiedSrc={runner.copiedSrc}
