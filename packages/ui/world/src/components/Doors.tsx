@@ -137,6 +137,7 @@ export default function Doors() {
         }
       },
       buildInstanceIds() {
+        state.animTargets.clear(); // keyed by the old instance ids
         state.toInstanceId = [];
         state.fromInstanceId = {};
         let nextId = 0;
