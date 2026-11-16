@@ -132,6 +132,18 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           shFiles={shellFunctionFiles} // JS wrapped as shell functions
           zoom={meta.zoom}
         />
+        {/* over the tty's menu, whose trigger stays below `minY` (40px) */}
+        <button
+          type="button"
+          title={jobs.shown ? "hide jobs" : "show jobs"}
+          className={cn(
+            "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer transition-colors",
+            jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
+          )}
+          onClick={() => state.setJobs({ shown: !jobs.shown })}
+        >
+          jobs
+        </button>
       </div>
       {jobs.shown && (
         <>

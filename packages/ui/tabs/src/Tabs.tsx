@@ -295,8 +295,7 @@ function TabHeaderItem({
   uiStore,
   uiStoreApi,
 }: TabHeaderItemProps) {
-  const { layoutApi, uiRegistry } = useContext(UiContext);
-  const TabButton = (uiRegistry[tab.uiKey] as UiPackageDef).TabButton;
+  const { layoutApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
@@ -449,8 +448,6 @@ function TabHeaderItem({
                 {Math.round((tab.zoom ?? 1) * 100)}%
               </SideTip>
             </BasicPopover>
-
-            {TabButton && <TabButton meta={tab} />}
 
             {tab.pausable === true && (
               <button
