@@ -8,10 +8,13 @@
   },
   "scripts": {},
   "dependencies": {
+    "@base-ui/react": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
+    "debounce": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:",

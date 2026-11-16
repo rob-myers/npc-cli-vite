@@ -1,8 +1,8 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
-/** What a window shows: the npc folder, an article, the process leaders, the jobs library, or an item jsh mounted on the World */
-export type SkipNetKind = "folder" | "article" | "jobs" | "library" | "item";
+/** What a window shows: the npc folder, an article, the jobs library, or an item jsh mounted on the World */
+export type SkipNetKind = "folder" | "article" | "library" | "item";
 
 /** A window's kind, and what it shows */
 export type SkipNetContent = {
@@ -40,9 +40,11 @@ export const SkipNetUiMetaSchema = z.object({
   arrange: z.enum(["free", "tidy"]).default("free"),
   windows: z
     .custom<SkipNetWindow[]>((x) => Array.isArray(x))
+    /** Jobs windows were dropped: jobs are now shown in their tty */
+    .transform((windows) => windows.filter((x) => (x.kind as string) !== "jobs"))
     .default((): SkipNetWindow[] => [
       { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
-      { id: "w2", kind: "jobs", x: 21, y: 1, w: 32, h: 14, z: 2 },
+      { id: "w2", kind: "library", x: 21, y: 1, w: 30, h: 24, z: 2 },
     ]),
 });
 

@@ -59,7 +59,7 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       open(content) {
         const { windows } = state.meta;
         const shown =
-          content.kind === "jobs" || content.kind === "library"
+          content.kind === "library"
             ? undefined
             : windows.find(
                 (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,

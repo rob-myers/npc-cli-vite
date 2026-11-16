@@ -10,26 +10,26 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 - **Arranging.** In `meta.arrange` `free` (the default), nothing compacts (`getCompactor(null, true)`), so windows overlap. In `tidy` they compact upwards (`verticalCompactor`). **Clean Up** compacts them once.
 - **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes and its boxes.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
-- **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **npc**, **jobs**, **library**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
+- **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **npc**, **library**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
 - **The npc folder** (`FolderWindow`) shows an icon per article. Opening one fronts the window already showing it, else opens a new one.
 
 ## Windows
 
-`meta.windows` holds each window (`SkipNetWindow`): its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `jobs`, `library` or `item`.
+`meta.windows` holds each window (`SkipNetWindow`): its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `library` or `item`. A saved `jobs` window is dropped: jobs are shown in their tty (`docs/jsh-jobs.md`).
 
 - **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`).
 - **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`.
 - **Grow box.** A window resizes from its bottom-right corner, larger on touch.
 - **Info bar.** Under the title, double-ruled (`infoBarClass`): "N items" in the folder, else the window's session (`SessionBar`).
 - **Opening.** A new window is cascaded from the last opened (`newWindow`).
-- **Sessions.** An article, jobs or library window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
+- **Sessions.** An article or library window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
 
 ## Menu bar
 
 Base-ui `Menubar` menus, portalled into SkipNet (`desktop/MenuBar.tsx`):
 
 - **◆**: the World's key
-- **File**: open the npc folder, new jobs or library windows, open each World item, close the front window
+- **File**: open the npc folder, a new library window, open each World item, close the front window
 - **View**: Clean Up, Free or Tidy
 - **Special**: Clear Desktop…, which asks first in a classic alert box (`ClearAlert`)
 
@@ -61,17 +61,13 @@ An article is an mdx file, `src/articles/npc-*.mdx`, e.g. `npc-spawn`. They will
 
 ## Library
 
-The jobs library (`library/JobsLibrary.tsx`), formerly in `Jobs`, whose examples are `library/examples/*.md` (`vite-plugin-jobs-examples`).
+The jobs library (`library/JobsLibrary.tsx`), whose examples are `library/examples/*.md` (`vite-plugin-jobs-examples`).
 
-- `use-session-runner.ts` runs them, as `Jobs` once did:
+- `use-session-runner.ts` runs them:
   - It mounts the tty if it is not mounted (`markEverSeen`).
   - It waits for the tty's profile to finish, saying which World the profile awaits.
   - It runs the command as a background process (`sourceExternal`).
   - A spinner shows until that process leads, read from the session's `process-leader` messages. A command already running is not run again.
-
-## Jobs
-
-The process leaders of a session: the `Jobs` ui itself, imported lazily by subpath (`@npc-cli/ui__jobs/Jobs`), so it is also a ui of its own. Within SkipNet it is given the window's session (`sessionKey`) and reports a pick (`onSessionKey`). On its own it keeps its first session. It connects by itself once its tty is mounted, e.g. by a library run, unless the user disconnected it (`optedOut`).
 
 ## Items
 

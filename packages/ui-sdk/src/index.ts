@@ -16,4 +16,6 @@ export type UiPackageDef = {
   schema: z.ZodType<UiInstanceMeta>;
   /** It scales itself by `meta.zoom`, so `Tabs` leaves it unzoomed */
   ownZoom?: true;
+  /** A control beside its tab's dots */
+  TabButton?: React.ComponentType<{ meta: UiInstanceMeta }>;
 };

@@ -53,15 +53,6 @@ export function ItemIcon() {
   );
 }
 
-export function JobsIcon() {
-  return (
-    <svg {...svgProps}>
-      <path d="M3 6h26v20H3z" />
-      <path d="M3 10h26M7 15l4 3-4 3M13 22h6" />
-    </svg>
-  );
-}
-
 export function LibraryIcon() {
   return (
     <svg {...svgProps}>

@@ -1,5 +1,4 @@
 import { Popover } from "@base-ui/react/popover";
-import { Select } from "@base-ui/react/select";
 import {
   type ExternalMessageProcessLeader,
   getPtagsPreview,
@@ -10,47 +9,31 @@ import {
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
-import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
-import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { error, throttle } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
-  CaretRightIcon,
   CheckIcon,
   CopyIcon,
+  DotsSixVerticalIcon,
   DotsThreeIcon,
   ListBulletsIcon,
   PauseIcon,
   PlayIcon,
-  PlugsConnectedIcon,
-  PlugsIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useContext, useEffect } from "react";
-import { useShallow } from "zustand/react/shallow";
-import type { JobsUiMeta } from "./schema";
+import { useEffect } from "react";
 
 /**
- * Visual reinterpretation of shell CLI `jobs`.
+ * Visual reinterpretation of shell CLI `jobs`, for one tty's session.
  * Its library of commands is in SkipNet.
  */
-export default function Jobs(props: Props) {
-  const { uiStore, uiStoreApi } = useContext(UiContext);
-
-  const ttyMetas = uiStore(
-    useShallow(({ byId }) =>
-      Object.values(byId).flatMap(({ meta }) => (meta.uiKey === "Jsh" ? (meta as JshUiMeta) : [])),
-    ),
-  );
-
+export function Jobs(props: Props) {
   const state = useStateRef(
     (): State => ({
-      connected: false,
-      optedOut: false,
       copiedSrc: null,
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
@@ -61,13 +44,9 @@ export default function Jobs(props: Props) {
       resetPids: new Set(),
       resetting: new Map(),
       sessionDisconnector: null,
-      sessionKey: null,
-      ttyMeta: null,
+      sessionKey: props.sessionKey,
 
       changeProcess(e) {
-        if (state.sessionKey === null) {
-          return;
-        }
         const pid = Number(e.currentTarget.dataset.pid);
         const act = e.currentTarget.dataset.act as "always" | "kill" | "pause" | "reset" | "resume";
 
@@ -117,25 +96,14 @@ export default function Jobs(props: Props) {
           state.set({ processes: alive, ordered: toOrdered(alive) });
         }
       },
-      connect() {
-        state.connected = true;
-        state.optedOut = false;
-        state.connectOrMount();
-      },
-      connectOrMount() {
-        if (state.connectSession() === false && state.ttyMeta !== null) {
-          // no session yet: mount the tty offscreen and connect when it has booted
-          uiStoreApi.markEverSeen(state.ttyMeta.id);
-        }
-      },
       connectSession() {
         try {
           state.sessionDisconnector?.();
+          state.sessionDisconnector = null;
 
           const session = state.getSession();
           if (session === undefined) {
-            state.set({ processes: [], ordered: [] });
-            return false;
+            return state.set({ processes: [], ordered: [] });
           }
 
           const leaders = Object.values(session.process).filter((p) => p.key === p.pgid);
@@ -157,10 +125,8 @@ export default function Jobs(props: Props) {
           );
 
           state.update();
-          return true;
         } catch (e) {
           error(e);
-          return false;
         }
       },
       copySrc(src) {
@@ -173,19 +139,10 @@ export default function Jobs(props: Props) {
           })
           .catch(error);
       },
-      disconnect() {
-        state.optedOut = true;
-        state.sessionDisconnector?.();
-        state.sessionDisconnector = null;
-        state.set({ connected: false, processes: [], ordered: [] });
-      },
       getSession() {
-        return state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
+        return sessionApi.getSession(state.sessionKey);
       },
       handleLeaderMessage(msg) {
-        if (state.sessionKey === null) {
-          return;
-        }
         if (msg.profile === true) {
           return; // ignore profile
         }
@@ -240,19 +197,9 @@ export default function Jobs(props: Props) {
 
         state.reorder();
       },
-      onChangeSessionKey(sessionKey) {
-        if (sessionKey === null) {
-          return;
-        }
-        state.sessionKey = sessionKey as `tty-${number}`;
-        state.ttyMeta = ttyMetas.find((x) => x.sessionKey === state.sessionKey) ?? null;
-        // any expansion belonged to the previous session
-        state.expandedUids.clear();
-        state.set({ processes: [], ordered: [] });
-      },
       onReset(pid) {
         const item = state.processes[pid];
-        if (state.sessionKey === null || item === undefined) {
+        if (item === undefined) {
           return;
         }
         if (item.status === toProcessStatus.Killed) {
@@ -289,32 +236,19 @@ export default function Jobs(props: Props) {
         state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
         state.update();
       },
-      toggleTtyDisabled() {
-        if (!state.ttyMeta) return;
-        uiStoreApi.setUiMeta(state.ttyMeta.id, (draft) => (draft.disabled = !draft.disabled));
-      },
     }),
-    { deps: [ttyMetas] },
   );
 
-  useEffect(() => {
-    if (ttyMetas.length === 0) {
-      state.set({ sessionKey: null, ttyMeta: null });
-      return;
-    }
-    const preferred = ttyMetas.some((x) => x.sessionKey === props.sessionKey) ? props.sessionKey : undefined;
-    if (preferred !== undefined && state.sessionKey !== null && preferred !== state.sessionKey) {
-      return state.onChangeSessionKey(preferred);
-    }
-    // the preferred session, else keep the current one, else select the first
-    const sessionKey =
-      preferred ??
-      (state.sessionKey !== null && ttyMetas.some((x) => x.sessionKey === state.sessionKey)
-        ? state.sessionKey
-        : ttyMetas[0].sessionKey);
+  state.sessionKey = props.sessionKey;
 
-    state.set({ sessionKey, ttyMeta: ttyMetas.find((x) => x.sessionKey === sessionKey) ?? null });
-  }, [ttyMetas, props.sessionKey]);
+  useEffect(() => {
+    state.expandedUids.clear();
+    state.connectSession(); // again once a reboot makes a new session
+    return () => {
+      state.sessionDisconnector?.();
+      state.sessionDisconnector = null;
+    };
+  }, [props.sessionKey, props.bootedAt]);
 
   useEffect(() => {
     const intervalId = setInterval(state.cleanupDead, cleanupDeadMs);
@@ -325,124 +259,25 @@ export default function Jobs(props: Props) {
     };
   }, []);
 
-  useEffect(() => {
-    // connect explicitly the first time; thereafter e.g. session switches reconnect,
-    // mounting the newly selected tty when it has never been seen
-    if (state.connected === true) {
-      state.connectOrMount();
-    } else if (state.optedOut === false && state.getSession() !== undefined) {
-      state.connect(); // its tty has mounted, e.g. to run a library command
-    }
-  }, [state.connected, state.ttyMeta?.id, state.ttyMeta?.sessionBootedAt]); // sync onchange session
-
-  const sessionsExist = ttyMetas.length > 0;
   const session = state.getSession();
-  const sessionExists = session !== undefined;
-  const ttyToggleAvailable = state.connected === true && state.ttyMeta !== null;
-
-  const sessionHeader = sessionsExist ? (
-    <div className="flex justify-end items-stretch gap-1">
-      <Select.Root
-        value={state.sessionKey ?? ""}
-        onValueChange={(key) => {
-          state.onChangeSessionKey(key);
-          key !== null && props.onSessionKey?.(key as `tty-${number}`);
-        }}
-      >
-        <Select.Trigger
-          title="sessionKey"
-          className={cn(
-            "flex items-center gap-2 cursor-pointer px-3 py-1 text-sm",
-            // the connect icon continues this trigger
-            "border border-r-0 border-term-surface shadow-sm shadow-black/50 bg-term-inset text-term-accent",
-            "transition-colors hover:bg-term-hover",
-          )}
-        >
-          <Select.Value placeholder="session" />
-          <CaretRightIcon alt="open" className="size-3 rotate-90 text-term-muted" />
-        </Select.Trigger>
-
-        <Select.Portal>
-          <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
-            <Select.Popup className="py-1 rounded-sm border border-term-surface shadow-lg shadow-black/50 bg-term-inset font-mono text-sm">
-              <Select.List>
-                {ttyMetas.map(({ sessionKey: key }) => (
-                  <Select.Item
-                    key={key}
-                    value={key}
-                    className={cn(
-                      "px-3 py-1 cursor-pointer text-term-paused",
-                      "data-highlighted:bg-term-surface data-selected:text-term-accent",
-                    )}
-                  >
-                    <Select.ItemText>{key}</Select.ItemText>
-                  </Select.Item>
-                ))}
-              </Select.List>
-            </Select.Popup>
-          </Select.Positioner>
-        </Select.Portal>
-      </Select.Root>
-      {/* attached to the select, being the same decision: which session, and are we on it */}
-      <button
-        type="button"
-        title={state.connected ? "disconnect" : "connect to session"}
-        className={cn(
-          "cursor-pointer grid place-items-center px-2 rounded-r-sm text-sm",
-          "border border-term-surface shadow-sm shadow-black/50 bg-term-inset",
-          "transition-colors hover:bg-term-hover",
-          state.connected ? "text-term-ok hover:text-term-danger" : "text-term-muted hover:text-term-ok",
-        )}
-        onClick={state.connected ? state.disconnect : state.connect}
-      >
-        {state.connected === false ? (
-          <PlugsIcon alt="connect to session" className="size-4" />
-        ) : sessionExists === false ? (
-          // the tty is mounting in the background — see `connect`
-          <Spinner className="size-4" />
-        ) : (
-          <PlugsConnectedIcon alt="disconnect" className="size-4" />
-        )}
-      </button>
-      {/* shown greyed out whilst disconnected, else connecting would shift the row leftwards */}
-      <button
-        type="button"
-        disabled={ttyToggleAvailable === false}
-        title={ttyToggleAvailable === false ? "not connected" : state.ttyMeta?.disabled ? "resume tty" : "pause tty"}
-        className={cn(
-          "flex items-center px-3 py-1 rounded-sm text-sm",
-          "border border-term-surface shadow-sm shadow-black/50 transition-colors",
-          ttyToggleAvailable ? "cursor-pointer hover:bg-term-hover-strong" : "cursor-default",
-        )}
-        onClick={state.toggleTtyDisabled}
-      >
-        {ttyToggleAvailable === false ? (
-          <PauseIcon alt="pause tty (not connected)" className="size-4 text-term-faint" />
-        ) : state.ttyMeta?.disabled ? (
-          <PlayIcon alt="resume tty" className="size-4 text-term-ok" />
-        ) : (
-          <PauseIcon alt="pause tty" className="size-4 text-term-paused" />
-        )}
-      </button>
-    </div>
-  ) : null;
 
   return (
     <div
       data-jobs-root
-      // nothing is selected by a stray drag or Cmd+A: a job's source is copied from its menu, an example by its button
-      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col select-none"
+      // nothing is selected by a stray drag or Cmd+A: a job's source is copied from its menu
+      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground flex flex-col select-none"
     >
-      <header className="shrink-0 flex items-stretch gap-1 font-mono">
-        <div className="flex items-center gap-1.5 px-3 py-1 text-sm text-term-accent" title="processes">
+      {/* dragged to move the panel beside the terminal */}
+      <header
+        className="shrink-0 flex items-stretch gap-1 font-mono cursor-grab touch-none"
+        onPointerDown={props.onGrip}
+      >
+        <DotsSixVerticalIcon alt="drag" weight="bold" className="self-center ml-1 size-4 text-term-muted" />
+        <div className="flex items-center gap-1.5 px-2 py-1 text-sm text-term-accent" title="processes">
           <ListBulletsIcon alt="processes" className="size-4" />
           {state.ordered.length}
         </div>
-
-        <div className="ml-auto">{sessionHeader}</div>
       </header>
-
-      {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
 
       <div className="flex-1 min-h-0 relative">
         <div
@@ -698,43 +533,29 @@ type State = {
   onReset: (pid: number) => void;
   /** `always` re-tags it so, as a reset keeps what its job was tagged */
   rerunProcess: (src: string, always?: boolean) => Promise<void>;
-  toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;
   /** `uid`s whose `src` is shown over two lines, rather than one */
   expandedUids: Set<number>;
   toggleExpanded: (e: React.MouseEvent<HTMLDivElement>) => void;
-  sessionKey: null | `tty-${number}`;
-  /** The selected session, if it exists i.e. its tty is mounted */
+  sessionKey: `tty-${number}`;
+  /** Its session, once its tty has mounted */
   getSession: () => undefined | Session;
-  ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
-  /** Have we connected to the selected session? Until then nothing is shown */
-  connected: boolean;
-  /** Connect, and stay connected e.g. when the session changes */
-  connect: () => void;
-  /** Connect to the selected session, mounting its tty in the background if absent */
-  connectOrMount: () => void;
-  /** Stop tracking the session, without touching its tty */
-  disconnect: () => void;
-  /** Disconnected by the user, so a mounted tty is not connected to */
-  optedOut: boolean;
-  connectSession: () => boolean;
+  connectSession: () => void;
   debouncedUpdate: () => void;
   sessionDisconnector: null | (() => void);
   handleLeaderMessage: (msg: ExternalMessageProcessLeader) => void;
-  onChangeSessionKey: (sessionKey: null | string) => void;
   /** Recompute `ordered`, at most once per 200ms */
   reorder: () => void;
 };
 
 type Props = {
-  /** Absent within SkipNet */
-  meta?: JobsUiMeta;
-  /** The session to show, when it exists */
-  sessionKey?: `tty-${number}`;
-  /** A session picked by the user */
-  onSessionKey?(sessionKey: `tty-${number}`): void;
+  sessionKey: `tty-${number}`;
+  /** When its session last booted, so a reboot reconnects */
+  bootedAt?: number;
+  /** A press on its header, which may start a drag of the panel */
+  onGrip(e: React.PointerEvent): void;
 };
 
 type ProcessLeader = {

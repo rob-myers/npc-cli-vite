@@ -1,6 +1,7 @@
 import { defineUi } from "@npc-cli/ui-sdk/schema";
 import { lazy } from "react";
 import { JshBootstrap } from "./bootstrap";
+import { JobsToggle } from "./JobsToggle";
 import { JshUiSchema } from "./schema";
 
 export default defineUi({
@@ -8,4 +9,5 @@ export default defineUi({
   bootstrap: JshBootstrap,
   schema: JshUiSchema,
   ownZoom: true,
+  TabButton: JobsToggle,
 });

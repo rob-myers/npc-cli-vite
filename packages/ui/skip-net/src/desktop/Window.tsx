@@ -4,7 +4,6 @@ import { useContext } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { SkipNetContext } from "../context";
 import { ItemPane } from "../ItemPane";
-import { JobsPane } from "../JobsPane";
 import { LibraryPane } from "../library/LibraryPane";
 import type { SkipNetWindow } from "../schema";
 import { FolderWindow } from "./FolderWindow";
@@ -94,8 +93,6 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
       return <FolderWindow />;
     case "article":
       return <ArticlePane win={win} />;
-    case "jobs":
-      return <JobsPane win={win} />;
     case "library":
       return <LibraryPane win={win} />;
     case "item":
