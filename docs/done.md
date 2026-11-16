@@ -174,6 +174,7 @@
 
 - ✅ follow cam shows closable inventory toast
 - ✅ support `take rob item:phaser`
+- ✅ can `give rob item:book` and `take book from:rob`
 
 - ✅ improve keychain icon e.g. lock
 - ✅ inventory toasts -> toasts at top
@@ -484,6 +485,21 @@
 - ✅ inventory bar: psi, phaser, keys, carried items
 
 ## Jsh and Jobs
+
+- ✅ move structure out of Scenarios
+  - ✅ remove characters
+  - ✅ move graphs into Decorator
+    - modal shows graphs from other levels
+  - ✅ graphs always directed
+    - 101-only example `act patrol test-route npc:kate`
+  - ✅ Decorator: graphs from other maps can be instantiated
+  - ✅ Decorator: drag spawn supports doables
+  - ✅ abstract conversation "pips" into `comms` run in PROFILE
+  - ✅ try changing conversations to SCP e.g. extract from site
+  - ✅ drop generated SCP conversations trees, instead:
+    - `comms` provide js/jsh api for text + responses + actions
+  - ✅ drop dialogue "pips" in favour of test-on-press
+  - ✅ handle speech said too far away
 
 - ✅ jsh `take` -> `head`
 

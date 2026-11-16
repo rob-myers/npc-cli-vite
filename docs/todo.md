@@ -1,22 +1,18 @@
 # TODO
 
-- 🚧 JobsLibrary -> Scenarios -> NpcBehave
-  - ✅ remove characters
-  - ✅ move graphs into Decorator
-    - modal shows graphs from other levels
-  - 🚧 graphs always directed
-  - 🚧 graphs from other maps can be instantiated
-  - Decorator drag spawn supports doables
-  - change conversations to SCP e.g. extract from site
-    - abstract extra ui e.g. can see npc
-  - Scenarios include low-level behaviours e.g. npc-inventory?
-    - ✅ can `give rob item:book` and `take book from:rob`
-  - move sidestep debug ui here
-  - tldr only contains most common
-  - label only (code viewable by running)
-  - individual persisted params with history
-  - move
-  - 🚧 return to Scenario and start acting them out
+- 🚧 JobsLibrary -> Scenarios -> SkipNet
+  - ✅ `SkipNet` has own customisable layout (sub-allotment)
+  - ✅ move sidestep debug ui here
+  - ✅ move JobsLibrary into SkipNet
+  - ✅ can instantiate Jobs in SkipNet
+  - start npc-docs
+    - use mdx
+    - e.g. npc-controls, npc-player, npc-inventory
+    - e.g. npc-hide-n-seek, npc-patrol, npc-sidestep
+  - ❌ tldr only contains most common
+    - label only (code viewable by running)
+    - individual persisted params with history
+  - ❌ return to Scenario and start acting them out
     - ✅ support `act {npcKey}` format
       - `act kate count:3 down` or `act count kate from:3`
       - `act kate avoid:rob`
@@ -35,8 +31,11 @@
         - `sc save graph/test ...`
     - meeting-in-secret sketch
     - breach-and-clear sketch
+  - narrator ui
+  - change command `sc`
+
 - Blog component is list of videos
-- narrator ui
+- ✅ smaller room labels
 
 After vid:
 
@@ -52,6 +51,10 @@ After vid:
 - saw phaser lowered through closed door when nearly entered
 - initial World load slowdown so allotment responsive
 - sidestep responsiveness?
+- decorator inspector toggles off/on on world pause via escape?
+- experiment with WebMCP + WebMCP Tools Chrome Extension
+  - https://aistudio.google.com/api-keys
+- phaser also shown in sense-mode
 
 ## World
 
