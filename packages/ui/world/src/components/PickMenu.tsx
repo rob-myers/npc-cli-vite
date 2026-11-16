@@ -315,7 +315,7 @@ export default function PickMenu() {
   return (
     <div
       ref={(el) => void (state.el = el)}
-      className="pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
+      className="unzoom pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
     >
       {[...state.menus.values()].map((entry) => (
         <Menu key={entry.menuKey} entry={entry} version={entry.version} collapsed={collapsedKeys.has(entry.menuKey)} />

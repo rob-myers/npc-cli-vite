@@ -317,7 +317,7 @@ export default function NpcFocus() {
   return (
     <div
       ref={(el) => void (state.el = el)}
-      className="group/focus pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
+      className="unzoom group/focus pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
       // its pulse holds whilst the World is paused
       data-paused={w.disabled ? "" : undefined}
       // the World keeps the focus, and with it the keys

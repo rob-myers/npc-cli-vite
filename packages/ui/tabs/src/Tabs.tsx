@@ -1,13 +1,21 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { Tooltip } from "@base-ui/react/tooltip";
+import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
-import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon } from "@phosphor-icons/react";
+import {
+  DotsThreeOutlineVerticalIcon,
+  MinusIcon,
+  PlayCircleIcon,
+  PlusCircleIcon,
+  PlusIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -250,6 +258,11 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             data-tab-content={tab.id}
             tabIndex={-1}
             className={cn("size-full outline-none", tab.id !== meta.currentTabId && "hidden")}
+            style={
+              tab.zoom === undefined || (uiRegistry[tab.uiKey] as UiPackageDef).ownZoom
+                ? undefined
+                : ({ zoom: tab.zoom, "--tab-zoom": tab.zoom } as React.CSSProperties)
+            }
           >
             {byId[tab.id] && meta.currentTabId === tab.id && (
               <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
@@ -289,6 +302,18 @@ function TabHeaderItem({
     isDragging: false,
     isDropTarget: false,
     confirmClose: false,
+    closeEl: null as HTMLButtonElement | null,
+    /** The zoom button last pressed, which the percentage shows beside */
+    zoomEl: null as HTMLElement | null,
+    zoomTip: false,
+    zoomTipTimer: 0,
+
+    onZoom(el: HTMLElement, by: number) {
+      zoomTab(uiStoreApi, tab.id, by);
+      window.clearTimeout(state.zoomTipTimer);
+      state.zoomTipTimer = window.setTimeout(() => state.set({ zoomTip: false }), zoomTipMs);
+      state.set({ zoomEl: el, zoomTip: true });
+    },
   }));
 
   useEffect(() => {
@@ -381,32 +406,47 @@ function TabHeaderItem({
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
               }
               triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
-              className="bg-gray-700 py-0.5 px-1 flex flex-col"
+              className="p-0 py-1 flex flex-col items-stretch bg-black text-white border-white/20"
               positionerClassName="z-10000"
-              arrowClassName="fill-gray-700"
+              arrowClassName="fill-black"
               side="bottom"
               sideOffset={0}
-              onOpenChange={(open) => !open && state.set({ confirmClose: false })}
+              onOpenChange={(open) => !open && state.set({ confirmClose: false, zoomTip: false })}
             >
-              <div className="flex items-center gap-2 px-2 py-1">
-                <button
-                  type="button"
-                  className={cn(
-                    "cursor-pointer text-sm",
-                    state.confirmClose ? "text-red-400 hover:text-red-300" : "text-white/80 hover:text-white",
-                  )}
-                  onPointerDown={() => {
-                    if (state.confirmClose) {
-                      state.set({ confirmClose: false });
-                      onDeleteTab();
-                    } else {
-                      state.set({ confirmClose: true });
-                    }
-                  }}
-                >
-                  {state.confirmClose ? "confirm" : "close"}
-                </button>
-              </div>
+              <button
+                ref={state.ref("closeEl")}
+                type="button"
+                title={state.confirmClose ? undefined : "close tab"}
+                className={cn(popoverButtonClass, state.confirmClose && "text-red-400 hover:text-red-300")}
+                onPointerDown={() => {
+                  if (state.confirmClose) onDeleteTab();
+                  state.set({ confirmClose: !state.confirmClose });
+                }}
+              >
+                <XIcon className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                title="zoom out"
+                className={popoverButtonClass}
+                onPointerDown={(e) => state.onZoom(e.currentTarget, -zoomStep)}
+              >
+                <MinusIcon className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                title="zoom in"
+                className={popoverButtonClass}
+                onPointerDown={(e) => state.onZoom(e.currentTarget, zoomStep)}
+              >
+                <PlusIcon className="size-3.5" />
+              </button>
+              <SideTip open={state.confirmClose} anchor={state.closeEl}>
+                confirm
+              </SideTip>
+              <SideTip open={state.zoomTip} anchor={state.zoomEl}>
+                {Math.round((tab.zoom ?? 1) * 100)}%
+              </SideTip>
             </BasicPopover>
 
             {tab.pausable === true && (
@@ -467,6 +507,43 @@ function moveTab(
     targetMeta.items.splice(idx === -1 ? targetMeta.items.length : idx, 0, opts.draggedId);
   });
   return sourceWasEmptied;
+}
+
+/** Scales a tab's content by `by` more, within `zoomRange` */
+function zoomTab(uiStoreApi: TabHeaderItemProps["uiStoreApi"], tabId: string, by: number) {
+  uiStoreApi.setUiMeta(tabId, (draft) => {
+    const zoom = Math.round(((draft.zoom ?? 1) + by) * 10) / 10;
+    const clamped = Math.min(Math.max(zoom, zoomRange[0]), zoomRange[1]);
+    if (clamped === 1) delete draft.zoom;
+    else draft.zoom = clamped;
+  });
+}
+
+const popoverButtonClass = tw("grid place-items-center cursor-pointer py-1 px-2 text-white hover:bg-white/20");
+const zoomStep = 0.1;
+/** How long the percentage shows after a zoom press */
+const zoomTipMs = 1200;
+const zoomRange = [0.5, 2] as const;
+
+/** A tip to the right of `anchor`, whilst open */
+function SideTip(props: { anchor: null | HTMLElement; children: React.ReactNode; open: boolean }) {
+  return (
+    <Tooltip.Root open={props.open}>
+      <Tooltip.Portal>
+        <Tooltip.Positioner anchor={props.anchor} side="right" sideOffset={8} className="z-10001">
+          <Tooltip.Popup
+            className={cn(
+              "px-1.5 py-0.5 rounded-sm bg-black text-white border border-white/20 text-xs tabular-nums whitespace-nowrap",
+              "transition-[opacity,translate] duration-150",
+              "data-starting-style:opacity-0 data-starting-style:-translate-x-1 data-ending-style:opacity-0",
+            )}
+          >
+            {props.children}
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
 }
 
 const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });

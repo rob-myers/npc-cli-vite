@@ -36,6 +36,7 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
       }
       sessionKey={meta.sessionKey}
       shFiles={shellFunctionFiles} // JS wrapped as shell functions
+      zoom={meta.zoom}
     />
   );
 }

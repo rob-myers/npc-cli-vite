@@ -537,7 +537,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div ref={state.ref("rootEl")} className="relative size-full">
+      {/* layers placed over the 3D view undo their tab's zoom, so they line up with it */}
+      <div ref={state.ref("rootEl")} className="relative size-full [&>.unzoom]:[zoom:calc(1/var(--tab-zoom,1))]">
         {state.rootEl && (
           <WorldView>
             <ambientLight intensity={ambientLightIntensity} color="#fff" />

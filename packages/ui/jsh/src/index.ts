@@ -7,4 +7,5 @@ export default defineUi({
   ui: lazy(() => import("./Jsh")),
   bootstrap: JshBootstrap,
   schema: JshUiSchema,
+  ownZoom: true,
 });

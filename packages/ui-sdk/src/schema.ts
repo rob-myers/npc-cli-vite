@@ -38,6 +38,8 @@ const FlatBaseUiMetaSchema = z.looseObject({
   parentId: z.string().optional(),
   /** e.g. tab header */
   title: z.string(),
+  /** Its tab's content is scaled by this (CSS `zoom`) */
+  zoom: z.number().optional(),
   /** UI class identifier */
   uiKey: z.literal(keys(mirrored)),
 });

@@ -14,4 +14,6 @@ export type UiPackageDef = {
   ui: React.LazyExoticComponent<(props: any) => React.ReactNode>;
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
   schema: z.ZodType<UiInstanceMeta>;
+  /** It scales itself by `meta.zoom`, so `Tabs` leaves it unzoomed */
+  ownZoom?: true;
 };

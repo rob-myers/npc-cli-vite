@@ -192,7 +192,7 @@ export default function NpcBubbles() {
   return (
     <div
       ref={(el) => void (state.el = el)}
-      className="pointer-events-none absolute inset-0 z-10 select-none overflow-hidden"
+      className="unzoom pointer-events-none absolute inset-0 z-10 select-none overflow-hidden"
     >
       {npcKeys.map((npcKey) => (
         <NpcBubble

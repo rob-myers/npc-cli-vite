@@ -1,5 +1,6 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import * as profiles from "@npc-cli/cli/jsh/profiles";
+import { useThemeName } from "@npc-cli/theme";
 import { useEffectNonStrict, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { error, jsStringify, keys, testNever, warn } from "@npc-cli/util/legacy/generic";
@@ -12,6 +13,7 @@ import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
 import { BaseTty, type State as BaseTtyState } from "./BaseTty";
 import { TtyMenu, type State as TtyMenuState } from "./TtyMenu";
+import { xtermThemes } from "./xterm-themes";
 
 /**
  * A `BaseTty` which can be:
@@ -24,6 +26,7 @@ export function Tty(props: Props) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const baseRef = React.useRef<BaseTtyState>(null);
   const ttyMenuRef = React.useRef<TtyMenuState>(null);
+  const themeName = useThemeName();
 
   const state = useStateRef(
     () => ({
@@ -245,6 +248,13 @@ export function Tty(props: Props) {
     }
   }, [baseRef.current?.session, props.shFiles, props.modules]);
 
+  React.useEffect(() => {
+    const xterm = baseRef.current?.xterm?.xterm;
+    if (!xterm) return;
+    xterm.options.fontSize = 16 * (props.zoom ?? 1);
+    state.fitDebounced();
+  }, [props.zoom]);
+
   // useEffectNonStrict so it occurs after BaseTty's
   // sync ~/PROFILE so ready for useEffectNonStrict
   useEffectNonStrict(() => {
@@ -278,6 +288,8 @@ export function Tty(props: Props) {
   return (
     <div
       className="relative size-full p-1 overflow-hidden"
+      // the space under its last row is the terminal's
+      style={{ background: xtermThemes[themeName].background }}
       ref={(el) => {
         rootRef(el);
         containerRef.current = el;
@@ -321,6 +333,8 @@ export interface Props {
   shFiles: Record<string, string>;
 
   onBooted(): void;
+  /** Scales its font, e.g. its tab's zoom */
+  zoom?: number;
 }
 
 const profilesLookup = { ...profiles };
