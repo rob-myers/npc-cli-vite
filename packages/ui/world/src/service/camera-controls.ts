@@ -126,9 +126,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   lockRotateAxis = true;
   /** Whether a touch turn locks to one axis, as `lockRotateAxis` does a mouse's. `WorldView` sets it whilst aiming */
   lockTouchRotateAxis = false;
-  /** Whilst set, a one-finger drag calls it at the finger, in client px, rather than panning or turning. `WorldView` sets it whilst following */
+  /** Whilst set, a two-finger drag calls it at their centroid, in client px, rather than turning. One finger turns. `WorldView` sets it whilst following */
   touchLook: null | ((clientX: number, clientY: number) => void) = null;
-  /** Where a one-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
+  /** Where a two-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
   touchLookFrom = { x: 0, y: 0, dragged: false };
   /** Whilst true, fingers move nothing: they are firing the player's phaser — see `onFireTouch` */
   holdTouch = false;
@@ -374,11 +374,20 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const prevY = this.twoFingerCentroid.y;
     this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
 
-    const dx = this.twoFingerCentroid.x - prevX;
-    const dy = this.twoFingerCentroid.y - prevY;
-    const [horiz, vert] = this.getTouchRotateAxes(dx, dy);
-    if (horiz) this.rotateLeft((2 * Math.PI * dx * rotateScale) / element.clientHeight);
-    if (vert) this.rotateUp((2 * Math.PI * dy * rotateScale) / element.clientHeight);
+    if (this.state === this.STATE.TOUCH_LOOK) {
+      const from = this.touchLookFrom;
+      // a drag, not a tap's jitter, which looks once. A pinch's drift looks nowhere
+      from.dragged ||= Math.hypot(cx - from.x, cy - from.y) > touchLookDragPx;
+      if (from.dragged === true && this.twoFingerRotateRatio >= pinchPurity) {
+        this.touchLook?.(this.twoFingerCentroid.x - window.scrollX, this.twoFingerCentroid.y - window.scrollY);
+      }
+    } else {
+      const dx = this.twoFingerCentroid.x - prevX;
+      const dy = this.twoFingerCentroid.y - prevY;
+      const [horiz, vert] = this.getTouchRotateAxes(dx, dy);
+      if (horiz) this.rotateLeft((2 * Math.PI * dx * rotateScale) / element.clientHeight);
+      if (vert) this.rotateUp((2 * Math.PI * dy * rotateScale) / element.clientHeight);
+    }
 
     const prevDist = this.u.dollyStart.y;
     const nextDist = prevDist + (dist - prevDist) * twoFingerSmoothing;
@@ -513,7 +522,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
   }
 
-  /** Whether a one-finger look is being dragged — see `touchLook` */
+  /** Whether a two-finger look is being dragged — see `touchLook` */
   isDraggingLook(): boolean {
     return this.state === this.STATE.TOUCH_LOOK && this.touchLookFrom.dragged;
   }
@@ -764,7 +773,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     this.removePointer(event);
 
-    if (event.pointerType === "touch" && this.pointers.length === 2 && this.state === this.STATE.TOUCH_DOLLY_ROTATE) {
+    if (
+      event.pointerType === "touch" &&
+      this.pointers.length === 2 &&
+      (this.state === this.STATE.TOUCH_DOLLY_ROTATE || this.state === this.STATE.TOUCH_LOOK)
+    ) {
       // back to two fingers: re-baseline, else the next move is measured against a spread and
       // centroid that included the finger which just left, and the camera jumps
       this.handleTouchStartRotate();
@@ -838,17 +851,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         break;
 
       case this.STATE.TOUCH_DOLLY_ROTATE:
+      case this.STATE.TOUCH_LOOK:
         this.handleTwoFingerMove(event);
         this.update();
         break;
-
-      case this.STATE.TOUCH_LOOK: {
-        const from = this.touchLookFrom;
-        // a drag, not a tap's jitter, which picks
-        from.dragged ||= Math.hypot(event.pageX - from.x, event.pageY - from.y) > touchLookDragPx;
-        if (from.dragged === true) this.touchLook?.(event.clientX, event.clientY);
-        break;
-      }
 
       default:
         this.state = this.STATE.NONE;
@@ -858,12 +864,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   onTouchStart = (event: PointerEvent) => {
     this.trackPointer(event);
 
-    if (this.pointers.length === 1 && this.touchLook !== null) {
-      // the camera's own start is not sent: it is not being moved
-      Object.assign(this.touchLookFrom, { x: event.pageX, y: event.pageY, dragged: false });
-      this.state = this.STATE.TOUCH_LOOK;
-    } else if (this.pointers.length === 1) {
-      switch (this.touches.ONE) {
+    if (this.pointers.length === 1) {
+      // following, the camera needs no pan: one finger turns it
+      switch (this.touchLook !== null ? TOUCH.ROTATE : this.touches.ONE) {
         case TOUCH.ROTATE:
           if (this.enableRotate === false) return;
           this.handleTouchStartRotate();
@@ -887,7 +890,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     } else if (this.pointers.length === 2) {
       this.handleTouchStartRotate(); // also uncommits the azimuth snap
       this.handleTouchStartDolly(); // baselines both spread and centroid
-      this.state = this.STATE.TOUCH_DOLLY_ROTATE;
+      const c = this.twoFingerCentroid;
+      Object.assign(this.touchLookFrom, { x: c.x, y: c.y, dragged: false });
+      // following, two fingers look and pinch rather than turn
+      this.state = this.touchLook !== null ? this.STATE.TOUCH_LOOK : this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
     }
     // the finger changes nothing else, rather than dropping the pinch it interrupts
