@@ -48,10 +48,10 @@ type Props = {
   win: SkipNetWindow;
 };
 
-/** Small enough for a title bar, in the desktop's greys over `Picker`'s own */
+/** Small enough for a title bar, in the desktop's greys over `Picker`'s own. Hovered, it is faintly tinted */
 const pickerClass = tw(
-  "h-3.5 py-0 rounded-none border-0 bg-transparent text-mac-text text-[11px] leading-none hover:bg-mac-window",
+  "h-3.5 py-0 rounded-none border-0 bg-mac-title text-mac-text text-[11px] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
 );
 const pickerPopupClass = tw(
-  "rounded-none! border-mac-edge! bg-mac-window! text-mac-text! [&_[data-highlighted]]:bg-mac-select! [&_[data-highlighted]]:text-mac-on-select!",
+  "rounded-none! border-mac-edge! bg-mac-window! text-mac-text! [&_[data-selected]]:text-mac-text! [&_[data-selected]]:font-bold [&_[data-highlighted]]:bg-mac-select/15!",
 );
