@@ -429,7 +429,7 @@ export default function WorldHud() {
       {/* at the World's top, clear of the bar wherever it is dragged */}
       <div className={noticesClass}>
         {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <AnimatePresence initial={false} mode="popLayout">
             {kept.map(({ label, title, end }) => (
               <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
@@ -474,7 +474,8 @@ export default function WorldHud() {
             title={muted ? "unmute sound" : "mute sound"}
             className={cn(
               "pointer-events-auto flex cursor-pointer items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 hover:text-sky-200",
-              muted && "text-neutral-400",
+              // disconnected, it greys whether muted or not
+              (muted || w.wasReadyFor.size === 0) && "text-neutral-400",
             )}
             onClick={() => {
               soundMute.set(!muted);
@@ -961,7 +962,7 @@ const noticesClass = tw(
  * slide along. Inside motion's wrapper, which owns its own opacity and scale, and would take the frame callback's ref
  */
 const keptClass = tw(
-  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-1 [&.gone]:grid-cols-[0fr] [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50",
+  "grid grid-cols-[1fr] transition-[grid-template-columns,margin] duration-300 [&.blocked]:text-neutral-400 [&.gone]:-mr-0.5 [&.gone]:grid-cols-[0fr] [&.gone>*]:px-0 [&.gone]:duration-600 [&.gone>*]:pointer-events-none [&.gone>*]:duration-600 [&.gone>*]:scale-75 [&.gone>*]:opacity-0 [&.latched>*]:opacity-50",
 );
 const keptInnerClass = tw(
   "group pointer-events-auto flex min-w-0 items-center gap-1 overflow-hidden rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2 transition-[opacity,scale] duration-300",
