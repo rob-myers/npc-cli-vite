@@ -11,6 +11,7 @@ import {
   GearIcon,
   InfoIcon,
   MoonIcon,
+  RobotIcon,
   SquareHalfBottomIcon,
   SquareHalfIcon,
   StackSimpleIcon,
@@ -20,6 +21,7 @@ import {
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
 import { useStore } from "zustand";
+import { hasWebMcp, isWebMcpOn, setWebMcpOn } from "../web-mcp";
 import { AboutModal } from "./AboutModal";
 import { countPanes, flattenPanes, resetPanes, splitRoot } from "./pane-service";
 
@@ -39,6 +41,8 @@ export function GlobalMenu() {
     resetArmed: false,
     /** DEV only, see the analytics item below */
     trackingOff: isTrackingDisabled(),
+    /** Offers the ttys to a browser agent, where the browser has WebMCP */
+    webMcpOn: isWebMcpOn(),
 
     close() {
       // a reset half-asked-for is forgotten with the menu
@@ -71,6 +75,10 @@ export function GlobalMenu() {
       // umami re-reads the key on every send, so this bites without a reload
       setTrackingDisabled(state.trackingOff === false);
       state.set({ trackingOff: isTrackingDisabled() });
+    },
+    onToggleWebMcp() {
+      state.set({ webMcpOn: !state.webMcpOn });
+      void setWebMcpOn(state.webMcpOn);
     },
     onTriggerClick() {
       if (state.canOpen === true) {
@@ -180,6 +188,17 @@ export function GlobalMenu() {
                 <Menu.Item className={itemClass} onClick={() => state.set({ aboutOpen: true })}>
                   <InfoIcon className={iconClass} />
                   About
+                </Menu.Item>
+
+                <Menu.Item
+                  className={cn(itemClass, !state.webMcpOn && "text-slate-500")}
+                  closeOnClick={false}
+                  disabled={!hasWebMcp()}
+                  title={hasWebMcp() ? "offer the ttys to a browser agent" : "this browser has no WebMCP"}
+                  onClick={state.onToggleWebMcp}
+                >
+                  <RobotIcon className={iconClass} />
+                  {state.webMcpOn ? "WebMCP: on" : "WebMCP: off"}
                 </Menu.Item>
 
                 {import.meta.env.DEV && (

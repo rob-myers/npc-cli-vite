@@ -1,18 +1,28 @@
 import { sessionApi, useSession } from "@npc-cli/cli";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
+import { isWebMcpOn } from "./web-mcp";
 
 /**
  * WebMCP tools for a browser agent such as Gemini in Chrome.
  * Chrome offers `document.modelContext` by origin trial, or by flag on localhost (`docs/mcp.md`).
  */
-const unregister = new AbortController();
+/** Aborted to unregister the tools, e.g. once switched off in the main menu */
+let unregister: null | AbortController = null;
 
-void registerTools((document as unknown as { modelContext: ModelContext }).modelContext);
+/** Registers the tools, unless they already are */
+export function startWebMcpTools() {
+  if (unregister !== null) return;
+  unregister = new AbortController();
+  void registerTools((document as unknown as { modelContext: ModelContext }).modelContext, unregister.signal);
+}
 
-async function registerTools(mc: ModelContext) {
-  const { signal } = unregister;
+export function stopWebMcpTools() {
+  unregister?.abort();
+  unregister = null;
+}
 
+async function registerTools(mc: ModelContext, signal: AbortSignal) {
   await mc.registerTool(
     {
       name: "list_terminals",
@@ -118,8 +128,11 @@ function text(s: string) {
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 const maxChars = 20_000;
 
+// loaded only once switched on, so on again after a hot reload
+if (isWebMcpOn()) startWebMcpTools();
+
 import.meta.hot?.accept();
-import.meta.hot?.dispose(() => unregister.abort());
+import.meta.hot?.dispose(stopWebMcpTools);
 
 type WriteInput = { line: string; tty?: string; waitMs?: number };
 

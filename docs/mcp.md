@@ -40,7 +40,7 @@ curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
 ## WebMCP
 
 `packages/app/src/web-mcp-tools.ts` offers the jsh terminals to a browser agent through WebMCP
-(`document.modelContext`). `main.tsx` loads it only where that exists, in DEV and production.
+(`document.modelContext`), once switched on in the main menu: **WebMCP: on**, saved in localStorage (`web-mcp`, `src/web-mcp.ts`). It is off by default, and greyed out where the browser has no WebMCP. `main.tsx` loads it at boot only if on, in DEV and production. Switched off, the tools are unregistered.
 
 - `list_terminals` gives each open tty's key, and whether it is shown or busy.
 - `write_to_terminal {line, tty?, waitMs?}` types a line into a tty, by default the one shown, and returns what it printed.
