@@ -8,19 +8,19 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 
 - **Grid.** The desk is `desktopCols` (80) cells of `cellPx` (20px), wider than most panels, so it scrolls both ways. Its rows grow with the windows, `rowGapPx` (6px) apart, so windows one above another never touch.
 - **Arranging.** In `meta.arrange` `free` (the default), nothing compacts (`getCompactor(null, true)`), so windows overlap. In `tidy` they compact upwards (`verticalCompactor`). **Clean Up** compacts them once.
-- **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes and its boxes.
+- **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes. Every window shows its close and windowshade boxes.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
 - **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **npc**, **library**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
-- **The npc folder** (`FolderWindow`) lists its articles as files: name, when modified, and size (once wide enough). A click opens one, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build.
+- **The npc folder** (`FolderWindow`) lists its articles as files: name, when modified, and size (once wide enough). Its title bar counts them. A click opens one, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build.
 
 ## Windows
 
 `meta.windows` holds each window (`SkipNetWindow`): its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `library` or `item`. A saved `jobs` window is dropped: jobs are shown in their tty (`docs/jsh-jobs.md`).
 
-- **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`).
+- **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`). The close box shows an x, and a first press arms it red: a second within `confirmMs` closes the window.
 - **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. Its box does it, as does a click on its bar, but not a drag (`clickSlopPx`).
 - **Resizing.** A window resizes from any edge or corner. Only the bottom-right grow box is drawn, larger on touch. The rest are invisible strips (`desktop/desktop.css`).
-- **Info bar.** Under the title, double-ruled (`infoBarClass`): "N items" in the folder, else the window's session (`SessionBar`).
+- **Session picker.** An article or library window picks its tty in its title bar (`SessionPicker`, through `InTitle`), with a spinner whilst a run starts and "awaits {world}" whilst its World is not open.
 - **Opening.** A new window is cascaded from the last opened (`newWindow`).
 - **Sessions.** An article or library window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
 

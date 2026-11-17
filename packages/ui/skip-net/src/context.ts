@@ -36,3 +36,6 @@ export type State = {
 };
 
 export const SkipNetContext = createContext<UseStateRef<State>>(null as never);
+
+/** A place in its window's title bar, e.g. for its session picker */
+export const TitleSlotContext = createContext<null | HTMLElement>(null);

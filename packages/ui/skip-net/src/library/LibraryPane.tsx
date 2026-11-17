@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { SkipNetContext } from "../context";
-import { SessionBar } from "../SessionBar";
+import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
 import { useWindowSession } from "../use-window-session";
 import JobsLibrary from "./JobsLibrary";
@@ -14,7 +14,7 @@ export function LibraryPane({ win }: { win: SkipNetWindow }) {
 
   return (
     <div className="size-full flex flex-col bg-term-dashboard text-term-foreground select-none">
-      <SessionBar runner={runner} session={session} win={win} />
+      <SessionPicker runner={runner} session={session} win={win} />
       <div className="flex-1 min-h-0 flex flex-col">
         <JobsLibrary
           uiId={`${meta.id}:${win.id}`}

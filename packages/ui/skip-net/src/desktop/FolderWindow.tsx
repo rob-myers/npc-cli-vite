@@ -3,7 +3,7 @@ import { cn, tw } from "@npc-cli/util";
 import { useContext } from "react";
 import { articleKeys } from "../articles";
 import { SkipNetContext } from "../context";
-import { infoBarClass } from "./classes";
+import { InTitle } from "./InTitle";
 import { DocumentIcon } from "./icons";
 
 /** The npc folder: its articles listed as files, with when each was modified and its size. A click opens one */
@@ -11,10 +11,12 @@ export function FolderWindow() {
   const state = useContext(SkipNetContext);
   return (
     <div className="size-full flex flex-col">
-      <div className={infoBarClass}>{articleKeys.length} items</div>
+      <InTitle>
+        <span className="text-mac-muted">{articleKeys.length} items</span>
+      </InTitle>
       <div className="@container flex-1 min-h-0 overflow-auto scrollbar-thin">
         <div className={cn(rowClass, "sticky top-0 bg-mac-window text-mac-muted border-b border-mac-edge")}>
-          <span className="pl-6">Name</span>
+          <span>Name</span>
           <span>Modified</span>
           <span className={sizeClass}>Size</span>
         </div>

@@ -4,7 +4,7 @@ import { Suspense, useContext, useMemo, useState } from "react";
 import { articleKeys, getArticle } from "../articles";
 import { SkipNetContext } from "../context";
 import { useSessionRunner } from "../library/use-session-runner";
-import { SessionBar } from "../SessionBar";
+import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
 import { useWindowSession } from "../use-window-session";
 import { articleComponents } from "./components";
@@ -44,7 +44,7 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
 
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text">
-      <SessionBar runner={runner} session={session} win={win} />
+      <SessionPicker runner={runner} session={session} win={win} />
       <div className="flex-1 min-h-0 overflow-auto scrollbar-thin px-3 pt-4 pb-3">
         <ArticleContext.Provider value={ctxt}>
           <Suspense fallback={<Spinner className="size-4 m-2" />}>

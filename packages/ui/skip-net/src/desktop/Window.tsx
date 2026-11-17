@@ -2,15 +2,15 @@ import { cn, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ArticlePane } from "../article/ArticlePane";
-import { SkipNetContext } from "../context";
+import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
 import { LibraryPane } from "../library/LibraryPane";
 import type { SkipNetWindow } from "../schema";
 import { FolderWindow } from "./FolderWindow";
 
 /**
- * A window's frame: a title bar to drag it by, with close and windowshade boxes whilst in front.
- * A click on its bar, not a drag, folds or unfolds it. Stacked, every bar has both boxes.
+ * A window's frame: a title bar to drag it by, with close and windowshade boxes.
+ * A click on its bar, not a drag, folds or unfolds it.
  */
 export function Window(props: {
   front: boolean;
@@ -23,9 +23,9 @@ export function Window(props: {
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
   const title = titleOf(win, state.items);
-  const boxes = front || stacked;
   /** Where a press on the bar began, so a drag's release is not a click */
   const downAt = useRef({ x: 0, y: 0 });
+  const [titleSlot, setTitleSlot] = useState<null | HTMLElement>(null);
 
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]">
@@ -43,13 +43,14 @@ export function Window(props: {
         }}
       >
         {front && <span className="absolute inset-x-1 inset-y-0.75" style={stripesStyle} />}
-        <CloseBox hidden={!boxes} onClose={() => state.close(win.id)} />
+        <CloseBox onClose={() => state.close(win.id)} />
         <span className={cn("relative min-w-0 px-2 truncate bg-mac-title", front ? "font-bold" : "text-mac-muted")}>
           {title}
         </span>
-        {stack && (
-          <span className="relative ml-auto flex gap-1">
-            {moveBoxes
+        <span className="relative ml-auto min-w-0 flex items-center gap-1">
+          <span ref={setTitleSlot} className="skip-net-no-drag min-w-0 flex items-center gap-1 bg-mac-title" />
+          {stack &&
+            moveBoxes
               .filter(({ by }) => !(by === -1 ? stack.first : stack.last))
               .map(({ by, Icon, title }) => (
                 <button
@@ -62,12 +63,11 @@ export function Window(props: {
                   <Icon weight="fill" className="size-2.5" />
                 </button>
               ))}
-          </span>
-        )}
+        </span>
         <button
           type="button"
           title={shaded ? "roll down" : "roll up"}
-          className={cn(boxClass, "flex flex-col justify-center", !boxes && "invisible")}
+          className={cn(boxClass, "flex flex-col justify-center")}
           onClick={() => state.toggleShade(win.id)}
         >
           <span className="h-px mx-px bg-mac-edge dark:bg-mac-text" />
@@ -80,7 +80,9 @@ export function Window(props: {
             stacked && "transition-opacity duration-150 starting:opacity-0",
           )}
         >
-          <WindowBody win={win} />
+          <TitleSlotContext.Provider value={titleSlot}>
+            <WindowBody win={win} />
+          </TitleSlotContext.Provider>
         </div>
       )}
     </div>
@@ -88,7 +90,7 @@ export function Window(props: {
 }
 
 /** Its first press arms it red, a second within `confirmMs` closes the window */
-function CloseBox({ hidden, onClose }: { hidden: boolean; onClose(): void }) {
+function CloseBox({ onClose }: { onClose(): void }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
@@ -103,7 +105,6 @@ function CloseBox({ hidden, onClose }: { hidden: boolean; onClose(): void }) {
         boxClass,
         "grid place-items-center text-mac-text",
         armed && "bg-red-600 border-red-700 dark:border-red-400 text-white",
-        hidden && "invisible",
       )}
       onClick={() => (armed ? onClose() : setArmed(true))}
       onBlur={() => setArmed(false)}
