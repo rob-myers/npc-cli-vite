@@ -11,6 +11,8 @@ export type State = {
   meta: SkipNetUiMeta;
   /** The panel is narrower than `stackPx`, so its windows are stacked */
   narrow: boolean;
+  /** The front window as the last press began, so a click on another's bar only fronts it */
+  pressedFrontId: undefined | string;
   rootEl: null | HTMLDivElement;
   /** Stacks it over every other */
   bringToFront(id: string): void;

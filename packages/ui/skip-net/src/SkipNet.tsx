@@ -30,11 +30,13 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       items: [],
       meta,
       narrow: false,
+      pressedFrontId: undefined,
       rootEl: null,
 
       bringToFront(id) {
         const { windows } = state.meta;
-        if (frontOf(windows)?.id !== id) state.setWindows(restack(windows, id));
+        state.pressedFrontId = frontOf(windows)?.id;
+        if (state.pressedFrontId !== id) state.setWindows(restack(windows, id));
       },
       cleanUp() {
         const { windows } = state.meta;

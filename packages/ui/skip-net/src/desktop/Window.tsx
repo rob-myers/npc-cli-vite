@@ -1,6 +1,6 @@
-import { cn, tw } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
@@ -9,7 +9,7 @@ import { FolderWindow } from "./FolderWindow";
 
 /**
  * A window's frame: a title bar to drag it by, with close and windowshade boxes.
- * A click on its bar, not a drag, folds or unfolds it.
+ * A click on its bar, not a drag, folds or unfolds it, once in front.
  */
 export function Window(props: {
   front: boolean;
@@ -22,9 +22,16 @@ export function Window(props: {
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
   const title = titleOf(win, state.items);
-  /** Where a press on the bar began, so a drag's release is not a click */
-  const downAt = useRef({ x: 0, y: 0 });
-  const [titleSlot, setTitleSlot] = useState<null | HTMLElement>(null);
+  const frame = useStateRef(
+    (): FrameState => ({
+      downAt: { x: 0, y: 0 },
+      titleSlot: null,
+
+      setTitleSlot(el) {
+        if (el !== frame.titleSlot) frame.set({ titleSlot: el });
+      },
+    }),
+  );
 
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]">
@@ -34,10 +41,12 @@ export function Window(props: {
           stacked ? "cursor-pointer" : "skip-net-drag cursor-grab active:cursor-grabbing",
           !shaded && "border-b border-mac-edge",
         )}
-        onPointerDown={(e) => void (downAt.current = { x: e.clientX, y: e.clientY })}
+        onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("button") !== null) return;
-          if (Math.hypot(e.clientX - downAt.current.x, e.clientY - downAt.current.y) > clickSlopPx) return;
+          const { downAt } = frame;
+          if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
+          if (!stacked && state.pressedFrontId !== win.id) return; // a click on a window behind only fronts it
           state.toggleShade(win.id);
         }}
       >
@@ -47,7 +56,7 @@ export function Window(props: {
           {title}
         </span>
         <span className="relative ml-auto min-w-0 flex items-center gap-1">
-          <span ref={setTitleSlot} className="skip-net-no-drag min-w-0 flex items-center gap-1 bg-mac-title" />
+          <span ref={frame.setTitleSlot} className="skip-net-no-drag min-w-0 flex items-center gap-1 bg-mac-title" />
           {stack &&
             moveBoxes
               .filter(({ by }) => !(by === -1 ? stack.first : stack.last))
@@ -79,7 +88,7 @@ export function Window(props: {
             stacked && "transition-opacity duration-150 starting:opacity-0",
           )}
         >
-          <TitleSlotContext.Provider value={titleSlot}>
+          <TitleSlotContext.Provider value={frame.titleSlot}>
             <WindowBody win={win} />
           </TitleSlotContext.Provider>
         </div>
@@ -90,12 +99,24 @@ export function Window(props: {
 
 /** Its first press arms it red, a second within `confirmMs` closes the window */
 function CloseBox({ onClose }: { onClose(): void }) {
-  const [armed, setArmed] = useState(false);
-  useEffect(() => {
-    if (!armed) return;
-    const timeoutId = window.setTimeout(() => setArmed(false), confirmMs);
-    return () => window.clearTimeout(timeoutId);
-  }, [armed]);
+  const box = useStateRef(
+    (): CloseBoxState => ({
+      armed: false,
+      timeoutId: 0,
+
+      arm() {
+        window.clearTimeout(box.timeoutId);
+        box.timeoutId = window.setTimeout(box.disarm, confirmMs);
+        box.set({ armed: true });
+      },
+      disarm() {
+        window.clearTimeout(box.timeoutId);
+        if (box.armed) box.set({ armed: false });
+      },
+    }),
+  );
+  useEffect(() => () => window.clearTimeout(box.timeoutId), []);
+  const { armed } = box;
   return (
     <button
       type="button"
@@ -105,8 +126,8 @@ function CloseBox({ onClose }: { onClose(): void }) {
         "grid place-items-center text-mac-text",
         armed && "bg-red-600 border-red-700 dark:border-red-400 text-white",
       )}
-      onClick={() => (armed ? onClose() : setArmed(true))}
-      onBlur={() => setArmed(false)}
+      onClick={() => (armed ? onClose() : box.arm())}
+      onBlur={box.disarm}
     >
       <XIcon weight="bold" className="size-2" />
     </button>
@@ -143,6 +164,22 @@ function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
       return win.kind;
   }
 }
+
+type FrameState = {
+  /** Where a press on the bar began, so a drag's release is not a click */
+  downAt: { x: number; y: number };
+  /** Where its body shows things in its title bar (`InTitle`) */
+  titleSlot: null | HTMLElement;
+  setTitleSlot(el: null | HTMLElement): void;
+};
+
+type CloseBoxState = {
+  /** A first press arms it, so a second closes the window */
+  armed: boolean;
+  timeoutId: number;
+  arm(): void;
+  disarm(): void;
+};
 
 const boxClass = tw(
   "skip-net-no-drag relative size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title cursor-pointer active:bg-mac-select",
