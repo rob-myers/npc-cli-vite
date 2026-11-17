@@ -1,5 +1,6 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
-import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { SkipNetContext, TitleSlotContext } from "../context";
@@ -9,7 +10,8 @@ import { FolderWindow } from "./FolderWindow";
 
 /**
  * A window's frame: a title bar to drag it by, with close and windowshade boxes.
- * A click on its bar, not a drag, folds or unfolds it, once in front.
+ * A click on its bar, not a drag, folds or unfolds it once in front: a click on one behind only fronts it.
+ * Stacked, only its grip drags it.
  */
 export function Window(props: {
   front: boolean;
@@ -19,6 +21,8 @@ export function Window(props: {
 }) {
   const { front, stack, win } = props;
   const stacked = stack !== undefined;
+  /** Stacked on touch, its bar and boxes are finger-sized */
+  const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
   const title = titleOf(win, state.items);
@@ -37,25 +41,47 @@ export function Window(props: {
     <div className="size-full flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]">
       <header
         className={cn(
-          "relative shrink-0 h-4.5 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
-          stacked ? "cursor-pointer" : "skip-net-drag cursor-grab active:cursor-grabbing",
+          "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
+          big ? "h-9 text-sm" : "h-4.5",
+          stacked
+            ? "cursor-pointer data-dragging:bg-mac-select/10"
+            : "skip-net-drag cursor-grab active:cursor-grabbing",
           !shaded && "border-b border-mac-edge",
         )}
         onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest("button") !== null) return;
+          if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return;
           const { downAt } = frame;
           if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
-          if (!stacked && state.pressedFrontId !== win.id) return; // a click on a window behind only fronts it
+          if (state.pressedFrontId !== win.id) return; // a click on a window behind only fronts it
           state.toggleShade(win.id);
         }}
       >
-        {front && <span className="absolute inset-x-1 inset-y-0.75" style={stripesStyle} />}
-        <CloseBox onClose={() => state.close(win.id)} />
-        <span className={cn("relative min-w-0 px-2 truncate bg-mac-title", front ? "font-bold" : "text-mac-muted")}>
+        {front && (
+          // fainter stacked, where the grips' dots sit on them
+          <span className={cn("absolute inset-x-1 inset-y-0.75", stacked && "opacity-40")} style={stripesStyle} />
+        )}
+        {stacked && (
+          <span data-stack-grip title="drag to resize" className={cn(gripClass, "shrink-0 -mx-1", big ? "w-7" : "w-4")}>
+            <DotsSixVerticalIcon weight="bold" className={big ? "size-4" : "size-3"} />
+          </span>
+        )}
+        <CloseBox big={big} onClose={() => state.close(win.id)} />
+        <span
+          className={cn(
+            "relative shrink-0 max-w-1/2 px-2 truncate bg-mac-title",
+            front ? "font-bold" : "text-mac-muted",
+          )}
+        >
           {title}
         </span>
-        <span className="relative ml-auto min-w-0 flex items-center gap-1">
+        {big && (
+          // a second grip, filling the bar between the title and the picker, easier to find with a thumb
+          <span data-stack-grip title="drag to resize" className={cn(gripClass, "flex-1 min-w-0")}>
+            <span className="h-3 w-full px-2 bg-clip-content opacity-40" style={longGripStyle} />
+          </span>
+        )}
+        <span className={cn("relative min-w-0 flex items-center gap-1", !big && "ml-auto")}>
           <span ref={frame.setTitleSlot} className="skip-net-no-drag min-w-0 flex items-center gap-1 bg-mac-title" />
           {stack &&
             moveBoxes
@@ -65,20 +91,20 @@ export function Window(props: {
                   key={by}
                   type="button"
                   title={title}
-                  className={moveBoxClass}
+                  className={cn(moveBoxClass, big && bigMoveBoxClass)}
                   onClick={() => state.moveInStack(win.id, by)}
                 >
-                  <Icon weight="fill" className="size-2.5" />
+                  <Icon weight="fill" className={big ? "size-3" : "size-2.5"} />
                 </button>
               ))}
         </span>
         <button
           type="button"
           title={shaded ? "roll down" : "roll up"}
-          className={cn(boxClass, "flex flex-col justify-center")}
+          className={cn(boxClass, big && bigBoxClass)}
           onClick={() => state.toggleShade(win.id)}
         >
-          <span className="h-px mx-px bg-mac-edge dark:bg-mac-text" />
+          <MinusIcon weight="bold" className={boxIconClass(big)} />
         </button>
       </header>
       {!shaded && (
@@ -98,7 +124,7 @@ export function Window(props: {
 }
 
 /** Its first press arms it red, a second within `confirmMs` closes the window */
-function CloseBox({ onClose }: { onClose(): void }) {
+function CloseBox({ big, onClose }: { big: boolean; onClose(): void }) {
   const box = useStateRef(
     (): CloseBoxState => ({
       armed: false,
@@ -121,15 +147,11 @@ function CloseBox({ onClose }: { onClose(): void }) {
     <button
       type="button"
       title={armed ? "press again to close" : "close"}
-      className={cn(
-        boxClass,
-        "grid place-items-center text-mac-text",
-        armed && "bg-red-600 border-red-700 dark:border-red-400 text-white",
-      )}
+      className={cn(boxClass, big && bigBoxClass, armed && "bg-red-600 border-red-700 dark:border-red-400 text-white")}
       onClick={() => (armed ? onClose() : box.arm())}
       onBlur={box.disarm}
     >
-      <XIcon weight="bold" className="size-2" />
+      <XIcon weight="bold" className={boxIconClass(big)} />
     </button>
   );
 }
@@ -182,12 +204,28 @@ type CloseBoxState = {
 };
 
 const boxClass = tw(
-  "skip-net-no-drag relative size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title cursor-pointer active:bg-mac-select",
+  "skip-net-no-drag relative grid place-items-center size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title text-mac-text cursor-pointer active:bg-mac-select",
 );
+/** A raised box on a touch-sized bar: lit above and left, shaded below and right, with a faint edge */
+const embossClass = tw(
+  "rounded-sm border-mac-edge/40 dark:border-mac-text/15 shadow-[inset_1px_1px_0_rgb(255_255_255/0.12),inset_-1px_-1px_0_rgb(0_0_0/0.35)]",
+);
+const bigBoxClass = cn(embossClass, "size-6");
+const bigMoveBoxClass = cn(embossClass, "h-6 w-8");
+/** A stacked bar's grip, which alone drags it */
+const gripClass = tw("relative grid place-items-center h-full cursor-row-resize text-mac-muted");
+/** The x or minus in a box */
+const boxIconClass = (big: boolean) => (big ? "size-3" : "size-2");
 /** How far a press on a bar may move and still be a click */
 const clickSlopPx = 4;
 /** How long a close box stays armed */
 const confirmMs = 2500;
+/** Two rows of dots along the middle grip, in its colour */
+const longGripStyle = {
+  backgroundImage: "radial-gradient(currentColor 1.25px, transparent 1.75px)",
+  backgroundSize: "6px 6px",
+  backgroundPosition: "center",
+};
 /** The front window's title bar is pinstriped */
 const stripesStyle = {
   backgroundImage: "repeating-linear-gradient(to bottom, var(--color-mac-stripe) 0 1px, transparent 1px 2px)",
@@ -200,3 +238,5 @@ const moveBoxes = [
   { by: -1, Icon: CaretUpIcon, title: "move up" },
   { by: 1, Icon: CaretDownIcon, title: "move down" },
 ] as const;
+
+const touchDevice = isTouchDevice();

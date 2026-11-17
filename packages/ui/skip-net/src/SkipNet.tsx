@@ -64,7 +64,11 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
           (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
         );
         if (shown !== undefined) return state.bringToFront(shown.id);
-        state.setWindows([...windows, newWindow(windows, content)]);
+        const win = newWindow(windows, content);
+        // stacked, an even share of the height, as `stackFlex` may be saved in px
+        const shares = windows.filter((x) => x.shadedH === undefined).map((x) => x.stackFlex ?? x.h);
+        if (shares.length > 0) win.stackFlex = shares.reduce((sum, x) => sum + x, 0) / shares.length;
+        state.setWindows([...windows, win]);
       },
       saveLayout(layout) {
         state.setWindows(withLayout(state.meta.windows, layout));
@@ -76,8 +80,13 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       setClearAsked(clearAsked) {
         state.set({ clearAsked });
       },
-      setStackFlex(flexById) {
-        state.setWindows(state.meta.windows.map((x) => (x.id in flexById ? { ...x, stackFlex: flexById[x.id] } : x)));
+      setStackFlex(flexById, unfoldId) {
+        state.setWindows(
+          state.meta.windows.map((x) => {
+            const y = x.id === unfoldId ? toggleShade(x) : x;
+            return y.id in flexById ? { ...y, stackFlex: flexById[y.id] } : y;
+          }),
+        );
       },
       setWindow(id, patch) {
         state.setWindows(state.meta.windows.map((x) => (x.id === id ? { ...x, ...patch } : x)));

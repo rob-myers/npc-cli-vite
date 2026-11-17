@@ -29,8 +29,8 @@ export type State = {
   saveLayout(layout: Layout): void;
   setArrange(arrange: SkipNetUiMeta["arrange"]): void;
   setClearAsked(clearAsked: boolean): void;
-  /** Each stacked window's share of the height, by id */
-  setStackFlex(flexById: Record<string, number>): void;
+  /** Each stacked window's share of the height, by id, unfolding `unfoldId` if given */
+  setStackFlex(flexById: Record<string, number>, unfoldId?: string): void;
   setWindow(id: string, patch: Partial<SkipNetWindow>): void;
   setWindows(windows: SkipNetWindow[]): void;
   /** Rolls it up to its title bar, or back down */

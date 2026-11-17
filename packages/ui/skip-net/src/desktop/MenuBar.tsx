@@ -58,10 +58,10 @@ export function MenuBar() {
               {label}
             </Menu.Item>
           ))}
-        </BarMenu>
-        <BarMenu label="Special">
+          <Menu.Separator className={separatorClass} />
+          {/* asks first, in a classic alert box */}
           <Menu.Item className={itemClass} disabled={windows.length === 0} onClick={() => state.setClearAsked(true)}>
-            Clear Desktop…
+            Clear…
           </Menu.Item>
         </BarMenu>
       </Menubar>
