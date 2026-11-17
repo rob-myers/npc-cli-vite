@@ -17,7 +17,6 @@ import {
   CopyIcon,
   DotsSixVerticalIcon,
   DotsThreeIcon,
-  ListBulletsIcon,
   PauseIcon,
   PlayIcon,
   XIcon,
@@ -265,21 +264,20 @@ export function Jobs(props: Props) {
     <div
       data-jobs-root
       // nothing is selected by a stray drag or Cmd+A: a job's source is copied from its menu
-      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground flex flex-col select-none"
+      className="bg-term-dashboard h-full overflow-hidden text-term-foreground flex flex-col select-none"
     >
-      {/* dragged to move the panel beside the terminal */}
-      <header
-        className="shrink-0 flex items-stretch gap-1 font-mono cursor-grab touch-none"
-        onPointerDown={props.onGrip}
-      >
-        <DotsSixVerticalIcon alt="drag" weight="bold" className="self-center ml-1 size-4 text-term-muted" />
-        <div className="flex items-center gap-1.5 px-2 py-1 text-sm text-term-accent" title="processes">
-          <ListBulletsIcon alt="processes" className="size-4" />
-          {state.ordered.length}
-        </div>
-      </header>
-
       <div className="flex-1 min-h-0 relative">
+        <button
+          type="button"
+          title="drag to move"
+          className={cn(
+            "absolute z-10 top-1 right-1 p-1 rounded cursor-grab touch-none",
+            "bg-term-surface/60 backdrop-blur-xs text-term-muted opacity-60 transition-opacity hover:opacity-100",
+          )}
+          onPointerDown={props.onGrip}
+        >
+          <DotsSixVerticalIcon alt="drag" weight="bold" className="size-4" />
+        </button>
         <div
           className={cn(
             "size-full overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
