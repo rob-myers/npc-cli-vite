@@ -59,7 +59,7 @@ A long line is shown a page at a time: whole sentences, at most `pageChars` (120
 
 Its timing is `utteranceOf` (`service/speech.ts`), shared with hearing (below):
 - Each word takes `speechConfig.wordSecs` (0.4s) to say. A page then stays `readSecs` (2s) to be read (`pageSecs`).
-- Each word shows as it is said, rising into place. Words not yet said are faint for the player's lines, else hidden.
+- Each word lights as it is said, rising into place. Words not yet said are faint, so a line said whilst paused can still be read.
 - The bubble swells a little with each word (`sayWord`).
 - All of it is written to the DOM from `onTick` (`showPage`, `sayWord`), never by a render.
 - Each npc's bubble is a memoised `NpcBubble` with stable refs, so a line said renders its own bubble alone.
@@ -81,7 +81,8 @@ Only a bubble for the player, i.e. to or from them, is kept inside the World's e
 ![a line heard by chunks](speech/hearing.svg)
 
 A line is heard a chunk at a time, `chunkWords` (3) words to a chunk, by whoever is in earshot as that chunk starts. Earshot is the speaker's room and those through open doors (`w.npc.near.inReach`), within `hearMetres` (8m) (`w.speech.hearersOf`).
-- **Timing.** `w.speech.utter` sets a game-time timer per chunk (`w.e.after`), so hearing pauses with the World and nothing is polled.
+- **Timing.** Each line has its own clock in `w.speech.uttering`, ticked by game time (`w.speech.onTick`, from `World`'s tick). A chunk is heard as the clock passes its start, so a timescale slows it and a pause holds it.
+- **Paused mid-line.** `w.speech.setPaused(npcKey, paused)` holds one speaker's line, their bubble and mouth too, e.g. whilst jsh `say` is suspended. `w.speech.cutOff(npcKey, id)` ends it at once, as a kill of `say` does.
 - **Partial.** Someone who walks up mid-line hears the rest, and someone who walks off misses it.
 - **Cut off.** A new line from the same speaker cuts off the last, and what was left unsaid is unheard.
 - **The player.** A line to or from the player always reaches them whole. Out of their earshot it comes over comms: a mic glyph in the bubble and the history (`entry.via`).
@@ -128,5 +129,5 @@ Measured with 161 npcs in a DEV World, from an MCP `query`:
 - **All 161 starting in one tick** costs one 60 to 180ms frame: mounting their word spans and starting their turns. A scene does not do this.
 - **Per speaker** a frame: a few quaternion turns of the head, two sampled `talk_left` tracks, and their bubble's placing.
 - **Per chunk**, about every 1.2s a speaker: one earshot test (`hearersOf`), a walk of the room graph.
-- **Per line**: a timer per chunk (`w.e.after`), and one `speech-heard` however many heard it.
+- **Per line**: a clock ticked each frame, and one `speech-heard` however many heard it.
 

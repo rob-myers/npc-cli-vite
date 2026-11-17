@@ -138,7 +138,7 @@ export default function Obstacles(_props: Props) {
               state.toInstanceId[gmId][obstacleId] = nextId;
               const room = roomId === null ? undefined : gm.rooms[roomId];
               const clip = obstacleClip.clipOf(gm.obstacles[obstacleId], room, gm.matrix);
-              clips.set(clip ?? obstacleClip.neverClipped, nextId * 4);
+              clips.set(clip ?? obstacleClip.neverClipped, nextId * 8);
               state.fromInstanceId[nextId] = { gmId, obstacleId };
               const broadId = broadIds[obstacleId];
               // shown with its ROOM: a broad wall abuts many, and would show it from any of them.
@@ -534,7 +534,7 @@ export type State = {
   fromInstanceId: { gmId: number; obstacleId: number }[];
   /** Which room each instance stands in, worked out once per map — see `roomSlotOf` */
   roomSlotByInstanceId: number[];
-  /** By instance id: `(cx, cz, a1, a2)` in world space, the walls past which neither material draws it. See `obstacle-clip` */
+  /** By instance id: two corners `(cx, cz, a1, a2)` in world space, the walls past which neither material draws it. See `obstacle-clip` */
   clipTex: THREE.DataTexture;
   /** Dense instance ids (`0..instanceCount-1`), rebuilt whenever the obstacles can change */
   buildInstanceIds(): number;

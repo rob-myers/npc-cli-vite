@@ -576,8 +576,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.hud?.say(npc?.anim.hurry === true ? "run" : "walk");
       },
       toggleStrafe() {
-        // aiming strafes them regardless, and sat or lain they never do
-        if (w.phasers?.isArmed(state.key) === true || state.get()?.posture !== "stand") return;
+        // aiming strafes them regardless. Sat or lain they never do, so it may be turned off but not on
+        if (w.phasers?.isArmed(state.key) === true) return;
+        if (state.strafe === false && state.get()?.posture !== "stand") return;
         state.strafe = !state.strafe;
         w.hud?.update(); // its hud-toast shows it
         w.r3f?.invalidate();

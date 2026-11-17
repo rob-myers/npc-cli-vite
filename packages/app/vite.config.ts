@@ -4,9 +4,9 @@ import { audioDefaultsPlugin } from "@npc-cli/scripts/vite-plugin-audio-defaults
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
 import { buildSheetHashPlugin } from "@npc-cli/scripts/vite-plugin-build-sheet-hash";
 import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
-import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { scenarioPlugin } from "@npc-cli/scripts/vite-plugin-scenario";
+import { skipNetArticlesPlugin } from "@npc-cli/scripts/vite-plugin-skip-net-articles";
 import { spotsPlugin } from "@npc-cli/scripts/vite-plugin-spots";
 import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
@@ -18,6 +18,8 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
+
+const skipNetArticles = /\/skip-net\/src\/articles\/[^/]+\.mdx$/;
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -32,16 +34,19 @@ export default defineConfig({
       routesDirectory: "src/routes",
     }),
     mdx({
+      exclude: skipNetArticles,
       rehypePlugins: [
         [rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false, langs: ["tsx", "sh"] }],
       ],
     }),
+    /** SkipNet's fences stay raw, so its own components can run them */
+    mdx({ include: skipNetArticles }),
     react(),
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
     spotsPlugin(),
-    jobsExamplesPlugin(),
+    skipNetArticlesPlugin(),
     scenarioPlugin(),
     audioDefaultsPlugin(),
     worldRtcPlugin(),

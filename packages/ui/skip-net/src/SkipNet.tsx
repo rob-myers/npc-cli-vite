@@ -1,0 +1,127 @@
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { useStateRef } from "@npc-cli/util";
+import { useContext, useEffect } from "react";
+import { verticalCompactor } from "react-grid-layout";
+import { SkipNetContext, type State } from "./context";
+import { Desktop } from "./desktop/Desktop";
+import { MenuBar } from "./desktop/MenuBar";
+import { Stack } from "./desktop/Stack";
+import {
+  desktopCols,
+  frontOf,
+  newWindow,
+  restack,
+  stackOrdered,
+  stackPx,
+  toggleShade,
+  toLayout,
+  withLayout,
+} from "./desktop/windows";
+import type { SkipNetUiMeta } from "./schema";
+import { useSkipNetItems } from "./use-skip-net-items";
+
+/** The intranet holding SCPs, as a classic desktop aligned with one World. See `docs/skip-net.md` */
+export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
+  const { uiStoreApi } = useContext(UiContext);
+
+  const state = useStateRef(
+    (): State => ({
+      clearAsked: false,
+      items: [],
+      meta,
+      narrow: false,
+      pressedFrontId: undefined,
+      rootEl: null,
+
+      bringToFront(id) {
+        const { windows } = state.meta;
+        state.pressedFrontId = frontOf(windows)?.id;
+        if (state.pressedFrontId !== id) state.setWindows(restack(windows, id));
+      },
+      cleanUp() {
+        const { windows } = state.meta;
+        state.setWindows(withLayout(windows, verticalCompactor.compact(toLayout(windows), desktopCols)));
+      },
+      clear() {
+        state.set({ clearAsked: false });
+        state.setWindows([]);
+      },
+      close(id) {
+        state.setWindows(state.meta.windows.filter((x) => x.id !== id));
+      },
+      moveInStack(id, by) {
+        const ordered = stackOrdered(state.meta.windows);
+        const i = ordered.findIndex((x) => x.id === id);
+        const j = i + by;
+        if (i === -1 || j < 0 || j >= ordered.length) return;
+        [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+        const orderOf = new Map(ordered.map((x, k) => [x.id, k]));
+        state.setWindows(state.meta.windows.map((x) => ({ ...x, stackOrder: orderOf.get(x.id) })));
+      },
+      open(content) {
+        const { windows } = state.meta;
+        const shown = windows.find(
+          (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
+        );
+        if (shown !== undefined) return state.bringToFront(shown.id);
+        const win = newWindow(windows, content);
+        // stacked, an even share of the height, as `stackFlex` may be saved in px
+        const shares = windows.filter((x) => x.shadedH === undefined).map((x) => x.stackFlex ?? x.h);
+        if (shares.length > 0) win.stackFlex = shares.reduce((sum, x) => sum + x, 0) / shares.length;
+        state.setWindows([...windows, win]);
+      },
+      saveLayout(layout) {
+        state.setWindows(withLayout(state.meta.windows, layout));
+      },
+      setArrange(arrange) {
+        uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).arrange = arrange));
+        if (arrange === "tidy") state.cleanUp();
+      },
+      setClearAsked(clearAsked) {
+        state.set({ clearAsked });
+      },
+      setStackFlex(flexById, unfoldId) {
+        state.setWindows(
+          state.meta.windows.map((x) => {
+            const y = x.id === unfoldId ? toggleShade(x) : x;
+            return y.id in flexById ? { ...y, stackFlex: flexById[y.id] } : y;
+          }),
+        );
+      },
+      setWindow(id, patch) {
+        state.setWindows(state.meta.windows.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+      },
+      setWindows(windows) {
+        uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).windows = windows));
+      },
+      toggleShade(id) {
+        state.setWindows(state.meta.windows.map((x) => (x.id === id ? toggleShade(x) : x)));
+      },
+    }),
+  );
+
+  state.meta = meta; // its handlers run long after this render
+  state.items = useSkipNetItems(meta.worldKey);
+
+  useEffect(() => {
+    if (state.rootEl === null) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const narrow = entry.contentRect.width < stackPx;
+      if (narrow !== state.narrow) state.set({ narrow });
+    });
+    observer.observe(state.rootEl);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <SkipNetContext.Provider value={state}>
+      <div
+        ref={(el) => void (state.rootEl = el)}
+        className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide"
+      >
+        <MenuBar />
+        {state.narrow ? <Stack /> : <Desktop />}
+      </div>
+    </SkipNetContext.Provider>
+  );
+}

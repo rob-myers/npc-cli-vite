@@ -63,19 +63,19 @@ hull segment whose midpoint is within 0.1 m of a hull door with that door's room
 
 An obstacle may be moved into a wall, e.g. a toilet, to widen its room's navmesh. Walls can be
 see-through (`theme.walls.opacity`), so `Obstacles` clips it at its room's edge, through
-`service/obstacle-clip.ts`. One wall per obstacle, or two meeting at a corner of the room, e.g. a sink run into one.
+`service/obstacle-clip.ts`. Up to four walls, as two corners of the room, e.g. a sink run into one corner, or a desk spanning the room.
 
-- **Which.** One with a corner outside its room's polygon (`clipOf`). The cut is the room's edge
-  nearest the furthest-out corner. Another corner past an edge from the same corner of the room adds that
-  wall too, if the room is convex there. A window's sill (`meta.window`) and a doorway's floor plate
+- **Which.** One with a corner outside its room's polygon (`clipOf`). Each such corner is cut at the room's
+  edge nearest it, or both edges if diagonally out. The walls pair off at the room's corners, the furthest past
+  first, where the room is convex. A wall with no partner is a corner of its own. A window's sill (`meta.window`) and a doorway's floor plate
   (`meta.floor`) span openings, so they are never clipped.
-- **Kept** in `clipTex`, a float texture of `(cx, cz, a1, a2)` by instance id, filled by `buildInstanceIds`:
-  a point, and the outward angles of the walls through it. One wall repeats its angle.
+- **Kept** in `clipTex`, a float texture of two texels `(cx, cz, a1, a2)` per instance id, filled by `buildInstanceIds`:
+  a point, and the outward angles of the walls through it. One wall repeats its angle, and one corner repeats itself.
   It is a texture rather than an attribute: the skirts have no vertex buffer to spare.
-- **Drawn.** Both materials read it (`insideClipBy`), by the nearer wall, and drop what lies past the cut (`maskNode`). A
+- **Drawn.** Both materials read it (`insideClipBy`), by the nearest wall, and drop what lies past the cut (`maskNode`). A
   top whitens within `cutLineWidth` of it.
 - **A black back.** Its own back skirt lies past the cut, so it is dropped with the rest, leaving a hole.
   `transformAndColorSkirts` adds a skirt across each cut instead (`clipBacksOf`, its outline clipped by
   each wall), facing into the room. It is plain black (`#000`), not panelled, as the obstacle's inside would be.
-- **Cost.** One texel fetch and two dot products per pixel, clipped or not. One more skirt instance per wall
+- **Cost.** Two texel fetches and four dot products per pixel, clipped or not. One more skirt instance per wall
   an obstacle is cut at. No draw calls.

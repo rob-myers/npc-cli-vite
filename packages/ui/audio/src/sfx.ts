@@ -1,4 +1,4 @@
-import { chantVoice, choirVoice, monkVoice } from "./choir";
+import { chantVoice, choirVoice } from "./choir";
 import { type DoorVoice, doorSfx, doorVoice } from "./doors";
 import { itemSfx } from "./items";
 import { gain, panner } from "./nodes";
@@ -58,7 +58,7 @@ export const sfxBus = (key: SfxKey) => (key in phaserSfx ? "fx" : "world");
 export type HoldParams = { level: number; pan: number; gain: number; voice?: DoorVoice; pick?: number };
 export type HeldVoice = { set(params: HoldParams, at: number): void; stop(at: number): void };
 
-export const holdKeys = ["charge", "door", "choir", "monk", "chant"] as const;
+export const holdKeys = ["charge", "door", "choir", "chant"] as const;
 export type HoldKey = (typeof holdKeys)[number];
 
 /** Each held voice's builder, given the params it is first held with */
@@ -75,7 +75,6 @@ export const holds: Record<
   charge: chargeVoice,
   door: doorVoice,
   choir: choirVoice,
-  monk: monkVoice,
   chant: chantVoice,
 };
 

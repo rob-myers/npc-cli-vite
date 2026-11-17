@@ -1,0 +1,56 @@
+/* react-grid-layout's look, made SkipNet's */
+.skip-net-grid > .react-grid-item {
+  /* a dragged window's outline is dashed */
+  &.react-grid-placeholder {
+    background: transparent;
+    opacity: 1;
+    outline: 1px dashed var(--color-mac-edge);
+  }
+
+  /* every edge and corner resizes it, but only its grow box (se) is drawn, in the window's edge */
+  > .react-resizable-handle {
+    &::after {
+      border-color: var(--color-mac-edge);
+    }
+    &:not(.react-resizable-handle-se) {
+      opacity: 0;
+      margin: 0;
+      transform: none;
+      &::after {
+        display: none;
+      }
+    }
+    &.react-resizable-handle-n,
+    &.react-resizable-handle-s {
+      left: 10px;
+      right: 10px;
+      width: auto;
+      height: 6px;
+    }
+    &.react-resizable-handle-n {
+      top: -3px;
+    }
+    &.react-resizable-handle-s {
+      bottom: -3px;
+    }
+    &.react-resizable-handle-w,
+    &.react-resizable-handle-e {
+      top: 10px;
+      bottom: 10px;
+      width: 6px;
+      height: auto;
+    }
+    &.react-resizable-handle-w {
+      left: -3px;
+    }
+    &.react-resizable-handle-e {
+      right: -3px;
+    }
+    &.react-resizable-handle-nw,
+    &.react-resizable-handle-ne,
+    &.react-resizable-handle-sw {
+      width: 10px;
+      height: 10px;
+    }
+  }
+}

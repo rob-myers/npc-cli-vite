@@ -1,32 +1,56 @@
 # Camera
 
-The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
+The World's camera: `service/camera-controls.ts`, a custom `MapControls`, driven by `WorldView`.
+
+![the camera, overall](camera/camera-overview.svg)
+
+Its parts, each a section below:
+1. **Gestures and keys**: what a drag, a wheel, a finger or a key moves.
+2. **Framing**: the fov, and the floor seen at each zoom stop.
+3. **Zoom**: two stops, eased between. Only a pure pinch zooms.
+4. **Turning**: about `target`, or a pivot.
+5. **`embodied` mode**: what may be steered, by zoom.
+6. **WASD heading**: where the w-key heads, from the view.
+7. **Following the player**: the view frames them and their frontier.
+
+The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writing to the folder it is run from.
 
 **Setup**
-- A custom `MapControls` subclass in `service/camera-controls.ts`.
 - Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance.
 - `CameraControls.jsx` exposes a JSDoc `@typedef Props`. `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`.
 - r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default. That is how `zoomToCursor` stays on.
 
+## Gestures and keys
+
+![what each gesture moves](camera/camera-gestures.svg)
+
 **Pointer** (`onMouseDown`)
 - A left drag pans, a right drag turns. Shift, ctrl or alt held swaps them. The middle button zooms.
 - Whilst following, panning is off (`enablePan`), so a left drag turns.
-- On touch, one finger pans and two turn or pinch.
-- Whilst following on touch, a one-finger drag moves where the player looks instead (`touchLook`), and a tap still picks. Two fingers turn or pinch as ever.
 
-**Framing** (`w.view.cameraView`, `setCameraView`, `service/camera-view.ts`)
-- Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.
-- So a new fov keeps the floor seen at each stop, as a dolly zoom: only the perspective changes.
-- The menu's **framing** row, beneath **camera**, has the presets, a reset, and a pop-up with a vertical slider for each. Only its button opens or closes it, so it stays open beside the menu, and goes with it.
-- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the device's base (`cameraFov` and its default stops), and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. The default, and so `reset`, is `high` (`getDefaultCameraView`).
-- Saved site-wide (`getSiteStore`, key `site`), as the light slider is. `ctrlOpts`, reset on hmr, reads it back.
+**Touch** (`onTouchStart`)
+- One finger pans, and two turn or pinch.
+- Whilst following, a one-finger drag moves where the player looks instead (`touchLook`), and a tap still picks. Two fingers turn or pinch as ever.
+- A two-finger tap is a look, at their midpoint (`w.player.onTouch`).
 
 **Keys**
 - `1`, `2` and `3` select the fade mode: `sight`, `sense`, `ship` (`fadeRoomsModeByKey`). The menu's button cycles them.
 - `0` toggles the spots overlay (`w.spots.toggle`), as the debug menu's **spots** does.
 - `-` and `+` (or `=`) step the camera's framing down or up through the presets, low, mid and high (`stepCameraPreset`), from whichever is nearest by fov.
 
+## Framing
+
+`w.view.cameraView`, `setCameraView`, `service/camera-view.ts`.
+
+- Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.
+- So a new fov keeps the floor seen at each stop, as a dolly zoom: only the perspective changes.
+- The menu's **framing** row, beneath **camera**, has the presets, a reset, and a pop-up with a vertical slider for each. Only its button opens or closes it, so it stays open beside the menu, and goes with it.
+- Its presets (`cameraPresets`) are whole framings: a wider fov nearer in, its near view a smaller share of the device's base (`cameraFov` and its default stops), and its far view too (`mid` 0.85, `high` 0.7), to stay zoomed in. The default, and so `reset`, is `high` (`getDefaultCameraView`).
+- Saved site-wide (`getSiteStore`, key `site`), as the light slider is. `ctrlOpts`, reset on hmr, reads it back.
+
 ## Zoom
+
+![zoom](camera/camera-zoom.svg)
 
 **Zoom has two stops**, `minDistance` and `maxDistance`. There is no continuous dolly.
 - `zoomProgress` is what gestures move: 0 at `maxDistance`, 1 at `minDistance`. The wheel moves it by `deltaY`, a pinch by the `ln` of its spread.
@@ -41,9 +65,11 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 **Zooms aim at a point.**
 - `setDollyTowards(clientX, clientY)` takes the cursor (wheel) or the pinch centroid.
 - `applyZoomTowards(prev, next)` moves the camera along that aim and re-derives `target`.
-- Only a **pure** pinch zooms. Two fingers also rotate and pan, so `twoFingerRotateRatio` (the smoothed share of centroid motion) must be under `pinchPurity`.
+- Only a **pure** pinch zooms. Two fingers also turn and pan, so `twoFingerRotateRatio` (the smoothed share of centroid motion) must be under `pinchPurity` (0.35).
 
 ## Turning
+
+![turns pivot on a point](camera/camera-pivot.svg)
 
 **Turns can pivot on a point.**
 - `rotateAbout` names one. `WorldView` gives the zoom crosshair whilst it shows, and nothing whilst following.
@@ -74,6 +100,8 @@ Whilst the player's phaser is raised (`isAiming`):
 
 ## WASD heading
 
+![wasd heading](camera/camera-wasd.svg)
+
 **The w-key heads along a world axis whenever it can, and where it heads depends on the view alone.** So doors line up without a square view.
 
 Which way (`getWasdDirection`, `syncWasdHeading`, `snapHeading`):
@@ -94,6 +122,8 @@ The HUD:
 
 ## Following the player
 
+![following](camera/camera-follow.svg)
+
 Whilst following, the view frames the player and their frontier: the furthest point ahead that they can see.
 
 **Turning it on**
@@ -110,14 +140,14 @@ Whilst following, the view frames the player and their frontier: the furthest po
   - A right click or two-finger tap sets the distance (`base`). It stays as they walk and turn, until another tap or the hud-toast's "x".
   - `r` held, or gaze mode, steers it to the pointer only whilst on (`steer`), then gives it back. `r` steers only once held `rCapMs`, so a tap of it shows nothing.
 - **A far look extends it**: Space held (`w.player.setFarLook`). Raised, it casts along the muzzle's line (`farBearing`).
-  - It casts to the first wall or door, up to `farLookMetres`, past the light and the outer stop. The view reaches `frontierConfig.farPadMetres` beyond it, so the wall, and the red dot whilst aiming, keep clear of the canvas edge. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in gaze mode or whilst `r` is held.
+  - It casts to the first wall or door, up to `farLookMetres` (40m), past the light and the outer stop. The view reaches `frontierConfig.farPadMetres` beyond it, so the wall, and the red dot whilst aiming, keep clear of the canvas edge. A hull window ends it too, where the cast leaves the ship (`RaycastResult.out`), and the readout greys, keeping its last number. It follows their facing, or the pointer in gaze mode or whilst `r` is held.
   - It casts again (`castFarLook`) once it swings `farRecastRad` or they move `farRecastMetres`. The frontier eases at `frontierConfig.scanRate` meanwhile (`w.player.isScanning`), so a doorway swept past does not jerk the view.
   - It is the look's `far`, in force over `steer` and `base` whilst Space is held. Letting go gives them back.
 - **Aiming frames the line, not the dot.** The dot stops at whoever the line meets, so sweeping past someone would leap the view. The far look along the muzzle reaches the first wall or door, past anyone, so it changes only as the walls do.
 - **The hud-toast.** Whilst a cap holds, the bar shows its reach: "focal 2m" (their focal distance), "gaze 2m" in gaze mode, "focal max" for a far look. A passing distance reads sky blue, steered by `r` or gaze mode, or a max look: only the tap's is lime. Its "x" drops the cap and ends gaze mode (`w.player.stopLooking`). With the phaser raised the hud-toast says "drawn" ("aim" whilst Space is held) and shows the dot's range instead.
 
 **How the view frames it** (`easeFrontier`, in `onCameraFrame`)
-- **The pan.** `followPlayer` holds the target `frontierConfig.panFrac` of the way along `ahead`, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
+- **The pan.** `followPlayer` holds the target `frontierConfig.panFrac` (0.5) of the way along `ahead`, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 - **The offset eases with the zoom**, else the view lunges ahead then pulls back, e.g. as the phaser is raised. It is never longer than wanted, so keeps pace as the frontier draws in. Its direction always eases, so a sweep never snaps it round.
 - **The stops sit further out**, as the 30° fov is narrow.
   - `controls.minDistance` eases to the nearest radius that fits the player and their frontier, with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted outer stop. So zoomed in, a follow is as far out as a free look zoomed out.

@@ -12,7 +12,7 @@ import { heading, headingOf, pathOf, SidestepLookout, table } from "./sidestep-l
 /**
  * Npcs make way for a walker coming at them or held up by them
  * - idempotent since it attaches a keyed listener
- * - chooses sidestep kind via the hud's debug ui
+ * - chooses sidestep kind via its SkipNet pane
  * - `kind:` and `back:` set that item's picks, and a number tunes the kind, e.g. `reach:2`.
  * - `--debug` logs each choice and why to the tty, and moreover draws in-world lines, until killed.
  * - npcKey operands restrict to those npcs
@@ -34,7 +34,7 @@ export async function* sidestep(ct: JshCli.RunArg) {
   if (args[0] === "off") {
     w.e.keyedListener.delete("sidestep");
     w.e.keyedTick.delete("sidestep");
-    w.hud?.removeDebugItem("sidestep");
+    w.skipNet?.remove("sidestep");
     watcher = null;
     return;
   }
@@ -75,7 +75,7 @@ function watchWalkers(w: JshCli.WorldState) {
   };
   const look = new SidestepLookout(w);
   watcher = { look, s };
-  w.hud?.addDebugItem({
+  w.skipNet?.add({
     key: "sidestep",
     title: "sidestep",
     Component: () => createElement(SidestepDebug, { w, s: s.choices, kinds: sidestepKinds, backs: sidestepBacks }),
@@ -120,7 +120,7 @@ function watchWalkers(w: JshCli.WorldState) {
 type Sidestep = {
   /** When they collapsed, in world seconds */
   fell: Map<string, number>;
-  /** The hud's debug item's: how npcs make way next, and where they go back to — kept in `/shared/sidestep` */
+  /** Its SkipNet pane's: how npcs make way next, and where they go back to — kept in `/shared/sidestep` */
   choices: SidestepDebugState;
   /** Where each stood before their first step aside, whilst they mean to go back — see `returnBack` */
   home: Map<string, Home>;
@@ -400,7 +400,7 @@ function* homeStatus(w: JshCli.WorldState, s: Sidestep): Generator<string> {
   yield* table(["npc", "off", "steps", "fails", "why not back yet"], rows);
 }
 
-/** The debug item's choices at `/shared/sidestep`, so a hot reload or a page reload keeps them: else the defaults */
+/** Its pane's choices at `/shared/sidestep`, so a hot reload or a page reload keeps them: else the defaults */
 function debugChoices(): SidestepDebugState {
   const saved = sharedFolder.sidestep as undefined | Partial<SidestepDebugState>;
   const choices: SidestepDebugState = {
@@ -411,7 +411,7 @@ function debugChoices(): SidestepDebugState {
     open: { tune: true, returns: true, ...saved?.open },
     chain: saved?.chain ?? false,
   };
-  sharedFolder.sidestep = choices; // the debug item writes to it as they are picked
+  sharedFolder.sidestep = choices; // the pane writes to it as they are picked
   return choices;
 }
 
@@ -660,7 +660,7 @@ const lineStyles: Record<ThemeName, { width: number; opacity: number; discRadius
 const sidestepConfig = {
   /** Game seconds before they react, at random between these. Kept short: a walker held up too long is stuck */
   reactSecs: [0.05, 0.15],
-  /** Where they go back to once the walker has gone, until the hud's debug item says otherwise */
+  /** Where they go back to once the walker has gone, until its SkipNet pane says otherwise */
   back: "last" as SidestepBack,
   /** The chance they say something as they make way, and what */
   says: { chance: 0, lines: ["Sorry.", "Excuse me."] },

@@ -1,16 +1,13 @@
-/* `NpcBubbles`: a word shows as it is said. For the player, the rest show faintly ahead */
+/* `NpcBubbles`: a word lights as it is said. The rest show faintly ahead, so a paused World shows the line */
 .said-bubble [data-word] {
   display: inline-block;
   /* its leading space kept */
   white-space: pre;
-  opacity: 0;
+  opacity: 0.4;
   translate: 0 1px;
   transition:
     opacity 150ms ease-out,
     translate 150ms ease-out;
-}
-.said-bubble[data-preview] [data-word] {
-  opacity: 0.4;
 }
 .said-bubble [data-word].said {
   opacity: 1;

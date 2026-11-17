@@ -1,7 +1,7 @@
 import { cn } from "@npc-cli/util";
 import { blogPages } from "./pages";
 
-/** Horizontal page strip, styled like the `JobsLibrary` nav */
+/** Horizontal page strip */
 export default function BlogNav({ pageKey, onSelect }: { pageKey: string; onSelect(key: string): void }) {
   return (
     <nav

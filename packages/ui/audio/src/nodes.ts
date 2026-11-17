@@ -96,7 +96,7 @@ const roomSecs = 0.45;
 /** How fast the room dies, over its length */
 const roomDecay = 7;
 
-/** A vast stone hall, as a monk chants in: a convolver over noise dying away slowly, and darker as it dies */
+/** A vast stone hall, as monks chant in: a convolver over noise dying away slowly, and darker as it dies */
 export function hall(ctx: BaseAudioContext) {
   const node = ctx.createConvolver();
   node.buffer = getHallImpulse(ctx);

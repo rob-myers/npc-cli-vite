@@ -1,0 +1,25 @@
+{
+  "name": "@npc-cli/ui__skip-net",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@npc-cli/cli": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__jsh": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-grid-layout": "catalog:",
+    "zod": "catalog:",
+    "zustand": "catalog:"
+  }
+}

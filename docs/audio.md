@@ -142,9 +142,8 @@ silent. Getting off is heard after either.
 ## Psi
 
 Whilst the player's psi is raised (`w.e.isPsiRaised`), something sings (`choir.ts`, on the `world` bus): what the
-desk's **psi** picker chooses (`psiVoices`, saved with the pane). That is the synthesised `choir` or `monk`, one of the
-recorded chants (`low-d`, `low-chant`, `drone`, `eerie`), else `random`: the choir `choirShare` of the time, else
-a chant. A change of it whilst raised is heard at once. Either is a held voice,
+desk's **psi** picker chooses (`psiVoices`, saved with the pane). That is the synthesised `choir`, one of the
+recorded chants (`low-chant`, `eerie`), else `random`: the choir `choirShare` of the time, else a chant. A change of it whilst raised is heard at once. Either is a held voice,
 renewed each tick, so a pause or psi lowered lets it die away. It swells in over `fadeInSecs`, dies away over
 `fadeOutSecs`, and is never panned, as it is the player's own.
 
@@ -164,11 +163,9 @@ renewed each tick, so a pause or psi lowered lets it die away. It swells in over
   - **Each singer their own**: a source brighter or darker (`throatTilts`), their own vibrato, loudness and drift,
     and a few cents off their place (`detuneStray`).
   - In the hall, beside its own voices (`choirHallWet`).
-- **The monk**: one low voice on D2 (`voiceHz`), as the choir's singers are, singing its phrases, overtones and bowl,
-  far off in the hall: it answers after `preDelaySecs`, far louder than the voice itself (`monkHallWet`, `monkDry`).
 - **The hall** (`hall` in `nodes.ts`): 9 s of stone, losing its highs as it dies (`hallBright`, `hallDull`).
-- **A chant**: one of the four `psi` recordings, never the same twice running. The four are fetched together
-  the first time any is wanted (542 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
+- **A chant**: one of the two `psi` recordings, never the same twice running. The two are fetched together
+  the first time either is wanted (270 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
   bank's), as decoded each is about 2.2 MB. The choir sings until it has, then fades as the chant swells in. It is looped in code: each pass
   skips the mp3's padding and starts `chantCrossSecs` before the last ends, crossfaded at equal power.
 - The desk's world strip has the **psi** picker, and a **psi** button that sings what it chose for a few seconds.

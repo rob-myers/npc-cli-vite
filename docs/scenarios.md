@@ -4,15 +4,9 @@ Scenarios in which two or more npcs interact, directed by queries over spots (`d
 
 A query becomes an interaction when it is asked again, on a tick or an event, and its npcs act on the change.
 
-## The panel: `ui/scenario`
-
-`@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), unused until a scenario runs. The text zoom buttons (`meta.zoom`) float over its top right corner.
-
-On the left is the list of **scenarios**. Beside it is the one chosen (`meta.entryKey`, `scenario/{key}`). Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
-
 ## The scenarios
 
-As yet each is a stub in `ui/scenario/src/scenarios.ts`, its card listing its steps.
+As yet each is a design, played in pieces by hand (`act`). None has a panel.
 
 | Scenario | Npcs | Status |
 | --- | --- | --- |
@@ -110,7 +104,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph` (`docs/npc-graphs.md`).
 
-`scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
+`scripts/src/vite-plugin-scenario.ts` provides them:
 
 | | DEV | production |
 |---|---|---|
@@ -120,7 +114,7 @@ Authored in DEV and shipped as data. One JSON file per entry, `packages/media/sr
 
 A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, kinds included, so a schema edit needs no restart. An edit to the plugin itself does.
 
-The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator uses them without depending on the panel.
+The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator and jsh use them without depending on a panel.
 
 ## Graphs
 

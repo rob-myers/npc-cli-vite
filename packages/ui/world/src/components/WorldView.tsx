@@ -1752,7 +1752,7 @@ export function WorldView(props: React.PropsWithChildren) {
   useEffect(() => void w.menu.update?.(), [state.pixelRatio.used]); // `{}` until WorldMenu mounts
 
   return (
-    <div className="size-full" ref={ref}>
+    <div className="unzoom size-full" ref={ref}>
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
         // inherited by the canvas, whose own cursor is set only whilst dragged. Aiming, a click fires

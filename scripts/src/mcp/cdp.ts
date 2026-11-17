@@ -1,5 +1,4 @@
 import { spawn } from "node:child_process";
-import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -207,14 +206,9 @@ export function sleep(ms: number) {
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ansi escapes
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 
-const canaryPath = "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary";
-
-/**
- * Chrome Canary if installed, else the usual Chrome.
- * Canary has its own Dock icon, so Cmd-Tab reaches its window.
- */
+/** The usual Chrome. Its own `--user-data-dir` makes it a separate instance beside the user's */
 function getChromePath() {
-  return fs.existsSync(canaryPath) ? canaryPath : "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 }
 
 type CdpTarget = { type: string; url: string; webSocketDebuggerUrl: string };

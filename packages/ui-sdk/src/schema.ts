@@ -8,10 +8,9 @@ const mirrored: Record<UiRegistryKey, true> = {
   Audio: true,
   Blog: true,
   Decorator: true,
-  Jobs: true,
   Jsh: true,
   MapEdit: true,
-  Scenario: true,
+  SkipNet: true,
   Tabs: true,
   Template: true,
   World: true,
@@ -38,6 +37,8 @@ const FlatBaseUiMetaSchema = z.looseObject({
   parentId: z.string().optional(),
   /** e.g. tab header */
   title: z.string(),
+  /** Its tab's content is scaled by this (CSS `zoom`) */
+  zoom: z.number().optional(),
   /** UI class identifier */
   uiKey: z.literal(keys(mirrored)),
 });

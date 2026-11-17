@@ -50,13 +50,10 @@
       "path": "./packages/graph"
     },
     {
-      "path": "./packages/ui/jobs"
-    },
-    {
       "path": "./packages/ui/decorator"
     },
     {
-      "path": "./packages/ui/scenario"
+      "path": "./packages/ui/skip-net"
     },
     {
       "path": "./packages/ui/audio"

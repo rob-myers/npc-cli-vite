@@ -37,6 +37,9 @@ export default function NpcBubbles() {
         }
         state.update();
       },
+      dropLine(npcKey) {
+        if (state.lines.delete(npcKey)) state.sync(npcKey);
+      },
       missChunk(npcKey, chunk) {
         const line = state.lines.get(npcKey);
         if (line === undefined) return;
@@ -45,6 +48,7 @@ export default function NpcBubbles() {
       },
       onTick(delta) {
         for (const [npcKey, line] of state.lines) {
+          if (line.paused) continue;
           line.t += delta;
           if (line.t >= line.end) {
             state.lines.delete(npcKey);
@@ -116,6 +120,7 @@ export default function NpcBubbles() {
           t: 0,
           end,
           held: hold,
+          paused: false,
           page: 0,
           said: 0,
           unheard: new Set(),
@@ -130,6 +135,10 @@ export default function NpcBubbles() {
         line.el?.animate([{ transform: "scale(1)" }, { transform: "scale(1.03)" }, { transform: "scale(1)" }], {
           duration: wordPulseMs,
         });
+      },
+      setPaused(npcKey, paused) {
+        const line = state.lines.get(npcKey);
+        if (line !== undefined) line.paused = paused;
       },
       setShown(npcKey, shown) {
         if (shown === !state.hidden.has(npcKey)) return;
@@ -183,7 +192,7 @@ export default function NpcBubbles() {
   return (
     <div
       ref={(el) => void (state.el = el)}
-      className="pointer-events-none absolute inset-0 z-10 select-none overflow-hidden"
+      className="unzoom pointer-events-none absolute inset-0 z-10 select-none overflow-hidden"
     >
       {npcKeys.map((npcKey) => (
         <NpcBubble
@@ -253,7 +262,6 @@ function SaidBubble({ line, elRef }: { line: Line; elRef: (el: HTMLDivElement | 
   return (
     <div
       ref={elRef}
-      data-preview={line.forPlayer ? "" : undefined}
       className="said-bubble mb-1.5 w-max max-w-64 rounded-xl border border-white/30 bg-black/75 px-2.5 py-1 text-[13px] text-white/95"
     >
       {line.comms && <MicrophoneIcon weight="bold" className="mr-1 inline size-3 align-[-1px] text-white/60" />}
@@ -334,6 +342,8 @@ export type State = {
   /** The thought last read off each, and the seconds it has left */
   thoughts: Map<string, Thought>;
   delete(...npcKeys: string[]): void;
+  /** Their line goes at once, any thought kept */
+  dropLine(npcKey: string): void;
   /** The player missed `chunk` of the line `npcKey` is saying: it shows as "…" */
   missChunk(npcKey: string, chunk: number): void;
   /** Lines run down whilst unpaused — see `World`'s `onTick` */
@@ -353,6 +363,8 @@ export type State = {
   ): void;
   /** Word `i` is said: it lights, and the bubble swells */
   sayWord(line: Line, i: number): void;
+  /** Holds their line mid-way, e.g. whilst `say` is suspended */
+  setPaused(npcKey: string, paused: boolean): void;
   setShown(npcKey: string, shown: boolean): void;
   /** Their bubble as it should be: a line, a thought, both, or gone */
   sync(npcKey: string): void;
@@ -373,6 +385,8 @@ type Line = {
   /** `Infinity` whilst `held` */
   end: number;
   held: boolean;
+  /** Held mid-way: `t` stands still */
+  paused: boolean;
   page: number;
   /** How many of its words are said */
   said: number;

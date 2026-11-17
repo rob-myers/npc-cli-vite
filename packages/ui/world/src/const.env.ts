@@ -287,8 +287,8 @@ export const MAX_ROOM_LABELS = 32;
 export const MAX_ROOM_LABEL_INSTANCES = 256;
 export const roomLabel = {
   /** How big one stands in the world (metres) */
-  width: 1.6,
-  height: 0.4,
+  width: 1.2,
+  height: 0.3,
   /** How long they take to come in, once the first boot's reveal has settled */
   revealMs: 0,
   /** How far out of the zoom's travel it starts to show: nearer, the room speaks for itself */

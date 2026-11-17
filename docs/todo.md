@@ -1,22 +1,20 @@
 # TODO
 
-- 🚧 JobsLibrary -> Scenarios -> NpcBehave
-  - ✅ remove characters
-  - ✅ move graphs into Decorator
-    - modal shows graphs from other levels
-  - 🚧 graphs always directed
-  - 🚧 graphs from other maps can be instantiated
-  - Decorator drag spawn supports doables
-  - change conversations to SCP e.g. extract from site
-    - abstract extra ui e.g. can see npc
-  - Scenarios include low-level behaviours e.g. npc-inventory?
-    - ✅ can `give rob item:book` and `take book from:rob`
-  - move sidestep debug ui here
-  - tldr only contains most common
-  - label only (code viewable by running)
-  - individual persisted params with history
-  - move
-  - 🚧 return to Scenario and start acting them out
+- 🚧 JobsLibrary -> Scenarios -> SkipNet
+  - ✅ `SkipNet` has own customisable layout (sub-allotment)
+  - ✅ move sidestep debug ui here
+  - ✅ move JobsLibrary into SkipNet
+  - ✅ can instantiate Jobs in SkipNet
+  - 🚧 start npc-docs
+    - 🚧 use mdx
+    - 🚧 e.g. npc-controls, npc-player, npc-inventory
+    - 🚧 e.g. npc-hide-n-seek, npc-patrol, npc-sidestep
+    - restyle SkipNet to look separate
+      - https://scipnet-terminal.web.app/
+  - ❌ tldr only contains most common
+    - label only (code viewable by running)
+    - individual persisted params with history
+  - ❌ return to Scenario and start acting them out
     - ✅ support `act {npcKey}` format
       - `act kate count:3 down` or `act count kate from:3`
       - `act kate avoid:rob`
@@ -35,8 +33,10 @@
         - `sc save graph/test ...`
     - meeting-in-secret sketch
     - breach-and-clear sketch
+  - narrator ui
+  - change command `sc`
+
 - Blog component is list of videos
-- narrator ui
 
 After vid:
 
@@ -52,19 +52,14 @@ After vid:
 - saw phaser lowered through closed door when nearly entered
 - initial World load slowdown so allotment responsive
 - sidestep responsiveness?
+- decorator inspector toggles off/on on world pause via escape?
+- experiment with WebMCP + WebMCP Tools Chrome Extension
+  - https://aistudio.google.com/api-keys
+- phaser also shown in sense-mode
 
 ## World
 
 ### Animation and Npc
-
-- ✅ fix lowered phaser going through a closed door
-  - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
-
-- ❌ refine psi breathing
-  - do lungs/diaphragm actually move like that?
-- ❌ skin remapping
-  - currently only have skinIndex
-  - could support mix-and-match body parts
 
 ### Camera
 
@@ -85,8 +80,6 @@ After vid:
   - ✅ demo_back_off
 
 - NpcAnimation has too many properties
-
-- ❌ clean up unused parts of WorldMenu theme (textarea)
 
 ### Decor
 
@@ -139,12 +132,7 @@ After vid:
 
 ### Unorganised Bugs
 
-- ❌ npc labels should be invisible during object-pick
-
 ### Worker
-
-- 🚧 consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
-  - ✅ demo_back_off
 
 ### WorldSpeech
 
@@ -168,21 +156,6 @@ After vid:
   - 🚧 brighter (1x global, 0.7x npc)
 
 ## Decorator
-
-- 🚧 Decorator refinements
-  - ✅ can tilt e.g. screen, switch
-  - ✅ Decorator can resize rect/circle/points
-  - ✅ Decorator has better icon for points
-  - ✅ Decorator dynamic decor has meta.shown
-  - ✅ improve default decor point icon (not warn)
-  - ✅ contextmenu
-    - ✅ for background (create)
-    - ✅ decor (edit)
-  - ✅ key to select tool: Esc, p, r, c, q
-  - ✅ can set 3d height 
-    - live update of control
-  - 🚧 book, box, key
-    - ✅ `book`, `box`, `keycard`, `phaser` decor, carried via `meta.item`
 
 ## Inventory
 

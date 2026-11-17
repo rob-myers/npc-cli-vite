@@ -9,14 +9,15 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { queryClientApi } from "./query-client";
 import { routeTree } from "./routeTree.gen";
+import { hasWebMcp, isWebMcpOn } from "./web-mcp";
 
 if (import.meta.env.DEV) {
   /** On first use, not at boot, so the app's own load order is untouched — see `docs/mcp.md` */
   (window as unknown as { __devMcpLoad(): Promise<unknown> }).__devMcpLoad = () => import("./dev-mcp-hooks");
 }
 
-if ("modelContext" in document) {
-  void import("./web-mcp-tools");
+if (hasWebMcp() && isWebMcpOn()) {
+  void import("./web-mcp-tools"); // registers its tools as it loads
 }
 
 const router = createRouter({

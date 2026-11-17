@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" width="760" height="360" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e0b050"/></marker><marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa0a6"/></marker></defs>
+<rect width="760" height="360" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">turns pivot on a point, from above</text>
+<circle cx="170" cy="170" r="110" fill="none" stroke="#7a8290" stroke-dasharray="6 5" opacity="0.5"/>
+<circle cx="270" cy="190" r="135" fill="none" stroke="#5aa0f0" stroke-dasharray="6 5" opacity="0.5"/>
+<line x1="240.70663706551932" y1="254.26488874308757" x2="241.24644055989074" y2="327.222760849362" stroke="#e0b050" stroke-width="2" marker-end="url(#amber)"/>
+<circle cx="170" cy="170" r="13" fill="#7a8290"/><text x="170" y="175" fill="#10131a" font-size="13" text-anchor="middle" font-weight="700">T</text>
+<circle cx="270" cy="190" r="13" fill="#5aa0f0"/><text x="270" y="195" fill="#10131a" font-size="13" text-anchor="middle" font-weight="700">P</text>
+<circle cx="170" cy="280" r="13" fill="#e6e6e6"/><text x="170" y="285" fill="#10131a" font-size="13" text-anchor="middle" font-weight="700">C</text>
+<circle cx="240.70663706551932" cy="254.26488874308757" r="9" fill="#7a8290"/><text x="240.70663706551932" y="259.26488874308757" fill="#10131a" font-size="13" text-anchor="middle" font-weight="700"></text>
+<circle cx="251.24644055989074" cy="323.222760849362" r="9" fill="#5aa0f0"/><text x="251.24644055989074" y="328.222760849362" fill="#10131a" font-size="13" text-anchor="middle" font-weight="700"></text>
+<text x="170" y="150" fill="#9aa0a6" font-size="12" text-anchor="middle">target</text>
+<text x="288" y="172" fill="#5aa0f0" font-size="12" text-anchor="start">pivot</text>
+<text x="254.70663706551932" y="272.26488874308757" fill="#9aa0a6" font-size="12" text-anchor="start">turned about T</text>
+<text x="265.24644055989074" y="327.222760849362" fill="#5aa0f0" font-size="12" text-anchor="start">turned about P</text>
+<text x="480" y="110" fill="#9aa0a6" font-size="12" text-anchor="start">rotateAbout names the pivot: WorldView</text>
+<text x="480" y="126" fill="#9aa0a6" font-size="12" text-anchor="start">gives the zoom crosshair whilst it shows.</text>
+<text x="480" y="166" fill="#9aa0a6" font-size="12" text-anchor="start">The same turn about P and about T leaves</text>
+<text x="480" y="182" fill="#9aa0a6" font-size="12" text-anchor="start">position - target the same, so the two</text>
+<text x="480" y="198" fill="#e0b050" font-size="12" text-anchor="start">differ by a pure translation (amber),</text>
+<text x="480" y="214" fill="#9aa0a6" font-size="12" text-anchor="start">which update applies (slideAboutPivot).</text>
+<text x="480" y="254" fill="#9aa0a6" font-size="12" text-anchor="start">No pivot named: the turn is about T.</text>
+</svg>

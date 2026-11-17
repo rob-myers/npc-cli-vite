@@ -309,8 +309,8 @@ declare namespace JshCli {
     skins?: string[];
   };
 
-  /** A debug item mounted on the hud from outside the World, e.g. by jsh, shown in the bar whilst hud debug is on */
-  type HudDebugItem = { key: string; title: string; Component: import("react").ComponentType };
+  /** An item mounted from outside the World, e.g. by jsh, which a SkipNet pane shows */
+  type SkipNetItem = { key: string; title: string; Component: import("react").ComponentType };
 
   type MoveOpts = {
     npcKey: string;

@@ -65,6 +65,7 @@ import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
+import useWorldSkipNet from "./use-world-skip-net";
 import Walls from "./Walls";
 import WorldHud from "./WorldHud";
 import { WorldMenu } from "./WorldMenu";
@@ -168,6 +169,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       // gltf is pending from the outset, else the first map could settle without npcs
       pending: { gltf: true },
       settledMapKey: null,
+      wasReadyFor: new Set(),
       r3f: null as any,
       r3fStore: null as any,
 
@@ -198,6 +200,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npcFocus: null as any,
       pickMenu: null as any,
       shields: null as any,
+      skipNet: null as any,
       spots: null as any,
       roomLabels: null as any,
       shadows: null as any,
@@ -267,8 +270,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       isMapChanging() {
         return state.settledMapKey !== state.mapKey;
       },
-      isReady(_connectionKey) {
-        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+      isReady(connectionKey) {
+        const ready = !!state.assets && state.nav !== emptyTiledNavmeshResponse;
+        if (ready && connectionKey !== undefined && !state.wasReadyFor.has(connectionKey)) {
+          state.wasReadyFor.add(connectionKey);
+          state.hud?.update();
+        }
+        return ready;
       },
       async loadDecorImages() {
         return await Promise.all(
@@ -295,6 +303,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
         state.e.postNpcTick();
+        state.speech?.onTick(delta);
         state.bubble?.onTick(delta);
         state.view.followPlayer(realDelta);
       },
@@ -445,6 +454,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useWorldEvents(state);
   useWorldPlayer(state);
   useWorldNet(state);
+  useWorldSkipNet(state);
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
@@ -527,7 +537,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   return (
     <WorldContext.Provider value={state}>
-      <div ref={state.ref("rootEl")} className="relative size-full">
+      {/* layers placed over the 3D view undo their tab's zoom, so they line up with it */}
+      <div ref={state.ref("rootEl")} className="relative size-full [&>.unzoom]:[zoom:calc(1/var(--tab-zoom,1))]">
         {state.rootEl && (
           <WorldView>
             <ambientLight intensity={ambientLightIntensity} color="#fff" />
@@ -670,6 +681,7 @@ export type State = {
   npcFocus: UseStateRef<import("./NpcFocus").State>;
   pickMenu: UseStateRef<import("./PickMenu").State>;
   shields: UseStateRef<import("./Shields").State>;
+  skipNet: UseStateRef<import("./use-world-skip-net").State>;
   /** The spots overlay, mounted by `Debug` */
   spots: UseStateRef<import("./SpotOverlay").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
@@ -694,6 +706,8 @@ export type State = {
 
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
+  /** The connectionKeys `isReady` has said yes to */
+  wasReadyFor: Set<string>;
 
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
@@ -704,6 +718,7 @@ export type State = {
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;
   isPlaygroundMap(): boolean;
+  /** Provide connectionKey to dismiss "disconnected" toast */
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
   /** Announce the map once its pending keys stop changing */

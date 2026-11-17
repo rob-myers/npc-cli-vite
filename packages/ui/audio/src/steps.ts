@@ -19,7 +19,7 @@ export const audioRanges: Record<AudioKey, [number, number, number]> = {
 export const audioUnits: Partial<Record<AudioKey, string>> = {};
 
 /** Marks a saved config. Bumped when the defaults change, so a desk saved against older ones starts afresh */
-export const audioConfigVersion = 7;
+export const audioConfigVersion = 8;
 
 /** Only the settings of `config` that differ from `audioDefaults`, which is what a desk saves */
 export function audioChanges(config: AudioConfig) {

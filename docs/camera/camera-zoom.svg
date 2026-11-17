@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 306" width="760" height="306" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e0b050"/></marker><marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa0a6"/></marker></defs>
+<rect width="760" height="306" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">zoom: two stops, and only a pure pinch zooms</text>
+<line x1="110" y1="110" x2="650" y2="110" stroke="#9aa0a6" stroke-width="2"/>
+<circle cx="110" cy="110" r="10" fill="#7a8290"/>
+<circle cx="650" cy="110" r="10" fill="#5aa0f0"/>
+<text x="110" y="142" fill="#e6e6e6" font-size="12" text-anchor="middle">far stop</text>
+<text x="110" y="158" fill="#9aa0a6" font-size="12" text-anchor="middle">maxDistance</text>
+<text x="110" y="174" fill="#9aa0a6" font-size="12" text-anchor="middle">zoomProgress 0</text>
+<text x="650" y="142" fill="#5aa0f0" font-size="12" text-anchor="middle">near stop</text>
+<text x="650" y="158" fill="#9aa0a6" font-size="12" text-anchor="middle">minDistance</text>
+<text x="650" y="174" fill="#9aa0a6" font-size="12" text-anchor="middle">zoomProgress 1</text>
+<line x1="380.0" y1="84" x2="380.0" y2="136" stroke="#7a8290" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="380.0" y="154" fill="#9aa0a6" font-size="12" text-anchor="middle">half way</text>
+<circle cx="272.0" cy="110" r="7" fill="#e0b050"/>
+<line x1="260.0" y1="88" x2="132" y2="88" stroke="#e0b050" stroke-width="1.5" marker-end="url(#amber)"/>
+<text x="286.0" y="84" fill="#e0b050" font-size="12" text-anchor="start">let go here: eases to the nearer stop, once input pauses (zoomSettleMs)</text>
+<rect x="110" y="236" width="189.0" height="28" fill="#1f2d42" stroke="#5aa0f0"/>
+<rect x="299.0" y="236" width="351.0" height="28" fill="#262a31" stroke="#3a404a"/>
+<text x="204.5" y="255" fill="#8cc0ff" font-size="13" text-anchor="middle" font-weight="600">pinch: zooms</text>
+<text x="474.5" y="255" fill="#e6e6e6" font-size="13" text-anchor="middle">drift: turns</text>
+<text x="110" y="284" fill="#9aa0a6" font-size="12" text-anchor="middle">0</text>
+<text x="299.0" y="284" fill="#9aa0a6" font-size="12" text-anchor="middle">pinchPurity 0.35</text>
+<text x="650" y="284" fill="#9aa0a6" font-size="12" text-anchor="middle">1</text>
+<text x="24" y="220" fill="#9aa0a6" font-size="12" text-anchor="start">two fingers: twoFingerRotateRatio, the smoothed share of centroid motion over spread</text>
+</svg>

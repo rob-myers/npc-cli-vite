@@ -10,10 +10,12 @@ what works as TypeScript, run it, and see what happened.
   lists it as `npc-cli`.
 - On first use it attaches to Chrome on CDP port `NPC_MCP_CDP_PORT` (9382). If none is running, it
   launches a visible one with its own profile, and opens the dev page there.
-- That Chrome is Chrome Canary if installed, else a second instance of your usual Chrome.
-  - Canary has its own Dock icon and Cmd-Tab entry. Install it with `brew install --cask google-chrome@canary`.
-  - Unlike Chrome for Testing, it can sign in to Google, so Gemini in Chrome works there.
-  - A second usual Chrome shares its app with yours, so the Dock and Cmd-Tab bring yours forward.
+- That Chrome is a second instance of your usual Chrome, kept apart from yours by its own profile.
+  - Not another Chrome. Each has had an issue:
+    - **Chrome Canary** drew at 60fps where the usual Chrome drew 120fps, on the same Mac (Canary 160, Chrome 156).
+      Unexplained. Both were on battery in Low Power Mode.
+    - **Chrome for Testing** cannot sign in to Google, so it has no Gemini in Chrome ("Ask Gemini").
+  - It shares its app with yours, so the Dock and Cmd-Tab may bring yours forward.
   - Its launch flags stop Chrome throttling the page whilst its window is hidden or covered.
   - WebMCP is on in its profile, set by hand once: see [WebMCP](#webmcp).
 - A windowless Chrome may still hold the port, e.g. one relaunched with `--no-startup-window --restart`.
@@ -24,7 +26,7 @@ what works as TypeScript, run it, and see what happened.
 curl -s http://127.0.0.1:9382/json/version
 
 # If MCP not started, do what `openPage` in `cdp.ts` does
-"/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary" --remote-debugging-port=9382 \
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9382 \
   --user-data-dir="$TMPDIR/npc-cli-mcp-chrome" --no-first-run --disable-background-timer-throttling \
   --disable-backgrounding-occluded-windows --disable-renderer-backgrounding \
   --window-size=1400,900 http://localhost:5173/ &
@@ -32,13 +34,13 @@ curl -s http://127.0.0.1:9382/json/version
 # If one is running but has no window, ask it for one on the dev page:
 curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
 ```
-- Canary and the usual Chrome share the profile `$TMPDIR/npc-cli-mcp-chrome`, so its saved data and sign-in carry over.
-  Canary, being newer, upgrades it, and the usual Chrome then warns.
+- Its profile is `$TMPDIR/npc-cli-mcp-chrome`, so its saved data and sign-in carry over between launches.
+  One a newer Chrome has opened, e.g. Canary, makes an older one warn: delete the folder to start afresh.
 
 ## WebMCP
 
 `packages/app/src/web-mcp-tools.ts` offers the jsh terminals to a browser agent through WebMCP
-(`document.modelContext`). `main.tsx` loads it only where that exists, in DEV and production.
+(`document.modelContext`), once switched on in the main menu: **WebMCP: on**, saved in localStorage (`web-mcp`, `src/web-mcp.ts`). It is off by default, and greyed out where the browser has no WebMCP. `main.tsx` loads it at boot only if on, in DEV and production. Switched off, the tools are unregistered.
 
 - `list_terminals` gives each open tty's key, and whether it is shown or busy.
 - `write_to_terminal {line, tty?, waitMs?}` types a line into a tty, by default the one shown, and returns what it printed.
@@ -48,7 +50,7 @@ Where it is on:
 
 - **Production**: by the origin trial, whose token goes in `index.html` as `<meta http-equiv="origin-trial" content="…">`.
 - **localhost**: by the flag `chrome://flags/#enable-webmcp-testing` ("WebMCP for testing"), set once per profile.
-  - For the MCP's Canary, set it, then quit Canary and let the next MCP call relaunch it.
+  - For the MCP's Chrome, set it, then quit that Chrome and let the next MCP call relaunch it.
     Chrome's own Relaunch button keeps its old command line.
   - It is not a launch flag (`--enable-blink-features=WebMCP`), which shows an "unsupported flag" banner.
   - The profile lives in `$TMPDIR`, so set it again if macOS clears it.
@@ -169,13 +171,13 @@ The Claude Code CLI shows the input inline, and `claude --resume` opens the same
 
 ### "mcp testing"
 
-The World's busy overlay says "mcp testing" from Claude's first call in a turn until the turn ends
-(`driving` in `dev-mcp-hooks.ts`).
+A banner at the top of the page says "mcp testing" from Claude's first call in a turn until the turn ends
+(`driving` in `dev-mcp-hooks.ts`). It is a plain element on `document.body` (`#dev-mcp-banner`), apart from any World.
 
 - Every call starts it, except `console`, `shot` and a `click` at client coordinates.
 - A `Stop` hook in `.claude/settings.local.json` ends it. The hook posts to `/api/dev-mcp/turn-end`, and
   `vite-plugin-dev-mcp` passes that to the page as the HMR event `dev-mcp:turn-end`.
-- A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the overlay says "mcp compacting" until
+- A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the banner says "mcp compacting" until
   Claude's next call or the turn's end.
 
 ### The user's own input
@@ -236,7 +238,7 @@ view). So check with `query` what is actually stale before reaching for a reload
 | A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
 | `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
 | `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |
-| Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => { w.view.busy = null; w.view.update(); }` hides the overlay. Ask the user to reload |
+| Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => document.getElementById("dev-mcp-banner")?.remove()` hides the banner. Ask the user to reload |
 
 Touching a file does not help: Vite sends no update for a file whose content is unchanged. So touching
 `NPCs.tsx` does not bump its query key.

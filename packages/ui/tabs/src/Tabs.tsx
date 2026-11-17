@@ -1,13 +1,20 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
+import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
-import { BasicPopover, cn, useStateRef } from "@npc-cli/util";
+import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { DotsThreeOutlineVerticalIcon, PlayCircleIcon, PlusCircleIcon } from "@phosphor-icons/react";
+import {
+  DotsThreeOutlineIcon,
+  MinusIcon,
+  PlayCircleIcon,
+  PlusCircleIcon,
+  PlusIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
@@ -250,6 +257,11 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             data-tab-content={tab.id}
             tabIndex={-1}
             className={cn("size-full outline-none", tab.id !== meta.currentTabId && "hidden")}
+            style={
+              tab.zoom === undefined || (uiRegistry[tab.uiKey] as UiPackageDef).ownZoom
+                ? undefined
+                : ({ zoom: tab.zoom, "--tab-zoom": tab.zoom } as React.CSSProperties)
+            }
           >
             {byId[tab.id] && meta.currentTabId === tab.id && (
               <portals.OutPortal key={tab.id} node={byId[tab.id].portal.portalNode} />
@@ -288,7 +300,6 @@ function TabHeaderItem({
     tabEl: null as HTMLDivElement | null,
     isDragging: false,
     isDropTarget: false,
-    confirmClose: false,
   }));
 
   useEffect(() => {
@@ -376,43 +387,10 @@ function TabHeaderItem({
 
         {isCurrentTab && (
           <>
-            <BasicPopover
-              trigger={
-                <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
-              }
-              triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
-              className="bg-gray-700 py-0.5 px-1 flex flex-col"
-              positionerClassName="z-10000"
-              arrowClassName="fill-gray-700"
-              side="bottom"
-              sideOffset={0}
-              onOpenChange={(open) => !open && state.set({ confirmClose: false })}
-            >
-              <div className="flex items-center gap-2 px-2 py-1">
-                <button
-                  type="button"
-                  className={cn(
-                    "cursor-pointer text-sm",
-                    state.confirmClose ? "text-red-400 hover:text-red-300" : "text-white/80 hover:text-white",
-                  )}
-                  onPointerDown={() => {
-                    if (state.confirmClose) {
-                      state.set({ confirmClose: false });
-                      onDeleteTab();
-                    } else {
-                      state.set({ confirmClose: true });
-                    }
-                  }}
-                >
-                  {state.confirmClose ? "confirm" : "close"}
-                </button>
-              </div>
-            </BasicPopover>
-
             {tab.pausable === true && (
               <button
                 type="button"
-                className="mr-0.5"
+                className="ml-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
                   uiStoreApi.setUiMeta(tab.id, (draft) => {
@@ -427,6 +405,46 @@ function TabHeaderItem({
                 />
               </button>
             )}
+            <BasicPopover
+              trigger={<DotsThreeOutlineIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />}
+              triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
+              className={tabMenuClass}
+              positionerClassName="z-10000"
+              arrowClassName="hidden"
+              side="right"
+              anchor={state.tabEl} // beside the tab, its underline included, so it hides the next tab
+              align="center"
+              sideOffset={0}
+            >
+              <button type="button" title="close tab" className={popoverButtonClass} onPointerDown={onDeleteTab}>
+                <XIcon className="size-3.5" />
+              </button>
+              <span className="self-stretch w-px my-1 bg-on-background/15" />
+              <button
+                type="button"
+                title="zoom out"
+                className={popoverButtonClass}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, -zoomStep)}
+              >
+                <MinusIcon className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                title="reset zoom"
+                className={cn(popoverButtonClass, "w-10 tabular-nums")}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, 1 - (tab.zoom ?? 1))}
+              >
+                {Math.round((tab.zoom ?? 1) * 100)}%
+              </button>
+              <button
+                type="button"
+                title="zoom in"
+                className={popoverButtonClass}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, zoomStep)}
+              >
+                <PlusIcon className="size-3.5" />
+              </button>
+            </BasicPopover>
           </>
         )}
       </div>
@@ -468,6 +486,26 @@ function moveTab(
   });
   return sourceWasEmptied;
 }
+
+/** Scales a tab's content by `by` more, within `zoomRange` */
+function zoomTab(uiStoreApi: TabHeaderItemProps["uiStoreApi"], tabId: string, by: number) {
+  uiStoreApi.setUiMeta(tabId, (draft) => {
+    const zoom = Math.round(((draft.zoom ?? 1) + by) * 10) / 10;
+    const clamped = Math.min(Math.max(zoom, zoomRange[0]), zoomRange[1]);
+    if (clamped === 1) delete draft.zoom;
+    else draft.zoom = clamped;
+  });
+}
+
+/** A row beside the tab, as high as it */
+const tabMenuClass = tw(
+  "h-(--anchor-height) p-0.5 flex items-center gap-0.5 rounded-md bg-button-background text-on-background text-xs border-on-background/15 shadow-lg shadow-black/20 dark:shadow-black/50",
+);
+const popoverButtonClass = tw(
+  "grid place-items-center size-6 rounded cursor-pointer text-on-background/70 transition-colors hover:bg-on-background/10 hover:text-on-background",
+);
+const zoomStep = 0.1;
+const zoomRange = [0.5, 2] as const;
 
 const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });
 
