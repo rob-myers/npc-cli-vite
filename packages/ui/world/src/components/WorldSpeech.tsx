@@ -29,7 +29,7 @@ export function WorldSpeech() {
       panelTab: "comms",
       history: [],
       menuItems: [],
-      minY: 40,
+      minY: 60,
       nextId: 0,
       thoughtAt: 0,
       unread: false,
