@@ -16,6 +16,7 @@ export function BasicPopover(props: BasicPopoverProps) {
         <Popover.Positioner
           className={props.positionerClassName}
           align={props.align}
+          anchor={props.anchor}
           side={props.side}
           sideOffset={props.sideOffset}
           collisionPadding={props.collisionPadding}
@@ -44,7 +45,7 @@ export function BasicPopover(props: BasicPopoverProps) {
 
 type BasicPopoverProps = Pick<
   React.ComponentProps<typeof Popover.Positioner>,
-  "align" | "collisionPadding" | "side" | "sideOffset"
+  "align" | "anchor" | "collisionPadding" | "side" | "sideOffset"
 > &
   PropsWithChildren<{
     arrowClassName?: string;

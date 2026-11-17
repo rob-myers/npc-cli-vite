@@ -1,7 +1,6 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
-import { Tooltip } from "@base-ui/react/tooltip";
 import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
@@ -9,7 +8,7 @@ import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
-  DotsThreeOutlineVerticalIcon,
+  DotsThreeOutlineIcon,
   MinusIcon,
   PlayCircleIcon,
   PlusCircleIcon,
@@ -299,21 +298,18 @@ function TabHeaderItem({
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
+    /** As tall as the tab, its right edge where the menu starts so that its x opens under the dots */
+    menuAnchor: {
+      getBoundingClientRect() {
+        const tab = state.tabEl?.getBoundingClientRect() ?? new DOMRect();
+        const dots = state.tabEl?.querySelector("[data-base-ui-click-trigger]")?.getBoundingClientRect();
+        const right = dots === undefined ? tab.right : dots.left + dots.width / 2 - menuToXPx;
+        return new DOMRect(right, tab.top, 0, tab.height);
+      },
+    },
     isDragging: false,
     isDropTarget: false,
     confirmClose: false,
-    closeEl: null as HTMLButtonElement | null,
-    /** The zoom button last pressed, which the percentage shows beside */
-    zoomEl: null as HTMLElement | null,
-    zoomTip: false,
-    zoomTipTimer: 0,
-
-    onZoom(el: HTMLElement, by: number) {
-      zoomTab(uiStoreApi, tab.id, by);
-      window.clearTimeout(state.zoomTipTimer);
-      state.zoomTipTimer = window.setTimeout(() => state.set({ zoomTip: false }), zoomTipMs);
-      state.set({ zoomEl: el, zoomTip: true });
-    },
   }));
 
   useEffect(() => {
@@ -401,58 +397,10 @@ function TabHeaderItem({
 
         {isCurrentTab && (
           <>
-            <BasicPopover
-              trigger={
-                <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
-              }
-              triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
-              className="p-0 py-1 flex flex-col items-stretch bg-black text-white border-white/20"
-              positionerClassName="z-10000"
-              arrowClassName="fill-black"
-              side="bottom"
-              sideOffset={0}
-              onOpenChange={(open) => !open && state.set({ confirmClose: false, zoomTip: false })}
-            >
-              <button
-                ref={state.ref("closeEl")}
-                type="button"
-                title={state.confirmClose ? undefined : "close tab"}
-                className={cn(popoverButtonClass, state.confirmClose && "text-red-400 hover:text-red-300")}
-                onPointerDown={() => {
-                  if (state.confirmClose) onDeleteTab();
-                  state.set({ confirmClose: !state.confirmClose });
-                }}
-              >
-                <XIcon className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                title="zoom out"
-                className={popoverButtonClass}
-                onPointerDown={(e) => state.onZoom(e.currentTarget, -zoomStep)}
-              >
-                <MinusIcon className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                title="zoom in"
-                className={popoverButtonClass}
-                onPointerDown={(e) => state.onZoom(e.currentTarget, zoomStep)}
-              >
-                <PlusIcon className="size-3.5" />
-              </button>
-              <SideTip open={state.confirmClose} anchor={state.closeEl}>
-                confirm
-              </SideTip>
-              <SideTip open={state.zoomTip} anchor={state.zoomEl}>
-                {Math.round((tab.zoom ?? 1) * 100)}%
-              </SideTip>
-            </BasicPopover>
-
             {tab.pausable === true && (
               <button
                 type="button"
-                className="mr-0.5"
+                className="ml-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
                   uiStoreApi.setUiMeta(tab.id, (draft) => {
@@ -467,6 +415,63 @@ function TabHeaderItem({
                 />
               </button>
             )}
+            <BasicPopover
+              trigger={<DotsThreeOutlineIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />}
+              triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
+              className={tabMenuClass}
+              positionerClassName="z-10000"
+              arrowClassName="hidden"
+              side="right"
+              anchor={state.menuAnchor} // as tall as the tab, its underline included, so it hides the next tab
+              align="center"
+              sideOffset={0}
+              onOpenChange={(open) => !open && state.set({ confirmClose: false })}
+            >
+              <button
+                type="button"
+                title={state.confirmClose ? "press again to close" : "close tab"}
+                className={popoverButtonClass}
+                onPointerDown={() => {
+                  if (state.confirmClose) onDeleteTab();
+                  state.set({ confirmClose: !state.confirmClose });
+                }}
+              >
+                {/* armed, a small red box around the x */}
+                <span
+                  className={cn(
+                    "grid place-items-center size-5 rounded-sm border",
+                    state.confirmClose ? "border-red-700" : "border-transparent",
+                  )}
+                >
+                  <XIcon className="size-3.5" />
+                </span>
+              </button>
+              <span className="self-stretch w-px my-1 bg-on-background/15" />
+              <button
+                type="button"
+                title="zoom out"
+                className={popoverButtonClass}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, -zoomStep)}
+              >
+                <MinusIcon className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                title="reset zoom"
+                className={cn(popoverButtonClass, "w-10 tabular-nums")}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, 1 - (tab.zoom ?? 1))}
+              >
+                {Math.round((tab.zoom ?? 1) * 100)}%
+              </button>
+              <button
+                type="button"
+                title="zoom in"
+                className={popoverButtonClass}
+                onPointerDown={() => zoomTab(uiStoreApi, tab.id, zoomStep)}
+              >
+                <PlusIcon className="size-3.5" />
+              </button>
+            </BasicPopover>
           </>
         )}
       </div>
@@ -519,32 +524,17 @@ function zoomTab(uiStoreApi: TabHeaderItemProps["uiStoreApi"], tabId: string, by
   });
 }
 
-const popoverButtonClass = tw("grid place-items-center cursor-pointer py-1 px-2 text-white hover:bg-white/20");
+/** From the menu's left edge to its x's centre: its border, padding and half a button */
+const menuToXPx = 1 + 2 + 12;
+/** A row beside the tab, as high as it */
+const tabMenuClass = tw(
+  "h-(--anchor-height) p-0.5 flex items-center gap-0.5 rounded-md bg-button-background text-on-background text-xs border-on-background/15 shadow-lg shadow-black/20 dark:shadow-black/50",
+);
+const popoverButtonClass = tw(
+  "grid place-items-center size-6 rounded cursor-pointer text-on-background/70 transition-colors hover:bg-on-background/10 hover:text-on-background",
+);
 const zoomStep = 0.1;
-/** How long the percentage shows after a zoom press */
-const zoomTipMs = 1200;
 const zoomRange = [0.5, 2] as const;
-
-/** A tip to the right of `anchor`, whilst open */
-function SideTip(props: { anchor: null | HTMLElement; children: React.ReactNode; open: boolean }) {
-  return (
-    <Tooltip.Root open={props.open}>
-      <Tooltip.Portal>
-        <Tooltip.Positioner anchor={props.anchor} side="right" sideOffset={8} className="z-10001">
-          <Tooltip.Popup
-            className={cn(
-              "px-1.5 py-0.5 rounded-sm bg-black text-white border border-white/20 text-xs tabular-nums whitespace-nowrap",
-              "transition-[opacity,translate] duration-150",
-              "data-starting-style:opacity-0 data-starting-style:-translate-x-1 data-ending-style:opacity-0",
-            )}
-          >
-            {props.children}
-          </Tooltip.Popup>
-        </Tooltip.Positioner>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  );
-}
 
 const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });
 
