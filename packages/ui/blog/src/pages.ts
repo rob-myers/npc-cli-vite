@@ -4,7 +4,7 @@ export type MdxModule = { default: MdxContent; title?: string; order?: number };
 
 export type BlogPage = { key: string; title: string; order: number; Content: MdxContent };
 
-// adding or renaming a page forces a full reload, unlike `jobsExamplesPlugin`
+// adding or renaming a page forces a full reload
 const modules = import.meta.glob<MdxModule>("./pages/*.mdx", { eager: true });
 
 export const blogPages: BlogPage[] = Object.entries(modules)

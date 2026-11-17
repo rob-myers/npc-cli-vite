@@ -4,7 +4,6 @@ import { audioDefaultsPlugin } from "@npc-cli/scripts/vite-plugin-audio-defaults
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
 import { buildSheetHashPlugin } from "@npc-cli/scripts/vite-plugin-build-sheet-hash";
 import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
-import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { scenarioPlugin } from "@npc-cli/scripts/vite-plugin-scenario";
 import { skipNetArticlesPlugin } from "@npc-cli/scripts/vite-plugin-skip-net-articles";
@@ -47,7 +46,6 @@ export default defineConfig({
     mapEditApiPlugin(),
     watchAssetsPlugin(),
     spotsPlugin(),
-    jobsExamplesPlugin(),
     skipNetArticlesPlugin(),
     scenarioPlugin(),
     audioDefaultsPlugin(),

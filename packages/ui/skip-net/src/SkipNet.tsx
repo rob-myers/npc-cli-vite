@@ -58,12 +58,9 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       },
       open(content) {
         const { windows } = state.meta;
-        const shown =
-          content.kind === "library"
-            ? undefined
-            : windows.find(
-                (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
-              );
+        const shown = windows.find(
+          (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
+        );
         if (shown !== undefined) return state.bringToFront(shown.id);
         state.setWindows([...windows, newWindow(windows, content)]);
       },

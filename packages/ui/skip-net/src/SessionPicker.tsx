@@ -3,8 +3,8 @@ import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { SkipNetContext } from "./context";
 import { InTitle } from "./desktop/InTitle";
-import type { SessionRunner } from "./library/use-session-runner";
 import type { SkipNetWindow } from "./schema";
+import type { SessionRunner } from "./use-session-runner";
 import type { useWindowSession } from "./use-window-session";
 
 /** In its window's title bar: its session, and whether a run is starting or awaits its World */

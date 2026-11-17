@@ -3,9 +3,9 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { hashText } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type ComponentProps, isValidElement, useContext, useMemo } from "react";
-import { type Example, type SrcSegment, splitExamples, toSegments } from "../library/library";
-import { tokenCss } from "../library/shell-highlight";
 import { ArticleContext } from "./context";
+import { type Example, type SrcSegment, splitExamples, toSegments } from "./shell";
+import { tokenCss } from "./shell-highlight";
 
 /** An article's `pre`: a shell fence's commands run on a click, any other fence is shown as is */
 export function ShellFence(props: ComponentProps<"pre">) {
@@ -26,7 +26,7 @@ function ShellCommands({ src }: { src: string }) {
   const fenceId = `${articleKey}#${(hashText(src) >>> 0).toString(36)}`;
   /** Highlighted once, rather than per render */
   const commands = useMemo(
-    () => splitExamples(fenceId, src.split("\n")).map((example) => ({ example, segments: toSegments(example, {}) })),
+    () => splitExamples(fenceId, src.split("\n")).map((example) => ({ example, segments: toSegments(example) })),
     [fenceId, src],
   );
 

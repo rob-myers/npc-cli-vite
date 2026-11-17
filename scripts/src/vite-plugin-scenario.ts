@@ -18,7 +18,7 @@ const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/world/src/scenario.sche
 /**
  * Provides `packages/media/src/scenario/{kind}/{slug}.json` to the Scenario panel — see `docs/scenarios.md`.
  *
- * Bundled for production, but fetched (and saved) during development, as `jobsExamplesPlugin` does.
+ * Bundled for production, but fetched (and saved) during development.
  */
 export function scenarioPlugin(): Plugin {
   let isDev = false;

@@ -7,7 +7,6 @@
     "./vite-plugin-audio-defaults": "./src/vite-plugin-audio-defaults.ts",
     "./vite-plugin-build-id": "./src/vite-plugin-build-id.ts",
     "./vite-plugin-dev-mcp": "./src/vite-plugin-dev-mcp.ts",
-    "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-skip-net-articles": "./src/vite-plugin-skip-net-articles.ts",
     "./vite-plugin-scenario": "./src/vite-plugin-scenario.ts",
     "./vite-plugin-build-sheet-hash": "./src/vite-plugin-build-sheet-hash.ts",

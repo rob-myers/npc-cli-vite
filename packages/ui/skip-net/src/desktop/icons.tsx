@@ -53,15 +53,6 @@ export function ItemIcon() {
   );
 }
 
-export function LibraryIcon() {
-  return (
-    <svg {...svgProps}>
-      <path d="M5 6h6v21H5zM11 8h6v19h-6z" />
-      <path d="M18 9l5-1.5 4.5 18.5-5 1.5z" />
-    </svg>
-  );
-}
-
 /** How far a touch may move and still open an icon */
 const tapSlopPx = 8;
 

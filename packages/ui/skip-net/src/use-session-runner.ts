@@ -6,7 +6,7 @@ import { useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 
-/** Runs a library's commands in a session, mounting its tty and awaiting its profile first */
+/** Runs an article's commands in a session, mounting its tty and awaiting its profile first */
 export function useSessionRunner(ttyMeta: null | JshUiMeta) {
   const { uiStoreApi } = useContext(UiContext);
 

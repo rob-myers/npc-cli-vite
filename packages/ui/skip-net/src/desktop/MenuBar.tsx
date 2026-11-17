@@ -24,9 +24,6 @@ export function MenuBar() {
           <Menu.Item className={itemClass} onClick={() => state.open({ kind: "folder" })}>
             Open npc Folder
           </Menu.Item>
-          <Menu.Item className={itemClass} onClick={() => state.open({ kind: "library" })}>
-            New Library Window
-          </Menu.Item>
           {state.items.map((item) => (
             <Menu.Item
               key={item.key}

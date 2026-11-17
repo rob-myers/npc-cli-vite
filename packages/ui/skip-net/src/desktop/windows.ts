@@ -79,5 +79,4 @@ const sizes: Record<SkipNetKind, [number, number]> = {
   article: [30, 24],
   folder: [20, 12],
   item: [20, 16],
-  library: [30, 24],
 };

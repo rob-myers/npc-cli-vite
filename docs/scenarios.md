@@ -104,7 +104,7 @@ An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused
 
 Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph` (`docs/npc-graphs.md`).
 
-`scripts/src/vite-plugin-scenario.ts` provides them, as `jobsExamplesPlugin` does its examples:
+`scripts/src/vite-plugin-scenario.ts` provides them:
 
 | | DEV | production |
 |---|---|---|

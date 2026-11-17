@@ -1,8 +1,8 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
-/** What a window shows: the npc folder, an article, the jobs library, or an item jsh mounted on the World */
-export type SkipNetKind = "folder" | "article" | "library" | "item";
+/** What a window shows: the npc folder, an article, or an item jsh mounted on the World */
+export type SkipNetKind = "folder" | "article" | "item";
 
 /** A window's kind, and what it shows */
 export type SkipNetContent = {
@@ -40,12 +40,9 @@ export const SkipNetUiMetaSchema = z.object({
   arrange: z.enum(["free", "tidy"]).default("free"),
   windows: z
     .custom<SkipNetWindow[]>((x) => Array.isArray(x))
-    /** Jobs windows were dropped: jobs are now shown in their tty */
-    .transform((windows) => windows.filter((x) => (x.kind as string) !== "jobs"))
-    .default((): SkipNetWindow[] => [
-      { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
-      { id: "w2", kind: "library", x: 21, y: 1, w: 30, h: 24, z: 2 },
-    ]),
+    /** Saved jobs and library windows are dropped: those kinds are gone */
+    .transform((windows) => windows.filter((x) => (x.kind as string) !== "jobs" && (x.kind as string) !== "library"))
+    .default((): SkipNetWindow[] => [{ id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 }]),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;

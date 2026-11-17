@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { SkipNetUiMetaSchema } from "./schema";
 
 // `moduleDetection: force` means ambient declarations need importing
-import "./library/virtual.d";
+import "./virtual.d";
 
 export default defineUi({
   ui: lazy(() => import("./SkipNet")),
