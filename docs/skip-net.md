@@ -18,7 +18,7 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 `meta.windows` holds each window (`SkipNetWindow`): its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `library` or `item`. A saved `jobs` window is dropped: jobs are shown in their tty (`docs/jsh-jobs.md`).
 
 - **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`).
-- **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`.
+- **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. Its box does it, as does a click on its bar, but not a drag (`clickSlopPx`).
 - **Grow box.** A window resizes from its bottom-right corner, larger on touch.
 - **Info bar.** Under the title, double-ruled (`infoBarClass`): "N items" in the folder, else the window's session (`SessionBar`).
 - **Opening.** A new window is cascaded from the last opened (`newWindow`).

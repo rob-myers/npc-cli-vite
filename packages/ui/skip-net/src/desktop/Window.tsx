@@ -1,6 +1,6 @@
 import { cn, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { SkipNetContext } from "../context";
 import { ItemPane } from "../ItemPane";
@@ -10,7 +10,7 @@ import { FolderWindow } from "./FolderWindow";
 
 /**
  * A window's frame: a title bar to drag it by, with close and windowshade boxes whilst in front.
- * Stacked, every bar has both boxes, and a tap on it folds or unfolds it.
+ * A click on its bar, not a drag, folds or unfolds it. Stacked, every bar has both boxes.
  */
 export function Window(props: {
   front: boolean;
@@ -24,6 +24,8 @@ export function Window(props: {
   const shaded = win.shadedH !== undefined;
   const title = titleOf(win, state.items);
   const boxes = front || stacked;
+  /** Where a press on the bar began, so a drag's release is not a click */
+  const downAt = useRef({ x: 0, y: 0 });
 
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]">
@@ -33,9 +35,12 @@ export function Window(props: {
           stacked ? "cursor-pointer" : "skip-net-drag cursor-grab active:cursor-grabbing",
           !shaded && "border-b border-mac-edge",
         )}
-        onClick={
-          stacked ? (e) => (e.target as HTMLElement).closest("button") === null && state.toggleShade(win.id) : undefined
-        }
+        onPointerDown={(e) => void (downAt.current = { x: e.clientX, y: e.clientY })}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button") !== null) return;
+          if (Math.hypot(e.clientX - downAt.current.x, e.clientY - downAt.current.y) > clickSlopPx) return;
+          state.toggleShade(win.id);
+        }}
       >
         {front && <span className="absolute inset-x-1 inset-y-0.75" style={stripesStyle} />}
         <CloseBox hidden={!boxes} onClose={() => state.close(win.id)} />
@@ -144,6 +149,8 @@ function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
 const boxClass = tw(
   "skip-net-no-drag relative size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title cursor-pointer active:bg-mac-select",
 );
+/** How far a press on a bar may move and still be a click */
+const clickSlopPx = 4;
 /** How long a close box stays armed */
 const confirmMs = 2500;
 /** The front window's title bar is pinstriped */
