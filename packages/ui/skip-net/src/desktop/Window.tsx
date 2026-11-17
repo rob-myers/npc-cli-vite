@@ -25,6 +25,8 @@ export function Window(props: {
   const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
+  /** The front window's bar is taller, its title larger, unless rolled up */
+  const tall = front && !shaded;
   const title = titleOf(win, state.items);
   const frame = useStateRef(
     (): FrameState => ({
@@ -42,7 +44,10 @@ export function Window(props: {
       <header
         className={cn(
           "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
-          big ? "h-9 text-sm" : "h-4.5",
+          big && "text-sm",
+          big ? (tall ? "h-11" : "h-9") : tall ? "h-6" : "h-4.5",
+          // rolling up shrinks its frame at once, so its bar does too
+          !shaded && "transition-[height] duration-150",
           stacked
             ? "cursor-pointer data-dragging:bg-mac-select/10"
             : "skip-net-drag cursor-grab active:cursor-grabbing",
@@ -69,8 +74,9 @@ export function Window(props: {
         <CloseBox big={big} onClose={() => state.close(win.id)} />
         <span
           className={cn(
-            "relative shrink-0 max-w-1/2 px-2 truncate bg-mac-title",
+            "relative shrink-0 max-w-1/2 px-2 truncate bg-mac-title transition-[font-size] duration-150",
             front ? "font-bold" : "text-mac-muted",
+            tall && (big ? "text-base" : "text-sm"),
           )}
         >
           {title}
