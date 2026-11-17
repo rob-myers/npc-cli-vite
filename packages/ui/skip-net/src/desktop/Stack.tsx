@@ -78,14 +78,6 @@ export function Stack() {
 
   useEffect(() => stack.onPointerUp, []);
 
-  if (windows.length === 0) {
-    return (
-      <div className="flex-1 min-h-0 overflow-auto" style={deskStyle}>
-        <DesktopIcons layout="row" />
-      </div>
-    );
-  }
-
   return (
     <div
       className="flex-1 min-h-0 flex flex-col gap-0.5 p-1 overflow-y-auto"
@@ -108,6 +100,8 @@ export function Stack() {
           </div>
         );
       })}
+      {/* with every window folded, the desk shows below their bars */}
+      {ordered.every((win) => win.shadedH !== undefined) && <DesktopIcons layout="row" />}
     </div>
   );
 }

@@ -11,7 +11,7 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 - **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes and its boxes.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
 - **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **npc**, **library**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
-- **The npc folder** (`FolderWindow`) shows an icon per article. Opening one fronts the window already showing it, else opens a new one.
+- **The npc folder** (`FolderWindow`) lists its articles as files: name, when modified, and size (once wide enough). A click opens one, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build.
 
 ## Windows
 

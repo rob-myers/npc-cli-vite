@@ -7,6 +7,7 @@ import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { scenarioPlugin } from "@npc-cli/scripts/vite-plugin-scenario";
+import { skipNetArticlesPlugin } from "@npc-cli/scripts/vite-plugin-skip-net-articles";
 import { spotsPlugin } from "@npc-cli/scripts/vite-plugin-spots";
 import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
@@ -47,6 +48,7 @@ export default defineConfig({
     watchAssetsPlugin(),
     spotsPlugin(),
     jobsExamplesPlugin(),
+    skipNetArticlesPlugin(),
     scenarioPlugin(),
     audioDefaultsPlugin(),
     worldRtcPlugin(),
