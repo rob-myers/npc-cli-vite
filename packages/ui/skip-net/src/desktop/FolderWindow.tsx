@@ -33,7 +33,16 @@ export function FolderWindow() {
                 <DocumentIcon />
                 <span className="truncate">{articleKey}</span>
               </span>
-              <span className="text-mac-muted">{stats ? formatModified(stats.modifiedMs) : "--"}</span>
+              <span className="text-mac-muted">
+                {stats ? (
+                  <>
+                    <span className="@[17rem]:hidden">{formatModified(stats.modifiedMs, true)}</span>
+                    <span className="hidden @[17rem]:inline">{formatModified(stats.modifiedMs)}</span>
+                  </>
+                ) : (
+                  "--"
+                )}
+              </span>
               <span className={cn(sizeClass, "text-mac-muted")}>{stats ? formatSize(stats.bytes) : "--"}</span>
             </button>
           );
@@ -43,12 +52,14 @@ export function FolderWindow() {
   );
 }
 
-/** Today by its time, else by its date */
-function formatModified(ms: number) {
+/** Today by its time, else by its date. `short` drops "Today" and the year, for a narrow window */
+function formatModified(ms: number, short = false) {
   const date = new Date(ms);
-  return date.toDateString() === new Date().toDateString()
-    ? `Today, ${date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`
-    : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  if (date.toDateString() === new Date().toDateString()) {
+    const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    return short ? time : `Today, ${time}`;
+  }
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: short ? undefined : "numeric" });
 }
 
 function formatSize(bytes: number) {
