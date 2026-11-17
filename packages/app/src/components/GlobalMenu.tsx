@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
 import { isTrackingDisabled, setTrackingDisabled } from "@npc-cli/ui-sdk/analytics";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   ArrowCounterClockwiseIcon,
@@ -22,21 +22,6 @@ import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { AboutModal } from "./AboutModal";
 import { countPanes, flattenPanes, resetPanes, splitRoot } from "./pane-service";
-
-const storageKey = "allotment-menu-y";
-const minY = 120;
-const touchDevice = isTouchDevice();
-
-/** same box as WorldSpeech's trigger */
-const triggerCls = touchDevice ? "size-12" : "size-9";
-const triggerPx = touchDevice ? 48 : 36;
-const gearCls = touchDevice ? "size-6" : "size-5";
-const itemCls = cn(
-  "flex items-center gap-2 px-3 text-slate-300 hover:bg-slate-700 cursor-pointer",
-  touchDevice ? "py-2.5 text-sm" : "py-1.5 text-xs",
-);
-const iconCls = "size-4 shrink-0";
-const separatorCls = "my-1 border-t border-slate-700";
 
 export function GlobalMenu() {
   const y = useMotionValue(getInitialY());
@@ -124,27 +109,27 @@ export function GlobalMenu() {
       >
         <Menu.Root open={state.menuOpen} onOpenChange={state.onOpenChange} modal={false}>
           <Menu.Trigger
-            className={cn("grid place-items-center cursor-pointer", triggerCls)}
+            className={cn("grid place-items-center cursor-pointer", triggerClass)}
             render={<span />}
             nativeButton={false}
             onClick={state.onTriggerClick}
             onKeyDown={state.onTriggerKeyDown}
           >
-            <GearIcon className={gearCls} weight="bold" />
+            <GearIcon className={gearClass} weight="bold" />
           </Menu.Trigger>
 
           <Menu.Portal>
             <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
               <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40">
-                <Menu.Item className={itemCls} closeOnClick={false} onClick={() => themeApi.setOther()}>
-                  {theme === "dark" ? <SunIcon className={iconCls} /> : <MoonIcon className={iconCls} />}
+                <Menu.Item className={itemClass} closeOnClick={false} onClick={() => themeApi.setOther()}>
+                  {theme === "dark" ? <SunIcon className={iconClass} /> : <MoonIcon className={iconClass} />}
                   {theme === "dark" ? "Light theme" : "Dark theme"}
                 </Menu.Item>
 
-                <Menu.Separator className={separatorCls} />
+                <Menu.Separator className={separatorClass} />
 
                 {/* a phone has no room for panes side by side */}
-                <div className={cn(itemCls, touchDevice && "hidden", "cursor-default hover:bg-transparent")}>
+                <div className={cn(itemClass, touchDevice && "hidden", "cursor-default hover:bg-transparent")}>
                   Split
                   <span className="ml-auto flex gap-1">
                     <Menu.Item
@@ -153,7 +138,7 @@ export function GlobalMenu() {
                       title="Split side by side"
                       onClick={() => splitRoot(false)}
                     >
-                      <SquareHalfIcon className={iconCls} />
+                      <SquareHalfIcon className={iconClass} />
                     </Menu.Item>
                     <Menu.Item
                       className="p-1 rounded hover:bg-slate-700 cursor-pointer"
@@ -161,27 +146,27 @@ export function GlobalMenu() {
                       title="Split top and bottom"
                       onClick={() => splitRoot(true)}
                     >
-                      <SquareHalfBottomIcon className={iconCls} />
+                      <SquareHalfBottomIcon className={iconClass} />
                     </Menu.Item>
                   </span>
                 </div>
 
                 {paneCount > 1 && (
-                  <Menu.Item className={itemCls} onClick={flattenPanes}>
-                    <StackSimpleIcon className={iconCls} />
+                  <Menu.Item className={itemClass} onClick={flattenPanes}>
+                    <StackSimpleIcon className={iconClass} />
                     Flatten layout
                   </Menu.Item>
                 )}
 
                 <Menu.Item
-                  className={cn(itemCls, state.resetArmed && "text-red-300")}
+                  className={cn(itemClass, state.resetArmed && "text-red-300")}
                   closeOnClick={false}
                   onClick={state.onReset}
                 >
                   {state.resetArmed ? (
-                    <WarningIcon className={iconCls} />
+                    <WarningIcon className={iconClass} />
                   ) : (
-                    <ArrowCounterClockwiseIcon className={iconCls} />
+                    <ArrowCounterClockwiseIcon className={iconClass} />
                   )}
                   {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
                   <span className="grid *:col-start-1 *:row-start-1">
@@ -190,20 +175,20 @@ export function GlobalMenu() {
                   </span>
                 </Menu.Item>
 
-                <Menu.Separator className={separatorCls} />
+                <Menu.Separator className={separatorClass} />
 
-                <Menu.Item className={itemCls} onClick={() => state.set({ aboutOpen: true })}>
-                  <InfoIcon className={iconCls} />
+                <Menu.Item className={itemClass} onClick={() => state.set({ aboutOpen: true })}>
+                  <InfoIcon className={iconClass} />
                   About
                 </Menu.Item>
 
                 {import.meta.env.DEV && (
                   <Menu.Item
-                    className={cn(itemCls, state.trackingOff && "text-slate-500")}
+                    className={cn(itemClass, state.trackingOff && "text-slate-500")}
                     closeOnClick={false}
                     onClick={state.onToggleTracking}
                   >
-                    <ChartLineIcon className={iconCls} />
+                    <ChartLineIcon className={iconClass} />
                     {state.trackingOff ? "Tracking: off" : "Tracking: on"}
                   </Menu.Item>
                 )}
@@ -243,11 +228,32 @@ function useVisualViewportOffset() {
   return offset;
 }
 
+/** Where it was left, else near the top, or the foot on touch, within a thumb's reach */
 function getInitialY() {
+  const defaultY = touchDevice ? window.innerHeight - 2 * minY : 2 * minY;
   try {
-    const stored = Number(localStorage.getItem(storageKey));
-    return Number.isFinite(stored) ? Math.max(minY, stored) : minY;
+    const stored = localStorage.getItem(storageKey);
+    return stored === null || !Number.isFinite(Number(stored)) ? defaultY : Math.max(minY, Number(stored));
   } catch {
-    return minY;
+    return defaultY;
   }
 }
+
+const touchDevice = isTouchDevice();
+
+/** The menu's place, saved under `storageKey`, at least `minY` from the top and foot */
+const storageKey = "allotment-menu-y";
+const minY = 120;
+
+/** Its trigger: the same box as WorldSpeech's */
+const triggerPx = touchDevice ? 48 : 36;
+const triggerClass = touchDevice ? "size-12" : "size-9";
+const gearClass = touchDevice ? "size-6" : "size-5";
+
+/** Its items */
+const itemClass = cn(
+  "flex items-center gap-2 px-3 text-slate-300 hover:bg-slate-700 cursor-pointer",
+  touchDevice ? "py-2.5 text-sm" : "py-1.5 text-xs",
+);
+const iconClass = tw("size-4 shrink-0");
+const separatorClass = tw("my-1 border-t border-slate-700");

@@ -127,7 +127,7 @@ const defaultWorldSettings: WorldSettings = {
   roomLabelsShown: false,
   breathTune: {},
   gmGraphsFilter: "room",
-  menuY: 40,
+  menuY: 80,
   menuWidth: 288,
   menuHeight: 288,
   speechY: 40,
