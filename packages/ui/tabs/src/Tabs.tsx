@@ -298,18 +298,8 @@ function TabHeaderItem({
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
-    /** As tall as the tab, its right edge where the menu starts so that its x opens under the dots */
-    menuAnchor: {
-      getBoundingClientRect() {
-        const tab = state.tabEl?.getBoundingClientRect() ?? new DOMRect();
-        const dots = state.tabEl?.querySelector("[data-base-ui-click-trigger]")?.getBoundingClientRect();
-        const right = dots === undefined ? tab.right : dots.left + dots.width / 2 - menuToXPx;
-        return new DOMRect(right, tab.top, 0, tab.height);
-      },
-    },
     isDragging: false,
     isDropTarget: false,
-    confirmClose: false,
   }));
 
   useEffect(() => {
@@ -422,29 +412,12 @@ function TabHeaderItem({
               positionerClassName="z-10000"
               arrowClassName="hidden"
               side="right"
-              anchor={state.menuAnchor} // as tall as the tab, its underline included, so it hides the next tab
+              anchor={state.tabEl} // beside the tab, its underline included, so it hides the next tab
               align="center"
               sideOffset={0}
-              onOpenChange={(open) => !open && state.set({ confirmClose: false })}
             >
-              <button
-                type="button"
-                title={state.confirmClose ? "press again to close" : "close tab"}
-                className={popoverButtonClass}
-                onPointerDown={() => {
-                  if (state.confirmClose) onDeleteTab();
-                  state.set({ confirmClose: !state.confirmClose });
-                }}
-              >
-                {/* armed, a small red box around the x */}
-                <span
-                  className={cn(
-                    "grid place-items-center size-5 rounded-sm border",
-                    state.confirmClose ? "border-red-700" : "border-transparent",
-                  )}
-                >
-                  <XIcon className="size-3.5" />
-                </span>
+              <button type="button" title="close tab" className={popoverButtonClass} onPointerDown={onDeleteTab}>
+                <XIcon className="size-3.5" />
               </button>
               <span className="self-stretch w-px my-1 bg-on-background/15" />
               <button
@@ -524,8 +497,6 @@ function zoomTab(uiStoreApi: TabHeaderItemProps["uiStoreApi"], tabId: string, by
   });
 }
 
-/** From the menu's left edge to its x's centre: its border, padding and half a button */
-const menuToXPx = 1 + 2 + 12;
 /** A row beside the tab, as high as it */
 const tabMenuClass = tw(
   "h-(--anchor-height) p-0.5 flex items-center gap-0.5 rounded-md bg-button-background text-on-background text-xs border-on-background/15 shadow-lg shadow-black/20 dark:shadow-black/50",
