@@ -12,7 +12,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 - A left drag pans, a right drag turns. Shift, ctrl or alt held swaps them. The middle button zooms.
 - Whilst following, panning is off (`enablePan`), so a left drag turns.
 - On touch, one finger pans and two turn or pinch.
-- Whilst following on touch, one finger turns instead, and a tap still picks. A two-finger drag moves where the player looks (`touchLook`), and a pinch still zooms.
+- Whilst following on touch, one finger turns instead, and a tap still picks. A two-finger drag moves where the player looks (`touchLook`), and a pinch still zooms. Once the fingers have pinched, they look no more until lifted (`touchLookFrom.pinched`).
 
 **Framing** (`w.view.cameraView`, `setCameraView`, `service/camera-view.ts`)
 - Set by its fov and the metres of floor seen top to bottom at each zoom stop, not by the stops' distances: `distanceOfView(view, fov)`.

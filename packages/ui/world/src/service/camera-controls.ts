@@ -128,8 +128,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   lockTouchRotateAxis = false;
   /** Whilst set, a two-finger drag calls it at their centroid, in client px, rather than turning. One finger turns. `WorldView` sets it whilst following */
   touchLook: null | ((clientX: number, clientY: number) => void) = null;
-  /** Where a two-finger look began, in page px, and whether it has since moved enough to be a drag — see `touchLook` */
-  touchLookFrom = { x: 0, y: 0, dragged: false };
+  /**
+   * Where a two-finger look began, in page px, whether it has since moved enough to be a drag, and whether it pinched.
+   * Once pinched, it looks no more until the fingers are lifted — see `touchLook`
+   */
+  touchLookFrom = { x: 0, y: 0, dragged: false, pinched: false };
   /** Whilst true, fingers move nothing: they are firing the player's phaser — see `onFireTouch` */
   holdTouch = false;
   /** How far the fingers have moved since the turn began, in px — see `pickRotateAxis` */
@@ -378,7 +381,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const from = this.touchLookFrom;
       // a drag, not a tap's jitter, which looks once. A pinch's drift looks nowhere
       from.dragged ||= Math.hypot(cx - from.x, cy - from.y) > touchLookDragPx;
-      if (from.dragged === true && this.twoFingerRotateRatio >= pinchPurity) {
+      if (from.dragged === true && from.pinched === false && this.twoFingerRotateRatio >= pinchPurity) {
         this.touchLook?.(this.twoFingerCentroid.x - window.scrollX, this.twoFingerCentroid.y - window.scrollY);
       }
     } else {
@@ -400,6 +403,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         // coordinates, where `setDollyTowards` measures against the element's client rect
         this.setDollyTowards(this.twoFingerCentroid.x - window.scrollX, this.twoFingerCentroid.y - window.scrollY);
         this.addZoomProgress(Math.log(nextDist / prevDist) / pinchLogPerStop);
+        this.touchLookFrom.pinched = true;
       }
       this.u.dollyStart.set(0, nextDist);
     }
@@ -891,7 +895,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.handleTouchStartRotate(); // also uncommits the azimuth snap
       this.handleTouchStartDolly(); // baselines both spread and centroid
       const c = this.twoFingerCentroid;
-      Object.assign(this.touchLookFrom, { x: c.x, y: c.y, dragged: false });
+      Object.assign(this.touchLookFrom, { x: c.x, y: c.y, dragged: false, pinched: false });
       // following, two fingers look and pinch rather than turn
       this.state = this.touchLook !== null ? this.STATE.TOUCH_LOOK : this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
