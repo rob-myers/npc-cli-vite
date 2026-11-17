@@ -702,7 +702,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const shiftPx = rgbShiftPx.near + (rgbShiftPx.far - rgbShiftPx.near) * eased;
         state.rgbShiftFx.setAmount(shiftPx / Math.max(1, w.r3f.size.width));
 
-        // following, the camera needs no pan: one finger turns it, and two move where the player looks
+        // following, the camera needs no pan, so one finger moves where the player looks instead
         controls.touchLook = state.follow === true ? w.player.dragLookTowards : null;
 
         if (state.cameraMode !== "embodied") return;

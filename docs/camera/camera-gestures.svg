@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 322" width="760" height="322" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e0b050"/></marker><marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa0a6"/></marker></defs>
+<rect width="760" height="322" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">what each gesture moves</text>
+<rect x="242" y="46" width="242" height="238" rx="6" fill="#262a31"/>
+<rect x="492" y="46" width="244" height="238" rx="6" fill="#1f3a2c"/>
+<text x="24" y="64" fill="#9aa0a6" font-size="12" text-anchor="start" font-weight="600">input</text>
+<text x="250" y="64" fill="#9aa0a6" font-size="12" text-anchor="start" font-weight="600">free</text>
+<text x="500" y="64" fill="#4ec98a" font-size="12" text-anchor="start" font-weight="600">following</text>
+<text x="24" y="90" fill="#e6e6e6" font-size="13" text-anchor="start">left drag</text>
+<text x="250" y="90" fill="#9aa0a6" font-size="13" text-anchor="start">pans</text>
+<text x="500" y="90" fill="#e6e6e6" font-size="13" text-anchor="start">turns (panning is off)</text>
+<text x="24" y="116" fill="#e6e6e6" font-size="13" text-anchor="start">right drag</text>
+<text x="250" y="116" fill="#9aa0a6" font-size="13" text-anchor="start">turns</text>
+<text x="500" y="116" fill="#e6e6e6" font-size="13" text-anchor="start">turns</text>
+<text x="24" y="142" fill="#e6e6e6" font-size="13" text-anchor="start">Shift, ctrl or alt held</text>
+<text x="250" y="142" fill="#9aa0a6" font-size="13" text-anchor="start">swaps left and right</text>
+<text x="500" y="142" fill="#e6e6e6" font-size="13" text-anchor="start">swaps left and right</text>
+<text x="24" y="168" fill="#e6e6e6" font-size="13" text-anchor="start">middle button, wheel</text>
+<text x="250" y="168" fill="#9aa0a6" font-size="13" text-anchor="start">zooms, towards the cursor</text>
+<text x="500" y="168" fill="#e6e6e6" font-size="13" text-anchor="start">zooms</text>
+<line x1="24" y1="176" x2="736" y2="176" stroke="#3a404a" stroke-width="1"/>
+<text x="24" y="194" fill="#e6e6e6" font-size="13" text-anchor="start">one finger</text>
+<text x="250" y="194" fill="#9aa0a6" font-size="13" text-anchor="start">pans</text>
+<text x="500" y="194" fill="#e6e6e6" font-size="13" text-anchor="start">moves where the player looks. A tap picks</text>
+<text x="24" y="220" fill="#e6e6e6" font-size="13" text-anchor="start">two fingers, dragged</text>
+<text x="250" y="220" fill="#9aa0a6" font-size="13" text-anchor="start">turn</text>
+<text x="500" y="220" fill="#e6e6e6" font-size="13" text-anchor="start">turn</text>
+<text x="24" y="246" fill="#e6e6e6" font-size="13" text-anchor="start">two fingers, pinched</text>
+<text x="250" y="246" fill="#9aa0a6" font-size="13" text-anchor="start">zoom</text>
+<text x="500" y="246" fill="#e6e6e6" font-size="13" text-anchor="start">zoom</text>
+<text x="24" y="272" fill="#e6e6e6" font-size="13" text-anchor="start">two fingers, tapped</text>
+<text x="250" y="272" fill="#9aa0a6" font-size="13" text-anchor="start">a look, there</text>
+<text x="500" y="272" fill="#e6e6e6" font-size="13" text-anchor="start">a look, there</text>
+<text x="24" y="304" fill="#9aa0a6" font-size="12" text-anchor="start">Touch is below the rule. Following, one finger looks (touchLook): the camera needs no pan</text>
+</svg>

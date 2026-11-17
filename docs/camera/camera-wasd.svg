@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="760" height="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs><marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e0b050"/></marker><marker id="muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa0a6"/></marker></defs>
+<rect width="760" height="420" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">wasd heading, from above: where the w-key heads</text>
+<path d="M250,240 L198.7,99.0 A150,150 0 0 1 301.3,99.0 z" fill="#4ec98a" opacity="0.18"/>
+<path d="M250,240 L391.0,188.7 A150,150 0 0 1 391.0,291.3 z" fill="#4ec98a" opacity="0.18"/>
+<path d="M250,240 L301.3,381.0 A150,150 0 0 1 198.7,381.0 z" fill="#4ec98a" opacity="0.18"/>
+<path d="M250,240 L109.0,291.3 A150,150 0 0 1 109.0,188.7 z" fill="#4ec98a" opacity="0.18"/>
+<circle cx="250" cy="240" r="150" fill="none" stroke="#3a404a"/>
+<line x1="250" y1="240" x2="250.0" y2="90.0" stroke="#3a404a" stroke-width="1"/>
+<text x="250.0" y="73.0" fill="#9aa0a6" font-size="12" text-anchor="middle">N  -z</text>
+<line x1="250" y1="240" x2="400.0" y2="240.0" stroke="#3a404a" stroke-width="1"/>
+<text x="422.0" y="245.0" fill="#9aa0a6" font-size="12" text-anchor="middle">E</text>
+<line x1="250" y1="240" x2="250.00000000000003" y2="390.0" stroke="#3a404a" stroke-width="1"/>
+<text x="250.00000000000003" y="417.0" fill="#9aa0a6" font-size="12" text-anchor="middle">S</text>
+<line x1="250" y1="240" x2="100.0" y2="240.00000000000003" stroke="#3a404a" stroke-width="1"/>
+<text x="78.0" y="245.00000000000003" fill="#9aa0a6" font-size="12" text-anchor="middle">W</text>
+<line x1="250" y1="240" x2="274.9494028981311" y2="122.62228791194332" stroke="#4ec98a" stroke-width="2.5" marker-end="url(#green)"/>
+<line x1="250" y1="240" x2="334.8528137423857" y2="155.1471862576143" stroke="#e0b050" stroke-width="2.5" marker-end="url(#amber)"/>
+<line x1="258" y1="230" x2="258" y2="124" stroke="#4ec98a" stroke-width="1.5" marker-end="url(#green)" stroke-dasharray="4 4"/>
+<text x="430" y="120" fill="#4ec98a" font-size="12" text-anchor="start">Screen-up within 20° of an axis (compassSnapRad):</text>
+<text x="430" y="136" fill="#4ec98a" font-size="12" text-anchor="start">the w-key heads along that axis.</text>
+<text x="430" y="176" fill="#e0b050" font-size="12" text-anchor="start">Further off: it heads up the screen.</text>
+<text x="430" y="216" fill="#9aa0a6" font-size="12" text-anchor="start">Taken as the first move key goes down,</text>
+<text x="430" y="232" fill="#9aa0a6" font-size="12" text-anchor="start">kept whilst any is held.</text>
+<text x="430" y="272" fill="#9aa0a6" font-size="12" text-anchor="start">Whilst wasd_delta runs, a held key turns</text>
+<text x="430" y="288" fill="#9aa0a6" font-size="12" text-anchor="start">the view until just within 20° of the</text>
+<text x="430" y="304" fill="#9aa0a6" font-size="12" text-anchor="start">nearest axis, and no further.</text>
+</svg>
