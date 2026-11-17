@@ -59,10 +59,13 @@ export function Desktop() {
 
 /** Nothing moves out of the way, so windows overlap */
 const freeCompactor = getCompactor(null, true);
+/** Pixels between windows one above another */
+const rowGapPx = 6;
 const gridConfig = {
   cols: desktopCols,
   rowHeight: cellPx,
-  margin: [0, 0] as const,
+  /** Rows apart by `rowGapPx`, so windows one above another never touch */
+  margin: [0, rowGapPx] as const,
   containerPadding: [desktopPadPx, desktopPadPx] as const,
 };
 const dragConfig = { handle: ".skip-net-drag", cancel: ".skip-net-no-drag" };

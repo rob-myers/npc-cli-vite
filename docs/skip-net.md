@@ -6,7 +6,7 @@ SkipNet is the intranet holding SCPs. As a panel, `packages/ui/skip-net` (uiKey 
 
 A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid out by `react-grid-layout`.
 
-- **Grid.** The desk is `desktopCols` (80) cells of `cellPx` (20px), wider than most panels, so it scrolls both ways. Its rows grow with the windows.
+- **Grid.** The desk is `desktopCols` (80) cells of `cellPx` (20px), wider than most panels, so it scrolls both ways. Its rows grow with the windows, `rowGapPx` (6px) apart, so windows one above another never touch.
 - **Arranging.** In `meta.arrange` `free` (the default), nothing compacts (`getCompactor(null, true)`), so windows overlap. In `tidy` they compact upwards (`verticalCompactor`). **Clean Up** compacts them once.
 - **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes and its boxes.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
