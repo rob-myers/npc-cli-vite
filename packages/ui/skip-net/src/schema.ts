@@ -42,7 +42,11 @@ export const SkipNetUiMetaSchema = z.object({
     .custom<SkipNetWindow[]>((x) => Array.isArray(x))
     /** Saved jobs and library windows are dropped: those kinds are gone */
     .transform((windows) => windows.filter((x) => (x.kind as string) !== "jobs" && (x.kind as string) !== "library"))
-    .default((): SkipNetWindow[] => [{ id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 }]),
+    /** The npc folder, and its first article beside it, or below it when stacked */
+    .default((): SkipNetWindow[] => [
+      { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
+      { id: "w2", kind: "article", articleKey: "npc-controls", x: 21, y: 0, w: 30, h: 24, z: 2 },
+    ]),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;
