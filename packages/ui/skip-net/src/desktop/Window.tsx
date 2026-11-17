@@ -82,7 +82,7 @@ export function Window(props: {
           </span>
         )}
         <span className={cn("relative min-w-0 flex items-center gap-1", !big && "ml-auto")}>
-          <span ref={frame.setTitleSlot} className="skip-net-no-drag min-w-0 flex items-center gap-1 bg-mac-title" />
+          <span ref={frame.setTitleSlot} className="min-w-0 flex items-center gap-1 bg-mac-title" />
           {stack &&
             moveBoxes
               .filter(({ by }) => !(by === -1 ? stack.first : stack.last))
