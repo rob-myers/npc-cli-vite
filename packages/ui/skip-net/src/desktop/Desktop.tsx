@@ -9,6 +9,7 @@ import { Window } from "./Window";
 import { cellPx, desktopCols, desktopPadPx, desktopPx, frontOf, toLayout } from "./windows";
 
 import "react-grid-layout/css/styles.css";
+import "./desktop.css";
 
 /** A dithered desktop, larger than its panel, so it scrolls. Icons lie under the windows */
 export function Desktop() {
@@ -32,7 +33,7 @@ export function Desktop() {
       <GridLayout
         className={cn(
           gridClass,
-          touchDevice && "[&_.react-resizable-handle]:size-6!",
+          touchDevice && "[&_.react-resizable-handle-se]:size-6!",
           !animate && "[&_.react-grid-item]:transition-none!",
         )}
         style={{ width: desktopPx }}
@@ -65,11 +66,10 @@ const gridConfig = {
   containerPadding: [desktopPadPx, desktopPadPx] as const,
 };
 const dragConfig = { handle: ".skip-net-drag", cancel: ".skip-net-no-drag" };
-const resizeConfig = { handles: ["se"] as const };
+/** Every edge and corner, styled in `desktop.css` */
+const resizeConfig = { handles: ["n", "e", "s", "w", "ne", "nw", "se", "sw"] as const };
 
 const touchDevice = isTouchDevice();
 
-/** A dragged window's outline is dashed, and its grow box drawn in the window's edge */
-const gridClass = tw(
-  "min-h-full [&_.react-grid-placeholder]:bg-transparent! [&_.react-grid-placeholder]:opacity-100! [&_.react-grid-placeholder]:outline-dashed [&_.react-grid-placeholder]:outline-1 [&_.react-grid-placeholder]:outline-mac-edge [&_.react-resizable-handle::after]:border-mac-edge!",
-);
+/** Its look is in `desktop.css` */
+const gridClass = tw("skip-net-grid min-h-full");

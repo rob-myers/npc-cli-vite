@@ -19,7 +19,7 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 
 - **Title bar.** It is the drag handle (`skip-net-drag`), with a close box on the left and a windowshade box on the right (`skip-net-no-drag`).
 - **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. Its box does it, as does a click on its bar, but not a drag (`clickSlopPx`).
-- **Grow box.** A window resizes from its bottom-right corner, larger on touch.
+- **Resizing.** A window resizes from any edge or corner. Only the bottom-right grow box is drawn, larger on touch. The rest are invisible strips (`desktop/desktop.css`).
 - **Info bar.** Under the title, double-ruled (`infoBarClass`): "N items" in the folder, else the window's session (`SessionBar`).
 - **Opening.** A new window is cascaded from the last opened (`newWindow`).
 - **Sessions.** An article or library window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
