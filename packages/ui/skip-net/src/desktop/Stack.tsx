@@ -269,7 +269,7 @@ export function Stack() {
           // over the window they would collapse: let go over one to choose it
           <motion.div
             key="choices"
-            className={choicesClass}
+            className={cn(choicesClass, stack.choice.dir < 0 && "flex-col-reverse")}
             style={{ left: stack.choice.x, top: stack.choice.y }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -359,8 +359,11 @@ type Unfold = { el: HTMLElement; from: number; grow: number; shrink: null | HTML
 const foldingClass = tw("transition-opacity data-folding:opacity-50");
 /** Pixels past a window's least height a grip is dragged to be offered the choices */
 const foldPx = 40;
-/** As wide as its pills: placed at the centre, it would otherwise get only the room to the stack's right edge */
-const choicesClass = tw("absolute z-20 flex w-max gap-2 -translate-x-1/2 -translate-y-1/2");
+/**
+ * One above the other, "move" further the way it was dragged, so moving takes the longer drag. Reversed for up.
+ * As wide as its pills: placed at the centre, it would otherwise get only the room to the stack's right edge
+ */
+const choicesClass = tw("absolute z-20 flex flex-col w-max gap-6 -translate-x-1/2 -translate-y-1/2");
 const choiceClass = tw(
   "inline-flex items-center justify-center h-9 px-4 whitespace-nowrap rounded-full border border-mac-edge bg-mac-window text-mac-text text-sm leading-none font-bold shadow select-none",
 );
