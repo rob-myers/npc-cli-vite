@@ -1,4 +1,5 @@
 import type { Layout, LayoutItem } from "react-grid-layout";
+import { articleFolderOf } from "../articles";
 import type { SkipNetContent, SkipNetKind, SkipNetWindow } from "../schema";
 
 /** Grid cells across the desktop */
@@ -30,7 +31,7 @@ export function newWindow(windows: SkipNetWindow[], content: SkipNetContent): Sk
     (a, b) => (a === undefined || idNum(b) > idNum(a) ? b : a),
     undefined,
   );
-  const [w, h] = sizes[content.kind];
+  const [w, h] = sizeOf(content);
   const x = last === undefined || last.x + cascadeCells + w > desktopCols ? 0 : last.x + cascadeCells;
   const y = last === undefined ? 0 : last.y + cascadeCells;
   const z = (frontOf(windows)?.z ?? 0) + 1;
@@ -78,6 +79,16 @@ const cascadeCells = 2;
 const sizes: Record<SkipNetKind, [number, number]> = {
   article: [30, 24],
   folder: [20, 12],
-  chat: [24, 24],
+  /** Tall enough for a thread with no comments yet */
+  chat: [24, 17],
   item: [20, 16],
 };
+
+/** A video article's size: just tall enough for one video, its width filling the window */
+const videoSize: [number, number] = [30, 15];
+
+/** A new window's width and height, in cells */
+function sizeOf(content: SkipNetContent): [number, number] {
+  if (content.kind === "article" && articleFolderOf(content.articleKey) === "video") return videoSize;
+  return sizes[content.kind];
+}
