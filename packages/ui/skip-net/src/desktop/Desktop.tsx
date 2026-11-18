@@ -1,35 +1,93 @@
 import { cn, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { GridLayout, getCompactor, verticalCompactor } from "react-grid-layout";
+import { XIcon } from "@phosphor-icons/react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { GridLayout } from "react-grid-layout";
 import { SkipNetContext } from "../context";
 import { deskStyle } from "./classes";
 import { DesktopIcons } from "./DesktopIcons";
 import { Window } from "./Window";
-import { cellPx, desktopCols, desktopPadPx, desktopPx, frontOf, toLayout } from "./windows";
+import {
+  cellPx,
+  desktopCols,
+  desktopPadPx,
+  desktopPx,
+  freeCompactor,
+  frontOf,
+  rowGapPx,
+  showAllSlots,
+  titleOf,
+  toLayout,
+} from "./windows";
 
 import "react-grid-layout/css/styles.css";
 import "./desktop.css";
 
-/** A dithered desktop, larger than its panel, so it scrolls. Icons lie under the windows */
+/**
+ * A dithered desktop, larger than its panel, so it scrolls. Icons lie under the windows.
+ * In Show All every window is tiled in view. A click on one fronts it, elsewhere or Escape just ends it.
+ */
 export function Desktop() {
   const state = useContext(SkipNetContext);
-  const { arrange, windows } = state.meta;
+  const { showAll } = state;
+  const { windows } = state.meta;
   /** Only the geometry, so fronting a window leaves the grid's layout be */
   const geometry = windows.map((x) => `${x.id}:${x.x},${x.y},${x.w},${x.h},${x.shadedH !== undefined}`).join(" ");
   const layout = useMemo(() => toLayout(windows), [geometry]);
   const front = frontOf(windows);
   /** Off until mounted, else every window slides in from a corner */
   const [animate, setAnimate] = useState(false);
+  const deskRef = useRef<HTMLDivElement>(null);
+  /** Show All's tiles have finished moving, so their badges show */
+  const [settled, setSettled] = useState(false);
+  /** What is in view, which Show All fills. Scrolling is held meanwhile */
+  const desk = deskRef.current;
+  const view = desk && {
+    x: desk.scrollLeft + showAllPadPx,
+    y: desk.scrollTop + showAllPadPx,
+    width: desk.clientWidth - 2 * showAllPadPx,
+    height: desk.clientHeight - 2 * showAllPadPx,
+  };
+  const slots = showAll && view !== null ? showAllSlots(windows, view) : null;
 
   useEffect(() => {
     const frameId = requestAnimationFrame(() => setAnimate(true));
     return () => cancelAnimationFrame(frameId);
   }, []);
 
+  /** Whilst Show All: its badges show once its tiles settle, and Escape ends it */
+  useEffect(() => {
+    setSettled(false);
+    if (!showAll) return;
+    const timeoutId = window.setTimeout(() => setSettled(true), showAllMs);
+    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && state.toggleShowAll(false);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showAll]);
+
   return (
-    <div className="relative flex-1 min-h-0 overflow-auto scrollbar-thin" style={deskStyle}>
+    <div
+      ref={deskRef}
+      className={cn("relative flex-1 min-h-0 scrollbar-thin", showAll ? "overflow-hidden" : "overflow-auto")}
+      style={deskStyle}
+    >
       <DesktopIcons />
+      {view !== null && slots !== null && (
+        // dims the desk and icons under the windows, and a click on it ends Show All
+        <div
+          className="absolute z-1 bg-black/30 starting:opacity-0 transition-opacity duration-300"
+          style={{
+            left: view.x - showAllPadPx,
+            top: view.y - showAllPadPx,
+            width: desk?.clientWidth,
+            height: desk?.clientHeight,
+          }}
+          onClick={() => state.toggleShowAll(false)}
+        />
+      )}
       <GridLayout
         className={cn(
           gridClass,
@@ -39,28 +97,71 @@ export function Desktop() {
         style={{ width: desktopPx }}
         width={desktopPx}
         gridConfig={gridConfig}
-        dragConfig={dragConfig}
-        resizeConfig={resizeConfig}
-        compactor={arrange === "tidy" ? verticalCompactor : freeCompactor}
+        dragConfig={showAll ? offConfig : dragConfig}
+        resizeConfig={showAll ? offConfig : resizeConfig}
+        compactor={freeCompactor}
         layout={layout}
         onDragStop={(layout) => state.saveLayout(layout)}
         onResizeStop={(layout) => state.saveLayout(layout)}
       >
-        {windows.map((win) => (
-          // above the icons, which are `z-1`
-          <div key={win.id} style={{ zIndex: win.z + 1 }} onPointerDownCapture={() => state.bringToFront(win.id)}>
-            <Window win={win} front={win.id === front?.id} />
-          </div>
-        ))}
+        {windows.map((win) => {
+          const slot = slots?.get(win.id);
+          return (
+            // above the icons, which are `z-1`
+            <div
+              key={win.id}
+              // its grid box stays put whilst its tile moves, so only the tile takes the pointer
+              className={cn(slot && "group pointer-events-none")}
+              style={{ zIndex: win.z + 1 }}
+              onPointerDownCapture={() => state.bringToFront(win.id)}
+              onClickCapture={(e) => {
+                if (!showAll || (e.target as HTMLElement).closest("[data-show-all-close]") !== null) return;
+                e.stopPropagation();
+                state.toggleShowAll(false);
+              }}
+            >
+              <div
+                className={cn(
+                  "size-full origin-top-left transition-transform duration-300 ease-out",
+                  slot && "pointer-events-auto cursor-pointer *:pointer-events-none",
+                )}
+                style={slot && { transform: `translate(${slot.dx}px, ${slot.dy}px) scale(${slot.scale})` }}
+              >
+                <Window win={win} front={win.id === front?.id} />
+              </div>
+              {slot && settled && (
+                // unscaled: its title in a badge at its tile's centre, and a close badge at its top-right whilst over it
+                <>
+                  <div
+                    className={showAllTitleBoxClass}
+                    style={{
+                      width: slot.width,
+                      height: slot.height,
+                      transform: `translate(${slot.dx}px, ${slot.dy}px)`,
+                    }}
+                  >
+                    <span className={showAllTitleClass}>{titleOf(win, state.items)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    data-show-all-close
+                    title="close"
+                    className={cn(showAllCloseClass, touchDevice && "opacity-100")}
+                    style={{ transform: `translate(${slot.dx + slot.width - 10}px, ${slot.dy - 10}px)` }}
+                    onClick={() => state.close(win.id)}
+                  >
+                    <XIcon weight="bold" className="size-3" />
+                  </button>
+                </>
+              )}
+            </div>
+          );
+        })}
       </GridLayout>
     </div>
   );
 }
 
-/** Nothing moves out of the way, so windows overlap */
-const freeCompactor = getCompactor(null, true);
-/** Pixels between windows one above another */
-const rowGapPx = 6;
 const gridConfig = {
   cols: desktopCols,
   rowHeight: cellPx,
@@ -69,6 +170,24 @@ const gridConfig = {
   containerPadding: [desktopPadPx, desktopPadPx] as const,
 };
 const dragConfig = { handle: ".skip-net-drag", cancel: ".skip-net-no-drag" };
+/** Centres a tile's title, fading in, then moving with it */
+const showAllTitleBoxClass = tw(
+  "absolute left-0 top-0 grid place-items-center p-2 transition-[transform,opacity] duration-300 ease-out starting:opacity-0",
+);
+/** A window's name in a badge over its tile in Show All, a click on which fronts it too */
+const showAllTitleClass = tw(
+  "max-w-full truncate px-3 py-1 rounded-full border border-mac-edge bg-mac-window/90 text-mac-text text-sm font-bold shadow pointer-events-auto cursor-pointer",
+);
+/** A window's close badge in Show All */
+const showAllCloseClass = tw(
+  "absolute left-0 top-0 grid place-items-center size-5 rounded-full border border-mac-edge bg-mac-window text-mac-text shadow pointer-events-auto cursor-pointer opacity-0 transition-[transform,opacity] duration-300 ease-out starting:opacity-0 group-hover:opacity-100 hover:bg-mac-select hover:text-mac-on-select",
+);
+/** Show All neither drags nor resizes */
+const offConfig = { enabled: false };
+/** Room around the windows in Show All */
+const showAllPadPx = 16;
+/** How long a tile takes to move, as its `duration-300` */
+const showAllMs = 300;
 /** Every edge and corner, styled in `desktop.css` */
 const resizeConfig = { handles: ["n", "e", "s", "w", "ne", "nw", "se", "sw"] as const };
 

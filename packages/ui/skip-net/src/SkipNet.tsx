@@ -1,22 +1,11 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
-import { verticalCompactor } from "react-grid-layout";
 import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
 import { MenuBar } from "./desktop/MenuBar";
 import { Stack } from "./desktop/Stack";
-import {
-  desktopCols,
-  frontOf,
-  newWindow,
-  restack,
-  stackOrdered,
-  stackPx,
-  toggleShade,
-  toLayout,
-  withLayout,
-} from "./desktop/windows";
+import { frontOf, newWindow, restack, stackOrdered, stackPx, toggleShade, withLayout } from "./desktop/windows";
 import type { SkipNetUiMeta } from "./schema";
 import { useSkipNetItems } from "./use-skip-net-items";
 
@@ -27,20 +16,18 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
   const state = useStateRef(
     (): State => ({
       clearAsked: false,
+      hovered: false,
       items: [],
       meta,
       narrow: false,
       pressedFrontId: undefined,
       rootEl: null,
+      showAll: false,
 
       bringToFront(id) {
         const { windows } = state.meta;
         state.pressedFrontId = frontOf(windows)?.id;
         if (state.pressedFrontId !== id) state.setWindows(restack(windows, id));
-      },
-      cleanUp() {
-        const { windows } = state.meta;
-        state.setWindows(withLayout(windows, verticalCompactor.compact(toLayout(windows), desktopCols)));
       },
       clear() {
         state.set({ clearAsked: false });
@@ -73,10 +60,6 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       saveLayout(layout) {
         state.setWindows(withLayout(state.meta.windows, layout));
       },
-      setArrange(arrange) {
-        uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).arrange = arrange));
-        if (arrange === "tidy") state.cleanUp();
-      },
       setClearAsked(clearAsked) {
         state.set({ clearAsked });
       },
@@ -93,9 +76,13 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       },
       setWindows(windows) {
         uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).windows = windows));
+        if (windows.length === 0) state.toggleShowAll(false); // nothing left to show
       },
       toggleShade(id) {
         state.setWindows(state.meta.windows.map((x) => (x.id === id ? toggleShade(x) : x)));
+      },
+      toggleShowAll(on = !state.showAll) {
+        if (on !== state.showAll) state.set({ showAll: on });
       },
     }),
   );
@@ -113,10 +100,24 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    /** A backtick over SkipNet toggles Show All, unless typing */
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "`" || !state.hovered || state.narrow || state.meta.windows.length === 0) return;
+      if ((e.target as HTMLElement).closest("input, textarea, [contenteditable]") !== null) return;
+      e.preventDefault();
+      state.toggleShowAll();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <SkipNetContext.Provider value={state}>
       <div
         ref={(el) => void (state.rootEl = el)}
+        onPointerEnter={() => void (state.hovered = true)}
+        onPointerLeave={() => void (state.hovered = false)}
         className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide"
       >
         <MenuBar />

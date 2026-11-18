@@ -45,11 +45,6 @@ if (import.meta.env.DEV && keyToLoader.size < Object.keys(loaders).length) {
   console.warn("SkipNet: two articles share a name, so one is hidden", Object.keys(loaders));
 }
 
-/** The folder holding the article, e.g. `npc` */
-export function articleFolderOf(key: undefined | string): undefined | string {
-  return key === undefined ? undefined : keyToFolder.get(key);
-}
-
 /** `key` if it is an article's, else the first. A stale key falls back */
 export function articleKeyOf(key: undefined | string): undefined | string {
   return articleKeys.find((x) => x === key) ?? articleKeys[0];

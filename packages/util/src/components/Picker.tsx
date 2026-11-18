@@ -8,6 +8,8 @@ export function Picker<T extends string>(props: {
   options: readonly (T | { value: T; label: string })[];
   onChange(value: T): void;
   disabled?: boolean;
+  /** Only its chevron opens it, so what is chosen is shown elsewhere */
+  chevronOnly?: boolean;
   title?: string;
   className?: string;
   /** The popup is portalled out of its panel, whose theme it takes by this class */
@@ -26,7 +28,7 @@ export function Picker<T extends string>(props: {
           props.className,
         )}
       >
-        <span className="truncate">{label}</span>
+        {!props.chevronOnly && <span className="truncate">{label}</span>}
         <CaretDownIcon className="size-3 shrink-0 text-zinc-500" />
       </Select.Trigger>
       <Select.Portal>

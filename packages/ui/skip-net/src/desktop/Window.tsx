@@ -4,13 +4,14 @@ import { Picker } from "@npc-cli/util/picker";
 import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
-import { articleKeyOf, articleKeys } from "../articles";
+import { articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
 import type { SkipNetWindow } from "../schema";
 import { titlePickerPopupClass } from "./classes";
 import { FolderWindow } from "./FolderWindow";
+import { titleOf } from "./windows";
 
 /**
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
@@ -81,21 +82,26 @@ export function Window(props: {
         )}
         <span
           className={cn(
-            "relative shrink-0 max-w-1/2 px-2 bg-mac-title",
-            win.kind === "article" ? "flex min-w-0" : "truncate",
+            // the session picker beside it gives way first
+            "relative min-w-0 px-2 bg-mac-title",
+            win.kind === "article" ? "flex items-center gap-1" : "truncate",
             front ? "font-bold" : "text-mac-muted",
             big ? "text-base" : "text-sm",
           )}
         >
           {win.kind === "article" ? (
-            <Picker
-              value={title}
-              options={articleKeys}
-              onChange={(articleKey) => state.setWindow(win.id, { articleKey })}
-              title="change article"
-              className={articlePickerClass}
-              popupClassName={titlePickerPopupClass}
-            />
+            <>
+              <span className="truncate">{title}</span>
+              <Picker
+                chevronOnly
+                value={title}
+                options={articleKeys}
+                onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
+                title="change article"
+                className={articlePickerClass}
+                popupClassName={titlePickerPopupClass}
+              />
+            </>
           ) : (
             title
           )}
@@ -106,7 +112,7 @@ export function Window(props: {
             <span className="h-3 w-full px-2 bg-clip-content opacity-40" style={longGripStyle} />
           </span>
         )}
-        <span className={cn("relative min-w-0 flex items-center gap-1", !big && "ml-auto")}>
+        <span className={cn("relative min-w-0 shrink-[10] flex items-center gap-1", !big && "ml-auto")}>
           <span ref={frame.setTitleSlot} className="min-w-0 flex items-center gap-1 bg-mac-title" />
           {stack &&
             moveBoxes
@@ -123,15 +129,20 @@ export function Window(props: {
                 </button>
               ))}
         </span>
-        <button
-          type="button"
-          title={shaded ? "roll down" : "roll up"}
-          className={cn(boxClass, big && bigBoxClass)}
-          onClick={() => state.toggleShade(win.id)}
-        >
-          <MinusIcon weight="bold" className={boxIconClass(big)} />
-        </button>
-        <CloseBox big={big} onClose={() => state.close(win.id)} />
+        {/* Show All closes it by a badge of its own instead */}
+        {!(state.showAll && !stacked) && (
+          <>
+            <button
+              type="button"
+              title={shaded ? "roll down" : "roll up"}
+              className={cn(boxClass, big && bigBoxClass)}
+              onClick={() => state.toggleShade(win.id)}
+            >
+              <MinusIcon weight="bold" className={boxIconClass(big)} />
+            </button>
+            <CloseBox big={big} onClose={() => state.close(win.id)} />
+          </>
+        )}
       </header>
       {!shaded && (
         <div
@@ -202,21 +213,6 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
   }
 }
 
-function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
-  switch (win.kind) {
-    case "folder":
-      return "files";
-    case "chat":
-      return "chat";
-    case "article":
-      return articleKeyOf(win.articleKey) ?? "article";
-    case "item":
-      return items.find((x) => x.key === win.itemKey)?.title ?? win.itemKey ?? "item";
-    default:
-      return win.kind;
-  }
-}
-
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */
   downAt: { x: number; y: number };
@@ -234,7 +230,7 @@ type CloseBoxState = {
 };
 
 const boxClass = tw(
-  "skip-net-no-drag relative grid place-items-center size-2.75 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title text-mac-text cursor-pointer active:bg-mac-select",
+  "skip-net-no-drag relative grid place-items-center size-4 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title text-mac-text cursor-pointer active:bg-mac-select",
 );
 /** A raised box on a touch-sized bar: lit above and left, shaded below and right, with a faint edge */
 const embossClass = tw(
@@ -242,14 +238,14 @@ const embossClass = tw(
 );
 const bigBoxClass = cn(embossClass, "size-6");
 const bigMoveBoxClass = cn(embossClass, "h-6 w-8");
-/** An article's title as a picker, in the bar's own type */
+/** The chevron beside an article's title, which alone picks another */
 const articlePickerClass = tw(
-  "skip-net-no-drag p-0 rounded-none border-0 bg-transparent text-current font-[inherit] text-[length:inherit] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
+  "skip-net-no-drag h-5 px-1.5 py-0 rounded-sm border-0 bg-transparent text-current font-[inherit] text-[length:inherit] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
 );
 /** A stacked bar's grip, which alone drags it */
 const gripClass = tw("relative grid place-items-center h-full cursor-row-resize text-mac-muted");
 /** The x or minus in a box */
-const boxIconClass = (big: boolean) => (big ? "size-3" : "size-2");
+const boxIconClass = (big: boolean) => (big ? "size-3" : "size-2.5");
 /** How far a press on a bar may move and still be a click */
 const clickSlopPx = 4;
 /** How long a close box stays armed */
@@ -266,7 +262,7 @@ const stripesStyle = {
 };
 /** A stacked bar's up or down box, wider than tall for a finger */
 const moveBoxClass = tw(
-  "skip-net-no-drag grid place-items-center h-3.5 w-5 border border-mac-edge bg-mac-title cursor-pointer dark:border-mac-text active:bg-mac-select active:text-mac-on-select",
+  "skip-net-no-drag grid place-items-center h-4 w-6 border border-mac-edge bg-mac-title cursor-pointer dark:border-mac-text active:bg-mac-select active:text-mac-on-select",
 );
 const moveBoxes = [
   { by: -1, Icon: CaretUpIcon, title: "move up" },

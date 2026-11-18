@@ -31,6 +31,8 @@ export type SkipNetWindow = SkipNetContent & {
   stackFlex?: number;
   /** Its place in a stack, once moved there. Else after those placed, in the desktop's reading order */
   stackOrder?: number;
+  /** Its height is fitted to its article once shown, then this is cleared */
+  fit?: boolean;
   /** The files window's open folders. Unset, every folder is open */
   openFolders?: string[];
 };
@@ -40,8 +42,6 @@ export const SkipNetUiMetaSchema = z.object({
   uiKey: z.literal("SkipNet"),
   /** The World it is aligned with */
   worldKey: z.templateLiteral(["world-", z.number()]).default("world-0"),
-  /** Windows overlap freely, else stay compacted upwards */
-  arrange: z.enum(["free", "tidy"]).default("free"),
   windows: z
     .custom<SkipNetWindow[]>((x) => Array.isArray(x))
     /** Saved jobs and library windows are dropped: those kinds are gone */

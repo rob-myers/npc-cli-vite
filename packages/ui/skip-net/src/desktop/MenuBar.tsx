@@ -2,6 +2,7 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Menu } from "@base-ui/react/menu";
 import { Menubar } from "@base-ui/react/menubar";
 import { cn, tw } from "@npc-cli/util";
+import { SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
 import { SkipNetContext } from "../context";
 import { frontOf } from "./windows";
@@ -9,7 +10,7 @@ import { frontOf } from "./windows";
 /** SkipNet's menu bar, its menus portalled into SkipNet */
 export function MenuBar() {
   const state = useContext(SkipNetContext);
-  const { arrange, windows, worldKey } = state.meta;
+  const { windows, worldKey } = state.meta;
   const front = frontOf(windows);
 
   return (
@@ -45,28 +46,29 @@ export function MenuBar() {
             Close Window
           </Menu.Item>
         </BarMenu>
-        <BarMenu label="View">
-          <Menu.Item className={itemClass} disabled={state.narrow} onClick={state.cleanUp}>
-            Clean Up
-          </Menu.Item>
-          <Menu.Separator className={separatorClass} />
-          {arranges.map(({ value, label }) => (
-            <Menu.Item
-              key={value}
-              className={itemClass}
-              disabled={state.narrow}
-              onClick={() => state.setArrange(value)}
+        <span className="ml-auto flex">
+          {!state.narrow && (
+            <button
+              type="button"
+              title="show all windows (`), Escape ends it"
+              className={cn(barButtonClass, state.showAll && "bg-mac-select text-mac-on-select")}
+              disabled={windows.length === 0}
+              onClick={() => state.toggleShowAll()}
             >
-              <span className="w-3">{arrange === value ? "✓" : ""}</span>
-              {label}
-            </Menu.Item>
-          ))}
-          <Menu.Separator className={separatorClass} />
+              <SquaresFourIcon weight="bold" className="size-3" />
+            </button>
+          )}
           {/* asks first, in a classic alert box */}
-          <Menu.Item className={itemClass} disabled={windows.length === 0} onClick={() => state.setClearAsked(true)}>
-            Clear…
-          </Menu.Item>
-        </BarMenu>
+          <button
+            type="button"
+            title="clear the desktop"
+            className={barButtonClass}
+            disabled={windows.length === 0}
+            onClick={() => state.setClearAsked(true)}
+          >
+            <TrashIcon weight="bold" className="size-3" />
+          </button>
+        </span>
       </Menubar>
       <ClearAlert />
     </>
@@ -119,10 +121,10 @@ function ClearAlert() {
   );
 }
 
-const arranges = [
-  { value: "free", label: "Free" },
-  { value: "tidy", label: "Tidy" },
-] as const;
+/** At the bar's right: Show All, as macOS's Mission Control, and Clear */
+const barButtonClass = tw(
+  "px-2 grid place-items-center cursor-pointer outline-none disabled:text-mac-muted disabled:cursor-default",
+);
 
 const itemClass = tw(
   "flex items-center gap-1 px-3 py-0.5 cursor-default outline-none data-highlighted:bg-mac-select data-highlighted:text-mac-on-select data-disabled:text-mac-muted",
