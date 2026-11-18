@@ -46,9 +46,15 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text">
       <SessionPicker runner={runner} session={session} win={win} />
-      <div className="flex-1 min-h-0 overflow-auto scrollbar-thin px-3 pt-4 pb-3">
+      <div className="relative flex-1 min-h-0 overflow-auto scrollbar-thin px-3 pt-4 pb-3">
         <ArticleContext.Provider value={ctxt}>
-          <Suspense fallback={<Spinner className="size-4 m-2" />}>
+          <Suspense
+            fallback={
+              <div className="absolute inset-0 grid place-items-center">
+                <Spinner className="size-6" />
+              </div>
+            }
+          >
             <article
               ref={articleRef}
               className={cn(
@@ -64,4 +70,12 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
       </div>
     </div>
   );
+}
+
+/** Its session picker alone, in a folded article window's bar */
+export function ArticleSessionPicker({ win }: { win: SkipNetWindow }) {
+  const state = useContext(SkipNetContext);
+  const session = useWindowSession(win, state.meta.worldKey);
+  const runner = useSessionRunner(session.ttyMeta);
+  return <SessionPicker runner={runner} session={session} win={win} />;
 }

@@ -3,7 +3,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
 import { DotsSixVerticalIcon, FileTextIcon, MinusIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect } from "react";
-import { ArticlePane } from "../article/ArticlePane";
+import { ArticlePane, ArticleSessionPicker } from "../article/ArticlePane";
 import { articleFolderOf, articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
@@ -15,7 +15,7 @@ import { titleOf } from "./windows";
 
 /**
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
- * A click on a folded one's bar unfolds it, having no windowshade box. Stacked, a click folds the front one too.
+ * A click on a folded one's bar unfolds it, its windowshade box greyed. Stacked, a click folds the front one too.
  */
 export const Window = memo(function Window(props: WindowProps) {
   const { front, items, peek, showAll, stack, win } = props;
@@ -126,20 +126,25 @@ export const Window = memo(function Window(props: WindowProps) {
         {/* Show All closes it by a badge of its own instead */}
         {!(showAll && !stacked) && (
           <>
-            {!shaded && (
-              <button
-                type="button"
-                title="collapse"
-                className={cn(boxClass, big && bigBoxClass)}
-                onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
-              >
-                <MinusIcon weight="bold" className={boxIconClass(big)} />
-              </button>
-            )}
+            <button
+              type="button"
+              title={shaded ? undefined : "collapse"}
+              disabled={shaded} // greyed whilst folded, keeping the bar's boxes in place
+              className={cn(boxClass, big && bigBoxClass, "disabled:opacity-35 disabled:cursor-default")}
+              onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
+            >
+              <MinusIcon weight="bold" className={boxIconClass(big)} />
+            </button>
             <CloseBox big={big} onClose={() => state.close(win.id)} />
           </>
         )}
       </header>
+      {!bodied && win.kind === "article" && (
+        // folded, its session still shows in its bar
+        <TitleSlotContext.Provider value={frame.titleSlot}>
+          <ArticleSessionPicker win={win} />
+        </TitleSlotContext.Provider>
+      )}
       {bodied && (
         <div
           className={cn(
