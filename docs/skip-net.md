@@ -18,8 +18,8 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 
 `meta.windows` holds each window (`SkipNetWindow`). A new SkipNet opens the files folder and `npc-controls`, which a narrow panel stacks one above the other. Each window has its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `item` or `chat`. A saved `jobs` or `library` window is dropped: jobs are shown in their tty (`docs/jsh-jobs.md`), and the library's examples are articles.
 
-- **Title bar.** It is the drag handle (`skip-net-drag`), with its windowshade and close boxes on the right (`skip-net-no-drag`). Every bar is the same height, 24px, or 44px stacked on touch. An article's title is a picker of every article. The close box shows an x, and a first press arms it red: a second within `confirmMs` closes the window.
-- **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. On the desktop only its box does it. A rolled-up bar overflows its one row into the gap below.
+- **Title bar.** It is the drag handle (`skip-net-drag`), with its windowshade and close boxes on the right (`skip-net-no-drag`). Every bar is 24px on the desktop, and stacked 28px, or 48px on touch. An article's title is a picker of every article. The close box shows an x, and a first press arms it red: a second within `confirmMs` closes the window.
+- **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. On the desktop only its box rolls it up. Rolled up, it has no box: a click on its bar, not a drag, rolls it down. A rolled-up bar overflows its one row into the gap below.
 - **Resizing.** A window resizes from any edge or corner. Only the bottom-right grow box is drawn, larger on touch. The rest are invisible strips (`desktop/desktop.css`).
 - **Session picker.** An article window picks its tty in its title bar (`SessionPicker`, through `InTitle`), with a spinner whilst a run starts and "awaits {world}" whilst its World is not open.
 - **Opening.** A new window is cascaded from the last opened (`newWindow`), sized by its kind. An article window is then fitted to its article once loaded (`fit`, `FitHeight`), between 6 rows and `articleRows`. Picking another article in its bar fits it again.
@@ -27,7 +27,7 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 
 ## Toolbar
 
-A small base-ui `Menubar` floating over the desk's top-right, above every window, so the desk takes the panel's full height (`desktop/Toolbar.tsx`). Stacked, it floats at the bottom-right, clear of the first window's bar. Windows are opened from the desktop icons, which sit below it.
+A small base-ui `Menubar` floating over the desk's top-right, above every window, so the desk takes the panel's full height (`desktop/Toolbar.tsx`). Stacked, it floats centred in the last window's bar, often folded, clear of its title and close box (`stackedClass`, sized to the bar). Windows are opened from the desktop icons, which sit below it.
 
 - Show All Windows (`` ` ``, hidden whilst stacked)
 - Clear, which asks first in a classic alert box (`ClearAlert`)
@@ -37,10 +37,10 @@ A small base-ui `Menubar` floating over the desk's top-right, above every window
 
 A panel narrower than `stackPx` (640) shows its windows stacked instead (`desktop/Stack.tsx`, `state.narrow` from a `ResizeObserver`). Nothing about the desktop changes, so widening the panel restores it.
 
-- Windows are in `stackOrder`, then any without one in the desktop's reading order, by `y` then `x` (`stackOrdered`). Each bar's up and down boxes swap it with its neighbour (`moveInStack`), which numbers every window's `stackOrder`. The desktop's places are untouched.
+- Windows are in the desktop's reading order, by `y` then `x` (`stackOrdered`).
 - A window is open unless windowshaded, so a fold in one layout is a fold in the other. Open windows share the height, the rest are bars.
 - A tap on the front window's bar folds it, and a tap on any folded bar unfolds it, but not a drag (`clickSlopPx`). Every bar has its boxes. On touch, bars and boxes are finger-sized (`big` in `Window`).
-- **Resizing.** A bar's grip (`data-stack-grip`: at its left, and on touch filling the bar between its title and picker too), dragged past `dragStartPx`, moves the boundary between the open windows either side of it. With a mouse, a window's bottom edge drags as the next bar's grip does (`data-stack-edge`), as the desktop's edges resize, each at least `stackMinPx` tall. Each open window's share is saved as `stackFlex`, apart from its desktop height. Until dragged, its share is its `h`. Whilst dragging, the bar is faintly tinted and the two windows it resizes are outlined dashed, after a short buzz on touch (`showDrag`). Dragged `foldPx` (40px) past a window's least height, letting go folds it instead: dragged down, the bar's own window, up, the open window above. It dims whilst it would. The inverse unfolds a folded window to the finger: the window above, dragged down, or the bar's own, dragged up, taking room from the open window beyond. Let go under `foldPx` in, it stays folded (dimmed meanwhile). The fold and the shares are saved together (`setStackFlex`'s `unfoldId`).
+- **Resizing.** A bar's grip (`data-stack-grip`: at its left, and on touch, unmarked, filling the bar between its title and picker too), dragged past `dragStartPx`, moves the boundary between the open windows either side of it. With a mouse, a window's bottom edge drags as the next bar's grip does (`data-stack-edge`), as the desktop's edges resize, each at least `stackMinPx` tall. Each open window's share is saved as `stackFlex`, apart from its desktop height. Until dragged, its share is its `h`. Whilst dragging, the bar is faintly tinted, after a short buzz on touch (`showDrag`). Dragged `foldPx` (40px) past a window's least height, letting go folds it instead: dragged down, the bar's own window, up, the open window above. It dims whilst it would. The inverse unfolds a folded window to the finger: the window above, dragged down, or the bar's own, dragged up, taking room from the open window beyond, its contents mounted meanwhile (`unfoldingId`, `peek`). Let go under `foldPx` in, it stays folded (dimmed meanwhile). The fold and the shares are saved together (`setStackFlex`'s `unfoldId`).
 - With no windows, the desktop icons show in a row.
 
 ## Light and dark

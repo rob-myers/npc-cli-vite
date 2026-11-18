@@ -23,8 +23,6 @@ export type State = {
   /** Closes every window */
   clear(): void;
   close(id: string): void;
-  /** Swaps it with its neighbour in the stack, above on `-1`, below on `1` */
-  moveInStack(id: string, by: -1 | 1): void;
   /** A new window, else fronts the one already showing that folder, article or item. `fresh` always opens one */
   open(content: SkipNetContent, fresh?: boolean): void;
   /** Keeps where each window was dragged or resized to */

@@ -2,6 +2,7 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Menu } from "@base-ui/react/menu";
 import { Menubar } from "@base-ui/react/menubar";
 import { cn, tw } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
 import { SkipNetContext } from "../context";
@@ -13,7 +14,7 @@ export function Toolbar() {
 
   return (
     <>
-      <Menubar className={cn(toolbarClass, state.narrow ? "bottom-1" : "top-1")}>
+      <Menubar className={cn(toolbarClass, state.narrow ? stackedClass : "top-1 right-1")}>
         {!state.narrow && (
           <button
             type="button"
@@ -92,10 +93,12 @@ function ClearAlert() {
   );
 }
 
-/** Floats over the desk's top-right, above every window. Stacked, at the bottom-right, clear of the first bar */
+/** Floats over the desk's top-right, above every window. Stacked, in the last bar: see `stackedClass` */
 const toolbarClass = tw(
-  "absolute right-1 z-2000 flex items-stretch h-7 bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] select-none",
+  "absolute z-2000 flex items-stretch h-7 bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] select-none",
 );
+/** Stacked, centred in the last bar, often folded: clear of its title and close box. A mouse's bar is shorter */
+const stackedClass = cn("left-1/2 -translate-x-1/2", isTouchDevice() ? "bottom-[9px]" : "bottom-px h-6");
 
 /** A toolbar button: Show All, as macOS's Mission Control, or Clear */
 const barButtonClass = tw(

@@ -23,6 +23,7 @@ export function Stack() {
   const stack = useStateRef(
     (): StackState => ({
       drag: null,
+      unfoldingId: null,
 
       onPointerDown(e) {
         const target = e.target as HTMLElement;
@@ -67,8 +68,7 @@ export function Stack() {
           if (el !== null) {
             const shrink = dy > 0 ? drag.below : drag.above;
             drag.unfold = { el, from: el.offsetHeight, grow: 0, shrink, sign: dy > 0 ? 1 : -1 };
-            el.setAttribute("data-unfolding", "");
-            shrink?.setAttribute("data-resizing", "");
+            stack.set({ unfoldingId: el.dataset.stackId ?? null }); // its contents mount, to be seen
           }
           stack.showDrag(drag, true);
         }
@@ -108,8 +108,7 @@ export function Stack() {
           const { el, from, grow, shrink } = drag.unfold;
           el.style.height = "";
           el.removeAttribute("data-folding");
-          el.removeAttribute("data-unfolding");
-          shrink?.removeAttribute("data-resizing");
+          stack.set({ unfoldingId: null });
           if (grow < foldPx) {
             for (const [x, flex] of drag.flexes) x.style.flexGrow = flex; // too little: it stays folded
             return;
@@ -130,12 +129,6 @@ export function Stack() {
       },
       showDrag(drag, shown) {
         drag.bar.toggleAttribute("data-dragging", shown);
-        if (drag.unfold !== null) {
-          drag.unfold.el.toggleAttribute("data-resizing", shown);
-        } else {
-          drag.above?.toggleAttribute("data-resizing", shown);
-          drag.below?.toggleAttribute("data-resizing", shown);
-        }
         if (shown) navigator.vibrate?.(10);
       },
       unfoldTo(unfold, heights, px) {
@@ -154,7 +147,7 @@ export function Stack() {
 
   return (
     <div
-      className="skip-net-stack flex-1 min-h-0 flex flex-col gap-0.5 p-1 overflow-y-auto"
+      className="skip-net-stack flex-1 min-h-0 flex flex-col overflow-y-auto"
       style={deskStyle}
       onPointerDown={stack.onPointerDown}
     >
@@ -165,7 +158,7 @@ export function Stack() {
             key={win.id}
             data-stack-id={win.id}
             data-open={open}
-            className={cn("relative", open ? "flex-1 min-h-32" : "shrink-0", resizingClass)}
+            className={cn("relative", open ? "flex-1 min-h-32" : "shrink-0", foldingClass)}
             style={open ? { flexGrow: win.stackFlex ?? win.h } : undefined}
             onPointerDownCapture={() => state.bringToFront(win.id)}
           >
@@ -173,8 +166,9 @@ export function Stack() {
               win={win}
               front={win.id === front?.id}
               items={state.items}
+              peek={win.id === stack.unfoldingId}
               showAll={false}
-              stack={{ first: i === 0, last: i === ordered.length - 1 }}
+              stack={{ last: i === ordered.length - 1 }}
             />
             {!touchDevice && i < ordered.length - 1 && <div data-stack-edge className={edgeClass} />}
           </div>
@@ -210,8 +204,10 @@ type StackState = {
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerMove(e: PointerEvent): void;
   onPointerUp(): void;
-  /** Marks the bar dragged and the windows it resizes, with a short buzz on touch */
+  /** Marks the bar dragged, with a short buzz on touch */
   showDrag(drag: NonNullable<StackState["drag"]>, shown: boolean): void;
+  /** The folded window being dragged open, whose contents show meanwhile */
+  unfoldingId: null | string;
   /** Grows a folded window's frame `px` towards the finger, within the room the other leaves */
   unfoldTo(unfold: Unfold, heights: Map<HTMLElement, number>, px: number): void;
 };
@@ -219,10 +215,8 @@ type StackState = {
 /** `sign` is the way it opens: down for the window above, up for the bar's own */
 type Unfold = { el: HTMLElement; from: number; grow: number; shrink: null | HTMLElement; sign: 1 | -1 };
 
-/** The two windows a drag resizes, outlined, dimmed if letting go would fold it, and greyed whilst still unmounted */
-const resizingClass = tw(
-  "transition-opacity data-resizing:outline-1 data-resizing:outline-dashed data-resizing:outline-mac-muted data-folding:opacity-50 data-unfolding:*:bg-mac-desk",
-);
+/** A stacked window, dimmed whilst letting go of a drag would fold it */
+const foldingClass = tw("transition-opacity data-folding:opacity-50");
 /** Pixels past a window's least height a grip is dragged to fold it */
 const foldPx = 40;
 /** A window's bottom edge, an invisible strip to drag with a mouse, as the desktop's edges are */

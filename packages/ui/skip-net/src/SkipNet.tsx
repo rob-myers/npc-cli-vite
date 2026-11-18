@@ -5,7 +5,7 @@ import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
 import { Stack } from "./desktop/Stack";
 import { Toolbar } from "./desktop/Toolbar";
-import { frontOf, newWindow, restack, stackOrdered, stackPx, toggleShade, withLayout } from "./desktop/windows";
+import { frontOf, newWindow, restack, stackPx, toggleShade, withLayout } from "./desktop/windows";
 import type { SkipNetUiMeta } from "./schema";
 import { useSkipNetItems } from "./use-skip-net-items";
 
@@ -35,15 +35,6 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       },
       close(id) {
         state.setWindows(state.meta.windows.filter((x) => x.id !== id));
-      },
-      moveInStack(id, by) {
-        const ordered = stackOrdered(state.meta.windows);
-        const i = ordered.findIndex((x) => x.id === id);
-        const j = i + by;
-        if (i === -1 || j < 0 || j >= ordered.length) return;
-        [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
-        const orderOf = new Map(ordered.map((x, k) => [x.id, k]));
-        state.setWindows(state.meta.windows.map((x) => ({ ...x, stackOrder: orderOf.get(x.id) })));
       },
       open(content, fresh = false) {
         const { windows } = state.meta;

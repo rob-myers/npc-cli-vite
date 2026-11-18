@@ -89,10 +89,9 @@ export function frontOf(windows: SkipNetWindow[]): undefined | SkipNetWindow {
   );
 }
 
-/** A stack's windows in order: by `stackOrder`, then any without one in the desktop's reading order */
+/** A stack's windows in order: the desktop's reading order */
 export function stackOrdered(windows: SkipNetWindow[]): SkipNetWindow[] {
-  const rank = (x: SkipNetWindow) => x.stackOrder ?? Number.POSITIVE_INFINITY;
-  return [...windows].sort((a, b) => rank(a) - rank(b) || a.y - b.y || a.x - b.x);
+  return [...windows].sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
 /** A window showing `content`, cascaded from the last opened, in front */

@@ -1,15 +1,7 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
-import {
-  CaretDownIcon,
-  CaretUpIcon,
-  DotsSixVerticalIcon,
-  FileTextIcon,
-  MinusIcon,
-  PlayCircleIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { DotsSixVerticalIcon, FileTextIcon, MinusIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
 import { memo, useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { articleFolderOf, articleKeys } from "../articles";
@@ -23,15 +15,17 @@ import { titleOf } from "./windows";
 
 /**
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
- * Stacked, a click on its bar folds it once in front, and unfolds a folded one. A click on one behind only fronts it.
+ * A click on a folded one's bar unfolds it, having no windowshade box. Stacked, a click folds the front one too.
  */
 export const Window = memo(function Window(props: WindowProps) {
-  const { front, items, showAll, stack, win } = props;
+  const { front, items, peek, showAll, stack, win } = props;
   const stacked = stack !== undefined;
   /** Stacked on touch, its bar and boxes are finger-sized */
   const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
+  /** Its contents show: open, or folded but being dragged open */
+  const bodied = !shaded || peek === true;
   const title = titleOf(win, items);
   const frame = useStateRef(
     (): FrameState => ({
@@ -50,21 +44,23 @@ export const Window = memo(function Window(props: WindowProps) {
         // folded on the desktop its bar overflows its row into the gap below
         shaded && !stacked ? "w-full" : "size-full",
         "flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]",
+        // stacked, edge to edge: only a line between windows
+        stack && cn("border-x-0 border-t-0 shadow-none", stack.last && "border-b-0"),
       )}
     >
       <header
         className={cn(
           "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
           big && "text-sm",
-          big ? "h-11" : "h-6",
+          big ? "h-12" : stacked ? "h-7" : "h-6",
           stacked
             ? "cursor-pointer data-dragging:bg-mac-select/10"
             : "skip-net-drag cursor-grab active:cursor-grabbing",
-          !shaded && "border-b border-mac-edge",
+          bodied && "border-b border-mac-edge",
         )}
         onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
         onClick={(e) => {
-          if (!stacked) return;
+          if (!stacked && !shaded) return;
           // a portalled popup's clicks bubble here through React
           if (!e.currentTarget.contains(e.target as Node)) return;
           if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return;
@@ -120,44 +116,30 @@ export const Window = memo(function Window(props: WindowProps) {
           )}
         </span>
         {big && (
-          // a second grip, filling the bar between the title and the picker, easier to find with a thumb
-          <span data-stack-grip title="drag to resize" className={cn(gripClass, "flex-1 min-w-0")}>
-            <span className="h-3 w-full px-2 bg-clip-content opacity-40" style={longGripStyle} />
-          </span>
+          // a second grip, unmarked, filling the bar between the title and the picker, easier to find with a thumb
+          <span data-stack-grip title="drag to resize" className={cn(gripClass, "flex-1 min-w-0")} />
         )}
         <span className={cn("relative min-w-0 shrink-[10] flex items-center gap-1", !big && "ml-auto")}>
           <span ref={frame.setTitleSlot} className="min-w-0 flex items-center gap-1 bg-mac-title" />
-          {stack &&
-            moveBoxes
-              .filter(({ by }) => !(by === -1 ? stack.first : stack.last))
-              .map(({ by, Icon, title }) => (
-                <button
-                  key={by}
-                  type="button"
-                  title={title}
-                  className={cn(moveBoxClass, big && bigMoveBoxClass)}
-                  onClick={() => state.moveInStack(win.id, by)}
-                >
-                  <Icon weight="fill" className={big ? "size-3" : "size-2.5"} />
-                </button>
-              ))}
         </span>
         {/* Show All closes it by a badge of its own instead */}
         {!(showAll && !stacked) && (
           <>
-            <button
-              type="button"
-              title={shaded ? "roll down" : "roll up"}
-              className={cn(boxClass, big && bigBoxClass)}
-              onClick={() => state.toggleShade(win.id)}
-            >
-              <MinusIcon weight="bold" className={boxIconClass(big)} />
-            </button>
+            {!shaded && (
+              <button
+                type="button"
+                title="roll up"
+                className={cn(boxClass, big && bigBoxClass)}
+                onClick={() => state.toggleShade(win.id)}
+              >
+                <MinusIcon weight="bold" className={boxIconClass(big)} />
+              </button>
+            )}
             <CloseBox big={big} onClose={() => state.close(win.id)} />
           </>
         )}
       </header>
-      {!shaded && (
+      {bodied && (
         <div
           className={cn(
             "flex-1 min-h-0 overflow-hidden",
@@ -232,10 +214,12 @@ type WindowProps = {
   front: boolean;
   /** What jsh mounted on the World, as `state.items`, passed so a change re-renders it */
   items: JshCli.SkipNetItem[];
+  /** Stacked and folded, it is being dragged open, so its contents show */
+  peek?: boolean;
   /** As `state.showAll`, passed so a change re-renders it */
   showAll: boolean;
-  /** Whilst stacked, whether it is first or last, so it cannot move past */
-  stack?: { first: boolean; last: boolean };
+  /** Whilst stacked, whether it is last, so it has no line beneath */
+  stack?: { last: boolean };
   win: SkipNetWindow;
 };
 
@@ -244,8 +228,8 @@ function sameWindowProps(a: WindowProps, b: WindowProps) {
   return (
     a.front === b.front &&
     a.items === b.items &&
+    a.peek === b.peek &&
     a.showAll === b.showAll &&
-    a.stack?.first === b.stack?.first &&
     a.stack?.last === b.stack?.last &&
     sameShown(a.win, b.win)
   );
@@ -258,7 +242,7 @@ function sameShown(a: SkipNetWindow, b: SkipNetWindow) {
 }
 
 /** Where a window is, not what it shows */
-const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "stackOrder"]);
+const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex"]);
 
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */
@@ -280,11 +264,9 @@ const boxClass = tw(
   "skip-net-no-drag relative grid place-items-center size-4 shrink-0 border border-mac-edge dark:border-mac-text bg-mac-title text-mac-text cursor-pointer active:bg-mac-select",
 );
 /** A raised box on a touch-sized bar: lit above and left, shaded below and right, with a faint edge */
-const embossClass = tw(
-  "rounded-sm border-mac-edge/40 dark:border-mac-text/15 shadow-[inset_1px_1px_0_rgb(255_255_255/0.12),inset_-1px_-1px_0_rgb(0_0_0/0.35)]",
+const bigBoxClass = tw(
+  "size-6 rounded-sm border-mac-edge/40 dark:border-mac-text/15 shadow-[inset_1px_1px_0_rgb(255_255_255/0.12),inset_-1px_-1px_0_rgb(0_0_0/0.35)]",
 );
-const bigBoxClass = cn(embossClass, "size-6");
-const bigMoveBoxClass = cn(embossClass, "h-6 w-8");
 /** The chevron beside an article's title, which alone picks another */
 const articlePickerClass = tw(
   "skip-net-no-drag h-5 px-1.5 py-0 rounded-sm border-0 bg-transparent text-current font-[inherit] text-[length:inherit] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
@@ -297,23 +279,9 @@ const boxIconClass = (big: boolean) => (big ? "size-3" : "size-2.5");
 const clickSlopPx = 4;
 /** How long a close box stays armed */
 const confirmMs = 2500;
-/** Two rows of dots along the middle grip, in its colour */
-const longGripStyle = {
-  backgroundImage: "radial-gradient(currentColor 1.25px, transparent 1.75px)",
-  backgroundSize: "6px 6px",
-  backgroundPosition: "center",
-};
 /** The front window's title bar is pinstriped */
 const stripesStyle = {
   backgroundImage: "repeating-linear-gradient(to bottom, var(--color-mac-stripe) 0 1px, transparent 1px 2px)",
 };
-/** A stacked bar's up or down box, wider than tall for a finger */
-const moveBoxClass = tw(
-  "skip-net-no-drag grid place-items-center h-4 w-6 border border-mac-edge bg-mac-title cursor-pointer dark:border-mac-text active:bg-mac-select active:text-mac-on-select",
-);
-const moveBoxes = [
-  { by: -1, Icon: CaretUpIcon, title: "move up" },
-  { by: 1, Icon: CaretDownIcon, title: "move down" },
-] as const;
 
 const touchDevice = isTouchDevice();

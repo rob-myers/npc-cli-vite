@@ -29,8 +29,6 @@ export type SkipNetWindow = SkipNetContent & {
   shadedH?: number;
   /** Its share of a stack's height, once a bar was dragged there. Else its `h` */
   stackFlex?: number;
-  /** Its place in a stack, once moved there. Else after those placed, in the desktop's reading order */
-  stackOrder?: number;
   /** Its height is fitted to its article once shown, then this is cleared */
   fit?: boolean;
   /** The files window's open folders. Unset, every folder is open */
