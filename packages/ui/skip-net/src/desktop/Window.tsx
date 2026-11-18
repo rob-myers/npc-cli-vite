@@ -104,7 +104,7 @@ export const Window = memo(function Window(props: WindowProps) {
                     ) : (
                       <FileTextIcon weight="bold" className="size-4" />
                     ),
-                  onAction: (articleKey) => state.open({ kind: "article", articleKey }, true),
+                  onAction: (articleKey) => state.open({ kind: "article", articleKey }, { fresh: true, below: win.id }),
                 }}
                 title="change article"
                 className={articlePickerClass}
@@ -128,7 +128,7 @@ export const Window = memo(function Window(props: WindowProps) {
             {!shaded && (
               <button
                 type="button"
-                title="roll up"
+                title="collapse"
                 className={cn(boxClass, big && bigBoxClass)}
                 onClick={() => state.toggleShade(win.id)}
               >
@@ -242,7 +242,7 @@ function sameShown(a: SkipNetWindow, b: SkipNetWindow) {
 }
 
 /** Where a window is, not what it shows */
-const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex"]);
+const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "stackOrder"]);
 
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */

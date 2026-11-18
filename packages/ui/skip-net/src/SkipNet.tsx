@@ -1,11 +1,11 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { useStateRef } from "@npc-cli/util";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useLayoutEffect } from "react";
 import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
 import { Stack } from "./desktop/Stack";
 import { Toolbar } from "./desktop/Toolbar";
-import { frontOf, newWindow, restack, stackPx, toggleShade, withLayout } from "./desktop/windows";
+import { frontOf, newWindow, restack, stackOrdered, stackPx, toggleShade, withLayout } from "./desktop/windows";
 import type { SkipNetUiMeta } from "./schema";
 import { useSkipNetItems } from "./use-skip-net-items";
 
@@ -36,7 +36,22 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       close(id) {
         state.setWindows(state.meta.windows.filter((x) => x.id !== id));
       },
-      open(content, fresh = false) {
+      moveInStack(id, by, flexById = {}) {
+        const ordered = stackOrdered(state.meta.windows);
+        const i = ordered.findIndex((x) => x.id === id);
+        const j = i + by;
+        if (i === -1 || j < 0 || j >= ordered.length) return;
+        [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+        const orderOf = new Map(ordered.map((x, k) => [x.id, k]));
+        state.setWindows(
+          state.meta.windows.map((x) => ({
+            ...x,
+            stackOrder: orderOf.get(x.id),
+            stackFlex: flexById[x.id] ?? x.stackFlex,
+          })),
+        );
+      },
+      open(content, { fresh = false, below } = {}) {
         const { windows } = state.meta;
         const shown = windows.find(
           (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
@@ -46,7 +61,13 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         // stacked, an even share of the height, as `stackFlex` may be saved in px
         const shares = windows.filter((x) => x.shadedH === undefined).map((x) => x.stackFlex ?? x.h);
         if (shares.length > 0) win.stackFlex = shares.reduce((sum, x) => sum + x, 0) / shares.length;
-        state.setWindows([...windows, win]);
+        const ordered = stackOrdered(windows);
+        const at = ordered.findIndex((x) => x.id === below);
+        if (at === -1) return state.setWindows([...windows, win]);
+        // just beneath `below`, every window numbered afresh
+        ordered.splice(at + 1, 0, win);
+        const orderOf = new Map(ordered.map((x, k) => [x.id, k]));
+        state.setWindows([...windows, win].map((x) => ({ ...x, stackOrder: orderOf.get(x.id) })));
       },
       saveLayout(layout) {
         state.setWindows(withLayout(state.meta.windows, layout));
@@ -81,12 +102,15 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
   state.meta = meta; // its handlers run long after this render
   state.items = useSkipNetItems(meta.worldKey);
 
-  useEffect(() => {
+  /** Measured before the first paint too, so a narrow panel never shows the desktop first */
+  useLayoutEffect(() => {
     if (state.rootEl === null) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const narrow = entry.contentRect.width < stackPx;
+    const sync = (width: number) => {
+      const narrow = width < stackPx;
       if (narrow !== state.narrow) state.set({ narrow });
-    });
+    };
+    sync(state.rootEl.clientWidth);
+    const observer = new ResizeObserver(([entry]) => sync(entry.contentRect.width));
     observer.observe(state.rootEl);
     return () => observer.disconnect();
   }, []);

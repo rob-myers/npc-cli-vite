@@ -1,7 +1,9 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useContext, useEffect, useMemo } from "react";
+import { flushSync } from "react-dom";
 import { SkipNetContext } from "../context";
 import { deskStyle } from "./classes";
 import { DesktopIcons } from "./DesktopIcons";
@@ -9,9 +11,8 @@ import { Window } from "./Window";
 import { frontOf, stackOrdered } from "./windows";
 
 /**
- * A narrow panel's windows, as an accordion: the open ones share its height, the folded ones are bars.
- * A bar's grip dragged moves the boundary between the windows either side of it.
- * Dragged far enough it folds one, or unfolds a folded one: down the window above, up its own.
+ * A narrow panel's windows as an accordion. A bar's grip moves the boundary between the windows either side, or unfolds one.
+ * Dragged far enough it holds, offering to collapse one or move its own window that way, chosen by letting go over one.
  */
 export function Stack() {
   const state = useContext(SkipNetContext);
@@ -19,12 +20,41 @@ export function Stack() {
   const front = frontOf(windows);
   /** Fronting one never moves it */
   const ordered = useMemo(() => stackOrdered(windows), [windows]);
+  /** Each window in order, and whether open: a change slides the windows to their new places */
+  const layoutKey = ordered.map((x) => `${x.id}:${x.shadedH === undefined}`).join(" ");
 
   const stack = useStateRef(
     (): StackState => ({
+      choice: null,
       drag: null,
       unfoldingId: null,
 
+      choiceAt(drag, folding, dir) {
+        const box = drag.container.getBoundingClientRect();
+        const rect = folding.getBoundingClientRect();
+        /** Its contents, below its bar */
+        const top = rect.top + (folding.querySelector("header")?.offsetHeight ?? 0);
+        return {
+          x: rect.left - box.left + rect.width / 2,
+          y: (top + rect.bottom) / 2 - box.top + drag.container.scrollTop,
+          dir,
+          over: "fold",
+        };
+      },
+      hoverChoice(e) {
+        const { choice, drag } = stack;
+        if (choice === null) return;
+        const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-stack-choice]");
+        const over = el?.dataset.stackChoice === "move" ? "move" : "fold"; // collapse unless over "move"
+        if (over === choice.over) return;
+        stack.set({ choice: { ...choice, over } });
+        drag?.folding?.toggleAttribute("data-folding", over === "fold"); // dimmed, as it would fold
+      },
+      isEdge(el, dir) {
+        const ordered = stackOrdered(state.meta.windows);
+        const i = ordered.findIndex((x) => x.id === el.dataset.stackId);
+        return dir < 0 ? i === 0 : i === ordered.length - 1;
+      },
       onPointerDown(e) {
         const target = e.target as HTMLElement;
         const els = [...e.currentTarget.querySelectorAll<HTMLElement>("[data-stack-id]")];
@@ -42,6 +72,8 @@ export function Stack() {
         const folded = (el: undefined | HTMLElement) => (el !== undefined && el.dataset.open !== "true" ? el : null);
         stack.drag = {
           bar,
+          container: e.currentTarget,
+          own: els[at]?.dataset.stackId ?? "",
           foldedOwn: folded(els[at]),
           foldedPrev: folded(els[at - 1]),
           unfold: null,
@@ -49,6 +81,7 @@ export function Stack() {
           below: els.slice(at).find((el) => el.dataset.open === "true") ?? null,
           flexes: new Map(open.map((el) => [el, el.style.flexGrow])),
           folding: null,
+          foldY: 0,
           heights: new Map(open.map((el) => [el, el.offsetHeight])),
           moved: false,
           y: e.clientY,
@@ -74,6 +107,14 @@ export function Stack() {
         }
         drag.moved = true;
         if (drag.unfold !== null) return stack.unfoldTo(drag.unfold, drag.heights, drag.unfold.sign * dy);
+        // once offered, the choices hold the drag, the finger only picking. They lie ahead, the way it was dragged
+        if (stack.choice !== null) {
+          // dragged back the other way, away from them, they go and the drag resumes
+          if ((e.clientY - drag.foldY) * stack.choice.dir > -cancelPx) return stack.hoverChoice(e);
+          stack.set({ choice: null });
+          drag.folding?.removeAttribute("data-folding");
+          drag.folding = null;
+        }
         if (drag.above === null || drag.below === null) return;
         const above = drag.heights.get(drag.above) ?? 0;
         const total = above + (drag.heights.get(drag.below) ?? 0);
@@ -87,10 +128,16 @@ export function Stack() {
               : null;
         if (folding !== drag.folding) {
           drag.folding?.removeAttribute("data-folding");
-          folding?.setAttribute("data-folding", "");
           if (folding !== null) navigator.vibrate?.(10);
           drag.folding = folding;
+          drag.foldY = e.clientY;
+          const dir = dy > 0 ? 1 : -1;
+          // the first dragged to the top, or the last to the bottom, has nowhere to move: it just collapses
+          const atEdge = folding !== null && stack.isEdge(folding, dir);
+          folding?.setAttribute("data-folding", ""); // dimmed, as by default it collapses
+          stack.set({ choice: folding === null || atEdge ? null : stack.choiceAt(drag, folding, dir) });
         }
+        stack.hoverChoice(e);
         // written straight to the DOM whilst dragging, then saved once let go
         for (const [el, h] of drag.heights) {
           el.style.flexGrow = `${el === drag.above ? next : el === drag.below ? total - next : h}`;
@@ -106,26 +153,35 @@ export function Stack() {
         stack.showDrag(drag, false);
         if (drag.unfold !== null) {
           const { el, from, grow, shrink } = drag.unfold;
-          el.style.height = "";
           el.removeAttribute("data-folding");
           stack.set({ unfoldingId: null });
           if (grow < foldPx) {
+            el.style.height = "";
             for (const [x, flex] of drag.flexes) x.style.flexGrow = flex; // too little: it stays folded
             return;
           }
           const flexById = Object.fromEntries(
             [...drag.heights].map(([x, h]) => [x.dataset.stackId, x === shrink ? h - grow : h]),
           );
-          return state.setStackFlex({ ...flexById, [el.dataset.stackId as string]: from + grow }, el.dataset.stackId);
+          // its shares as dragged, applied at once so the slide starts from there. Open, its share sizes it, not `height`
+          flushSync(() =>
+            state.setStackFlex({ ...flexById, [el.dataset.stackId as string]: from + grow }, el.dataset.stackId),
+          );
+          el.style.height = "";
+          return;
         }
         if (drag.folding !== null) {
-          drag.folding.removeAttribute("data-folding");
-          for (const [el, flex] of drag.flexes) el.style.flexGrow = flex; // the drag undone, then the fold
-          return state.toggleShade(drag.folding.dataset.stackId as string);
+          const [choice, folding] = [stack.choice, drag.folding];
+          stack.set({ choice: null });
+          folding.removeAttribute("data-folding");
+          // the shares kept as dragged, so nothing changes size after. A collapsed one keeps its own, for when it opens
+          const foldId = folding.dataset.stackId as string;
+          const flexById = sharesOf([...drag.heights.keys()].filter((el) => choice?.over === "move" || el !== folding));
+          // let go anywhere but "move", it collapses
+          if (choice?.over === "move") return state.moveInStack(drag.own, choice.dir, flexById);
+          return state.setStackFlex(flexById, foldId);
         }
-        state.setStackFlex(
-          Object.fromEntries([...drag.heights.keys()].map((el) => [el.dataset.stackId, Number(el.style.flexGrow)])),
-        );
+        state.setStackFlex(sharesOf([...drag.heights.keys()]));
       },
       showDrag(drag, shown) {
         drag.bar.toggleAttribute("data-dragging", shown);
@@ -146,16 +202,22 @@ export function Stack() {
   useEffect(() => stack.onPointerUp, []);
 
   return (
-    <div
-      className="skip-net-stack flex-1 min-h-0 flex flex-col overflow-y-auto"
+    // `layoutScroll` so a slide is measured within its scroll
+    <motion.div
+      layoutScroll
+      className="skip-net-stack relative flex-1 min-h-0 flex flex-col overflow-y-auto"
       style={deskStyle}
       onPointerDown={stack.onPointerDown}
     >
       {ordered.map((win, i) => {
         const open = win.shadedH === undefined;
         return (
-          <div
+          // a move or a fold slides it to its new place. Measured only then, as a drag sizes it directly
+          <motion.div
             key={win.id}
+            layout="position"
+            layoutDependency={layoutKey}
+            transition={moveTransition}
             data-stack-id={win.id}
             data-open={open}
             className={cn("relative", open ? "flex-1 min-h-32" : "shrink-0", foldingClass)}
@@ -171,28 +233,63 @@ export function Stack() {
               stack={{ last: i === ordered.length - 1 }}
             />
             {!touchDevice && i < ordered.length - 1 && <div data-stack-edge className={edgeClass} />}
-          </div>
+          </motion.div>
         );
       })}
+      <AnimatePresence>
+        {stack.choice !== null && (
+          // over the window they would collapse: let go over one to choose it
+          <motion.div
+            key="choices"
+            className={choicesClass}
+            style={{ left: stack.choice.x, top: stack.choice.y }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+          >
+            <span data-stack-choice="fold" className={cn(choiceClass, stack.choice.over === "fold" && choiceOverClass)}>
+              collapse
+            </span>
+            <span data-stack-choice="move" className={cn(choiceClass, stack.choice.over === "move" && choiceOverClass)}>
+              {stack.choice.dir > 0 ? "move down" : "move up"}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* with every window folded, the desk shows below their bars */}
       {ordered.every((win) => win.shadedH !== undefined) && <DesktopIcons layout="row" />}
-    </div>
+    </motion.div>
   );
 }
 
 type StackState = {
+  /** Offered once a drag passes the fold point: collapse the window it would fold, or move the bar's own that way */
+  choice: null | Choice;
+  /** The choices, over the contents of the window they would collapse */
+  choiceAt(drag: NonNullable<StackState["drag"]>, folding: HTMLElement, dir: -1 | 1): Choice;
+  /** Whether `el` is the first in the stack, `dir` up, or the last, down: collapsed that way, it has nowhere to move */
+  isEdge(el: HTMLElement, dir: -1 | 1): boolean;
+  /** Notes the choice under the finger: "move", else "collapse", which dims the window it would fold */
+  hoverChoice(e: PointerEvent): void;
   /** A bar being dragged: the open windows either side of it, and each open window's height at the start */
   drag: null | {
     /** The bar dragged, by its grip */
     bar: HTMLElement;
+    /** The stack, which the choices are placed in */
+    container: HTMLElement;
+    /** Its window's id */
+    own: string;
     /** Its own window, if folded */
     foldedOwn: null | HTMLElement;
     /** The window just above it, if folded */
     foldedPrev: null | HTMLElement;
     /** A folded window being dragged open, by `grow` px, `shrink` giving the room */
     unfold: null | Unfold;
-    /** Each open window's share before the drag, restored if it folds one instead */
+    /** Each open window's share before the drag, restored if an unfold falls short */
     flexes: Map<HTMLElement, string>;
+    /** Where the finger was as `folding` was set */
+    foldY: number;
     /** The window letting go would fold, dragged well past its least height */
     folding: null | HTMLElement;
     above: null | HTMLElement;
@@ -212,13 +309,32 @@ type StackState = {
   unfoldTo(unfold: Unfold, heights: Map<HTMLElement, number>, px: number): void;
 };
 
+/** Each window's share by id, as a drag has written them */
+function sharesOf(els: HTMLElement[]): Record<string, number> {
+  return Object.fromEntries(els.map((el) => [el.dataset.stackId, Number(el.style.flexGrow)]));
+}
+
+/** Where the choices show, in the stack's scrolled pixels, the way the drag went, and which is chosen: "fold" by default */
+type Choice = { x: number; y: number; dir: -1 | 1; over: "fold" | "move" };
+
 /** `sign` is the way it opens: down for the window above, up for the bar's own */
 type Unfold = { el: HTMLElement; from: number; grow: number; shrink: null | HTMLElement; sign: 1 | -1 };
 
-/** A stacked window, dimmed whilst letting go of a drag would fold it */
+/** A stacked window, dimmed whilst it would collapse, or whilst dragged open too little to stay */
 const foldingClass = tw("transition-opacity data-folding:opacity-50");
-/** Pixels past a window's least height a grip is dragged to fold it */
+/** Pixels past a window's least height a grip is dragged to be offered the choices */
 const foldPx = 40;
+/** As wide as its pills: placed at the centre, it would otherwise get only the room to the stack's right edge */
+const choicesClass = tw("absolute z-20 flex w-max gap-2 -translate-x-1/2 -translate-y-1/2");
+const choiceClass = tw(
+  "inline-flex items-center justify-center h-9 px-4 whitespace-nowrap rounded-full border border-mac-edge bg-mac-window text-mac-text text-sm leading-none font-bold shadow select-none",
+);
+/** The choice under the finger */
+const choiceOverClass = tw("bg-mac-select text-mac-on-select");
+/** Pixels the finger moves back, away from the choices, to dismiss them */
+const cancelPx = 24;
+/** A window's slide to its new place in the stack, after a move or a fold */
+const moveTransition = { duration: 0.25, ease: "easeOut" } as const;
 /** A window's bottom edge, an invisible strip to drag with a mouse, as the desktop's edges are */
 const edgeClass = tw("absolute inset-x-0 -bottom-1 z-10 h-2 cursor-row-resize");
 const touchDevice = isTouchDevice();

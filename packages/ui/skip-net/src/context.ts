@@ -23,8 +23,13 @@ export type State = {
   /** Closes every window */
   clear(): void;
   close(id: string): void;
-  /** A new window, else fronts the one already showing that folder, article or item. `fresh` always opens one */
-  open(content: SkipNetContent, fresh?: boolean): void;
+  /** Swaps it with its neighbour in the stack, above on `-1`, below on `1`, saving `flexById` as each one's share too */
+  moveInStack(id: string, by: -1 | 1, flexById?: Record<string, number>): void;
+  /**
+   * A new window, else fronts the one already showing that folder, article or item. `fresh` always opens one.
+   * `below` places it just beneath that window in the stack
+   */
+  open(content: SkipNetContent, opts?: { fresh?: boolean; below?: string }): void;
   /** Keeps where each window was dragged or resized to */
   saveLayout(layout: Layout): void;
   setClearAsked(clearAsked: boolean): void;
