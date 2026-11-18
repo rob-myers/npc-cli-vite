@@ -51,7 +51,7 @@ export const Window = memo(function Window(props: WindowProps) {
   return (
     <div
       className={cn(
-        // folded on the desktop its bar overflows its row into the gap below
+        // folded on the desktop its bar overflows its one row, past the gap below
         shaded && !stacked ? "w-full" : "size-full",
         "flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]",
         // stacked, edge to edge: only a line between windows
@@ -62,7 +62,7 @@ export const Window = memo(function Window(props: WindowProps) {
         className={cn(
           "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
           big && "text-sm",
-          big ? "h-12" : stacked ? "h-7" : "h-6",
+          big ? "h-12" : "h-7",
           stacked
             ? "cursor-pointer data-dragging:bg-mac-select/10"
             : "skip-net-drag cursor-grab active:cursor-grabbing",

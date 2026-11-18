@@ -1,8 +1,8 @@
 import { cn } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { hashText } from "@npc-cli/util/legacy/generic";
-import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
-import { type ComponentProps, isValidElement, useContext, useMemo } from "react";
+import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, PlayIcon } from "@phosphor-icons/react";
+import { type ComponentProps, isValidElement, useContext, useMemo, useState } from "react";
 import { ArticleContext } from "./context";
 import { type Example, type SrcSegment, splitExamples, toSegments } from "./shell";
 import { tokenCss } from "./shell-highlight";
@@ -39,54 +39,63 @@ function ShellCommands({ src }: { src: string }) {
   );
 }
 
+/** Its comment, a run button on its left, copy and expand on its right. Expanded, its command shows beneath */
 function ShellCommand({ example, segments }: { example: Example; segments: SrcSegment[] }) {
   const { copiedSrc, copy, ranId, run } = useContext(ArticleContext);
+  const [expanded, setExpanded] = useState(false);
+  const toggle = () => setExpanded(!expanded);
   const { src } = example;
+  /** Without a comment, its command is shown in its place */
+  const commented = example.commentLines.length > 0;
+  const command = (
+    <code className={cn(codeCss, "min-w-0")}>
+      {segments.map((segment, i) => (
+        <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
+          {segment.text}
+        </span>
+      ))}
+    </code>
+  );
 
   return (
     <div
       className={cn(
-        "group/example relative px-3 py-1 cursor-pointer hover:bg-term-hover-strong",
-        // bordered throughout, so gaining the colour shifts nothing
-        "border border-transparent",
+        "px-3 py-1 border border-transparent", // bordered throughout, so gaining the colour shifts nothing
         example.id === ranId && "border-term-ok/50 bg-term-ok/10",
         example.blankBefore > 0 && "mt-0.5",
+        // run, comment, then copy and expand. Expanded, its command goes under the comment
+        "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
       )}
-      onClick={() => run(example.id, src)}
     >
-      {example.commentLines.length > 0 && (
-        <div className="flex items-start">
-          <span className={copyColumnCss} />
-          <code className={cn(codeCss, tokenCss.comment, "flex-1 min-w-0")}>{example.commentLines.join("\n")}</code>
-        </div>
-      )}
-      <div className="flex items-start">
-        <span className={cn(copyColumnCss, "group-has-[button:hover]/example:text-term-foreground")}>
-          {copiedSrc === src ? (
-            <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
-          ) : (
-            <CopyIcon alt="copy" className="size-3.5" />
-          )}
-        </span>
-        <code className={cn(codeCss, "flex-1 min-w-0")}>
-          {segments.map((segment, i) => (
-            <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
-              {segment.text}
-            </span>
-          ))}
+      <button type="button" title="run" className={runButtonCss} onClick={() => run(example.id, src)}>
+        <PlayIcon weight="fill" className={runIconCss} />
+      </button>
+      {commented ? (
+        <code
+          className={cn(codeCss, tokenCss.comment, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
+          onClick={toggle}
+        >
+          {example.commentLines.join("\n")}
         </code>
-      </div>
-      {/* the whole left column, so a tap near the icon copies rather than runs */}
-      <button
-        type="button"
-        title="copy command"
-        aria-label="copy command"
-        className="absolute inset-y-0 left-0 w-10 cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          copy(src);
-        }}
-      />
+      ) : (
+        command
+      )}
+      <span className="flex items-center gap-0.5">
+        <button type="button" title="copy" className={iconButtonCss} onClick={() => copy(src)}>
+          {copiedSrc === src ? <CheckIcon className={cn(iconCss, "text-term-ok")} /> : <CopyIcon className={iconCss} />}
+        </button>
+        {commented && (
+          <button
+            type="button"
+            title={expanded ? "hide command" : "show command"}
+            className={iconButtonCss}
+            onClick={toggle}
+          >
+            {expanded ? <CaretUpIcon className={iconCss} /> : <CaretDownIcon className={iconCss} />}
+          </button>
+        )}
+      </span>
+      {commented && expanded && <div className="col-start-2 col-span-2 mt-0.5">{command}</div>}
     </div>
   );
 }
@@ -99,9 +108,15 @@ const codeCss = cn(
   "block font-mono text-[13px]/[1.45] whitespace-pre-wrap wrap-break-word",
   touchDevice && "text-[15px]/[1.45]",
 );
-/** Left of each line: the copy icon beside the command, empty beside its comment */
-const copyColumnCss = cn(
-  "shrink-0 w-7 h-[1.45em] flex items-center text-[13px]",
-  touchDevice && "text-[15px]",
-  "text-term-faint transition-colors",
+/** A copy or expand button, right of an example's comment */
+const iconButtonCss = cn(
+  "grid place-items-center rounded cursor-pointer text-term-faint transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
+  touchDevice ? "size-8" : "size-5",
 );
+const iconCss = touchDevice ? "size-4.5" : "size-3.5";
+/** The run button, left of an example's comment, larger than the rest */
+const runButtonCss = cn(
+  "shrink-0 grid place-items-center rounded border border-term-border-subtle cursor-pointer text-term-muted transition-colors hover:text-term-ok hover:border-term-ok/50 hover:bg-term-ok/10",
+  touchDevice ? "size-10" : "size-7",
+);
+const runIconCss = touchDevice ? "size-5" : "size-4";
