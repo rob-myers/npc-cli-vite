@@ -117,6 +117,7 @@ export function Stack() {
               ? target.closest("header")
               : null;
         if (bar === null) return;
+        e.preventDefault(); // else a press on an edge starts a text selection, which autoscrolls the window above
         const at = els.findIndex((el) => el.contains(bar));
         const open = els.filter((el) => el.dataset.open === "true");
         const folded = (el: undefined | HTMLElement) => (el !== undefined && el.dataset.open !== "true" ? el : null);
