@@ -1870,7 +1870,7 @@ export function WorldView(props: React.PropsWithChildren) {
           <motion.div
             className={cn(
               indicatorClassName,
-              "pointer-events-none top-20 z-70 whitespace-nowrap border border-yellow-200/30 bg-black/60", // below the hud-toasts (`noticesHeight`), dark to stand out
+              "pointer-events-none top-24 z-70 whitespace-nowrap border border-yellow-200/30 bg-black/60", // below the hud-toasts, two lines with "disconnected", dark to stand out
             )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
