@@ -45,12 +45,12 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         const orderOf = new Map(ordered.map((x, k) => [x.id, k]));
         state.setWindows(state.meta.windows.map((x) => ({ ...x, stackOrder: orderOf.get(x.id) })));
       },
-      open(content) {
+      open(content, fresh = false) {
         const { windows } = state.meta;
         const shown = windows.find(
           (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
         );
-        if (shown !== undefined) return state.bringToFront(shown.id);
+        if (shown !== undefined && !fresh) return state.bringToFront(shown.id);
         const win = newWindow(windows, content);
         // stacked, an even share of the height, as `stackFlex` may be saved in px
         const shares = windows.filter((x) => x.shadedH === undefined).map((x) => x.stackFlex ?? x.h);

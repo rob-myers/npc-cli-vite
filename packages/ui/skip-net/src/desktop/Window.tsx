@@ -1,7 +1,14 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
-import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowSquareOutIcon,
+  CaretDownIcon,
+  CaretUpIcon,
+  DotsSixVerticalIcon,
+  MinusIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { articleKeys } from "../articles";
@@ -97,6 +104,11 @@ export function Window(props: {
                 value={title}
                 options={articleKeys}
                 onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
+                optionAction={{
+                  title: "open in a new window",
+                  icon: <ArrowSquareOutIcon weight="bold" className="size-3.5" />,
+                  onAction: (articleKey) => state.open({ kind: "article", articleKey }, true),
+                }}
                 title="change article"
                 className={articlePickerClass}
                 popupClassName={titlePickerPopupClass}
