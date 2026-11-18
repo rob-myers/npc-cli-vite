@@ -15,7 +15,8 @@ import { titleOf } from "./windows";
 
 /**
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
- * A click on a folded one's bar unfolds it, its windowshade box greyed. Stacked, a click folds the front one too.
+ * A tap on a folded one's bar unfolds it, its windowshade box greyed. Stacked, a tap folds the front one too.
+ * With a mouse a double-click folds or unfolds any, a single click only fronting it.
  */
 export const Window = memo(function Window(props: WindowProps) {
   const { front, items, peek, showAll, stack, win } = props;
@@ -27,11 +28,20 @@ export const Window = memo(function Window(props: WindowProps) {
   /** Its contents show: open, or folded but being dragged open */
   const bodied = !shaded || peek === true;
   const title = titleOf(win, items);
+  /** Folds it, or unfolds it if folded */
+  const fold = () => (stack ? (shaded ? stack.expand : stack.collapse)(win.id) : state.toggleShade(win.id));
   const frame = useStateRef(
     (): FrameState => ({
       downAt: { x: 0, y: 0 },
+      mouse: false,
       titleSlot: null,
 
+      isBarClick(e) {
+        // a portalled popup's clicks bubble here through React
+        if (!e.currentTarget.contains(e.target as Node)) return false;
+        if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return false;
+        return Math.hypot(e.clientX - frame.downAt.x, e.clientY - frame.downAt.y) <= clickSlopPx;
+      },
       setTitleSlot(el) {
         if (el !== frame.titleSlot) frame.set({ titleSlot: el });
       },
@@ -58,18 +68,16 @@ export const Window = memo(function Window(props: WindowProps) {
             : "skip-net-drag cursor-grab active:cursor-grabbing",
           bodied && "border-b border-mac-edge",
         )}
-        onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
-        onClick={(e) => {
-          if (!stacked && !shaded) return;
-          // a portalled popup's clicks bubble here through React
-          if (!e.currentTarget.contains(e.target as Node)) return;
-          if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return;
-          const { downAt } = frame;
-          if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
-          if (state.pressedFrontId !== win.id && !shaded) return; // a click on an open window behind only fronts it
-          if (stack) (shaded ? stack.expand : stack.collapse)(win.id);
-          else state.toggleShade(win.id);
+        onPointerDown={(e) => {
+          frame.downAt = { x: e.clientX, y: e.clientY };
+          frame.mouse = e.pointerType === "mouse";
         }}
+        onClick={(e) => {
+          if (frame.mouse || (!stacked && !shaded) || !frame.isBarClick(e)) return;
+          if (state.pressedFrontId !== win.id && !shaded) return; // a tap on an open window behind only fronts it
+          fold();
+        }}
+        onDoubleClick={(e) => void (frame.mouse && frame.isBarClick(e) && fold())}
       >
         {front && (
           // fainter stacked, where the grips' dots sit on them
@@ -253,6 +261,10 @@ const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "sta
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */
   downAt: { x: number; y: number };
+  /** That press was a mouse's, so a double-click folds rather than a click */
+  mouse: boolean;
+  /** A click on the bar itself, not a box, grip or popup, and not the end of a drag */
+  isBarClick(e: React.MouseEvent): boolean;
   /** Where its body shows things in its title bar (`InTitle`) */
   titleSlot: null | HTMLElement;
   setTitleSlot(el: null | HTMLElement): void;
