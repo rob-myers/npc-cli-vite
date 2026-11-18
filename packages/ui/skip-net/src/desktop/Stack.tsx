@@ -69,9 +69,9 @@ export function Stack() {
         stack.set({ choice: { ...choice, over } });
         drag?.folding?.toggleAttribute("data-folding", over === "fold"); // dimmed, as it would fold
       },
-      isEdge(el, dir) {
+      isEdge(drag, dir) {
         const ordered = stackOrdered(state.meta.windows);
-        const i = ordered.findIndex((x) => x.id === el.dataset.stackId);
+        const i = ordered.findIndex((x) => x.id === drag.own);
         return dir < 0 ? i === 0 : i === ordered.length - 1;
       },
       onPointerDown(e) {
@@ -134,7 +134,13 @@ export function Stack() {
           drag.folding?.removeAttribute("data-folding");
           drag.folding = null;
         }
-        if (drag.above === null || drag.below === null) return;
+        if (drag.below === null) return;
+        const dir = dy > 0 ? 1 : -1;
+        if (drag.above === null) {
+          // nothing open above to give room to: dragged far enough either way, it offers to collapse or move its own
+          const own = drag.below.contains(drag.bar) ? drag.below : null;
+          return stack.setFolding(e, drag, Math.abs(dy) > foldPx ? own : null, dir);
+        }
         const above = drag.heights.get(drag.above) ?? 0;
         const total = above + (drag.heights.get(drag.below) ?? 0);
         const next = Math.min(Math.max(above + dy, stackMinPx), total - stackMinPx);
@@ -145,18 +151,7 @@ export function Stack() {
             : above + dy < stackMinPx - foldPx
               ? drag.above
               : null;
-        if (folding !== drag.folding) {
-          drag.folding?.removeAttribute("data-folding");
-          if (folding !== null) navigator.vibrate?.(10);
-          drag.folding = folding;
-          drag.foldY = e.clientY;
-          const dir = dy > 0 ? 1 : -1;
-          // the first dragged to the top, or the last to the bottom, has nowhere to move: it just collapses
-          const atEdge = folding !== null && stack.isEdge(folding, dir);
-          folding?.setAttribute("data-folding", ""); // dimmed, as by default it collapses
-          stack.set({ choice: folding === null || atEdge ? null : stack.choiceAt(drag, folding, dir) });
-        }
-        stack.hoverChoice(e);
+        stack.setFolding(e, drag, folding, dir);
         // written straight to the DOM whilst dragging, then saved once let go
         for (const [el, h] of drag.heights) {
           el.style.flexGrow = `${el === drag.above ? next : el === drag.below ? total - next : h}`;
@@ -201,6 +196,19 @@ export function Stack() {
           return state.setStackFlex(flexById, foldId);
         }
         state.setStackFlex(sharesOf([...drag.heights.keys()]));
+      },
+      setFolding(e, drag, folding, dir) {
+        if (folding !== drag.folding) {
+          drag.folding?.removeAttribute("data-folding");
+          if (folding !== null) navigator.vibrate?.(10);
+          drag.folding = folding;
+          drag.foldY = e.clientY;
+          // its own window first dragged up, or last dragged down, has nowhere to move: it just collapses
+          const atEdge = folding !== null && stack.isEdge(drag, dir);
+          folding?.setAttribute("data-folding", ""); // dimmed, as by default it collapses
+          stack.set({ choice: folding === null || atEdge ? null : stack.choiceAt(drag, folding, dir) });
+        }
+        stack.hoverChoice(e);
       },
       showDrag(drag, shown) {
         drag.bar.toggleAttribute("data-dragging", shown);
@@ -287,11 +295,11 @@ type StackState = {
   /** Offered once a drag passes the fold point: collapse the window it would fold, or move the bar's own that way */
   choice: null | Choice;
   /** The choices, over the contents of the window they would collapse */
-  choiceAt(drag: NonNullable<StackState["drag"]>, folding: HTMLElement, dir: -1 | 1): Choice;
+  choiceAt(drag: Drag, folding: HTMLElement, dir: -1 | 1): Choice;
   /** Eases an open window to its bar, contents showing, then folds it, as its "-" box or a tap on its bar asks */
   collapse(id: string): void;
-  /** Whether `el` is the first in the stack, `dir` up, or the last, down: collapsed that way, it has nowhere to move */
-  isEdge(el: HTMLElement, dir: -1 | 1): boolean;
+  /** Whether the dragged bar's window is first in the stack, `dir` up, or last, down: it has nowhere to move that way */
+  isEdge(drag: Drag, dir: -1 | 1): boolean;
   /** Notes the choice under the finger: "move", else "collapse", which dims the window it would fold */
   hoverChoice(e: PointerEvent): void;
   /** A bar being dragged: the open windows either side of it, and each open window's height at the start */
@@ -323,8 +331,10 @@ type StackState = {
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerMove(e: PointerEvent): void;
   onPointerUp(): void;
+  /** Notes the window letting go would collapse, offering the choices unless its own has nowhere to move */
+  setFolding(e: PointerEvent, drag: Drag, folding: null | HTMLElement, dir: -1 | 1): void;
   /** Marks the bar dragged, with a short buzz on touch */
-  showDrag(drag: NonNullable<StackState["drag"]>, shown: boolean): void;
+  showDrag(drag: Drag, shown: boolean): void;
   rootEl: null | HTMLDivElement;
   /** The folded window being dragged open, whose contents show meanwhile */
   unfoldingId: null | string;
@@ -336,6 +346,8 @@ type StackState = {
 function sharesOf(els: HTMLElement[]): Record<string, number> {
   return Object.fromEntries(els.map((el) => [el.dataset.stackId, Number(el.style.flexGrow)]));
 }
+
+type Drag = NonNullable<StackState["drag"]>;
 
 /** Where the choices show, in the stack's scrolled pixels, the way the drag went, and which is chosen: "fold" by default */
 type Choice = { x: number; y: number; dir: -1 | 1; over: "fold" | "move" };
