@@ -25,6 +25,15 @@ export function DeskIcon({ children, label, onOpen }: { children: ReactNode; lab
   );
 }
 
+export function ChatIcon() {
+  return (
+    <svg {...svgProps}>
+      <path d="M4 6h24v15H14l-6 5v-5H4z" />
+      <path d="M9 11h14M9 15h10" />
+    </svg>
+  );
+}
+
 export function DocumentIcon() {
   return (
     <svg {...svgProps}>

@@ -8,6 +8,11 @@ export const deskStyle = {
   backgroundAttachment: "local",
 };
 
+/** A small picker in a title bar, in the desktop's greys over `Picker`'s own. Hovered, it is faintly tinted */
+export const titlePickerClass = tw(
+  "skip-net-no-drag h-3.5 py-0 rounded-none border-0 bg-mac-title text-mac-text text-[11px] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
+);
+
 /** A title bar picker's popup, in the desktop's greys over `Picker`'s own */
 export const titlePickerPopupClass = tw(
   "rounded-none! border-mac-edge! bg-mac-window! text-mac-text! [&_[data-selected]]:text-mac-text! [&_[data-selected]]:font-bold [&_[data-highlighted]]:bg-mac-select/15!",

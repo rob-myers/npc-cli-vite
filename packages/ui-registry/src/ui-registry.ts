@@ -1,5 +1,4 @@
 import Audio from "@npc-cli/ui__audio";
-import Blog from "@npc-cli/ui__blog";
 import Decorator from "@npc-cli/ui__decorator";
 import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
@@ -16,7 +15,6 @@ import type { UiPackageDef } from "@npc-cli/ui-sdk";
  */
 export type UiRegistry = {
   Audio: typeof Audio;
-  Blog: typeof Blog;
   Decorator: typeof Decorator;
   Jsh: typeof Jsh;
   MapEdit: typeof MapEdit;
@@ -29,7 +27,6 @@ export type UiRegistry = {
 export const uiRegistryFactory = (): UiRegistry =>
   ({
     Audio,
-    Blog,
     Decorator,
     Jsh,
     MapEdit,

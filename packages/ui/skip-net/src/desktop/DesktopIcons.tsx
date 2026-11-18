@@ -1,14 +1,17 @@
 import { useContext } from "react";
 import { SkipNetContext } from "../context";
-import { DeskIcon, FolderIcon, ItemIcon } from "./icons";
+import { ChatIcon, DeskIcon, FolderIcon, ItemIcon } from "./icons";
 
 /** A column at the top-right of what is in view, under every window. Else a row, e.g. on an empty stack */
 export function DesktopIcons({ layout = "column" }: { layout?: "column" | "row" }) {
   const state = useContext(SkipNetContext);
   const icons = (
     <>
-      <DeskIcon label="npc" onOpen={() => state.open({ kind: "folder" })}>
+      <DeskIcon label="files" onOpen={() => state.open({ kind: "folder" })}>
         <FolderIcon />
+      </DeskIcon>
+      <DeskIcon label="chat" onOpen={() => state.open({ kind: "chat" })}>
+        <ChatIcon />
       </DeskIcon>
       {state.items.map((item) => (
         <DeskIcon key={item.key} label={item.title} onOpen={() => state.open({ kind: "item", itemKey: item.key })}>

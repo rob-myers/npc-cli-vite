@@ -22,7 +22,10 @@ export function MenuBar() {
         </BarMenu>
         <BarMenu label="File">
           <Menu.Item className={itemClass} onClick={() => state.open({ kind: "folder" })}>
-            Open npc Folder
+            Open files
+          </Menu.Item>
+          <Menu.Item className={itemClass} onClick={() => state.open({ kind: "chat" })}>
+            Open chat
           </Menu.Item>
           {state.items.map((item) => (
             <Menu.Item

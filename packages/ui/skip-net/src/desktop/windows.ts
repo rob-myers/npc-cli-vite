@@ -78,5 +78,6 @@ const cascadeCells = 2;
 const sizes: Record<SkipNetKind, [number, number]> = {
   article: [30, 24],
   folder: [20, 12],
+  chat: [24, 24],
   item: [20, 16],
 };

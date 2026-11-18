@@ -1,8 +1,8 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
-/** What a window shows: the npc folder, an article, or an item jsh mounted on the World */
-export type SkipNetKind = "folder" | "article" | "item";
+/** What a window shows: the files folder, an article, an item jsh mounted on the World, or the chat */
+export type SkipNetKind = "folder" | "article" | "item" | "chat";
 
 /** A window's kind, and what it shows */
 export type SkipNetContent = {
@@ -13,6 +13,8 @@ export type SkipNetContent = {
   articleKey?: string;
   /** The item's key, e.g. `sidestep` */
   itemKey?: string;
+  /** The chat's thread, `general` or an article's key. Unset, `general` */
+  threadKey?: string;
 };
 
 /** A window on the desktop, placed in grid cells. A higher `z` stacks it over others */
@@ -29,6 +31,8 @@ export type SkipNetWindow = SkipNetContent & {
   stackFlex?: number;
   /** Its place in a stack, once moved there. Else after those placed, in the desktop's reading order */
   stackOrder?: number;
+  /** The files window's open folders. Unset, every folder is open */
+  openFolders?: string[];
 };
 
 export const SkipNetUiMetaSchema = z.object({
@@ -42,7 +46,7 @@ export const SkipNetUiMetaSchema = z.object({
     .custom<SkipNetWindow[]>((x) => Array.isArray(x))
     /** Saved jobs and library windows are dropped: those kinds are gone */
     .transform((windows) => windows.filter((x) => (x.kind as string) !== "jobs" && (x.kind as string) !== "library"))
-    /** The npc folder, and its first article beside it, or below it when stacked */
+    /** The files folder, and its first npc article beside it, or below it when stacked */
     .default((): SkipNetWindow[] => [
       { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
       { id: "w2", kind: "article", articleKey: "npc-controls", x: 21, y: 0, w: 30, h: 24, z: 2 },

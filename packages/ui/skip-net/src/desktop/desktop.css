@@ -54,3 +54,9 @@
     }
   }
 }
+
+/* whilst a window is dragged or resized, an iframe (the chat's) never takes the pointer */
+.skip-net-grid:has(> .react-draggable-dragging, > .resizing) iframe,
+.skip-net-stack:has([data-dragging]) iframe {
+  pointer-events: none;
+}

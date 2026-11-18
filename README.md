@@ -31,7 +31,7 @@ Some scripts need extra tools (pngquant, ImageMagick, Go/TinyGo) — see [docs/t
 |---|---|
 | `packages/app` | Vite app entry, and the public assets: sheets, symbols, maps, decor, skins |
 | `packages/ui/world` | The 3D world: camera, npcs, navigation, lighting, floor |
-| `packages/ui/*` | The other UIs: `jsh`, `map-edit`, `decorator`, `manifest`, `tabs`, `jobs`, `blog`, … |
+| `packages/ui/*` | The other UIs: `jsh`, `map-edit`, `decorator`, `manifest`, `tabs`, `jobs`, `skip-net`, … |
 | `packages/cli` | The shell behind Jsh: tty, processes, and the `jsh` world commands |
 | `packages/media` | Static asset keys, symbol metadata, source images e.g. the geomorphs |
 | `packages/util` | Shared geometry (`Mat`, `Vect`, `Rect`), services, TSL helpers |

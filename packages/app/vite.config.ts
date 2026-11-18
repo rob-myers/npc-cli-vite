@@ -11,15 +11,12 @@ import { spotsPlugin } from "@npc-cli/scripts/vite-plugin-spots";
 import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import { worldRtcPlugin } from "@npc-cli/scripts/vite-plugin-world-rtc";
-import rehypeShiki from "@shikijs/rehype";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
-
-const skipNetArticles = /\/skip-net\/src\/articles\/[^/]+\.mdx$/;
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -33,14 +30,8 @@ export default defineConfig({
       autoCodeSplitting: true,
       routesDirectory: "src/routes",
     }),
-    mdx({
-      exclude: skipNetArticles,
-      rehypePlugins: [
-        [rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false, langs: ["tsx", "sh"] }],
-      ],
-    }),
-    /** SkipNet's fences stay raw, so its own components can run them */
-    mdx({ include: skipNetArticles }),
+    /** Fences stay raw, so SkipNet's own components can highlight and run them */
+    mdx(),
     react(),
     tailwindcss(),
     mapEditApiPlugin(),

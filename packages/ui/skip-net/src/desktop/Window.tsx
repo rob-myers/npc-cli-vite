@@ -5,6 +5,7 @@ import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, MinusIcon, XIcon } fro
 import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { articleKeyOf, articleKeys } from "../articles";
+import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
 import type { SkipNetWindow } from "../schema";
@@ -185,7 +186,9 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
   const state = useContext(SkipNetContext);
   switch (win.kind) {
     case "folder":
-      return <FolderWindow />;
+      return <FolderWindow win={win} />;
+    case "chat":
+      return <ChatWindow win={win} />;
     case "article":
       return <ArticlePane win={win} />;
     case "item":
@@ -202,7 +205,9 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
 function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
   switch (win.kind) {
     case "folder":
-      return "npc";
+      return "files";
+    case "chat":
+      return "chat";
     case "article":
       return articleKeyOf(win.articleKey) ?? "article";
     case "item":

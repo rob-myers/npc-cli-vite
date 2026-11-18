@@ -1,8 +1,8 @@
-import { Spinner, tw } from "@npc-cli/util";
+import { Spinner } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { SkipNetContext } from "./context";
-import { titlePickerPopupClass } from "./desktop/classes";
+import { titlePickerClass, titlePickerPopupClass } from "./desktop/classes";
 import { InTitle } from "./desktop/InTitle";
 import type { SkipNetWindow } from "./schema";
 import type { SessionRunner } from "./use-session-runner";
@@ -35,7 +35,7 @@ export function SessionPicker(props: Props) {
           options={ttyMetas.map((x) => x.sessionKey)}
           onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
           title="the session commands run in"
-          className={pickerClass}
+          className={titlePickerClass}
           popupClassName={titlePickerPopupClass}
         />
       )}
@@ -48,8 +48,3 @@ type Props = {
   session: ReturnType<typeof useWindowSession>;
   win: SkipNetWindow;
 };
-
-/** Small enough for a title bar, in the desktop's greys over `Picker`'s own. Hovered, it is faintly tinted */
-const pickerClass = tw(
-  "skip-net-no-drag h-3.5 py-0 rounded-none border-0 bg-mac-title text-mac-text text-[11px] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
-);
