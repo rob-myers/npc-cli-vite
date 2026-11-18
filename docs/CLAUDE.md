@@ -36,6 +36,7 @@ Pnpm monorepo. Key packages:
 - TSX/TS for almost everything. `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A class-string constant is wrapped in `tw` (`@npc-cli/util`), e.g. `const barClass = tw("…")`, so Tailwind IntelliSense reads it. `tw` returns it as is: `cn` is for combining.
 - A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
+- A tab has its own theme, chosen in its dots menu: `auto` (the page's), `light` or `dark` (`meta.theme`, else its def's `defaultTheme`). Its content gets `.theme-light` / `.theme-dark` and a `bg-background` of its own. Inside it, `UiContext.theme` and `useThemeName()` give the tab's theme (`themeOfUi`, `TabThemeContext`). Tokens in `theme.css` need a value in `.theme-light` too.
 - A modal opened from a ui panel stays inside that panel, never over the whole page. Portal it into the panel's root (base-ui `Dialog.Portal container`) and position it `absolute`, not `fixed`.
 - `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.
   - Keep mutable data in it, not at module level, e.g. `movesBegun` in `use-world-events`. Its fields survive a hot reload, and new ones are added. A module-level `const` is made afresh, so in-flight work and fresh code see different copies.

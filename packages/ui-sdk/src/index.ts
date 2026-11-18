@@ -16,4 +16,6 @@ export type UiPackageDef = {
   schema: z.ZodType<UiInstanceMeta>;
   /** It scales itself by `meta.zoom`, so `Tabs` leaves it unzoomed */
   ownZoom?: true;
+  /** Its tab's theme unless one is chosen, else the page's */
+  defaultTheme?: import("@npc-cli/theme").ThemeName;
 };

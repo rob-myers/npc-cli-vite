@@ -2,17 +2,21 @@ import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
+import { themeOfUi } from "@npc-cli/ui-sdk/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
+  CircleHalfIcon,
   DotsThreeOutlineIcon,
   MinusIcon,
+  MoonIcon,
   PlayCircleIcon,
   PlusCircleIcon,
   PlusIcon,
+  SunIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
@@ -21,7 +25,7 @@ import { useStore } from "zustand";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
-  const { layoutApi, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
+  const { layoutApi, theme, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
   const rootRef = useRef<HTMLDivElement>(null);
   const newTabButtonRef = useRef<HTMLButtonElement>(null);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -256,7 +260,12 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             key={tab.id}
             data-tab-content={tab.id}
             tabIndex={-1}
-            className={cn("size-full outline-none", tab.id !== meta.currentTabId && "hidden")}
+            className={cn(
+              // a backdrop in its own theme
+              "size-full outline-none bg-background",
+              `theme-${themeOfUi(tab, uiRegistry[tab.uiKey], theme)}`,
+              tab.id !== meta.currentTabId && "hidden",
+            )}
             style={
               tab.zoom === undefined || (uiRegistry[tab.uiKey] as UiPackageDef).ownZoom
                 ? undefined
@@ -294,7 +303,8 @@ function TabHeaderItem({
   uiStore,
   uiStoreApi,
 }: TabHeaderItemProps) {
-  const { layoutApi } = useContext(UiContext);
+  const { layoutApi, uiRegistry } = useContext(UiContext);
+  const chosenTheme = tab.theme ?? (uiRegistry[tab.uiKey] as UiPackageDef).defaultTheme ?? "auto";
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
@@ -411,10 +421,10 @@ function TabHeaderItem({
               className={tabMenuClass}
               positionerClassName="z-10000"
               arrowClassName="hidden"
-              side="right"
-              anchor={state.tabEl} // beside the tab, its underline included, so it hides the next tab
-              align="center"
-              sideOffset={0}
+              side="bottom"
+              anchor={state.tabEl}
+              align="start"
+              sideOffset={2}
             >
               <button type="button" title="close tab" className={popoverButtonClass} onPointerDown={onDeleteTab}>
                 <XIcon className="size-3.5" />
@@ -444,6 +454,18 @@ function TabHeaderItem({
               >
                 <PlusIcon className="size-3.5" />
               </button>
+              <span className="self-stretch w-px my-1 bg-on-background/15" />
+              {themeChoices.map(({ key, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={`${key} theme`}
+                  className={cn(popoverButtonClass, key === chosenTheme && "bg-on-background/15 text-on-background")}
+                  onPointerDown={() => uiStoreApi.setUiMeta(tab.id, (draft) => void (draft.theme = key))}
+                >
+                  <Icon className="size-3.5" />
+                </button>
+              ))}
             </BasicPopover>
           </>
         )}
@@ -497,14 +519,20 @@ function zoomTab(uiStoreApi: TabHeaderItemProps["uiStoreApi"], tabId: string, by
   });
 }
 
-/** A row beside the tab, as high as it */
+/** A row below the tab */
 const tabMenuClass = tw(
-  "h-(--anchor-height) p-0.5 flex items-center gap-0.5 rounded-md bg-button-background text-on-background text-xs border-on-background/15 shadow-lg shadow-black/20 dark:shadow-black/50",
+  "h-8 p-0.5 flex items-center gap-0.5 rounded-md bg-button-background text-on-background text-xs border-on-background/15 shadow-lg shadow-black/20 dark:shadow-black/50",
 );
 const popoverButtonClass = tw(
   "grid place-items-center size-6 rounded cursor-pointer text-on-background/70 transition-colors hover:bg-on-background/10 hover:text-on-background",
 );
 const zoomStep = 0.1;
+/** A tab's theme: the page's, or always light or dark */
+const themeChoices = [
+  { key: "auto", Icon: CircleHalfIcon },
+  { key: "light", Icon: SunIcon },
+  { key: "dark", Icon: MoonIcon },
+] as const;
 const zoomRange = [0.5, 2] as const;
 
 const noopTouchCleanup = Object.assign(() => {}, { resetDraggable() {} });

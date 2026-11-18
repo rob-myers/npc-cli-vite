@@ -45,7 +45,7 @@ A panel narrower than `stackPx` (640) shows its windows stacked instead (`deskto
 
 ## Light and dark
 
-The chrome is greyscale, in `mac-*` colour tokens in `packages/app/src/styles/theme.css`: light (the classic white look) and `.theme-dark`. Window bodies keep their `term-*` colours. An article's `prose` is inverted only in the dark theme.
+The chrome is greyscale, in `mac-*` colour tokens in `packages/app/src/styles/theme.css`: light (the classic white look) and `.theme-dark`. Window bodies keep their `term-*` colours. An article's `prose` is inverted only in the dark theme. SkipNet is light unless its tab's menu chooses otherwise (`defaultTheme: "light"`).
 
 ## Articles
 

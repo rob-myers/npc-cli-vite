@@ -1,13 +1,16 @@
+import { TabThemeContext } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
 import type { UiInstanceMeta, UiStoreByIdEntry } from "@npc-cli/ui-sdk";
 import { recordUiLoad } from "@npc-cli/ui-sdk/analytics";
+import { themeOfUi } from "@npc-cli/ui-sdk/schema";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiErrorBoundary } from "@npc-cli/ui-sdk/UiErrorBoundary";
 import { UiParseError } from "@npc-cli/ui-sdk/UiParseError";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { Spinner } from "@npc-cli/util";
 import { simulatedStaleUi } from "@npc-cli/util/build-info";
 import type React from "react";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useContext, useEffect, useMemo, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 
@@ -26,6 +29,10 @@ const UiPortal = ({ meta, portal, everSeen }: UiStoreByIdEntry) => {
   const def = uiRegistry[meta.uiKey];
   const C = def.ui as React.ComponentType<{ meta: UiInstanceMeta }>;
   const result = useMemo(() => def.schema.safeParse(meta), [def, meta]);
+  const pageCtxt = useContext(UiContext);
+  const theme = themeOfUi(meta, def, pageCtxt.theme);
+  /** Its tab may choose its own theme */
+  const ctxt = useMemo(() => ({ ...pageCtxt, theme }), [pageCtxt, theme]);
   // when the lazy chunk started loading; `ReportLoad` below closes the interval
   const startedAt = useRef(0);
   if (everSeen === true && startedAt.current === 0) startedAt.current = performance.now();
@@ -33,18 +40,22 @@ const UiPortal = ({ meta, portal, everSeen }: UiStoreByIdEntry) => {
   return (
     <portals.InPortal key={meta.id} node={portal.portalNode}>
       {everSeen && (
-        <UiErrorBoundary meta={meta}>
-          <Suspense fallback={<Spinner />}>
-            <ReportLoad meta={meta} startedAt={startedAt} />
-            {simulatedStaleUi === meta.uiKey ? (
-              <SimulatedChunkFailure uiKey={meta.uiKey} />
-            ) : result.success ? (
-              <C key={meta.mountKey} meta={result.data} />
-            ) : (
-              <UiParseError uiKey={meta.uiKey} zodError={result.error} />
-            )}
-          </Suspense>
-        </UiErrorBoundary>
+        <UiContext.Provider value={ctxt}>
+          <TabThemeContext.Provider value={theme}>
+            <UiErrorBoundary meta={meta}>
+              <Suspense fallback={<Spinner />}>
+                <ReportLoad meta={meta} startedAt={startedAt} />
+                {simulatedStaleUi === meta.uiKey ? (
+                  <SimulatedChunkFailure uiKey={meta.uiKey} />
+                ) : result.success ? (
+                  <C key={meta.mountKey} meta={result.data} />
+                ) : (
+                  <UiParseError uiKey={meta.uiKey} zodError={result.error} />
+                )}
+              </Suspense>
+            </UiErrorBoundary>
+          </TabThemeContext.Provider>
+        </UiContext.Provider>
       )}
     </portals.InPortal>
   );
