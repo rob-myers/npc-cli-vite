@@ -111,7 +111,7 @@ export function Desktop() {
             <div
               key={win.id}
               // its grid box stays put whilst its tile moves, so only the tile takes the pointer
-              className={cn(slot && "group pointer-events-none")}
+              className={cn(slot && "group pointer-events-none", win.fit && fittingClass)}
               style={{ zIndex: win.z + 1 }}
               onPointerDownCapture={() => state.bringToFront(win.id)}
               onClickCapture={(e) => {
@@ -182,6 +182,8 @@ const showAllTitleClass = tw(
 const showAllCloseClass = tw(
   "absolute left-0 top-0 grid place-items-center size-5 rounded-full border border-mac-edge bg-mac-window text-mac-text shadow pointer-events-auto cursor-pointer opacity-0 transition-[transform,opacity] duration-300 ease-out starting:opacity-0 group-hover:opacity-100 hover:bg-mac-select hover:text-mac-on-select",
 );
+/** Hidden whilst fitted to its article, and not animated, the grid's own transition overridden */
+const fittingClass = tw("invisible transition-none!");
 /** Show All neither drags nor resizes */
 const offConfig = { enabled: false };
 /** Room around the windows in Show All */
