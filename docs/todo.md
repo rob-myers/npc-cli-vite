@@ -1,42 +1,18 @@
 # TODO
 
-- 🚧 JobsLibrary -> Scenarios -> SkipNet
-  - ✅ `SkipNet` has own customisable layout (sub-allotment)
-  - ✅ move sidestep debug ui here
-  - ✅ move JobsLibrary into SkipNet
-  - ✅ can instantiate Jobs in SkipNet
-  - 🚧 start npc-docs
-    - 🚧 use mdx
-    - 🚧 e.g. npc-controls, npc-player, npc-inventory
-    - 🚧 e.g. npc-hide-n-seek, npc-patrol, npc-sidestep
-    - restyle SkipNet to look separate
-      - https://scipnet-terminal.web.app/
-  - ❌ tldr only contains most common
-    - label only (code viewable by running)
-    - individual persisted params with history
-  - ❌ return to Scenario and start acting them out
-    - ✅ support `act {npcKey}` format
-      - `act kate count:3 down` or `act count kate from:3`
-      - `act kate avoid:rob`
-    - ✅ hide-and-seek sketch
-      - can `act hide kate from:rob` fails if dst has nearby (1.5m) spot visible by rob
-      - can `act kate avoid:rob` fails if dst's nearest spot may be seen by rob
-      - can `act kate count:3 down`
-      - can `act count kate from:3 to:0`
-    - 🚧 guard-and-intruder sketch
-      - ✅ `act guard room:{grKey}`
-      - ❌ try provide structure via dfas with synchronising words
-      - ✅ `sc save patrol/patrol-route path:[[17.5,10.4],[17.5,11.4],[16.5,10.4]] npc:guard-0`
-      - `act patrol test-patrol`
-      - `act patrol path:[[17.5,10.4],[17.5,11.4],[16.5,10.2]] g1,g2 watch:nobody`
-      - ✅ patrols -> graphs
-        - `sc save graph/test ...`
-    - meeting-in-secret sketch
-    - breach-and-clear sketch
+- 🚧 SkipNet refine
+  - extend articles
+  - refine code-fence component
+    - only comment by default, can expand to show code, can expand/collapse all
+    - can specify defaults
+    - World pause initially has persisted "autoboot" checkbox which runs defaults
+  - improve sidestep ui
+  - improve SkipLib top menu
   - narrator ui
   - change command `sc`
 
-- Blog component is list of videos
+- helper ui pointing user towards SkipNet
+
 
 After vid:
 
