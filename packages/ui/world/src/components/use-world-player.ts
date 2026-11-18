@@ -462,8 +462,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const el = w.rootEl;
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
         const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
-        // a key released after focus has gone elsewhere never reaches `onKeyUp`
-        const onBlur = () => (state.cancelCharge(), state.setFarLook(false), w.hud?.update());
+        // a key released after focus has gone elsewhere never reaches `onKeyUp`. Space's is WorldView's (`keysDown`)
+        const onBlur = () => (state.cancelCharge(), w.hud?.update());
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);

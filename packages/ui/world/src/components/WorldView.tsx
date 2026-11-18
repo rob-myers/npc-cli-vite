@@ -1012,6 +1012,10 @@ export function WorldView(props: React.PropsWithChildren) {
         w.menu?.onResize();
         w.speech?.onResize();
       }, 100),
+      onBlur() {
+        if (state.keysDown.has(" ")) w.player?.setFarLook(false); // Space held, its far look ends too
+        state.keysDown.clear();
+      },
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
         const key = wasdOfArrow[e.key] ?? e.key.toLowerCase();
@@ -1285,8 +1289,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e);
         const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
         const onZoomWheel = (e: WheelEvent) => state.onZoomWheel(e);
-        // a key released after focus has gone elsewhere never reaches `onKeyUp`
-        const onBlur = () => state.keysDown.clear();
+        const onBlur = () => state.onBlur();
         w.rootEl.addEventListener("keydown", onKeyDown);
         w.rootEl.addEventListener("keyup", onKeyUp);
         w.rootEl.addEventListener("focusout", onBlur);
@@ -2057,6 +2060,8 @@ export type State = {
   /** What is under `e`: picked by colour, then raycast for the point */
   pickAt(e: PointerEvent): Promise<null | PickFound>;
   onCreated(rootState: RootState): void;
+  /** Focus lost: a key released meanwhile never reaches `onKeyUp`, so every key is let go */
+  onBlur(): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
   /** Pans onto the player, following them as they walk — what turning `follow` on does */
