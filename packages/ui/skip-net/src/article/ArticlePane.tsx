@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Spinner } from "@npc-cli/util";
+import { cn, Spinner, tw } from "@npc-cli/util";
 import { Suspense, useContext, useMemo, useRef, useState } from "react";
-import { articleKeyOf, getArticle } from "../articles";
+import { articleFolderOf, articleKeyOf, getArticle } from "../articles";
 import { SkipNetContext } from "../context";
 import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
@@ -60,6 +60,7 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
               className={cn(
                 "prose prose-sm max-w-[unset] leading-[1.4] prose-code:before:hidden prose-code:after:hidden prose-code:px-1 prose-code:bg-mac-text/10",
                 theme === "dark" && "prose-invert",
+                articleFolderOf(articleKey) !== "video" && framedClass,
               )}
             >
               {content}
@@ -79,3 +80,6 @@ export function ArticleSessionPicker({ win }: { win: SkipNetWindow }) {
   const runner = useSessionRunner(session.ttyMeta);
   return <SessionPicker runner={runner} session={session} win={win} />;
 }
+
+/** A rounded frame around an article's text, though not its videos */
+const framedClass = tw("rounded-xl border border-mac-text/20 px-4 py-3");
