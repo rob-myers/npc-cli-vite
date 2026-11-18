@@ -135,7 +135,7 @@ export const Window = memo(function Window(props: WindowProps) {
             >
               <MinusIcon weight="bold" className={boxIconClass(big)} />
             </button>
-            <CloseBox big={big} onClose={() => state.close(win.id)} />
+            <CloseBox big={big} onClose={() => (stack ? stack.close(win.id) : state.close(win.id))} />
           </>
         )}
       </header>
@@ -224,8 +224,8 @@ type WindowProps = {
   peek?: boolean;
   /** As `state.showAll`, passed so a change re-renders it */
   showAll: boolean;
-  /** Whilst stacked, whether it is last, so it has no line beneath, and how it eases to and from its bar */
-  stack?: { last: boolean; collapse(id: string): void; expand(id: string): void };
+  /** Whilst stacked, whether it is last, so it has no line beneath, and how it eases away or to and from its bar */
+  stack?: { last: boolean; close(id: string): void; collapse(id: string): void; expand(id: string): void };
   win: SkipNetWindow;
 };
 
