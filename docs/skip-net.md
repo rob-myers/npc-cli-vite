@@ -4,11 +4,11 @@ SkipNet is the intranet holding SCPs. As a panel, `packages/ui/skip-net` (uiKey 
 
 ## Desktop
 
-A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid out by `react-grid-layout`.
+A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx`), laid out by `react-grid-layout`.
 
 - **Grid.** The desk is `desktopCols` (80) cells of `cellPx` (20px), wider than most panels, so it scrolls both ways. Its rows grow with the windows, `rowGapPx` (6px) apart, so windows one above another never touch.
 - **No compaction.** Windows stay where they are put and overlap freely (`freeCompactor`). Upward, leftward and push-apart compaction were tried and dropped.
-- **Show All Windows**, as macOS's Mission Control: every window is tiled within what is in view, shrunk to fit and never overlapping, in reading order (`showAllSlots`). A CSS transform on each moves it, so nothing remounts, and the desk dims and holds its scroll. It is toggled by the ⊞ button at the menu bar's right, or a backtick whilst the pointer is over SkipNet and no text field has focus (`state.hovered`). A click on a window fronts it and ends it, as do a click on the desk and Escape. Each tile has its title in a badge at its centre, and a round close badge at its top-right whilst the pointer is over it (always on touch). Its bar's own boxes are hidden. It ends once the last window closes. Meanwhile nothing drags or resizes. A stacked panel has none.
+- **Show All Windows**, as macOS's Mission Control: every window is tiled within what is in view, shrunk to fit and never overlapping, in reading order (`showAllSlots`). A CSS transform on each moves it, so nothing remounts, and the desk dims and holds its scroll. It is toggled by the toolbar's ⊞ button, or a backtick whilst the pointer is over SkipNet and no text field has focus (`state.hovered`). A click on a window fronts it and ends it, as do a click on the desk and Escape. Each tile has its title in a badge at its centre, and a round close badge at its top-right whilst the pointer is over it (always on touch). Its bar's own boxes are hidden. It ends once the last window closes. Meanwhile nothing drags or resizes. A stacked panel has none.
 - **Front window.** A press on a window stacks it over the rest (`bringToFront`, `restack` renumbers `z` from 1). Only the front window has pinstripes. Every window shows its close and windowshade boxes.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
 - **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **files**, **chat**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
@@ -25,13 +25,13 @@ A dithered desk with a menu bar, icons and windows (`desktop/Desktop.tsx`), laid
 - **Opening.** A new window is cascaded from the last opened (`newWindow`), sized by its kind. An article window is then fitted to its article once loaded (`fit`, `FitHeight`), between 6 rows and `articleRows`. Picking another article in its bar fits it again.
 - **Sessions.** An article window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
 
-## Menu bar
+## Toolbar
 
-Base-ui `Menubar` menus, portalled into SkipNet (`desktop/MenuBar.tsx`):
+A small base-ui `Menubar` floating over the desk's top-right, above every window, so the desk takes the panel's full height (`desktop/Toolbar.tsx`). Stacked, it floats at the bottom-right, clear of the first window's bar. Windows are opened from the desktop icons, which sit below it.
 
-- **◆**: the World's key
-- **File**: open the files folder, the chat, each World item, close the front window
-- At its right, buttons for Show All Windows (`` ` ``, hidden whilst stacked) and Clear, which asks first in a classic alert box (`ClearAlert`)
+- Show All Windows (`` ` ``, hidden whilst stacked)
+- Clear, which asks first in a classic alert box (`ClearAlert`)
+- **◆**, a menu portalled into SkipNet: the World's key
 
 ## Stack
 

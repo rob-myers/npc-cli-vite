@@ -25,7 +25,8 @@ export function DesktopIcons({ layout = "column" }: { layout?: "column" | "row" 
   }
   return (
     <div className="sticky top-0 left-0 z-1 h-0 w-full flex justify-end pointer-events-none">
-      <div className="pt-3 pr-3 flex flex-col items-center gap-3 pointer-events-auto">{icons}</div>
+      {/* below the toolbar */}
+      <div className="pt-11 pr-3 flex flex-col items-center gap-3 pointer-events-auto">{icons}</div>
     </div>
   );
 }

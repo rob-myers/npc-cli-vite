@@ -3,8 +3,8 @@ import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
 import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
-import { MenuBar } from "./desktop/MenuBar";
 import { Stack } from "./desktop/Stack";
+import { Toolbar } from "./desktop/Toolbar";
 import { frontOf, newWindow, restack, stackOrdered, stackPx, toggleShade, withLayout } from "./desktop/windows";
 import type { SkipNetUiMeta } from "./schema";
 import { useSkipNetItems } from "./use-skip-net-items";
@@ -120,7 +120,7 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         onPointerLeave={() => void (state.hovered = false)}
         className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide"
       >
-        <MenuBar />
+        <Toolbar />
         {state.narrow ? <Stack /> : <Desktop />}
       </div>
     </SkipNetContext.Provider>
