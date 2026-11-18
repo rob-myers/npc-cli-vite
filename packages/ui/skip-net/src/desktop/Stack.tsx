@@ -169,7 +169,13 @@ export function Stack() {
             style={open ? { flexGrow: win.stackFlex ?? win.h } : undefined}
             onPointerDownCapture={() => state.bringToFront(win.id)}
           >
-            <Window win={win} front={win.id === front?.id} stack={{ first: i === 0, last: i === ordered.length - 1 }} />
+            <Window
+              win={win}
+              front={win.id === front?.id}
+              items={state.items}
+              showAll={false}
+              stack={{ first: i === 0, last: i === ordered.length - 1 }}
+            />
             {!touchDevice && i < ordered.length - 1 && <div data-stack-edge className={edgeClass} />}
           </div>
         );

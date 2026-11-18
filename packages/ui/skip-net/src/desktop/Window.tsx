@@ -9,7 +9,7 @@ import {
   MinusIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { useContext, useEffect } from "react";
+import { memo, useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
 import { articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
@@ -24,19 +24,14 @@ import { titleOf } from "./windows";
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
  * Stacked, a click on its bar folds it once in front, and unfolds a folded one. A click on one behind only fronts it.
  */
-export function Window(props: {
-  front: boolean;
-  /** Whilst stacked, whether it is first or last, so it cannot move past */
-  stack?: { first: boolean; last: boolean };
-  win: SkipNetWindow;
-}) {
-  const { front, stack, win } = props;
+export const Window = memo(function Window(props: WindowProps) {
+  const { front, items, showAll, stack, win } = props;
   const stacked = stack !== undefined;
   /** Stacked on touch, its bar and boxes are finger-sized */
   const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
-  const title = titleOf(win, state.items);
+  const title = titleOf(win, items);
   const frame = useStateRef(
     (): FrameState => ({
       downAt: { x: 0, y: 0 },
@@ -142,7 +137,7 @@ export function Window(props: {
               ))}
         </span>
         {/* Show All closes it by a badge of its own instead */}
-        {!(state.showAll && !stacked) && (
+        {!(showAll && !stacked) && (
           <>
             <button
               type="button"
@@ -170,7 +165,7 @@ export function Window(props: {
       )}
     </div>
   );
-}
+}, sameWindowProps);
 
 /** Its first press arms it red, a second within `confirmMs` closes the window */
 function CloseBox({ big, onClose }: { big: boolean; onClose(): void }) {
@@ -224,6 +219,38 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
       );
   }
 }
+
+type WindowProps = {
+  front: boolean;
+  /** What jsh mounted on the World, as `state.items`, passed so a change re-renders it */
+  items: JshCli.SkipNetItem[];
+  /** As `state.showAll`, passed so a change re-renders it */
+  showAll: boolean;
+  /** Whilst stacked, whether it is first or last, so it cannot move past */
+  stack?: { first: boolean; last: boolean };
+  win: SkipNetWindow;
+};
+
+/** The same, unless what it shows changed. Its place and `z` are the grid's, so moving or fronting another leaves it be */
+function sameWindowProps(a: WindowProps, b: WindowProps) {
+  return (
+    a.front === b.front &&
+    a.items === b.items &&
+    a.showAll === b.showAll &&
+    a.stack?.first === b.stack?.first &&
+    a.stack?.last === b.stack?.last &&
+    sameShown(a.win, b.win)
+  );
+}
+
+function sameShown(a: SkipNetWindow, b: SkipNetWindow) {
+  if (a === b) return true;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof SkipNetWindow>;
+  return [...keys].every((key) => placeKeys.has(key) || a[key] === b[key]);
+}
+
+/** Where a window is, not what it shows */
+const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "stackOrder"]);
 
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */

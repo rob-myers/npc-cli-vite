@@ -127,7 +127,7 @@ export function Desktop() {
                 )}
                 style={slot && { transform: `translate(${slot.dx}px, ${slot.dy}px) scale(${slot.scale})` }}
               >
-                <Window win={win} front={win.id === front?.id} />
+                <Window win={win} front={win.id === front?.id} items={state.items} showAll={showAll} />
               </div>
               {slot && settled && (
                 // unscaled: its title in a badge at its tile's centre, and a close badge at its top-right whilst over it
