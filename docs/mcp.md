@@ -87,7 +87,7 @@ Loading:
 | `jsh({ cmd, tty?, waitMs?, typed? })` | Runs one line in a tty, `tty-1` by default, typed visibly unless `typed: false`. Returns once the prompt is back, else after `waitMs` (2000) with the command still running |
 | `output({ tty?, since? })` | What was written to the tty since a previous result's `since` |
 | `interrupt({ tty? })` | Ctrl-c: ends the foreground command, so the tty takes input again |
-| `query({ fn, world?, depth? })` | Runs `fn`, JS source such as `w => w.gms[0].rooms.length`, on the World and returns JSON. Writes to no tty. It runs in the page, so `window` is in reach |
+| `query({ fn, world?, depth? })` | Runs `fn`, JS source such as `w => w.gms[0].rooms.length`, on the World and returns JSON. Writes to no tty. It runs in the page, so `window` is in reach. `world: ""` runs it with no World, e.g. to inspect a panel |
 | `click({ x, z, y? } \| { clientX, clientY }, long?, button? })` | A real pointer press, e.g. to answer `pick`. A world point is projected by the camera |
 | `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error. `level: "debug"` shows Vite's `hot updated` lines. On a hung page it still returns what was logged before, ending `[page not responding]` |
 | `shot()` | A screenshot |
