@@ -18,7 +18,7 @@ export function SessionPicker(props: Props) {
     <InTitle>
       {/* a clicked command has been queued, but has yet to lead a process */}
       {runner.spawning.src !== null && (
-        <span title={`running: ${runner.spawning.src}`}>
+        <span className="p-1" title={`running: ${runner.spawning.src}`}>
           <Spinner className="size-3" />
         </span>
       )}
