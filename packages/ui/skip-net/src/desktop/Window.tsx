@@ -174,6 +174,7 @@ export const Window = memo(function Window(props: WindowProps) {
 }, sameWindowProps);
 
 /** Its first press arms it red, a second within `confirmMs` closes the window */
+// biome-ignore lint/style/useComponentExportOnlyModules: Biome misses the memo'd `Window`, so thinks this file exports none
 function CloseBox({ big, onClose }: { big: boolean; onClose(): void }) {
   const box = useStateRef(
     (): CloseBoxState => ({
@@ -206,6 +207,7 @@ function CloseBox({ big, onClose }: { big: boolean; onClose(): void }) {
   );
 }
 
+// biome-ignore lint/style/useComponentExportOnlyModules: as `CloseBox`
 function WindowBody({ win }: { win: SkipNetWindow }) {
   const state = useContext(SkipNetContext);
   switch (win.kind) {
