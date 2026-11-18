@@ -51,7 +51,10 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
           <Suspense fallback={<Spinner className="size-4 m-2" />}>
             <article
               ref={articleRef}
-              className={cn("prose prose-sm max-w-[unset] leading-[1.4]", theme === "dark" && "prose-invert")}
+              className={cn(
+                "prose prose-sm max-w-[unset] leading-[1.4] prose-code:before:hidden prose-code:after:hidden prose-code:px-1 prose-code:bg-mac-text/10",
+                theme === "dark" && "prose-invert",
+              )}
             >
               {content}
             </article>
