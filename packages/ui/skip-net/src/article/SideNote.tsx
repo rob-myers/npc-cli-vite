@@ -24,7 +24,7 @@ export function SideNote({ children }: { children: ReactNode }) {
           sideOffset={4}
           collisionPadding={8}
         >
-          <Popover.Popup className="max-w-60 px-2 py-1.5 bg-mac-window text-mac-text text-xs leading-snug border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] outline-none">
+          <Popover.Popup className="max-w-60 px-2 py-1.5 bg-mac-select text-mac-on-select text-xs leading-snug border border-mac-select shadow-[1px_1px_0_var(--color-mac-shadow)] outline-none text-[0.9rem]">
             {children}
           </Popover.Popup>
         </Popover.Positioner>
