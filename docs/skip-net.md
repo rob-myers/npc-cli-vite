@@ -58,6 +58,8 @@ An article is an mdx file in a folder, `src/articles/{folder}/{key}.mdx`, e.g. `
   - A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), for amendments to attach to later.
   - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
   - `<Video id="…" />` is a YouTube video loaded on click (`article/Video.tsx`, lazy, so its library loads only with it), e.g. `video/demo`.
+  - `<SideNote>…</SideNote>` is an info icon in the text, showing the note on hover or press (a base-ui Popover with `openOnHover`, since a Tooltip ignores presses).
+  - `mdx.d.ts` types these tags in the editor, as the global `MDXProvidedComponents` the MDX extension reads.
 - Adding or renaming one reloads the page.
 
 ## Chat
