@@ -33,7 +33,6 @@
   "devDependencies": {
     "@mdx-js/react": "^3.1.1",
     "@mdx-js/rollup": "^3.1.1",
-    "@shikijs/rehype": "catalog:",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query-devtools": "catalog:",

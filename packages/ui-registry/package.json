@@ -14,7 +14,6 @@
   "dependencies": {
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/ui__audio": "workspace:^",
-    "@npc-cli/ui__blog": "workspace:^",
     "@npc-cli/ui__decorator": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",

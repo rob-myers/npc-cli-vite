@@ -1,10 +1,8 @@
 /* react-grid-layout's look, made SkipNet's */
 .skip-net-grid > .react-grid-item {
-  /* a dragged window's outline is dashed */
+  /* where a dragged window would land is not drawn */
   &.react-grid-placeholder {
-    background: transparent;
-    opacity: 1;
-    outline: 1px dashed var(--color-mac-edge);
+    display: none;
   }
 
   /* every edge and corner resizes it, but only its grow box (se) is drawn, in the window's edge */
@@ -53,4 +51,10 @@
       height: 10px;
     }
   }
+}
+
+/* whilst a window is dragged or resized, an iframe (the chat's) never takes the pointer */
+.skip-net-grid:has(> .react-draggable-dragging, > .resizing) iframe,
+.skip-net-stack:has([data-dragging]) iframe {
+  pointer-events: none;
 }

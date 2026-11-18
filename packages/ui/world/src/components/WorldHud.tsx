@@ -428,6 +428,34 @@ export default function WorldHud() {
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
       <div className={noticesClass}>
+        {/* on a line of its own, above the rest */}
+        <AnimatePresence initial={false} mode="popLayout">
+          {w.wasReadyFor.size === 0 && (
+            <motion.div key="disconnected" {...toastMotion}>
+              {/* a popover, opened by a click or tap */}
+              <Popover.Root>
+                <Popover.Trigger
+                  className="pointer-events-auto flex cursor-help items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 text-sky-300"
+                  onClick={() => w.view.focus()}
+                >
+                  <PlugsIcon className="size-4" />
+                  <span>disconnected</span>
+                </Popover.Trigger>
+                <Popover.Portal container={w.rootEl}>
+                  <Popover.Positioner side="bottom" sideOffset={4} className="z-50">
+                    <Popover.Popup
+                      initialFocus={false}
+                      finalFocus={false}
+                      className="rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-sky-100"
+                    >
+                      connect a tty or world
+                    </Popover.Popup>
+                  </Popover.Positioner>
+                </Popover.Portal>
+              </Popover.Root>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* kept whilst aiming, strafing, looking, following or capped, an "x" ending each, greyed if it may not be. Then sound, muted or not */}
         <div className="flex items-center gap-0.5">
           <AnimatePresence initial={false} mode="popLayout">
@@ -486,33 +514,6 @@ export default function WorldHud() {
             {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
             <span>{muted ? "muted" : "unmuted"}</span>
           </motion.button>
-          <AnimatePresence initial={false} mode="popLayout">
-            {w.wasReadyFor.size === 0 && (
-              <motion.div key="disconnected" {...toastMotion}>
-                {/* a popover, opened by a click or tap */}
-                <Popover.Root>
-                  <Popover.Trigger
-                    className="pointer-events-auto flex cursor-help items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 text-sky-300"
-                    onClick={() => w.view.focus()}
-                  >
-                    <PlugsIcon className="size-4" />
-                    <span>disconnected</span>
-                  </Popover.Trigger>
-                  <Popover.Portal container={w.rootEl}>
-                    <Popover.Positioner side="bottom" sideOffset={4} className="z-50">
-                      <Popover.Popup
-                        initialFocus={false}
-                        finalFocus={false}
-                        className="rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-sky-100"
-                      >
-                        connect a tty or world
-                      </Popover.Popup>
-                    </Popover.Positioner>
-                  </Popover.Portal>
-                </Popover.Root>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
         <AnimatePresence>
           {state.notice !== null && (

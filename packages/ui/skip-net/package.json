@@ -9,6 +9,7 @@
   "scripts": {},
   "dependencies": {
     "@base-ui/react": "catalog:",
+    "@giscus/react": "catalog:",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
@@ -16,9 +17,11 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-grid-layout": "catalog:",
+    "react-lite-youtube-embed": "catalog:",
     "zod": "catalog:",
     "zustand": "catalog:"
   }

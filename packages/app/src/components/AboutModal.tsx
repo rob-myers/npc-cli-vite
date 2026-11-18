@@ -4,6 +4,9 @@ import { XIcon } from "@phosphor-icons/react";
 import About from "./about.mdx";
 import { aboutComponents } from "./about-components";
 
+// `moduleDetection: force` means ambient declarations need importing
+import "../mdx.d";
+
 export function AboutModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>

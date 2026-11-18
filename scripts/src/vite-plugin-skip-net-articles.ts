@@ -48,13 +48,13 @@ export function skipNetArticlesPlugin(): Plugin {
 function readArticles(isDev: boolean): Record<string, { bytes: number; modifiedMs: number }> {
   return Object.fromEntries(
     fs
-      .readdirSync(ARTICLES_DIR)
+      .readdirSync(ARTICLES_DIR, { recursive: true, encoding: "utf8" })
       .filter((x) => x.endsWith(".mdx"))
       .map((x) => {
         const file = path.join(ARTICLES_DIR, x);
         const stat = fs.statSync(file);
         return [
-          x.slice(0, -".mdx".length),
+          path.basename(x, ".mdx"),
           { bytes: stat.size, modifiedMs: isDev ? stat.mtimeMs : (committedMs(file) ?? stat.mtimeMs) },
         ];
       }),

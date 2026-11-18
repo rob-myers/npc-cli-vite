@@ -29,9 +29,6 @@
       "path": "./packages/util"
     },
     {
-      "path": "./packages/ui/blog"
-    },
-    {
       "path": "./packages/ui/jsh"
     },
     {

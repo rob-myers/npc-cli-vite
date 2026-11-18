@@ -2,66 +2,43 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Menu } from "@base-ui/react/menu";
 import { Menubar } from "@base-ui/react/menubar";
 import { cn, tw } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
 import { SkipNetContext } from "../context";
-import { frontOf } from "./windows";
 
-/** SkipNet's menu bar, its menus portalled into SkipNet */
-export function MenuBar() {
+/** SkipNet's toolbar: Show All, Clear, and the ◆ menu, portalled into SkipNet */
+export function Toolbar() {
   const state = useContext(SkipNetContext);
-  const { arrange, windows, worldKey } = state.meta;
-  const front = frontOf(windows);
+  const { windows, worldKey } = state.meta;
 
   return (
     <>
-      <Menubar className="shrink-0 relative z-2 flex items-stretch h-5 px-1 bg-mac-window text-mac-text border-b border-mac-edge select-none">
-        <BarMenu label="◆">
+      <Menubar className={cn(toolbarClass, state.narrow ? stackedClass : "top-1 right-1")}>
+        {!state.narrow && (
+          <button
+            type="button"
+            title="show all windows (`), Escape ends it"
+            className={cn(barButtonClass, state.showAll && "bg-mac-select text-mac-on-select")}
+            disabled={windows.length === 0}
+            onClick={() => state.toggleShowAll()}
+          >
+            <SquaresFourIcon weight="bold" className="size-4" />
+          </button>
+        )}
+        {/* asks first, in a classic alert box */}
+        <button
+          type="button"
+          title="clear the desktop"
+          className={barButtonClass}
+          disabled={windows.length === 0}
+          onClick={() => state.setClearAsked(true)}
+        >
+          <TrashIcon weight="bold" className="size-4" />
+        </button>
+        <BarMenu label="◆" side={state.narrow ? "top" : "bottom"}>
           <Menu.Item className={itemClass} disabled>
             SkipNet · {worldKey}
-          </Menu.Item>
-        </BarMenu>
-        <BarMenu label="File">
-          <Menu.Item className={itemClass} onClick={() => state.open({ kind: "folder" })}>
-            Open npc Folder
-          </Menu.Item>
-          {state.items.map((item) => (
-            <Menu.Item
-              key={item.key}
-              className={itemClass}
-              onClick={() => state.open({ kind: "item", itemKey: item.key })}
-            >
-              Open {item.title}
-            </Menu.Item>
-          ))}
-          <Menu.Separator className={separatorClass} />
-          <Menu.Item
-            className={itemClass}
-            disabled={front === undefined}
-            onClick={() => front !== undefined && state.close(front.id)}
-          >
-            Close Window
-          </Menu.Item>
-        </BarMenu>
-        <BarMenu label="View">
-          <Menu.Item className={itemClass} disabled={state.narrow} onClick={state.cleanUp}>
-            Clean Up
-          </Menu.Item>
-          <Menu.Separator className={separatorClass} />
-          {arranges.map(({ value, label }) => (
-            <Menu.Item
-              key={value}
-              className={itemClass}
-              disabled={state.narrow}
-              onClick={() => state.setArrange(value)}
-            >
-              <span className="w-3">{arrange === value ? "✓" : ""}</span>
-              {label}
-            </Menu.Item>
-          ))}
-          <Menu.Separator className={separatorClass} />
-          {/* asks first, in a classic alert box */}
-          <Menu.Item className={itemClass} disabled={windows.length === 0} onClick={() => state.setClearAsked(true)}>
-            Clear…
           </Menu.Item>
         </BarMenu>
       </Menubar>
@@ -70,15 +47,15 @@ export function MenuBar() {
   );
 }
 
-function BarMenu({ children, label }: { children: ReactNode; label: string }) {
+function BarMenu({ children, label, side }: { children: ReactNode; label: string; side: "top" | "bottom" }) {
   const state = useContext(SkipNetContext);
   return (
     <Menu.Root>
-      <Menu.Trigger className="px-2 font-bold cursor-default outline-none data-popup-open:bg-mac-select data-popup-open:text-mac-on-select">
+      <Menu.Trigger className="px-2.5 text-sm font-bold cursor-default outline-none data-popup-open:bg-mac-select data-popup-open:text-mac-on-select">
         {label}
       </Menu.Trigger>
       <Menu.Portal container={state.rootEl}>
-        <Menu.Positioner className="z-3000" positionMethod="absolute" align="start" sideOffset={0}>
+        <Menu.Positioner className="z-3000" positionMethod="absolute" side={side} align="end" sideOffset={2}>
           <Menu.Popup className="min-w-40 py-0.5 bg-mac-window text-mac-text text-xs border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] outline-none">
             {children}
           </Menu.Popup>
@@ -116,15 +93,21 @@ function ClearAlert() {
   );
 }
 
-const arranges = [
-  { value: "free", label: "Free" },
-  { value: "tidy", label: "Tidy" },
-] as const;
+/** Floats over the desk's top-right, above every window. Stacked, in the last bar: see `stackedClass` */
+const toolbarClass = tw(
+  "absolute z-2000 flex items-stretch h-7 bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] select-none",
+);
+/** Stacked, centred in the last bar, often folded: clear of its title and close box. A mouse's bar is shorter */
+const stackedClass = cn("left-1/2 -translate-x-1/2", isTouchDevice() ? "bottom-[9px]" : "bottom-px h-6");
+
+/** A toolbar button: Show All, as macOS's Mission Control, or Clear */
+const barButtonClass = tw(
+  "px-2.5 grid place-items-center cursor-pointer outline-none disabled:text-mac-muted disabled:cursor-default",
+);
 
 const itemClass = tw(
   "flex items-center gap-1 px-3 py-0.5 cursor-default outline-none data-highlighted:bg-mac-select data-highlighted:text-mac-on-select data-disabled:text-mac-muted",
 );
-const separatorClass = tw("my-0.5 border-t border-dotted border-mac-muted");
 const alertButtonClass = tw(
   "min-w-16 px-3 py-0.5 rounded-full border border-mac-edge bg-mac-window cursor-pointer active:bg-mac-select active:text-mac-on-select",
 );

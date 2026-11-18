@@ -25,6 +25,15 @@ export function DeskIcon({ children, label, onOpen }: { children: ReactNode; lab
   );
 }
 
+export function ChatIcon() {
+  return (
+    <svg {...svgProps}>
+      <path d="M4 6h24v15H14l-6 5v-5H4z" />
+      <path d="M9 11h14M9 15h10" />
+    </svg>
+  );
+}
+
 export function DocumentIcon() {
   return (
     <svg {...svgProps}>
@@ -40,6 +49,16 @@ export function FolderIcon() {
     <svg {...svgProps}>
       <path d="M3 9h10l2 3h14v15H3z" />
       <path d="M3 12h26" />
+    </svg>
+  );
+}
+
+/** A screen with a play mark, for a video article */
+export function VideoFileIcon() {
+  return (
+    <svg {...svgProps}>
+      <rect x="4" y="7" width="24" height="18" rx="2" />
+      <path d="M13 11.5v9l7.5-4.5z" />
     </svg>
   );
 }
