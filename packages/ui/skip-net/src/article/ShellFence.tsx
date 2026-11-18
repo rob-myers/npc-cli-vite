@@ -1,8 +1,11 @@
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { hashText } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, PlayIcon } from "@phosphor-icons/react";
-import { type ComponentProps, isValidElement, useContext, useMemo, useState } from "react";
+import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { SkipNetContext } from "../context";
+import type { SkipNetUiMeta } from "../schema";
 import { ArticleContext } from "./context";
 import { type Example, type SrcSegment, splitExamples, toSegments } from "./shell";
 import { tokenCss } from "./shell-highlight";
@@ -20,8 +23,12 @@ export function ShellFence(props: ComponentProps<"pre">) {
   return <pre {...props} />;
 }
 
+/** Its commands, in a box resized by its corner, its height saved */
 function ShellCommands({ src }: { src: string }) {
   const { articleKey } = useContext(ArticleContext);
+  const state = useContext(SkipNetContext);
+  const { uiStoreApi } = useContext(UiContext);
+  const boxRef = useRef<HTMLDivElement>(null);
   /** By its original, so an amendment can attach to it */
   const fenceId = `${articleKey}#${(hashText(src) >>> 0).toString(36)}`;
   /** Highlighted once, rather than per render */
@@ -30,8 +37,37 @@ function ShellCommands({ src }: { src: string }) {
     [fenceId, src],
   );
 
+  useEffect(() => {
+    const el = boxRef.current;
+    if (el === null) return;
+    let timeoutId = 0;
+    // only a drag of its corner sets its height inline
+    const observer = new ResizeObserver(() => {
+      const px = Math.round(Number.parseFloat(el.style.height));
+      if (Number.isNaN(px) || px === state.meta.fenceHeights?.[fenceId]) return;
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        uiStoreApi.setUiMeta(state.meta.id, (draft) => {
+          const meta = draft as SkipNetUiMeta;
+          meta.fenceHeights = { ...meta.fenceHeights, [fenceId]: px };
+        });
+      }, saveDelayMs);
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timeoutId);
+    };
+  }, [fenceId]);
+
+  const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
-    <div data-fence-id={fenceId} className="not-prose my-3 py-1 rounded border border-term-border-subtle bg-term-fence">
+    <div
+      ref={boxRef}
+      data-fence-id={fenceId}
+      className="not-prose my-3 py-1 min-h-10 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence"
+      style={savedPx === undefined ? undefined : { height: savedPx }}
+    >
       {commands.map(({ example, segments }) => (
         <ShellCommand key={example.id} example={example} segments={segments} />
       ))}
@@ -101,6 +137,8 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
 }
 
 const touchDevice = isTouchDevice();
+/** How long after a resize its height is saved */
+const saveDelayMs = 300;
 /** MDX's class for a fence's language, `sh` or the like */
 const shellClasses = new Set(["language-sh", "language-bash"]);
 
