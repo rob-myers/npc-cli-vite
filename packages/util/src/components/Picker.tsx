@@ -1,6 +1,7 @@
 import { Select } from "@base-ui/react/select";
 import { CaretDownIcon } from "@phosphor-icons/react";
-import { type ReactNode, type SyntheticEvent, useState } from "react";
+import { type ReactNode, type SyntheticEvent, useRef, useState } from "react";
+import { isTouchDevice } from "../legacy/dom";
 import { cn } from "../service/tailwind-cn";
 
 /** One of `options`, chosen from a base-ui `Select` — as wide as what is chosen, and no wider */
@@ -11,7 +12,7 @@ export function Picker<T extends string>(props: {
   disabled?: boolean;
   /** Only its chevron opens it, so what is chosen is shown elsewhere */
   chevronOnly?: boolean;
-  /** A button before each option, doing something with it besides choosing it. It closes the popup */
+  /** Something to do with an option besides choosing it, closing the popup: a button before it, on touch a long press */
   optionAction?: { title: string; icon(value: T): ReactNode; onAction(value: T): void };
   title?: string;
   className?: string;
@@ -22,6 +23,28 @@ export function Picker<T extends string>(props: {
   const label = options.find((o) => o.value === props.value)?.label ?? props.value;
   const [open, setOpen] = useState(false);
   const action = props.optionAction;
+  /** On touch, a long press does `optionAction`: its timer, else "fired", so the lift ending it chooses nothing */
+  const press = useRef<number | "fired">(0);
+  const endPress = () => press.current !== "fired" && window.clearTimeout(press.current);
+  const pressProps = (value: T) =>
+    touchDevice && action
+      ? {
+          onPointerDown: () => {
+            press.current = window.setTimeout(() => {
+              press.current = "fired";
+              navigator.vibrate?.(10);
+              setOpen(false);
+              action.onAction(value);
+            }, longPressMs);
+          },
+          onPointerUp: endPress,
+          onPointerCancel: endPress, // e.g. the list scrolled
+          onPointerLeave: endPress,
+          onClick: (e: { preventBaseUIHandler(): void }) => {
+            if (press.current === "fired") (press.current = 0), e.preventBaseUIHandler();
+          },
+        }
+      : {};
   return (
     <Select.Root
       open={open}
@@ -54,9 +77,10 @@ export function Picker<T extends string>(props: {
               <Select.Item
                 key={value}
                 value={value}
-                className="flex items-center gap-1 px-3 py-1 cursor-pointer outline-none data-highlighted:bg-zinc-700 data-selected:text-zinc-100"
+                className="flex items-center gap-1 px-3 py-1 cursor-pointer outline-none select-none [-webkit-touch-callout:none] data-highlighted:bg-zinc-700 data-selected:text-zinc-100"
+                {...pressProps(value)}
               >
-                {action && (
+                {action && !touchDevice && (
                   // its own presses never reach the option, so it is not chosen
                   <button
                     type="button"
@@ -85,3 +109,7 @@ export function Picker<T extends string>(props: {
 }
 
 const stopPropagation = (e: SyntheticEvent) => e.stopPropagation();
+
+const touchDevice = isTouchDevice();
+/** How long an option is pressed, on touch, to do its `optionAction` */
+const longPressMs = 500;
