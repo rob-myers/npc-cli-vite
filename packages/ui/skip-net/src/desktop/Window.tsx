@@ -67,7 +67,8 @@ export const Window = memo(function Window(props: WindowProps) {
           const { downAt } = frame;
           if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
           if (state.pressedFrontId !== win.id && !shaded) return; // a click on an open window behind only fronts it
-          state.toggleShade(win.id);
+          if (!shaded && stack) stack.collapse(win.id);
+          else state.toggleShade(win.id);
         }}
       >
         {front && (
@@ -130,7 +131,7 @@ export const Window = memo(function Window(props: WindowProps) {
                 type="button"
                 title="collapse"
                 className={cn(boxClass, big && bigBoxClass)}
-                onClick={() => state.toggleShade(win.id)}
+                onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
               >
                 <MinusIcon weight="bold" className={boxIconClass(big)} />
               </button>
@@ -218,8 +219,8 @@ type WindowProps = {
   peek?: boolean;
   /** As `state.showAll`, passed so a change re-renders it */
   showAll: boolean;
-  /** Whilst stacked, whether it is last, so it has no line beneath */
-  stack?: { last: boolean };
+  /** Whilst stacked, whether it is last, so it has no line beneath, and how it collapses, easing to its bar */
+  stack?: { last: boolean; collapse(id: string): void };
   win: SkipNetWindow;
 };
 

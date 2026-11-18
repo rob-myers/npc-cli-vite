@@ -27,6 +27,7 @@ export function Stack() {
     (): StackState => ({
       choice: null,
       drag: null,
+      rootEl: null,
       unfoldingId: null,
 
       choiceAt(drag, folding, dir) {
@@ -40,6 +41,24 @@ export function Stack() {
           dir,
           over: "fold",
         };
+      },
+      collapse(id) {
+        const el = stack.rootEl?.querySelector<HTMLElement>(`[data-stack-id="${id}"]`);
+        const bar = el?.querySelector("header");
+        if (el == null || bar == null || el.dataset.open !== "true") return state.toggleShade(id);
+        if (el.hasAttribute("data-collapsing")) return; // a second press meanwhile, which would open it again
+        // its frame eases to its bar, contents showing, the windows below following. Then it folds, nothing moving
+        el.setAttribute("data-collapsing", "");
+        el.style.minHeight = `${el.offsetHeight}px`;
+        void el.offsetHeight; // laid out from there, so the transition runs
+        el.style.transition = collapseTransition;
+        el.style.minHeight = `${bar.offsetHeight}px`;
+        el.style.flexGrow = "0";
+        window.setTimeout(() => {
+          flushSync(() => state.toggleShade(id)); // folded first, else its `min-h-32` returns for a moment
+          el.style.transition = el.style.minHeight = "";
+          el.removeAttribute("data-collapsing");
+        }, collapseMs);
       },
       hoverChoice(e) {
         const { choice, drag } = stack;
@@ -204,6 +223,7 @@ export function Stack() {
   return (
     // `layoutScroll` so a slide is measured within its scroll
     <motion.div
+      ref={(el) => void (stack.rootEl = el)}
       layoutScroll
       className="skip-net-stack relative flex-1 min-h-0 flex flex-col overflow-y-auto"
       style={deskStyle}
@@ -230,7 +250,7 @@ export function Stack() {
               items={state.items}
               peek={win.id === stack.unfoldingId}
               showAll={false}
-              stack={{ last: i === ordered.length - 1 }}
+              stack={{ last: i === ordered.length - 1, collapse: stack.collapse }}
             />
             {!touchDevice && i < ordered.length - 1 && <div data-stack-edge className={edgeClass} />}
           </motion.div>
@@ -268,6 +288,8 @@ type StackState = {
   choice: null | Choice;
   /** The choices, over the contents of the window they would collapse */
   choiceAt(drag: NonNullable<StackState["drag"]>, folding: HTMLElement, dir: -1 | 1): Choice;
+  /** Eases an open window to its bar, contents showing, then folds it, as its "-" box or a tap on its bar asks */
+  collapse(id: string): void;
   /** Whether `el` is the first in the stack, `dir` up, or the last, down: collapsed that way, it has nowhere to move */
   isEdge(el: HTMLElement, dir: -1 | 1): boolean;
   /** Notes the choice under the finger: "move", else "collapse", which dims the window it would fold */
@@ -303,6 +325,7 @@ type StackState = {
   onPointerUp(): void;
   /** Marks the bar dragged, with a short buzz on touch */
   showDrag(drag: NonNullable<StackState["drag"]>, shown: boolean): void;
+  rootEl: null | HTMLDivElement;
   /** The folded window being dragged open, whose contents show meanwhile */
   unfoldingId: null | string;
   /** Grows a folded window's frame `px` towards the finger, within the room the other leaves */
@@ -333,6 +356,9 @@ const choiceClass = tw(
 const choiceOverClass = tw("bg-mac-select text-mac-on-select");
 /** Pixels the finger moves back, away from the choices, to dismiss them */
 const cancelPx = 24;
+/** How long a window takes to ease to its bar as it collapses */
+const collapseMs = 300;
+const collapseTransition = `flex-grow ${collapseMs}ms ease-in-out, min-height ${collapseMs}ms ease-in-out`;
 /** A window's slide to its new place in the stack, after a move or a fold */
 const moveTransition = { duration: 0.25, ease: "easeOut" } as const;
 /** A window's bottom edge, an invisible strip to drag with a mouse, as the desktop's edges are */
