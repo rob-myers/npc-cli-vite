@@ -6,7 +6,7 @@ import { articleFolders } from "../articles";
 import { SkipNetContext } from "../context";
 import type { SkipNetWindow } from "../schema";
 import { InTitle } from "./InTitle";
-import { DocumentIcon, FolderIcon } from "./icons";
+import { DocumentIcon, FolderIcon, VideoFileIcon } from "./icons";
 
 /**
  * The files folder: its folders as a tree, each opened or closed in place, their articles beneath.
@@ -62,7 +62,7 @@ export function FolderWindow({ win }: { win: SkipNetWindow }) {
                       onClick={() => state.open({ kind: "article", articleKey })}
                     >
                       <span className={cn(nameClass, "pl-4.5")}>
-                        <DocumentIcon />
+                        {folder.key === "video" ? <VideoFileIcon /> : <DocumentIcon />}
                         <span className="truncate">{articleKey}</span>
                       </span>
                       <Modified ms={stats?.modifiedMs} />

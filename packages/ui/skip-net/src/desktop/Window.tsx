@@ -2,16 +2,17 @@ import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
 import {
-  ArrowSquareOutIcon,
   CaretDownIcon,
   CaretUpIcon,
   DotsSixVerticalIcon,
+  FileTextIcon,
   MinusIcon,
+  PlayCircleIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { memo, useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
-import { articleKeys } from "../articles";
+import { articleFolderOf, articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
@@ -101,7 +102,12 @@ export const Window = memo(function Window(props: WindowProps) {
                 onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
                 optionAction={{
                   title: "open in a new window",
-                  icon: <ArrowSquareOutIcon weight="bold" className="size-3.5" />,
+                  icon: (articleKey) =>
+                    articleFolderOf(articleKey) === "video" ? (
+                      <PlayCircleIcon weight="bold" className="size-4" />
+                    ) : (
+                      <FileTextIcon weight="bold" className="size-4" />
+                    ),
                   onAction: (articleKey) => state.open({ kind: "article", articleKey }, true),
                 }}
                 title="change article"

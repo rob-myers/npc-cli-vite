@@ -53,6 +53,16 @@ export function FolderIcon() {
   );
 }
 
+/** A screen with a play mark, for a video article */
+export function VideoFileIcon() {
+  return (
+    <svg {...svgProps}>
+      <rect x="4" y="7" width="24" height="18" rx="2" />
+      <path d="M13 11.5v9l7.5-4.5z" />
+    </svg>
+  );
+}
+
 export function ItemIcon() {
   return (
     <svg {...svgProps}>

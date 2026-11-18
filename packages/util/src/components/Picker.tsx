@@ -12,7 +12,7 @@ export function Picker<T extends string>(props: {
   /** Only its chevron opens it, so what is chosen is shown elsewhere */
   chevronOnly?: boolean;
   /** A button before each option, doing something with it besides choosing it. It closes the popup */
-  optionAction?: { title: string; icon: ReactNode; onAction(value: T): void };
+  optionAction?: { title: string; icon(value: T): ReactNode; onAction(value: T): void };
   title?: string;
   className?: string;
   /** The popup is portalled out of its panel, whose theme it takes by this class */
@@ -61,7 +61,7 @@ export function Picker<T extends string>(props: {
                   <button
                     type="button"
                     title={action.title}
-                    className="-my-0.5 -ml-1.5 p-0.5 rounded cursor-pointer opacity-30 hover:opacity-100 hover:bg-black/20"
+                    className="-my-0.5 -ml-1.5 p-0.5 rounded cursor-pointer opacity-60 hover:opacity-100 hover:bg-black/20"
                     onPointerDown={stopPropagation}
                     onPointerUp={stopPropagation}
                     onMouseUp={stopPropagation}
@@ -71,7 +71,7 @@ export function Picker<T extends string>(props: {
                       action.onAction(value);
                     }}
                   >
-                    {action.icon}
+                    {action.icon(value)}
                   </button>
                 )}
                 <Select.ItemText>{label}</Select.ItemText>
