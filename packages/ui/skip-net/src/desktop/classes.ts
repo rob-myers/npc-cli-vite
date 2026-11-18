@@ -1,10 +1,13 @@
 import { tw } from "@npc-cli/util";
 
-/** A 2px dither that scrolls with the desktop */
+/** A 2px dither over a gradient, lighter at the top, scrolling with the desktop */
 export const deskStyle = {
   backgroundColor: "var(--color-mac-desk)",
-  backgroundImage: "repeating-conic-gradient(var(--color-mac-desk-dot) 0 25%, transparent 0 50%)",
-  backgroundSize: "4px 4px",
+  backgroundImage: [
+    "repeating-conic-gradient(var(--color-mac-desk-dot) 0 25%, transparent 0 50%)",
+    "linear-gradient(to bottom, color-mix(in oklab, var(--color-mac-desk), white 25%), var(--color-mac-desk))",
+  ].join(", "),
+  backgroundSize: "4px 4px, 100% 100%",
   backgroundAttachment: "local",
 };
 
