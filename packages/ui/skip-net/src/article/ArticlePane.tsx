@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner } from "@npc-cli/util";
 import { Suspense, useContext, useMemo, useState } from "react";
-import { articleKeys, getArticle } from "../articles";
+import { articleKeyOf, getArticle } from "../articles";
 import { SkipNetContext } from "../context";
 import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
@@ -18,8 +18,7 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
   const runner = useSessionRunner(session.ttyMeta);
   const [ranId, setRanId] = useState<null | string>(null);
 
-  /** A stale key falls back to the first */
-  const articleKey = articleKeys.find((x) => x === win.articleKey) ?? articleKeys[0];
+  const articleKey = articleKeyOf(win.articleKey);
   const Content = articleKey === undefined ? undefined : getArticle(articleKey);
 
   /** Fences update through the context alone, so a run never re-renders the whole article */

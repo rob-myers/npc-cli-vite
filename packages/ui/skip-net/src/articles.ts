@@ -26,6 +26,11 @@ const articleOrder = [
 
 export const articleKeys = [...keyToLoader.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 
+/** `key` if it is an article's, else the first. A stale key falls back */
+export function articleKeyOf(key: undefined | string): undefined | string {
+  return articleKeys.find((x) => x === key) ?? articleKeys[0];
+}
+
 const lazyByKey = new Map<string, LazyExoticComponent<ArticleContent>>();
 
 /** The article's content, loaded on first render. A Suspense must be above it */

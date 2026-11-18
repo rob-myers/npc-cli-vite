@@ -1,17 +1,19 @@
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { Picker } from "@npc-cli/util/picker";
 import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect } from "react";
 import { ArticlePane } from "../article/ArticlePane";
+import { articleKeyOf, articleKeys } from "../articles";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
 import type { SkipNetWindow } from "../schema";
+import { titlePickerPopupClass } from "./classes";
 import { FolderWindow } from "./FolderWindow";
 
 /**
- * A window's frame: a title bar to drag it by, with close and windowshade boxes.
- * A click on its bar, not a drag, folds or unfolds it once in front: a click on one behind only fronts it.
- * Stacked, only its grip drags it.
+ * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
+ * Stacked, a click on its bar folds it once in front, and unfolds a folded one. A click on one behind only fronts it.
  */
 export function Window(props: {
   front: boolean;
@@ -25,8 +27,6 @@ export function Window(props: {
   const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
-  /** The front window's bar is taller, its title larger, unless rolled up */
-  const tall = front && !shaded;
   const title = titleOf(win, state.items);
   const frame = useStateRef(
     (): FrameState => ({
@@ -40,14 +40,18 @@ export function Window(props: {
   );
 
   return (
-    <div className="size-full flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]">
+    <div
+      className={cn(
+        // folded on the desktop its bar overflows its row into the gap below
+        shaded && !stacked ? "w-full" : "size-full",
+        "flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]",
+      )}
+    >
       <header
         className={cn(
           "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
           big && "text-sm",
-          big ? (tall ? "h-11" : "h-9") : tall ? "h-6" : "h-4.5",
-          // rolling up shrinks its frame at once, so its bar does too
-          !shaded && "transition-[height] duration-150",
+          big ? "h-11" : "h-6",
           stacked
             ? "cursor-pointer data-dragging:bg-mac-select/10"
             : "skip-net-drag cursor-grab active:cursor-grabbing",
@@ -55,10 +59,13 @@ export function Window(props: {
         )}
         onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
         onClick={(e) => {
+          if (!stacked) return;
+          // a portalled popup's clicks bubble here through React
+          if (!e.currentTarget.contains(e.target as Node)) return;
           if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return;
           const { downAt } = frame;
           if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
-          if (state.pressedFrontId !== win.id) return; // a click on a window behind only fronts it
+          if (state.pressedFrontId !== win.id && !shaded) return; // a click on an open window behind only fronts it
           state.toggleShade(win.id);
         }}
       >
@@ -71,15 +78,26 @@ export function Window(props: {
             <DotsSixVerticalIcon weight="bold" className={big ? "size-4" : "size-3"} />
           </span>
         )}
-        <CloseBox big={big} onClose={() => state.close(win.id)} />
         <span
           className={cn(
-            "relative shrink-0 max-w-1/2 px-2 truncate bg-mac-title transition-[font-size] duration-150",
+            "relative shrink-0 max-w-1/2 px-2 bg-mac-title",
+            win.kind === "article" ? "flex min-w-0" : "truncate",
             front ? "font-bold" : "text-mac-muted",
-            tall && (big ? "text-base" : "text-sm"),
+            big ? "text-base" : "text-sm",
           )}
         >
-          {title}
+          {win.kind === "article" ? (
+            <Picker
+              value={title}
+              options={articleKeys}
+              onChange={(articleKey) => state.setWindow(win.id, { articleKey })}
+              title="change article"
+              className={articlePickerClass}
+              popupClassName={titlePickerPopupClass}
+            />
+          ) : (
+            title
+          )}
         </span>
         {big && (
           // a second grip, filling the bar between the title and the picker, easier to find with a thumb
@@ -112,6 +130,7 @@ export function Window(props: {
         >
           <MinusIcon weight="bold" className={boxIconClass(big)} />
         </button>
+        <CloseBox big={big} onClose={() => state.close(win.id)} />
       </header>
       {!shaded && (
         <div
@@ -185,7 +204,7 @@ function titleOf(win: SkipNetWindow, items: JshCli.SkipNetItem[]): string {
     case "folder":
       return "npc";
     case "article":
-      return win.articleKey ?? "article";
+      return articleKeyOf(win.articleKey) ?? "article";
     case "item":
       return items.find((x) => x.key === win.itemKey)?.title ?? win.itemKey ?? "item";
     default:
@@ -218,6 +237,10 @@ const embossClass = tw(
 );
 const bigBoxClass = cn(embossClass, "size-6");
 const bigMoveBoxClass = cn(embossClass, "h-6 w-8");
+/** An article's title as a picker, in the bar's own type */
+const articlePickerClass = tw(
+  "skip-net-no-drag p-0 rounded-none border-0 bg-transparent text-current font-[inherit] text-[length:inherit] leading-none [&_svg]:text-current hover:bg-mac-select/15 data-popup-open:bg-mac-select/15",
+);
 /** A stacked bar's grip, which alone drags it */
 const gripClass = tw("relative grid place-items-center h-full cursor-row-resize text-mac-muted");
 /** The x or minus in a box */
