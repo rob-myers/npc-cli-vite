@@ -2,7 +2,7 @@ import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
-import { themeOfUi } from "@npc-cli/ui-sdk/schema";
+import { chosenThemeOf, themeOfUi } from "@npc-cli/ui-sdk/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
 import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
@@ -304,7 +304,7 @@ function TabHeaderItem({
   uiStoreApi,
 }: TabHeaderItemProps) {
   const { layoutApi, uiRegistry } = useContext(UiContext);
-  const chosenTheme = tab.theme ?? (uiRegistry[tab.uiKey] as UiPackageDef).defaultTheme ?? "auto";
+  const chosenTheme = chosenThemeOf(tab, uiRegistry[tab.uiKey]);
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
