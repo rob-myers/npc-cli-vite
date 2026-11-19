@@ -36,6 +36,17 @@ curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
 ```
 - Its profile is `$TMPDIR/npc-cli-mcp-chrome`, so its saved data and sign-in carry over between launches.
   One a newer Chrome has opened, e.g. Canary, makes an older one warn: delete the folder to start afresh.
+- Each Claude session starts a server of its own, so old sessions leave theirs running. List them with the
+  session each belongs to, its parent's `--resume` id if any. Killing one disconnects that session's `npc-cli`
+  until `/mcp` reconnects it.
+```sh
+for pid in $(pgrep -f mcp/server.ts); do
+  ppid=$(ps -o ppid= -p $pid | tr -d ' ')
+  echo "$pid parent $ppid $(ps -o lstart= -p $pid) $(ps -o command= -p $ppid | grep -o -- '--resume=[^ ]*')"
+done
+# This session's has the parent `ps -o ppid= -p $$` prints, from Claude's own shell
+
+```
 
 ## WebMCP
 
