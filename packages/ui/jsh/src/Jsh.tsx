@@ -137,7 +137,7 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           type="button"
           title={jobs.shown ? "hide jobs" : "show jobs"}
           className={cn(
-            "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer transition-colors",
+            "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer select-none transition-colors",
             jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
           )}
           onClick={() => state.setJobs({ shown: !jobs.shown })}
