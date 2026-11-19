@@ -146,6 +146,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // a door seen edge-on samples the panel's rivets and lettering at a glancing angle, which
         // nearest-filtered is a crawl — see `TexArray.applyOpts`, where this also brings mipmaps
         anisotropy: touchDevice ? undefined : 4,
+        gpu: true, // a readback waits on a busy GPU: seconds of a cold boot
       }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS, anisotropy: 4 }),
       texSkinSlices: new TexArray({

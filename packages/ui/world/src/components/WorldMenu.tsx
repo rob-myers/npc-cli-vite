@@ -337,14 +337,14 @@ export function WorldMenu() {
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setPostProcessingEnabled();
           state.update();
-          return w.view.warmPick();
+          return w.view.warmPipelines();
         });
         break;
       case "npc outline":
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setNpcOutlineEnabled();
           state.update();
-          return w.view.warmPick();
+          return w.view.warmPipelines();
         });
         break;
       case "rgb shift":

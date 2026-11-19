@@ -46,6 +46,7 @@ export default function Doors() {
       builtGmsHash: 0,
       byKey: {},
       labelToLayer: new Map(),
+      labelsKey: "",
       lastHmr: 0,
 
       inst: null,
@@ -695,7 +696,11 @@ export default function Doors() {
     state.buildByKey();
     state.positionInstances();
     state.sendToRaycast();
-    state.drawDoorTextures();
+    const labelsKey = `${w.gmsHash} ${w.hash} ${w.themeKey} ${state.lastHmr}`;
+    if (labelsKey !== state.labelsKey) {
+      state.labelsKey = labelsKey;
+      state.drawDoorTextures();
+    }
     state.sendDataToGpu();
     state.syncLockTints();
     state.update();
@@ -742,6 +747,8 @@ export type State = {
   fromInstanceId: Record<number, Geomorph.GmDoorId>;
   /** Label or iconKey. */
   labelToLayer: Map<string, number>;
+  /** What the labels were last drawn from, so a boot draws them once */
+  labelsKey: string;
   /** Bumped by an hmr of this file, so the effect below re-runs — see `__JUST_HMR_DOORS__` */
   lastHmr: number;
   openRatioArray: Float32Array;

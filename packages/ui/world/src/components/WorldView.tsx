@@ -102,7 +102,8 @@ export function WorldView(props: React.PropsWithChildren) {
       pixelRatio: { native: 1, used: 1 },
       canvas: null as any,
       pausedEl: null,
-      warmingPick: false,
+      warming: false,
+      scenePass: null,
       // "canonical" is what a save before the rename calls it
       cameraMode: ["embodied", "canonical"].includes(saved.cameraMode as string) ? "embodied" : defaultCameraMode,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
@@ -993,11 +994,12 @@ export function WorldView(props: React.PropsWithChildren) {
           uiStoreApi.setUiMeta(w.id, (draft) => void ((draft as WorldUiMeta).cameraOnPlayer = false));
         // override THREE.WebGPURenderer
         w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
-        w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.r3f.gl;
+        w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.texDoorLabel.renderer = w.r3f.gl;
         // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
         // live only there — three re-uploads the rest from their mirrors, these are redrawn
         if (w.floor?.drawnMapKey != null) {
           w.floor.drawAll();
+          w.door?.drawDoorTextures();
           void Promise.all([w.ceil.draw(), w.obs.draw()]).then(() => w.update());
         }
         w.update();
@@ -1177,44 +1179,42 @@ export function WorldView(props: React.PropsWithChildren) {
 
         return renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1);
       },
-      warmPick() {
-        // the pick target has other attachments than the screen, so the first pick builds every
-        // material a second pipeline — on a phone a freeze of a second or two, right on the first
-        // tap. Built here instead, asynchronously: `compileAsync` has the backend create them off
-        // the main thread, yielding between materials. Each shader reads the renderer's mrt as it
-        // is built, so the renderer stays in pick state throughout — and no frame may be drawn
-        // meanwhile, hence `warmingPick` holds `frameloop` at `"never"` via `syncRenderMode`
-        if (state.warmingPick === true) return Promise.resolve();
+      warmPipelines(prepare) {
+        if (state.warming === true) return Promise.resolve().then(prepare); // the restore must still run
         return state.runBusy(compilingShadersText, async () => {
           const { gl, scene, camera } = w.r3f;
           const renderer = gl as unknown as THREE.WebGPURenderer;
-          state.warmingPick = true;
+          state.warming = true;
           state.syncRenderMode();
           await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
-          const startMark = performance.mark(`${w.key}:warm-pick`);
+          const startMark = performance.mark(`${w.key}:warm`);
           try {
-            renderer.setMRT(state.npcMaskMrt);
-            renderer.setRenderTarget(state.pickRT);
-            await renderer.compileAsync(scene, camera);
-            renderer.setMRT(null);
-            renderer.setRenderTarget(null);
-            // then DRAWN once, and the readback waited for: on a phone a pipeline's first draw
-            // has a cost of its own, in the driver rather than here, which the frames after
-            // would otherwise wait on — and this is where the old synchronous warm paid it
-            await state.renderPick({ u: 0.5, v: 0.5 });
-          } catch {
-            // a nicety: the first tap builds whatever this did not
+            await prepare?.();
+            try {
+              // off the main thread, yielding between materials
+              await (state.scenePass?.compileAsync(renderer) ?? renderer.compileAsync(scene, camera));
+              // the pick pass has other attachments, so each material needs a second pipeline
+              renderer.setMRT(state.npcMaskMrt);
+              renderer.setRenderTarget(state.pickRT);
+              await renderer.compileAsync(scene, camera);
+              renderer.setMRT(null);
+              renderer.setRenderTarget(null);
+              await state.renderPick({ u: 0.5, v: 0.5 }); // a pipeline's first draw costs too, in the driver
+            } catch {
+              // a nicety: the first draw or tap builds whatever this did not
+            }
           } finally {
             renderer.setMRT(null);
             renderer.setRenderTarget(null);
-            state.warmingPick = false;
+            state.warming = false;
             state.syncRenderMode();
-            performance.measure(`${w.key}:warm-pick`, startMark.name);
+            performance.measure(`${w.key}:warm`, startMark.name);
+            w.e.setBooted();
           }
         });
       },
       async pickAt(e) {
-        if (w.isMapChanging() === true || state.warmingPick === true) return null;
+        if (w.isMapChanging() === true || state.warming === true) return null;
         const uv = state.computePixelUv(e);
         if (uv === null) return null; // off the warped frame
         const rgba = await state.renderPick(uv);
@@ -1650,6 +1650,7 @@ export function WorldView(props: React.PropsWithChildren) {
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
+        state.scenePass = scenePass;
 
         // the silhouette the npc borders grow from, declared only whilst they are wanted — off, no
         // npc shader writes it. Shared with the pick pass, so both compile the same variant
@@ -1688,6 +1689,7 @@ export function WorldView(props: React.PropsWithChildren) {
         return () => {
           gl.render = originalRender;
           pipeline.dispose();
+          state.scenePass = null;
           state.npcMaskMrt = null;
           state.syncPickRT();
           w.npc?.syncOutlineMask();
@@ -1696,8 +1698,8 @@ export function WorldView(props: React.PropsWithChildren) {
         };
       },
       syncRenderMode() {
-        if (state.warmingPick === true) {
-          w.r3f?.set({ frameloop: "never" }); // the renderer is in pick state — see `warmPick`
+        if (state.warming === true) {
+          w.r3f?.set({ frameloop: "never" }); // see `warmPipelines`
           return "never";
         }
         if (w.disabled === true) {
@@ -2106,12 +2108,17 @@ export type State = {
   computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
   /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
-  /** Builds the pick pass's pipelines ahead of the first pick — see within */
-  warmPick(): Promise<void>;
   /** Whilst an animated `lookAt` runs — the follow button is lit by it */
   lookingAt: boolean;
-  /** Whilst `warmPick` holds the renderer in pick state, when no frame may be drawn */
-  warmingPick: boolean;
+  /**
+   * Restores what `prepare` does, then compiles the screen and pick passes, all with no frame drawn.
+   * So no material compiles on its first draw. The first warm boots the World.
+   */
+  warmPipelines(prepare?: () => Promise<void>): Promise<void>;
+  /** Whilst `warmPipelines` runs, when no frame may be drawn */
+  warming: boolean;
+  /** The post pass's scene pass, else `null` */
+  scenePass: null | THREE.PassNode;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */

@@ -575,25 +575,24 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         let playerWasSaved = false;
 
         try {
-          // decor first: a restored npc's may be sitting on a chair (decorKey)
-          state.restoreDecor();
-          w.decor.restored = true;
+          // restored with no frame drawn, so their shaders compile before their first draw
+          await w.view.warmPipelines(async () => {
+            // decor first: a restored npc's may be sitting on a chair (decorKey)
+            state.restoreDecor();
+            w.decor.restored = true;
 
-          // - player first, else next restored npc becomes player
-          // - the player should always be ensured but it might not have been saved before
-          playerWasSaved = await player.ensure();
-          await state.restoreNpcs(saved);
-          w.npc.restored = true;
-          await state.openDoorwaysWithNpcs();
+            // - player first, else next restored npc becomes player
+            // - the player should always be ensured but it might not have been saved before
+            playerWasSaved = await player.ensure();
+            await state.restoreNpcs(saved);
+            w.npc.restored = true;
+            await state.openDoorwaysWithNpcs();
+          });
 
-          // ensure npcs drawn
+          // ensure npcs drawn, before the pan wants its frames
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-          // with everything drawn once, the pick pass compiles now rather than on the first tap.
-          // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
-          await w.view.warmPick();
-          state.setBooted();
           if (firstBootstrap === true && playerWasSaved === false) {
             await player.panTo();
           }
