@@ -113,7 +113,12 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     // try improve mobile predictive text e.g. firefox
     xterm.textarea?.setAttribute("enterkeyhint", "send");
 
+    // redrawn whenever seen again: a phone may drop a hidden WebGL canvas's pixels, which xterm can't know
+    const seen = new IntersectionObserver(([e]) => e?.isIntersecting && xterm.refresh(0, xterm.rows - 1));
+    containerRef.current && seen.observe(containerRef.current);
+
     return () => {
+      seen.disconnect();
       if (!state.session) {
         return console.warn("BaseTty: session already removed");
       }
