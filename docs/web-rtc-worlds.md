@@ -20,7 +20,7 @@ Two Worlds on one page may skip WebRTC: their channels can be `MessagePort`s ins
   - It uses ports at once if the debug menu's **net** select says `MessageChannel`, or if WebRTC cannot connect here.
   - Otherwise it tries WebRTC, and falls back to ports if it has not connected in `localFallbackMs` (1.5s).
 - **To fall back**, the server closes its peer connection, wires its ends of two `MessageChannel`s, and sends the others in a `local` signal. The client's `onLocal` closes its own peer connection and attaches the ports through `attachChannel`, as it would WebRTC's.
-- **`probeWebRtc`** finds out once per page whether WebRTC connects at all: two loopback peers open a data channel, or fail to in 3s. A browser without local network access (e.g. one launched for MCP testing) offers only mDNS `.local` candidates, which never resolve. The **net** select greys out WebRTC there.
+- **`probeWebRtc`** finds out once per page whether WebRTC connects at all: two loopback peers open a data channel, or fail to in 3s. A browser without local network access (e.g. one launched for MCP testing) offers only mDNS `.local` candidates, which never resolve. The **net** select greys out WebRTC there. It runs once the World has booted and the page is idle (`probeWebRtcWhenIdle`, from `setBooted`), as its peers would stall the boot. A join before then tries WebRTC, with its usual fallback.
 - **The choice is site-wide**: `netTransport` in `getSiteStore()`, read by whichever World serves.
 - **Across tabs** a join is always WebRTC: a `MessagePort` cannot leave the page.
 

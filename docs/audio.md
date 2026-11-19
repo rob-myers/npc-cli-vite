@@ -166,6 +166,9 @@ renewed each tick, so a pause or psi lowered lets it die away. It swells in over
     and a few cents off their place (`detuneStray`).
   - In the hall, beside its own voices (`choirHallWet`).
 - **The hall** (`hall` in `nodes.ts`): 9 s of stone, losing its highs as it dies (`hallBright`, `hallDull`).
+  Setting a convolver's buffer prepares the impulse on the main thread, so halls are pooled per context:
+  a choir takes one (`takeHall`) and gives it back once faded out (`giveHall`). The engine prepares one whilst
+  idle (`warmHall`), so raising psi never stalls.
 - **A chant**: one of the two `psi` recordings, never the same twice running. The two are fetched together
   the first time either is wanted (270 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
   bank's), as decoded each is about 2.2 MB. The choir sings until it has, then fades as the chant swells in. It is looped in code: each pass

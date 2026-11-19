@@ -43,6 +43,9 @@ created on the thread that also finishes frames).
 - **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
   WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
   `useMeasure`'s `bounds`, which start at zero and would force a resize.
+- **A tty redraws whenever it is seen again** (an `IntersectionObserver` in `BaseTty`). A phone may
+  drop a hidden WebGL canvas's pixels, which xterm can't know: switched back to, it stayed black
+  until tapped.
 
 ## Little on the main thread
 
@@ -61,6 +64,11 @@ created on the thread that also finishes frames).
 - **`assets.json` and `sheets.json` are preloaded** (`index.html`). They start during script
   evaluation, not after the World mounts.
 - **`/assets/*` is immutable for a year** (`public/_headers`).
+- **`Tabs` isn't lazy** (`ui/tabs/src/index.ts`). Every pane's header shows on the first render,
+  not after a chunk arrives. It is 15 KB.
+- **A ui may give its own `loading`** (`UiPackageDef`), which `UiPortalContainer` shows whilst its
+  lazy code arrives, else a spinner. The World's is black (`WorldLoading`), so a phone sees the
+  header and the World's black, not a grey spinner first.
 
 ## Tried and dropped
 
