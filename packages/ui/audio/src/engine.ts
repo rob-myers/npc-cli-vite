@@ -1,7 +1,7 @@
 import { soundMute } from "@npc-cli/util/sound-mute";
 import { isPsiVoice, type PsiVoice } from "./choir";
 import type { DoorVoice } from "./doors";
-import { gain, limiter, room } from "./nodes";
+import { gain, limiter, room, warmHall } from "./nodes";
 import { bankSize, loadSamples, pickSample, type SampleBank, type Samples, samplesKey, wantSample } from "./samples";
 import {
   type HeldVoice,
@@ -136,6 +136,9 @@ function createEngine() {
   const sleeper = window.setInterval(() => {
     if (ctx.state === "running" && performance.now() - soundAt > idleSecs * 1000) void ctx.suspend();
   }, sleepCheckMs);
+  // the choir's hall, made whilst idle so the first raise of psi needn't
+  const prepareHall = () => warmHall(ctx);
+  "requestIdleCallback" in window ? requestIdleCallback(prepareHall) : setTimeout(prepareHall, 1000);
 
   /** When each effect last played, and where, so a twin is dropped */
   const lastPlayed = new Map<SfxKey, { at: number; pan: number }>();

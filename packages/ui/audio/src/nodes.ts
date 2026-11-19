@@ -103,6 +103,23 @@ export function hall(ctx: BaseAudioContext) {
   return node;
 }
 
+/** A hall whose buffer is already set. Setting one prepares the impulse on the main thread */
+export function takeHall(ctx: BaseAudioContext) {
+  return hallPools.get(ctx)?.pop() ?? hall(ctx);
+}
+
+/** Keeps a hall for the next `takeHall`, once nothing plays through it */
+export function giveHall(ctx: BaseAudioContext, node: ConvolverNode) {
+  node.disconnect();
+  hallPools.get(ctx)?.push(node) ?? hallPools.set(ctx, [node]);
+}
+
+/** Prepares a hall ahead of the first `takeHall`, unless one is kept already */
+export function warmHall(ctx: BaseAudioContext) {
+  if (!hallPools.get(ctx)?.length) giveHall(ctx, hall(ctx));
+}
+
+const hallPools = new WeakMap<BaseAudioContext, ConvolverNode[]>();
 const hallImpulses = new WeakMap<BaseAudioContext, AudioBuffer>();
 
 /** `hallSecs` of stereo noise dying away, losing its highs first as stone does, made once per context */
