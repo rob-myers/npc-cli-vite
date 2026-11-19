@@ -13,9 +13,8 @@ Cold GPU, production build, page opened in a fresh tab:
 
 | | before | after |
 |---|---|---|
-| main thread blocked | 8.2 s | 0.9 s |
-| longest task | 3.45 s | 0.58 s, xterm's WebGL start-up |
-| longest gap between frames | 4.8 s | 2.2 s |
+| main thread blocked | 8.2 s | 0.6 s |
+| longest task | 3.45 s | 0.34 s, xterm's WebGL start-up |
 | `booted` | — | ~14 s, bounded by the GPU's compiling |
 
 On macOS, Metal caches compiled shaders per app, shared by every Chrome profile. With it warm, a
@@ -41,9 +40,6 @@ created on the thread that also finishes frames).
   `prepare`, then `compileAsync`s the post pass's scene pass and the pick pass. Dawn creates
   those pipelines on worker threads. `onBootstrapMap` restores decor and npcs as that `prepare`,
   so their shaders compile before their first draw. The warm then sets `w.e.bootedAt`.
-- **`worldGroup` is hidden until the warm**, on a first map only (`Floor.onNewMap`). A first visit
-  shows the floor's hulls alone until then. Drawn flat instead, the layers' first draws stopped
-  frames for ~5 s. The warm takes longer for it (~7 s cold), but frames keep coming.
 - **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
   WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
   `useMeasure`'s `bounds`, which start at zero and would force a resize.
@@ -76,11 +72,17 @@ created on the thread that also finishes frames).
   build `Rect`/`Poly` instances anyway.
 - **Fitting a tty before loading xterm's WebGL renderer, or loading it after the first fit.** The
   first didn't stop the resize, and both use xterm's DOM renderer meanwhile.
+- **Hiding `worldGroup` until the warm, on a first map.** No layer's first draw then compiled on
+  the GPU's frame thread, so a cold desktop's longest frame gap fell from 4.8 s to 2.2 s. But the
+  World no longer appeared bit by bit: on a phone the boot looked worse, refreshes waited for the
+  whole warm, and the floor arrived late.
 
 ## Still open
 
 - **A cold boot is ~14 s**, bounded by the GPU compiling every pipeline. Only fewer shader
   variants would shorten it.
+- **Frames stop for up to ~5 s on a cold boot**, whilst the layers' first draws compile their
+  pipelines on the GPU's frame thread. The main thread stays free meanwhile.
 - **A flaky layout shift.** In about half of Lighthouse runs the right allotment pane shifts
   (CLS 0.258). Treat CLS as noise when comparing runs.
 - **The `World` chunk is 1.9 MB.**

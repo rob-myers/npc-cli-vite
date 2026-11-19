@@ -1187,7 +1187,6 @@ export function WorldView(props: React.PropsWithChildren) {
           state.warming = true;
           state.syncRenderMode();
           await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
-          if (w.worldGroup !== null) w.worldGroup.visible = true; // a first map hides it until now
           const startMark = performance.mark(`${w.key}:warm`);
           try {
             await prepare?.();

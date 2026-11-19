@@ -287,8 +287,6 @@ export default function Floor() {
         if (firstMap === true) {
           state.fade.texAmount.value = 0; // arrives flat, whatever it was
           w.setWorldFold(0); // the rest of the world flat, until settled
-          // hidden until `warmPipelines`, so no draw compiles its shaders on the GPU's busiest thread
-          if (w.worldGroup !== null) w.worldGroup.visible = false;
         }
         state.drawHulls(w.gms);
 
