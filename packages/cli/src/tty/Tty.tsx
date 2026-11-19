@@ -51,7 +51,8 @@ export function Tty(props: Props) {
       fitDebounced: debounce(() => {
         const base = baseRef.current;
         if (!base) return;
-        if (!state.bounds.width || !state.bounds.height) return void (state.fitSkipped = true); // hidden
+        const el = containerRef.current; // not `bounds`, which starts at zero before it measures
+        if (!el?.offsetWidth || !el.offsetHeight) return void (state.fitSkipped = true); // hidden
         const { xterm } = base.xterm;
         const size = `${xterm.cols}x${xterm.rows}`;
         base.fitAddon.fit(); // each resize reallocates the WebGL canvas, which waits on the GPU

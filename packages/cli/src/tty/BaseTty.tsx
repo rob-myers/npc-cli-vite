@@ -9,6 +9,7 @@ import { type Session, sessionApi } from "../shell/session";
 import { getSharedStore, getTtyStore } from "../shell/storage";
 import { stripAnsi } from "../shell/util";
 import { TtyXterm } from "../shell/xterm";
+import { fitOf, xtermFont } from "./xterm-fit";
 import { LinkProvider } from "./xterm-link-provider";
 import { xtermThemes } from "./xterm-themes";
 
@@ -54,9 +55,8 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
 
     const xterm = new XTermTerminal({
       allowProposedApi: true, // Needed for WebLinksAddon
-      fontSize: 16,
+      ...xtermFont,
       cursorBlink: true,
-      fontFamily: "'Courier New', Courier, monospace",
       // lineHeight: 1.2,
       // letterSpacing: 2,
       // rendererType: "canvas",
@@ -65,7 +65,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
       theme: xtermThemes[themeName],
       convertEol: true, // fix mobile paste
       scrollback,
-      rows: 50,
+      ...((containerRef.current && fitOf(containerRef.current)) ?? { rows: 50 }),
     });
 
     xterm.registerLinkProvider(
