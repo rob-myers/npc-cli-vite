@@ -14,7 +14,7 @@
 
 <rect x="390" y="56" width="310" height="74" rx="8" fill="#262a31" stroke="#3a404a"/>
 <text x="406" y="76" fill="#e6e6e6" font-weight="600">on by default</text>
-<text x="406" y="94" fill="#9aa0a6" font-size="12"><tspan font-family="ui-monospace, monospace">#&#160;@bootable mobile desktop</tspan>, either or both</text>
+<text x="406" y="94" fill="#9aa0a6" font-size="12"><tspan font-family="ui-monospace, monospace">#&#160;@bootable @default</tspan>, or =mobile, =desktop</text>
 <text x="406" y="110" fill="#9aa0a6" font-size="12">listed by the articles plugin, read before any</text>
 <text x="406" y="124" fill="#9aa0a6" font-size="12">article shows (virtual:skip-net-autorun)</text>
 

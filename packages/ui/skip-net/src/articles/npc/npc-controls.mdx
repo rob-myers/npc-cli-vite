@@ -4,11 +4,11 @@
 
 ```sh
 # pointer moves player
-# @bootable desktop mobile
+# @bootable @default
 pick meta.{floor,do} | move $( playerPath ) --force
 
 # keys move player
-# @bootable desktop
+# @bootable @default=desktop
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
 # last picked moves

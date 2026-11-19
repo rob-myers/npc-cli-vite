@@ -66,7 +66,7 @@ function readArticles(isDev: boolean): Record<string, { bytes: number; modifiedM
   );
 }
 
-/** Each shell fence with a `# @bootable mobile` or `desktop` line, its source as MDX gives it */
+/** Each shell fence with a `# @bootable @default` line (or `@default=mobile`, `=desktop`), its source as MDX gives it */
 function readAutorunFences(): { articleKey: string; src: string }[] {
   return fs
     .readdirSync(ARTICLES_DIR, { recursive: true, encoding: "utf8" })
@@ -82,7 +82,7 @@ function readAutorunFences(): { articleKey: string; src: string }[] {
 /** A fence at column 0: its language, then its lines each ending in a newline, as MDX hands them to `ShellFence` */
 const fenceRe = /^```(\w*)[^\n]*\n([\s\S]*?)^```[ \t]*$/gm;
 const shellLangs = new Set(["", "sh", "bash"]);
-const autorunLineRe = /^#\s*@bootable\s+(?:mobile|desktop)\b/m;
+const autorunLineRe = /^#\s*@bootable\b.*\s@default\b/m;
 
 /** When the file was last committed, if ever */
 function committedMs(file: string): undefined | number {

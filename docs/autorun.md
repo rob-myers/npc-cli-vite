@@ -15,18 +15,20 @@ To make a command available to autorun, add a `# @bootable` line to its comment 
 
 ```sh
 # pointer moves player
-# @bootable desktop mobile
+# @bootable @default
 pick meta.{floor,do} | move $( playerPath ) --force
 ```
 
-Every marked command gets a toggle, a lightning bolt on the right of the command. The words after `@bootable` decide whether it starts on or off:
+Every marked command gets a toggle, a lightning bolt on the right of the command. An `@default` word after `@bootable` makes it start on:
 
 | Marker | The command |
 | --- | --- |
 | `# @bootable` | Off until you toggle it on |
-| `# @bootable desktop` | On by default on a desktop |
-| `# @bootable mobile` | On by default on a touch device (`isTouchDevice`) |
-| `# @bootable mobile desktop` | On by default everywhere |
+| `# @bootable @default` | On by default, on mobile and desktop |
+| `# @bootable @default=desktop` | On by default on a desktop |
+| `# @bootable @default=mobile` | On by default on a touch device |
+
+The words after `@bootable` are `@key` or `@key=value`, and `@default` is the only one read so far. A touch device is one with touch events or touch points (`isTouchDevice` in `@npc-cli/util/legacy/dom`), checked once as the page loads (`defaults.ts`).
 
 A command that is on by default is called a **default**. It stays on until you toggle it off.
 
@@ -39,7 +41,7 @@ A command that is on by default is called a **default**. It stays on until you t
 
 Autorun runs before any article has been opened, so it cannot learn the defaults from the article windows.
 
-- The articles plugin (`vite-plugin-skip-net-articles`) reads every article. It provides each fence that has a `mobile` or `desktop` marker as the module `virtual:skip-net-autorun`.
+- The articles plugin (`vite-plugin-skip-net-articles`) reads every article. It provides each fence that has an `@default` marker as the module `virtual:skip-net-autorun`.
 - `defaults.ts` splits those fences into commands with the same parser the fences use (`splitExamples` and `fenceIdOf` in `@npc-cli/cli`), so the ids match the toggles' ids.
 - Editing an article's markers updates the defaults straight away. Editing the plugin itself needs a dev server restart.
 

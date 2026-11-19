@@ -61,14 +61,22 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
       src,
       args: parseArgTokens(src),
       bootable: bootLines.length > 0,
-      autorunOn: bootLines.flatMap((m) => m[1].split(/\s+/).filter(isAutorunDevice)),
+      autorunOn: bootLines.flatMap((m) => autorunOnOf(m[1])),
     };
   });
 }
 
-/** A comment line marking its command bootable, e.g. `# @bootable mobile`, which is not shown */
-const bootLineRe = /^#\s*@bootable((?:\s+(?:mobile|desktop))*)\s*$/;
-const isAutorunDevice = (x: string): x is AutorunDevice => x === "mobile" || x === "desktop";
+/** A comment line marking its command bootable, then its `@key` or `@key=value` words e.g. `@default=mobile`. Not shown */
+const bootLineRe = /^#\s*@bootable((?:\s+@[\w-]+(?:=[\w-]+)?)*)\s*$/;
+
+/** Where `@default` autoruns it: `@default` everywhere, `@default=mobile` or `=desktop` there alone */
+function autorunOnOf(words: string): AutorunDevice[] {
+  return words.split(/\s+/).flatMap((word) => {
+    if (word === "@default") return ["mobile", "desktop"] as const;
+    const device = /^@default=(mobile|desktop)$/.exec(word)?.[1];
+    return device === undefined ? [] : [device as AutorunDevice];
+  });
+}
 const keyRe = /([A-Za-z_][\w-]*):/g;
 /** A line that is a comment, indented or not */
 const commentLineRe = /^[ \t]*#.*$/gm;
@@ -163,7 +171,7 @@ export type Example = {
   args: ArgToken[];
   /** Marked `# @bootable`, so a World's autorun may run it */
   bootable: boolean;
-  /** Where it autoruns until turned off, e.g. `# @bootable mobile desktop` */
+  /** Where it autoruns until turned off, e.g. `# @bootable @default=mobile` */
   autorunOn: AutorunDevice[];
 };
 
