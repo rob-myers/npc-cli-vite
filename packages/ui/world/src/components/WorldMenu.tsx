@@ -42,7 +42,7 @@ import {
 } from "../service/camera-view";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
-import { probeWebRtc, webRtcWorks } from "../service/net-signaling";
+import { webRtcWorks } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, type HudLayout, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
@@ -252,8 +252,6 @@ export function WorldMenu() {
   );
 
   w.menu = state;
-
-  useEffect(() => void probeWebRtc().then(() => state.update()), []); // greys WebRTC if it cannot connect
 
   const y = useMotionValue(state.getClampedY(state.y));
   state.colY = y;
