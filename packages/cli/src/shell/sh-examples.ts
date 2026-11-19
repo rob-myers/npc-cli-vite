@@ -1,4 +1,10 @@
-import { type TokenKind, tokenizeShell } from "@npc-cli/cli/shell/sh-tokens";
+import { hashText } from "@npc-cli/util/legacy/generic";
+import { type TokenKind, tokenizeShell } from "./sh-tokens";
+
+/** A fence's id, by its article and source as MDX gives it */
+export function fenceIdOf(articleKey: string, src: string) {
+  return `${articleKey}#${(hashText(src) >>> 0).toString(36)}`;
+}
 
 /**
  * A new example starts at a blank line, or at a `#` comment following code — one at column 0,
@@ -40,6 +46,7 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
   flush();
 
   return chunks.flatMap(({ lines: chunkLines, blankBefore }, index) => {
+    const bootLines = chunkLines.map((x) => bootLineRe.exec(x)).filter((m) => m !== null);
     const ls = chunkLines.filter((x) => bootLineRe.test(x) === false);
     const at = ls.findIndex((x) => !x.startsWith("#"));
     const src = (at === -1 ? [] : ls.slice(at)).join("\n").trim();
@@ -53,13 +60,15 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
       commentLines,
       src,
       args: parseArgTokens(src),
-      bootable: ls.length < chunkLines.length,
+      bootable: bootLines.length > 0,
+      autorunOn: bootLines.flatMap((m) => m[1].split(/\s+/).filter(isAutorunDevice)),
     };
   });
 }
 
-/** A comment line marking its command bootable, which is not shown */
-const bootLineRe = /^#\s*@bootable\s*$/;
+/** A comment line marking its command bootable, e.g. `# @bootable mobile`, which is not shown */
+const bootLineRe = /^#\s*@bootable((?:\s+(?:mobile|desktop))*)\s*$/;
+const isAutorunDevice = (x: string): x is AutorunDevice => x === "mobile" || x === "desktop";
 const keyRe = /([A-Za-z_][\w-]*):/g;
 /** A line that is a comment, indented or not */
 const commentLineRe = /^[ \t]*#.*$/gm;
@@ -154,6 +163,8 @@ export type Example = {
   args: ArgToken[];
   /** Marked `# @bootable`, so a World's autorun may run it */
   bootable: boolean;
+  /** Where it autoruns until turned off, e.g. `# @bootable mobile desktop` */
+  autorunOn: AutorunDevice[];
 };
 
 /** Where a `key:value` arg lies in its example's source */
@@ -169,3 +180,5 @@ export type SrcSegment = {
   /** Set when inside a `key:value` arg */
   arg: undefined | "key" | "value";
 };
+
+export type AutorunDevice = "mobile" | "desktop";

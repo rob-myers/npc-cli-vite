@@ -7,12 +7,14 @@ import { type PreludeEntry, preludeApi } from "./store";
 
 /** Runs the World's prelude if autorun is on. Resolves once each command has started or been skipped */
 export async function runPrelude(worldKey: string): Promise<void> {
-  const { autorun, entries } = preludeApi.get(worldKey);
-  if (autorun === false || entries.length === 0) return;
+  const entries = preludeApi.entries(worldKey);
+  if (preludeApi.get(worldKey).autorun === false || entries.length === 0) return;
 
-  const bySession = Map.groupBy(entries, (x) => x.sessionKey);
+  const worldTty = worldTtyOf(worldKey);
+  const bySession = Map.groupBy(entries, (x) => x.sessionKey ?? worldTty);
   await Promise.all(
     Array.from(bySession, async ([sessionKey, group]) => {
+      if (sessionKey === undefined) return warn(`prelude: ${worldKey} has no tty: skipped ${group.length}`);
       const ran: string[] = [];
       for (const entry of group) {
         if (await runEntry(sessionKey, entry.src).catch(error)) ran.push(labelOf(entry));
@@ -63,6 +65,12 @@ function killWorldJobs(session: Session) {
   }
   const pgids = new Set(liveProcesses(session).flatMap((p) => (isWorldProcess(p) && p.pgid !== 0 ? p.pgid : [])));
   sessionApi.kill(session.key, [...pgids], { GROUP: true, SIGINT: true }); // as the Jobs panel's kill
+}
+
+/** Where an entry without a tty runs: its World's lowest-numbered tty, e.g. `tty-0` */
+export function worldTtyOf(worldKey: string): undefined | JshUiMeta["sessionKey"] {
+  const numberOf = (x: JshUiMeta) => Number(x.sessionKey.slice("tty-".length));
+  return findTtys(worldKey).sort((a, b) => numberOf(a) - numberOf(b))[0]?.sessionKey;
 }
 
 /** The ttys whose World is this one */

@@ -1,15 +1,15 @@
+import { type Example, fenceIdOf, type SrcSegment, splitExamples, toSegments } from "@npc-cli/cli";
 import { tokenCss } from "@npc-cli/cli/shell/sh-tokens";
+import { worldTtyOf } from "@npc-cli/ui__jsh-prelude/run";
 import { preludeApi, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Tip } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { hashText } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, LightningIcon, PlayIcon } from "@phosphor-icons/react";
 import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { SkipNetContext } from "../context";
 import type { SkipNetUiMeta } from "../schema";
 import { ArticleContext } from "./context";
-import { type Example, type SrcSegment, splitExamples, toSegments } from "./shell";
 
 /** An article's `pre`: a shell fence's commands run on a click, any other fence is shown as is */
 export function ShellFence(props: ComponentProps<"pre">) {
@@ -31,7 +31,7 @@ function ShellCommands({ src }: { src: string }) {
   const { uiStoreApi } = useContext(UiContext);
   const boxRef = useRef<HTMLDivElement>(null);
   /** By its original, so an amendment can attach to it */
-  const fenceId = `${articleKey}#${(hashText(src) >>> 0).toString(36)}`;
+  const fenceId = fenceIdOf(articleKey, src);
   /** Highlighted once, rather than per render */
   const commands = useMemo(
     () => splitExamples(fenceId, src.split("\n")).map((example) => ({ example, segments: toSegments(example) })),
@@ -78,7 +78,7 @@ function ShellCommands({ src }: { src: string }) {
 
 /** Its comment, a run button on its left, copy and expand on its right. Expanded, its command shows beneath */
 function ShellCommand({ example, segments }: { example: Example; segments: SrcSegment[] }) {
-  const { copiedSrc, copy, ranId, run } = useContext(ArticleContext);
+  const { copiedSrc, copy, ranId, run, sessionKey } = useContext(ArticleContext);
   const [expanded, setExpanded] = useState(false);
   const toggle = () => setExpanded(!expanded);
   const { src } = example;
@@ -104,7 +104,13 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
         "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
       )}
     >
-      <button type="button" title="run" className={runButtonCss} onClick={() => run(example.id, src)}>
+      <button
+        type="button"
+        title={sessionKey === null ? "no tty to run in" : "run"}
+        disabled={sessionKey === null}
+        className={runButtonCss}
+        onClick={() => run(example.id, src)}
+      >
         <PlayIcon weight="fill" className={runIconCss} />
       </button>
       {commented ? (
@@ -141,22 +147,23 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
 /** Whether the World's autorun runs it, in this article's tty */
 function AutorunToggle({ example }: { example: Example }) {
   const { articleKey, sessionKey, worldKey } = useContext(ArticleContext);
-  const on = usePrelude(worldKey).entries.some((x) => x.id === example.id);
+  const entry = usePrelude(worldKey).entries.find((x) => x.id === example.id);
+  const on = entry !== undefined;
   const toggle = () =>
-    sessionKey !== null &&
     preludeApi.toggle(worldKey, {
       id: example.id,
       articleKey,
-      sessionKey,
+      sessionKey: sessionKey ?? undefined,
       src: example.src,
       comment: example.commentLines.join("\n"),
     });
+  const tty = entry?.sessionKey ?? worldTtyOf(worldKey);
+  const tip = on ? `autoruns in ${tty ?? "no tty yet"}` : "add to autorun";
   return (
-    <Tip content={sessionKey === null ? "no tty to autorun in" : on ? `autoruns in ${sessionKey}` : "add to autorun"}>
+    <Tip content={tip}>
       <button
         type="button"
         aria-pressed={on}
-        aria-disabled={sessionKey === null}
         className={cn(autorunButtonCss, on && "text-term-accent border-term-accent/50 bg-term-accent/10")}
         onClick={toggle}
       >
@@ -188,10 +195,13 @@ const sideButtonCss = cn(
   touchDevice ? "size-10" : "size-7",
 );
 /** The run button */
-const runButtonCss = cn(sideButtonCss, "hover:text-term-ok hover:border-term-ok/50 hover:bg-term-ok/10");
+const runButtonCss = cn(
+  sideButtonCss,
+  "enabled:hover:text-term-ok enabled:hover:border-term-ok/50 enabled:hover:bg-term-ok/10 disabled:opacity-40 disabled:cursor-default",
+);
 const runIconCss = touchDevice ? "size-5" : "size-4";
 /** The autorun toggle, right of the comment, as large as the run button */
 const autorunButtonCss = cn(
   sideButtonCss,
-  "mr-1.5 hover:text-term-accent hover:border-term-accent/50 hover:bg-term-accent/10 aria-disabled:opacity-40",
+  "mr-1.5 hover:text-term-accent hover:border-term-accent/50 hover:bg-term-accent/10",
 );

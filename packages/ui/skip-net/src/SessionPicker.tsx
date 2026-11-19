@@ -28,7 +28,7 @@ export function SessionPicker(props: Props) {
         </span>
       )}
       {ttyMeta === null ? (
-        <span className="text-mac-muted">no tty</span>
+        <span className="text-term-danger">no tty</span>
       ) : (
         <Picker
           value={ttyMeta.sessionKey}

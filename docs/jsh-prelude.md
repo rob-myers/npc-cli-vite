@@ -14,6 +14,12 @@ pick meta.{floor,do} | move $( playerPath ) --force
 
 A marked command has a toggle (a lightning bolt) on its right, before copy. On, it joins the prelude of its SkipNet's World (`meta.worldKey`), to run in the article window's tty. Entries run in the order they were toggled on.
 
+**On by default:** `# @bootable mobile`, `# @bootable desktop` or `# @bootable mobile desktop` also autoruns it on those devices (`isTouchDevice`) until toggled off.
+- Autorun runs as the World loads, before any article shows. So the articles plugin (`vite-plugin-skip-net-articles`) serves each fence so marked as `virtual:skip-net-autorun`, and `defaults.ts` splits them with the fences' own parser (`splitExamples`, `fenceIdOf` in `@npc-cli/cli`).
+- A default runs in the World's lowest-numbered tty, e.g. `tty-0` (`worldTtyOf`), which its list row and tooltip name. So does a command toggled on in a window with no tty.
+- Toggling one off adds it to the World's `off`. Toggling it on again removes it from there.
+- A change to the plugin needs a dev server restart. A change to an article's markers needs none.
+
 An entry keeps a copy of its `src`. Its id is the example's (`{articleKey}#{fenceHash}/{index}`), so an edit of its fence turns its toggle off, but the entry stays until removed.
 
 ## Package

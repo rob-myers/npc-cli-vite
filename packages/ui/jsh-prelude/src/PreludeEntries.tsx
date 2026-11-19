@@ -5,6 +5,7 @@ import { cn, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { worldTtyOf } from "./run";
 import { type PreludeEntry, preludeApi, usePrelude } from "./store";
 
 /** The commands a World autoruns, in order, each removable */
@@ -17,6 +18,9 @@ export function PreludeEntries({ worldKey }: { worldKey: string }) {
     ),
   );
 
+  const worldTty = worldTtyOf(worldKey);
+  const isGone = (tty?: JshUiMeta["sessionKey"]) => tty === undefined || sessionKeys.includes(tty) === false;
+
   if (entries.length === 0) {
     return <div className="px-5 py-3 text-sm text-term-muted leading-snug">Nothing yet.</div>;
   }
@@ -26,7 +30,8 @@ export function PreludeEntries({ worldKey }: { worldKey: string }) {
         <EntryRow
           key={entry.id}
           entry={entry}
-          missing={sessionKeys.includes(entry.sessionKey) === false}
+          tty={entry.sessionKey ?? worldTty}
+          gone={isGone(entry.sessionKey ?? worldTty)}
           onRemove={() => preludeApi.remove(worldKey, entry.id)}
         />
       ))}
@@ -34,7 +39,9 @@ export function PreludeEntries({ worldKey }: { worldKey: string }) {
   );
 }
 
-function EntryRow({ entry, missing, onRemove }: { entry: PreludeEntry; missing: boolean; onRemove(): void }) {
+/** `tty` is where it runs, `gone` if there is none */
+function EntryRow(props: { entry: PreludeEntry; tty?: JshUiMeta["sessionKey"]; gone: boolean; onRemove(): void }) {
+  const { entry, tty, gone, onRemove } = props;
   const [expanded, setExpanded] = useState(false);
   const toggle = () => setExpanded(!expanded);
   return (
@@ -42,8 +49,8 @@ function EntryRow({ entry, missing, onRemove }: { entry: PreludeEntry; missing: 
       <button type="button" className="min-w-0 text-left cursor-pointer" onClick={toggle}>
         <code className={cn(codeCss, "text-sh-comment")}>{entry.comment || entry.src}</code>
         <span className="block mt-0.5 text-xs text-term-muted">
-          {entry.sessionKey}
-          {missing && <span className="text-term-danger"> (no tty)</span>} · {entry.articleKey}
+          {gone ? <span className="text-term-danger">{tty === undefined ? "no tty" : `${tty} (gone)`}</span> : tty} ·{" "}
+          {entry.articleKey}
         </span>
       </button>
       <span className="flex items-start gap-0.5">
