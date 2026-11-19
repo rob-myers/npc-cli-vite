@@ -1,6 +1,7 @@
-import { type ExternalMessageProcessLeader, type Session, sessionApi, toProcessStatus } from "@npc-cli/cli";
+import { type ExternalMessageProcessLeader, type Session, sessionApi } from "@npc-cli/cli";
 import { queryClientApi } from "@npc-cli/cli/shell/query-client";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
+import { isRunning } from "@npc-cli/ui__jsh-prelude/run";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
@@ -83,11 +84,8 @@ export function useSessionRunner(ttyMeta: null | JshUiMeta) {
         return state.ttyMeta === null ? undefined : sessionApi.getSession(state.ttyMeta.sessionKey);
       },
       isRunning(src) {
-        // paused counts as running, so only a killed process may be re-run
         const session = state.getSession();
-        return Object.values(session?.process ?? {}).some(
-          (p) => p.key === p.pgid && p.origSrc === src && p.status !== toProcessStatus.Killed,
-        );
+        return session !== undefined && isRunning(session, src);
       },
       listen(session) {
         state.unlisten?.();

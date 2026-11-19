@@ -1,7 +1,6 @@
 import { useThemeName } from "@npc-cli/theme";
-import { runPrelude } from "@npc-cli/ui__jsh-prelude/run";
-import { WorldPrelude } from "@npc-cli/ui__jsh-prelude/world";
-import { WorldPreludeContext, type WorldPreludeSlot } from "@npc-cli/ui__world/prelude-slot";
+import { PausedPill } from "@npc-cli/ui__jsh-prelude/paused-pill";
+import { WorldPausedPillContext } from "@npc-cli/ui__world/paused-pill";
 import { uiRegistry } from "@npc-cli/ui-registry";
 import { flushUisLoaded } from "@npc-cli/ui-sdk/analytics";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -28,9 +27,6 @@ import {
   toggleOrientation,
 } from "../components/pane-service";
 import { UiPortalContainer } from "../components/UiPortalContainer";
-
-/** The jsh each World runs before its first play */
-const preludeSlot: WorldPreludeSlot = { Ui: WorldPrelude, run: runPrelude };
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -107,7 +103,7 @@ function Index() {
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>
-      <WorldPreludeContext.Provider value={preludeSlot}>
+      <WorldPausedPillContext.Provider value={PausedPill}>
         <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
           <motion.div
             className="h-full"
@@ -119,7 +115,7 @@ function Index() {
           </motion.div>
         </PaneTreeWrapper>
         <UiPortalContainer />
-      </WorldPreludeContext.Provider>
+      </WorldPausedPillContext.Provider>
     </UiContext.Provider>
   );
 }

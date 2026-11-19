@@ -1,33 +1,101 @@
-import { type Session, sessionApi, toProcessStatus } from "@npc-cli/cli";
+import { ansi, type ProcessMeta, type Session, sessionApi, toProcessStatus } from "@npc-cli/cli";
+import { worldPtag } from "@npc-cli/cli/jsh/world/ptag";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { error, warn } from "@npc-cli/util/legacy/generic";
+import { error, pause, warn } from "@npc-cli/util/legacy/generic";
 import { type PreludeEntry, preludeApi } from "./store";
 
-/** Runs the World's prelude if auto-boot is on. Resolves once each command has started or been skipped */
+/** Runs the World's prelude if autorun is on. Resolves once each command has started or been skipped */
 export async function runPrelude(worldKey: string): Promise<void> {
-  const { autoBoot, entries } = preludeApi.get(worldKey);
-  if (autoBoot === false || entries.length === 0) return;
+  const { autorun, entries } = preludeApi.get(worldKey);
+  if (autorun === false || entries.length === 0) return;
 
   const bySession = Map.groupBy(entries, (x) => x.sessionKey);
   await Promise.all(
-    Array.from(bySession.values(), async (group) => {
-      for (const entry of group) await runEntry(entry).catch(error);
+    Array.from(bySession, async ([sessionKey, group]) => {
+      const ran: string[] = [];
+      for (const entry of group) {
+        if (await runEntry(sessionKey, entry.src).catch(error)) ran.push(labelOf(entry));
+      }
+      if (ran.length > 0) {
+        sessionApi.writeMsg(sessionKey, `autorun ${ansi.White}${ran.join(", ")}`, "info");
+      }
     }),
   );
 }
 
-/** The tty with this session, if any */
-function findTty(sessionKey: string): undefined | JshUiMeta {
-  return Object.values(uiStore.getState().byId).find(
-    ({ meta }) => meta.uiKey === "Jsh" && (meta as JshUiMeta).sessionKey === sessionKey,
-  )?.meta as undefined | JshUiMeta;
+/** Its comment's first line, else its command's */
+function labelOf({ comment, src }: PreludeEntry) {
+  return (comment.split("\n")[0].replace(/^#\s*/, "") || src.split("\n")[0]).trim();
 }
 
-async function runEntry({ sessionKey, src }: PreludeEntry) {
+/**
+ * In each tty on the World running a world process: kills its world jobs and any foreground job, then re-runs its profile.
+ * Then runs the prelude. Each step is announced, and given a moment
+ */
+export async function rebootWorld(worldKey: string, onStep: (label: string) => void): Promise<void> {
+  const sessionKeys = findTtys(worldKey).flatMap(({ sessionKey }) => {
+    const session = getSession(sessionKey);
+    return session !== undefined && liveProcesses(session).some(isWorldProcess) ? [sessionKey] : [];
+  });
+  const step = async (label: string, run?: (session: Session) => unknown) => {
+    onStep(label);
+    for (const sessionKey of sessionKeys) {
+      sessionApi.writeMsg(sessionKey, `reboot ${ansi.White}${label}`, "info");
+    }
+    await Promise.all(sessionKeys.map(async (key) => run?.(getSession(key) as Session)));
+    await pause(stepPauseMs);
+  };
+
+  await step("killing jobs", killWorldJobs);
+  await step("running profiles", async (session) => {
+    await until(() => session.ttyShell.isInteractive());
+    await session.ttyShell.runProfile();
+  });
+  await step("running prelude");
+  await runPrelude(worldKey);
+}
+
+/** Kills the foreground job, if any, and every job with a world process */
+function killWorldJobs(session: Session) {
+  if (session.ttyShell.isProfileFinished() && session.ttyShell.isInteractive() === false) {
+    sessionApi.killSessionLeader(session.key); // ctrl-c
+  }
+  const pgids = new Set(liveProcesses(session).flatMap((p) => (isWorldProcess(p) && p.pgid !== 0 ? p.pgid : [])));
+  sessionApi.kill(session.key, [...pgids], { GROUP: true, SIGINT: true }); // as the Jobs panel's kill
+}
+
+/** The ttys whose World is this one */
+function findTtys(worldKey: string): JshUiMeta[] {
+  return jshMetas().filter((meta) => meta.env.WORLD_KEY === worldKey);
+}
+
+/** Every tty */
+function jshMetas(): JshUiMeta[] {
+  return Object.values(uiStore.getState().byId).flatMap(({ meta }) =>
+    meta.uiKey === "Jsh" ? (meta as JshUiMeta) : [],
+  );
+}
+
+function isWorldProcess(p: ProcessMeta) {
+  return p.ptags?.[worldPtag] === true;
+}
+
+function liveProcesses(session: Session) {
+  return Object.values(session.process).filter((p) => p.status !== toProcessStatus.Killed);
+}
+
+/** The tty with this session, if any */
+function findTty(sessionKey: string): undefined | JshUiMeta {
+  return jshMetas().find((meta) => meta.sessionKey === sessionKey);
+}
+
+/** Runs `src` in the background, once its tty is up. Was it started? */
+async function runEntry(sessionKey: string, src: string): Promise<boolean> {
   const ttyMeta = findTty(sessionKey);
   if (ttyMeta === undefined) {
-    return warn(`prelude: no tty ${sessionKey}: skipped: ${src}`);
+    warn(`prelude: no tty ${sessionKey}: skipped: ${src}`);
+    return false;
   }
   if (getSession(sessionKey) === undefined) {
     uiStoreApi.markEverSeen(ttyMeta.id); // mounts it offscreen
@@ -36,9 +104,10 @@ async function runEntry({ sessionKey, src }: PreludeEntry) {
   const ready = await until(() => getSession(sessionKey)?.ttyShell.isProfileFinished() === true);
   const session = getSession(sessionKey);
   if (ready === false || session === undefined) {
-    return warn(`prelude: ${sessionKey} never finished its profile: skipped: ${src}`);
+    warn(`prelude: ${sessionKey} never finished its profile: skipped: ${src}`);
+    return false;
   }
-  if (isRunning(session, src)) return;
+  if (isRunning(session, src)) return false;
 
   let unlisten = noop;
   const started = new Promise<void>((resolve) => {
@@ -50,17 +119,16 @@ async function runEntry({ sessionKey, src }: PreludeEntry) {
   session.ttyShell.sourceExternal(src, { background: true }).catch(error);
   await Promise.race([started, timeout()]);
   unlisten();
+  return true;
 }
 
 function getSession(sessionKey: string): undefined | Session {
   return sessionApi.getSession(sessionKey);
 }
 
-/** Does an unkilled process lead `src`? */
-function isRunning(session: Session, src: string) {
-  return Object.values(session.process).some(
-    (p) => p.key === p.pgid && p.origSrc === src && p.status !== toProcessStatus.Killed,
-  );
+/** Does an unkilled process lead `src`, as given rather than as the shell re-prints it? Paused counts */
+export function isRunning(session: Session, src: string) {
+  return liveProcesses(session).some((p) => p.key === p.pgid && p.origSrc === src);
 }
 
 /** Polls `test` until it holds, else gives up after `waitMs` */
@@ -78,6 +146,8 @@ function timeout() {
 }
 
 const noop = () => {};
+/** A pause after each reboot step, so each is seen */
+const stepPauseMs = 400;
 const pollMs = 250;
 /** How long a step waits, e.g. on a tty which never boots */
 const waitMs = 20000;

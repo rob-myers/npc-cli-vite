@@ -16,10 +16,11 @@ export * as sidestep from "./world/sidestep.ts";
 export * as spot from "./world/spot.ts";
 
 import { pausablePtag } from "../shell/pause-group";
+import { worldPtag } from "./world/ptag.const";
 
 const worldPaths = Object.keys(import.meta.glob(["./world/*.ts", "!./world/*.*.ts"], { eager: true }));
 
 /** Set default ptags used by `run` -- see `docs/jsh-pause.md` */
 export const modulePtags = Object.fromEntries(
-  worldPaths.map((path) => [path.replace(/^.*\/|\.ts$/g, ""), { [pausablePtag("world")]: true }]),
+  worldPaths.map((path) => [path.replace(/^.*\/|\.ts$/g, ""), { [pausablePtag("world")]: true, [worldPtag]: true }]),
 );

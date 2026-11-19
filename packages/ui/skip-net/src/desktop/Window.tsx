@@ -1,8 +1,16 @@
+import { usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
-import { DotsSixVerticalIcon, FileTextIcon, MinusIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
-import { memo, useContext, useEffect } from "react";
+import {
+  ArrowSquareOutIcon,
+  DotsSixVerticalIcon,
+  FileTextIcon,
+  MinusIcon,
+  PlayCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
+import { memo, useContext, useEffect, useMemo } from "react";
 import { ArticlePane, ArticleSessionPicker } from "../article/ArticlePane";
 import { articleFolderOf, articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
@@ -28,6 +36,9 @@ export const Window = memo(function Window(props: WindowProps) {
   /** Its contents show: open, or folded but being dragged open */
   const bodied = !shaded || peek === true;
   const title = titleOf(win, items);
+  /** Articles with a command its World autoruns */
+  const { entries } = usePrelude(state.meta.worldKey);
+  const autorunKeys = useMemo(() => new Set(entries.map((x) => x.articleKey)), [entries]);
   /** Folds it, or unfolds it if folded */
   const fold = () => (stack ? (shaded ? stack.expand : stack.collapse)(win.id) : state.toggleShade(win.id));
   const frame = useStateRef(
@@ -105,14 +116,20 @@ export const Window = memo(function Window(props: WindowProps) {
                 value={title}
                 options={articleKeys}
                 onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
+                optionIcon={(articleKey) => {
+                  const Icon = articleFolderOf(articleKey) === "video" ? PlayCircleIcon : FileTextIcon;
+                  const autoruns = autorunKeys.has(articleKey);
+                  return (
+                    <Icon
+                      weight="bold"
+                      className={cn("size-4 shrink-0", autoruns ? "text-yellow-400" : "opacity-60")}
+                      aria-label={autoruns ? "autoruns" : undefined}
+                    />
+                  );
+                }}
                 optionAction={{
                   title: "open in a new window",
-                  icon: (articleKey) =>
-                    articleFolderOf(articleKey) === "video" ? (
-                      <PlayCircleIcon weight="bold" className="size-4" />
-                    ) : (
-                      <FileTextIcon weight="bold" className="size-4" />
-                    ),
+                  icon: () => <ArrowSquareOutIcon weight="bold" className="size-4" />,
                   onAction: (articleKey) => state.open({ kind: "article", articleKey }, { fresh: true, below: win.id }),
                 }}
                 title="change article"

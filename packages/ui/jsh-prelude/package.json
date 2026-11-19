@@ -7,7 +7,7 @@
     "./schema": "./src/schema.ts",
     "./store": "./src/store.ts",
     "./run": "./src/run.ts",
-    "./world": "./src/WorldPrelude.tsx"
+    "./paused-pill": "./src/PausedPill.tsx"
   },
   "scripts": {},
   "dependencies": {
@@ -15,6 +15,7 @@
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "react": "catalog:",

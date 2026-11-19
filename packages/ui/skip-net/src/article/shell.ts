@@ -1,4 +1,4 @@
-import { type TokenKind, tokenizeShell } from "./shell-highlight";
+import { type TokenKind, tokenizeShell } from "@npc-cli/cli/shell/sh-tokens";
 
 /**
  * A new example starts at a blank line, or at a `#` comment following code — one at column 0,
@@ -152,7 +152,7 @@ export type Example = {
   /** Verbatim source, newlines preserved */
   src: string;
   args: ArgToken[];
-  /** Marked `# @bootable`, so a World's auto-boot may run it */
+  /** Marked `# @bootable`, so a World's autorun may run it */
   bootable: boolean;
 };
 

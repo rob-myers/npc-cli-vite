@@ -707,6 +707,9 @@ importers:
       '@npc-cli/ui__jsh':
         specifier: workspace:^
         version: link:../jsh
+      '@npc-cli/ui__world':
+        specifier: workspace:^
+        version: link:../world
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../../util

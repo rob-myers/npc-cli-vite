@@ -1,12 +1,13 @@
+import { tokenCss, tokenizeShell } from "@npc-cli/cli/shell/sh-tokens";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { type PreludeEntry, preludeApi, usePrelude } from "./store";
 
-/** The commands a World's auto-boot runs, in order, each removable */
+/** The commands a World autoruns, in order, each removable */
 export function PreludeEntries({ worldKey }: { worldKey: string }) {
   const { entries } = usePrelude(worldKey);
   const { uiStore } = useContext(UiContext);
@@ -60,11 +61,21 @@ function EntryRow({ entry, missing, onRemove }: { entry: PreludeEntry; missing: 
       </span>
       {expanded && (
         <code className={cn(codeCss, "col-span-2 mt-2 px-2 py-1.5 rounded bg-term-fence text-sh-text")}>
-          {entry.src}
+          <Highlighted src={entry.src} />
         </code>
       )}
     </li>
   );
+}
+
+/** `src` coloured as SkipNet's fences colour it */
+function Highlighted({ src }: { src: string }) {
+  const tokens = useMemo(() => tokenizeShell(src), [src]);
+  return tokens.map(({ start, end, kind }) => (
+    <span key={start} className={tokenCss[kind]}>
+      {src.slice(start, end)}
+    </span>
+  ));
 }
 
 const codeCss = tw("block font-mono text-xs whitespace-pre-wrap wrap-break-word");

@@ -15,7 +15,7 @@ export type PreludeEntry = {
 
 export type WorldPrelude = {
   /** Does the World's first unpause run `entries`? */
-  autoBoot: boolean;
+  autorun: boolean;
   /** In the order they were toggled on */
   entries: PreludeEntry[];
 };
@@ -41,8 +41,8 @@ export const preludeApi = {
   remove(worldKey: string, id: string) {
     preludeApi.patch(worldKey, { entries: preludeApi.get(worldKey).entries.filter((x) => x.id !== id) });
   },
-  setAutoBoot(worldKey: string, autoBoot: boolean) {
-    preludeApi.patch(worldKey, { autoBoot });
+  setAutorun(worldKey: string, autorun: boolean) {
+    preludeApi.patch(worldKey, { autorun });
   },
   /** Adds it, else removes the entry with its id */
   toggle(worldKey: string, entry: PreludeEntry) {
@@ -58,4 +58,4 @@ export function usePrelude(worldKey: string): WorldPrelude {
   return preludeStore((s) => s.byWorld[worldKey] ?? emptyPrelude);
 }
 
-const emptyPrelude: WorldPrelude = { autoBoot: true, entries: [] };
+const emptyPrelude: WorldPrelude = { autorun: true, entries: [] };
