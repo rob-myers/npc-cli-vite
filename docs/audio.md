@@ -36,6 +36,8 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
   The bar's sound hud-toast toggles it, kept in localStorage. Neither the World nor the engine imports the other.
 - **Autoplay.** Browsers start a context only after a press or key. The engine resumes on the next `pointerdown` or
   `keydown`. `warmAudio()` waits for one of those before making the engine, so nothing is refused at page load.
+- **Not during the boot.** jsh `sounds` calls `warmAudio()`, and plays anything, only once the World has booted
+  (`w.e.bootedAt`) and the page is idle. Its samples would otherwise compete with the boot on a phone.
 - **Samples.** All CC0, in named banks (`sampleFiles`), fetched as the engine is made, bar the lazy `psi`: 26 steps (216 KB) and the
   effects' layers (252 KB). `pickSample` never plays one twice running. A layer not yet loaded is left out.
 - **Hot reload.** The context, samples, listeners, config and status are kept on `import.meta.hot.data`.
