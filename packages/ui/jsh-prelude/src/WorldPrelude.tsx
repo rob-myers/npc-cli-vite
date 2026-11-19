@@ -109,8 +109,9 @@ function RebootButton({ disabled, onReboot }: { disabled: boolean; onReboot(): v
         type="button"
         disabled={disabled}
         className={cn(
-          "flex items-center gap-1 h-5 rounded-full cursor-pointer transition-colors disabled:opacity-50",
-          confirming ? "px-1.5 text-amber-300 ring-1 ring-amber-300/70 animate-pulse" : "hover:text-white",
+          "flex items-center h-5 rounded-full cursor-pointer disabled:opacity-50",
+          "ring-1 transition-[padding,color,box-shadow] duration-200",
+          confirming ? "px-1.5 text-amber-300 ring-amber-300/70 animate-pulse" : "ring-transparent hover:text-white",
         )}
         onClick={() => {
           setConfirming(!confirming);
@@ -118,7 +119,15 @@ function RebootButton({ disabled, onReboot }: { disabled: boolean; onReboot(): v
         }}
       >
         <ArrowsClockwiseIcon className="size-3.5" weight={confirming ? "bold" : "regular"} />
-        {confirming && "confirm"}
+        {/* grows from no width, so it slides in rather than appearing */}
+        <span
+          className={cn(
+            "grid transition-[grid-template-columns,opacity] duration-200",
+            confirming ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0",
+          )}
+        >
+          <span className="overflow-hidden whitespace-nowrap pl-1">confirm</span>
+        </span>
       </button>
     </Tip>
   );
