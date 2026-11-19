@@ -51,6 +51,8 @@ export const SkipNetUiMetaSchema = z.object({
       { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
       { id: "w2", kind: "article", articleKey: "npc-controls", x: 21, y: 0, w: 30, h: 24, z: 2 },
     ]),
+  /** Each code fence's height by its id, once resized by its corner */
+  fenceHeights: z.record(z.string(), z.number()).optional(),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;

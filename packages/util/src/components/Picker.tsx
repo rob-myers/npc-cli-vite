@@ -12,8 +12,10 @@ export function Picker<T extends string>(props: {
   disabled?: boolean;
   /** Only its chevron opens it, so what is chosen is shown elsewhere */
   chevronOnly?: boolean;
-  /** Something to do with an option besides choosing it, closing the popup: a button before it, on touch a long press */
+  /** Something to do with an option besides choosing it, closing the popup: a button after it, on touch a long press */
   optionAction?: { title: string; icon(value: T): ReactNode; onAction(value: T): void };
+  /** An icon before an option, not a button */
+  optionIcon?(value: T): ReactNode;
   title?: string;
   className?: string;
   /** The popup is portalled out of its panel, whose theme it takes by this class */
@@ -77,15 +79,17 @@ export function Picker<T extends string>(props: {
               <Select.Item
                 key={value}
                 value={value}
-                className="flex items-center gap-1 px-3 py-1 cursor-pointer outline-none select-none [-webkit-touch-callout:none] data-highlighted:bg-zinc-700 data-selected:text-zinc-100"
+                className="flex items-center gap-1.5 px-3 py-1 cursor-pointer outline-none select-none [-webkit-touch-callout:none] data-highlighted:bg-zinc-700 data-selected:text-zinc-100"
                 {...pressProps(value)}
               >
+                {props.optionIcon?.(value)}
+                <Select.ItemText className={cn(action && !touchDevice && "mr-3")}>{label}</Select.ItemText>
                 {action && !touchDevice && (
                   // its own presses never reach the option, so it is not chosen
                   <button
                     type="button"
                     title={action.title}
-                    className="-my-0.5 -ml-1.5 p-0.5 rounded cursor-pointer opacity-60 hover:opacity-100 hover:bg-black/20"
+                    className="-my-0.5 -mr-1.5 ml-auto p-0.5 rounded cursor-pointer opacity-60 hover:opacity-100 hover:bg-black/20"
                     onPointerDown={stopPropagation}
                     onPointerUp={stopPropagation}
                     onMouseUp={stopPropagation}
@@ -98,7 +102,6 @@ export function Picker<T extends string>(props: {
                     {action.icon(value)}
                   </button>
                 )}
-                <Select.ItemText>{label}</Select.ItemText>
               </Select.Item>
             ))}
           </Select.Popup>

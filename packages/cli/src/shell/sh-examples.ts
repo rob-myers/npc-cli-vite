@@ -1,4 +1,10 @@
-import { type TokenKind, tokenizeShell } from "./shell-highlight";
+import { hashText } from "@npc-cli/util/legacy/generic";
+import { type TokenKind, tokenizeShell } from "./sh-tokens";
+
+/** A fence's id, by its article and source as MDX gives it */
+export function fenceIdOf(articleKey: string, src: string) {
+  return `${articleKey}#${(hashText(src) >>> 0).toString(36)}`;
+}
 
 /**
  * A new example starts at a blank line, or at a `#` comment following code — one at column 0,
@@ -39,7 +45,9 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
   }
   flush();
 
-  return chunks.flatMap(({ lines: ls, blankBefore }, index) => {
+  return chunks.flatMap(({ lines: chunkLines, blankBefore }, index) => {
+    const bootLines = chunkLines.map((x) => bootLineRe.exec(x)).filter((m) => m !== null);
+    const ls = chunkLines.filter((x) => bootLineRe.test(x) === false);
     const at = ls.findIndex((x) => !x.startsWith("#"));
     const src = (at === -1 ? [] : ls.slice(at)).join("\n").trim();
     if (src === "") {
@@ -52,10 +60,23 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
       commentLines,
       src,
       args: parseArgTokens(src),
+      bootable: bootLines.length > 0,
+      autorunOn: bootLines.flatMap((m) => autorunOnOf(m[1])),
     };
   });
 }
 
+/** A comment line marking its command bootable, then its `@key` or `@key=value` words e.g. `@default=mobile`. Not shown */
+const bootLineRe = /^#\s*@bootable((?:\s+@[\w-]+(?:=[\w-]+)?)*)\s*$/;
+
+/** Where `@default` autoruns it: `@default` everywhere, `@default=mobile` or `=desktop` there alone */
+function autorunOnOf(words: string): AutorunDevice[] {
+  return words.split(/\s+/).flatMap((word) => {
+    if (word === "@default") return ["mobile", "desktop"] as const;
+    const device = /^@default=(mobile|desktop)$/.exec(word)?.[1];
+    return device === undefined ? [] : [device as AutorunDevice];
+  });
+}
 const keyRe = /([A-Za-z_][\w-]*):/g;
 /** A line that is a comment, indented or not */
 const commentLineRe = /^[ \t]*#.*$/gm;
@@ -148,6 +169,10 @@ export type Example = {
   /** Verbatim source, newlines preserved */
   src: string;
   args: ArgToken[];
+  /** Marked `# @bootable`, so a World's autorun may run it */
+  bootable: boolean;
+  /** Where it autoruns until turned off, e.g. `# @bootable @default=mobile` */
+  autorunOn: AutorunDevice[];
 };
 
 /** Where a `key:value` arg lies in its example's source */
@@ -163,3 +188,5 @@ export type SrcSegment = {
   /** Set when inside a `key:value` arg */
   arg: undefined | "key" | "value";
 };
+
+export type AutorunDevice = "mobile" | "desktop";

@@ -442,7 +442,7 @@ export default function WorldHud() {
                   <span>disconnected</span>
                 </Popover.Trigger>
                 <Popover.Portal container={w.rootEl}>
-                  <Popover.Positioner side="bottom" sideOffset={4} className="z-50">
+                  <Popover.Positioner side="right" sideOffset={4} className="z-50">
                     <Popover.Popup
                       initialFocus={false}
                       finalFocus={false}

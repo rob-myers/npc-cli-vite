@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Spinner } from "@npc-cli/util";
+import { cn, Spinner, tw } from "@npc-cli/util";
 import { Suspense, useContext, useMemo, useRef, useState } from "react";
-import { articleKeyOf, getArticle } from "../articles";
+import { articleFolderOf, articleKeyOf, getArticle } from "../articles";
 import { SkipNetContext } from "../context";
 import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
@@ -30,13 +30,15 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
       articleKey: articleKey ?? "",
       copiedSrc: runner.copiedSrc,
       ranId,
+      sessionKey: session.ttyMeta?.sessionKey ?? null,
+      worldKey: state.meta.worldKey,
       copy: runner.copySrc,
       run(exampleId, src) {
         setRanId(exampleId);
         runner.runSrc(src);
       },
     }),
-    [articleKey, runner.copiedSrc, ranId],
+    [articleKey, runner.copiedSrc, ranId, session.ttyMeta?.sessionKey, state.meta.worldKey],
   );
 
   if (articleKey === undefined || content === undefined) {
@@ -46,12 +48,22 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
   return (
     <div className="size-full flex flex-col bg-mac-window text-mac-text">
       <SessionPicker runner={runner} session={session} win={win} />
-      <div className="flex-1 min-h-0 overflow-auto scrollbar-thin px-3 pt-4 pb-3">
+      <div className="relative flex-1 min-h-0 overflow-auto scrollbar-thin px-3 pt-4 pb-3">
         <ArticleContext.Provider value={ctxt}>
-          <Suspense fallback={<Spinner className="size-4 m-2" />}>
+          <Suspense
+            fallback={
+              <div className="absolute inset-0 grid place-items-center">
+                <Spinner className="size-6" />
+              </div>
+            }
+          >
             <article
               ref={articleRef}
-              className={cn("prose prose-sm max-w-[unset] leading-[1.4]", theme === "dark" && "prose-invert")}
+              className={cn(
+                "prose prose-sm max-w-[unset] leading-[1.4] prose-code:before:hidden prose-code:after:hidden prose-code:px-1 prose-code:bg-mac-text/10",
+                theme === "dark" && "prose-invert",
+                articleFolderOf(articleKey) !== "video" && framedClass,
+              )}
             >
               {content}
             </article>
@@ -62,3 +74,14 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
     </div>
   );
 }
+
+/** Its session picker alone, in a folded article window's bar */
+export function ArticleSessionPicker({ win }: { win: SkipNetWindow }) {
+  const state = useContext(SkipNetContext);
+  const session = useWindowSession(win, state.meta.worldKey);
+  const runner = useSessionRunner(session.ttyMeta);
+  return <SessionPicker runner={runner} session={session} win={win} />;
+}
+
+/** A rounded frame around an article's text, though not its videos */
+const framedClass = tw("rounded-xl border border-mac-text/20 px-4 py-3");

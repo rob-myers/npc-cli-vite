@@ -1,9 +1,17 @@
+import { usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
-import { DotsSixVerticalIcon, FileTextIcon, MinusIcon, PlayCircleIcon, XIcon } from "@phosphor-icons/react";
-import { memo, useContext, useEffect } from "react";
-import { ArticlePane } from "../article/ArticlePane";
+import {
+  ArrowSquareOutIcon,
+  DotsSixVerticalIcon,
+  FileTextIcon,
+  MinusIcon,
+  PlayCircleIcon,
+  XIcon,
+} from "@phosphor-icons/react";
+import { memo, useContext, useEffect, useMemo } from "react";
+import { ArticlePane, ArticleSessionPicker } from "../article/ArticlePane";
 import { articleFolderOf, articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
@@ -15,7 +23,8 @@ import { titleOf } from "./windows";
 
 /**
  * A window's frame: a title bar with close and windowshade boxes. On the desktop the bar drags it, stacked only its grip.
- * A click on a folded one's bar unfolds it, having no windowshade box. Stacked, a click folds the front one too.
+ * A tap on a folded one's bar unfolds it, its windowshade box greyed. Stacked, a tap folds the front one too.
+ * With a mouse a double-click folds or unfolds any, a single click only fronting it.
  */
 export const Window = memo(function Window(props: WindowProps) {
   const { front, items, peek, showAll, stack, win } = props;
@@ -27,11 +36,23 @@ export const Window = memo(function Window(props: WindowProps) {
   /** Its contents show: open, or folded but being dragged open */
   const bodied = !shaded || peek === true;
   const title = titleOf(win, items);
+  /** Articles with a command its World autoruns */
+  const { entries } = usePrelude(state.meta.worldKey);
+  const autorunKeys = useMemo(() => new Set(entries.map((x) => x.articleKey)), [entries]);
+  /** Folds it, or unfolds it if folded */
+  const fold = () => (stack ? (shaded ? stack.expand : stack.collapse)(win.id) : state.toggleShade(win.id));
   const frame = useStateRef(
     (): FrameState => ({
       downAt: { x: 0, y: 0 },
+      mouse: false,
       titleSlot: null,
 
+      isBarClick(e) {
+        // a portalled popup's clicks bubble here through React
+        if (!e.currentTarget.contains(e.target as Node)) return false;
+        if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return false;
+        return Math.hypot(e.clientX - frame.downAt.x, e.clientY - frame.downAt.y) <= clickSlopPx;
+      },
       setTitleSlot(el) {
         if (el !== frame.titleSlot) frame.set({ titleSlot: el });
       },
@@ -41,7 +62,7 @@ export const Window = memo(function Window(props: WindowProps) {
   return (
     <div
       className={cn(
-        // folded on the desktop its bar overflows its row into the gap below
+        // folded on the desktop its bar overflows its one row, past the gap below
         shaded && !stacked ? "w-full" : "size-full",
         "flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]",
         // stacked, edge to edge: only a line between windows
@@ -52,24 +73,22 @@ export const Window = memo(function Window(props: WindowProps) {
         className={cn(
           "relative shrink-0 flex items-center justify-between gap-2 px-1.5 bg-mac-title select-none touch-none",
           big && "text-sm",
-          big ? "h-12" : stacked ? "h-7" : "h-6",
+          big ? "h-12" : "h-7",
           stacked
             ? "cursor-pointer data-dragging:bg-mac-select/10"
             : "skip-net-drag cursor-grab active:cursor-grabbing",
           bodied && "border-b border-mac-edge",
         )}
-        onPointerDown={(e) => void (frame.downAt = { x: e.clientX, y: e.clientY })}
-        onClick={(e) => {
-          if (!stacked && !shaded) return;
-          // a portalled popup's clicks bubble here through React
-          if (!e.currentTarget.contains(e.target as Node)) return;
-          if ((e.target as HTMLElement).closest("button, [data-stack-grip]") !== null) return;
-          const { downAt } = frame;
-          if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > clickSlopPx) return;
-          if (state.pressedFrontId !== win.id && !shaded) return; // a click on an open window behind only fronts it
-          if (!shaded && stack) stack.collapse(win.id);
-          else state.toggleShade(win.id);
+        onPointerDown={(e) => {
+          frame.downAt = { x: e.clientX, y: e.clientY };
+          frame.mouse = e.pointerType === "mouse";
         }}
+        onClick={(e) => {
+          if (frame.mouse || (!stacked && !shaded) || !frame.isBarClick(e)) return;
+          if (state.pressedFrontId !== win.id && !shaded) return; // a tap on an open window behind only fronts it
+          fold();
+        }}
+        onDoubleClick={(e) => void (frame.mouse && frame.isBarClick(e) && fold())}
       >
         {front && (
           // fainter stacked, where the grips' dots sit on them
@@ -97,14 +116,20 @@ export const Window = memo(function Window(props: WindowProps) {
                 value={title}
                 options={articleKeys}
                 onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
+                optionIcon={(articleKey) => {
+                  const Icon = articleFolderOf(articleKey) === "video" ? PlayCircleIcon : FileTextIcon;
+                  const autoruns = autorunKeys.has(articleKey);
+                  return (
+                    <Icon
+                      weight="bold"
+                      className={cn("size-4 shrink-0", autoruns ? "text-yellow-400" : "opacity-60")}
+                      aria-label={autoruns ? "autoruns" : undefined}
+                    />
+                  );
+                }}
                 optionAction={{
                   title: "open in a new window",
-                  icon: (articleKey) =>
-                    articleFolderOf(articleKey) === "video" ? (
-                      <PlayCircleIcon weight="bold" className="size-4" />
-                    ) : (
-                      <FileTextIcon weight="bold" className="size-4" />
-                    ),
+                  icon: () => <ArrowSquareOutIcon weight="bold" className="size-4" />,
                   onAction: (articleKey) => state.open({ kind: "article", articleKey }, { fresh: true, below: win.id }),
                 }}
                 title="change article"
@@ -126,20 +151,25 @@ export const Window = memo(function Window(props: WindowProps) {
         {/* Show All closes it by a badge of its own instead */}
         {!(showAll && !stacked) && (
           <>
-            {!shaded && (
-              <button
-                type="button"
-                title="collapse"
-                className={cn(boxClass, big && bigBoxClass)}
-                onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
-              >
-                <MinusIcon weight="bold" className={boxIconClass(big)} />
-              </button>
-            )}
-            <CloseBox big={big} onClose={() => state.close(win.id)} />
+            <button
+              type="button"
+              title={shaded ? undefined : "collapse"}
+              disabled={shaded} // greyed whilst folded, keeping the bar's boxes in place
+              className={cn(boxClass, big && bigBoxClass, "disabled:opacity-35 disabled:cursor-default")}
+              onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
+            >
+              <MinusIcon weight="bold" className={boxIconClass(big)} />
+            </button>
+            <CloseBox big={big} onClose={() => (stack ? stack.close(win.id) : state.close(win.id))} />
           </>
         )}
       </header>
+      {!bodied && win.kind === "article" && (
+        // folded, its session still shows in its bar
+        <TitleSlotContext.Provider value={frame.titleSlot}>
+          <ArticleSessionPicker win={win} />
+        </TitleSlotContext.Provider>
+      )}
       {bodied && (
         <div
           className={cn(
@@ -219,8 +249,8 @@ type WindowProps = {
   peek?: boolean;
   /** As `state.showAll`, passed so a change re-renders it */
   showAll: boolean;
-  /** Whilst stacked, whether it is last, so it has no line beneath, and how it collapses, easing to its bar */
-  stack?: { last: boolean; collapse(id: string): void };
+  /** Whilst stacked, whether it is last, so it has no line beneath, and how it eases away or to and from its bar */
+  stack?: { last: boolean; close(id: string): void; collapse(id: string): void; expand(id: string): void };
   win: SkipNetWindow;
 };
 
@@ -248,6 +278,10 @@ const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "sta
 type FrameState = {
   /** Where a press on the bar began, so a drag's release is not a click */
   downAt: { x: number; y: number };
+  /** That press was a mouse's, so a double-click folds rather than a click */
+  mouse: boolean;
+  /** A click on the bar itself, not a box, grip or popup, and not the end of a drag */
+  isBarClick(e: React.MouseEvent): boolean;
   /** Where its body shows things in its title bar (`InTitle`) */
   titleSlot: null | HTMLElement;
   setTitleSlot(el: null | HTMLElement): void;

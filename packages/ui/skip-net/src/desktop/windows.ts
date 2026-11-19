@@ -157,7 +157,7 @@ function rectOf(win: SkipNetWindow): Rect {
 type Rect = { x: number; y: number; width: number; height: number };
 
 /** A folded window's height: its bar and borders */
-const foldedPx = 26;
+const foldedPx = 30;
 /** Room around each window in Show All */
 const showAllGapPx = 24;
 /** How far each new window is offset from the last, in cells */

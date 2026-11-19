@@ -1,0 +1,26 @@
+{
+  "name": "@npc-cli/ui__jsh-prelude",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./store": "./src/store.ts",
+    "./run": "./src/run.ts",
+    "./paused-pill": "./src/PausedPill.tsx"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@npc-cli/cli": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__jsh": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:",
+    "zustand": "catalog:"
+  }
+}

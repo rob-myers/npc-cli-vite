@@ -33,7 +33,10 @@ pred.setHandler(function onWorldEvent(e, w) {
   switch (e.key) {
     case "picked":
       if (w.helper.isNpcPickEvent(e) === true && e.longDown === false && isReading(w) === false) {
-        visualisePredicates(w, onPickNpc(e));
+        const changed = new Set(onPickNpc(e));
+        visualisePredicates(w, [...changed]);
+        // their menus' "picked" toggles show it
+        for (const npcKey of changed) w.events.next({ key: "npc-toggled", npcKey });
       }
       break;
     case "set-player": {

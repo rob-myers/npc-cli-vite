@@ -16,6 +16,7 @@
     "@npc-cli/ui__audio": "workspace:^",
     "@npc-cli/ui__decorator": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
+    "@npc-cli/ui__jsh-prelude": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
     "@npc-cli/ui__skip-net": "workspace:^",
     "@npc-cli/ui__tabs": "workspace:^",

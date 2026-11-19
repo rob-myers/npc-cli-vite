@@ -1,3 +1,4 @@
+import { pause } from "@npc-cli/util/legacy/generic";
 import { type ComponentType, type LazyExoticComponent, lazy } from "react";
 
 export type ArticleComponents = Record<string, ComponentType<any>>;
@@ -57,14 +58,19 @@ export function articleKeyOf(key: undefined | string): undefined | string {
 
 const lazyByKey = new Map<string, LazyExoticComponent<ArticleContent>>();
 
-/** The article's content, loaded on first render. A Suspense must be above it */
+/** The article's content, loaded on first render, at least `firstShowMs` in. A Suspense must be above it */
 export function getArticle(key: string): undefined | LazyExoticComponent<ArticleContent> {
   const load = keyToLoader.get(key);
   if (load === undefined) return undefined;
   let Content = lazyByKey.get(key);
-  if (Content === undefined) lazyByKey.set(key, (Content = lazy(load)));
+  if (Content === undefined) {
+    lazyByKey.set(key, (Content = lazy(() => Promise.all([load(), pause(firstShowMs)]).then(([m]) => m))));
+  }
   return Content;
 }
+
+/** Its spinner shows at least this long, so it never just flickers */
+const firstShowMs = 500;
 
 function rank(order: string[], key: string) {
   return order.indexOf(key) + 1 || Number.POSITIVE_INFINITY;

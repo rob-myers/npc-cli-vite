@@ -1,4 +1,6 @@
 import { useThemeName } from "@npc-cli/theme";
+import { PausedPill } from "@npc-cli/ui__jsh-prelude/paused-pill";
+import { WorldPausedPillContext } from "@npc-cli/ui__world/paused-pill";
 import { uiRegistry } from "@npc-cli/ui-registry";
 import { flushUisLoaded } from "@npc-cli/ui-sdk/analytics";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -101,17 +103,19 @@ function Index() {
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>
-      <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
-        <motion.div
-          className="h-full"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: ready ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {ready && <PaneTree node={root} />}
-        </motion.div>
-      </PaneTreeWrapper>
-      <UiPortalContainer />
+      <WorldPausedPillContext.Provider value={PausedPill}>
+        <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: ready ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {ready && <PaneTree node={root} />}
+          </motion.div>
+        </PaneTreeWrapper>
+        <UiPortalContainer />
+      </WorldPausedPillContext.Provider>
     </UiContext.Provider>
   );
 }

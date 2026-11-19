@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 @import "./theme.css" layer(theme);
-@custom-variant dark (&:where(.theme-dark, .theme-dark *));
+/* not within a light tab in a dark page */
+@custom-variant dark (&:where(.theme-dark, .theme-dark *):not(:where(.theme-dark .theme-light, .theme-dark .theme-light *)));
 
 @plugin "@tailwindcss/typography";
 

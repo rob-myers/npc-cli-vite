@@ -84,7 +84,7 @@ server.registerTool(
       "Evaluate `fn` (JS source, e.g. `w => w.gms[0].rooms.length`) against the World and return its result as JSON, written to no tty — for reads too long or noisy for one. May return a promise.",
     inputSchema: {
       fn: z.string(),
-      world: z.string().default("world-0"),
+      world: z.string().default("world-0").describe('"" runs `fn` on the page alone, `w` undefined'),
       depth: z.number().int().min(1).max(8).default(4).describe("nesting kept before [Object]"),
     },
   },

@@ -13,7 +13,7 @@ export const JshUiSchema = z.object({
   /** Its jobs panel, beside the terminal */
   jobs: z
     .object({
-      shown: z.boolean().default(false),
+      shown: z.boolean().default(true),
       at: z.enum(["top", "bottom", "left", "right"]).default("bottom"),
       /** Its share of the Jsh along `at`'s axis */
       size: z.number().default(0.35),

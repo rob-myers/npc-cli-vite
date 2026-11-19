@@ -1,8 +1,14 @@
+- __Item #:__ npc-controls
+- __Tags:__ ui, actuation
+- __Activation:__ code, keyboard, pointer
+
 ```sh
 # pointer moves player
+# @bootable @default
 pick meta.{floor,do} | move $( playerPath ) --force
 
 # keys move player
+# @bootable @default=desktop
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
 # last picked moves
@@ -26,3 +32,10 @@ pick --long | look npc:rob --force
 # keys look
 wasd_delta npc:rob | look npc:rob --force
 ```
+
+- keyboard shortcuts __TODO__ pics
+- pointer events __TODO__ pics
+
+
+__Description:__
+When the NPC is the Player <SideNote>Player ∊ NPC, despite contradiction.</SideNote>

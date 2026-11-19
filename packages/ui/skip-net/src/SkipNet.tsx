@@ -133,7 +133,7 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         ref={(el) => void (state.rootEl = el)}
         onPointerEnter={() => void (state.hovered = true)}
         onPointerLeave={() => void (state.hovered = false)}
-        className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide"
+        className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide [--color-spinner:var(--color-mac-muted)]"
       >
         <Toolbar />
         {state.narrow ? <Stack /> : <Desktop />}

@@ -1,6 +1,7 @@
 export * from "./components/BasicPopover";
 export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
+export * from "./components/Tip";
 export * from "./ExhaustiveError";
 export * from "./hooks/use-before-unload-or-visibility-change";
 export * from "./hooks/use-composed-refs";

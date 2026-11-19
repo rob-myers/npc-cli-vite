@@ -2,7 +2,7 @@ import { cn, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { SkipNetContext } from "../context";
 import { deskStyle } from "./classes";
@@ -20,14 +20,14 @@ export function Stack() {
   const front = frontOf(windows);
   /** Fronting one never moves it */
   const ordered = useMemo(() => stackOrdered(windows), [windows]);
-  /** Each window in order, and whether open: a change slides the windows to their new places */
-  const layoutKey = ordered.map((x) => `${x.id}:${x.shadedH === undefined}`).join(" ");
 
   const stack = useStateRef(
     (): StackState => ({
       choice: null,
       drag: null,
+      moves: 0,
       rootEl: null,
+      shownIds: null,
       unfoldingId: null,
 
       choiceAt(drag, folding, dir) {
@@ -42,23 +42,54 @@ export function Stack() {
           over: "fold",
         };
       },
+      close(id) {
+        const el = stack.rootEl?.querySelector<HTMLElement>(`[data-stack-id="${id}"]`);
+        if (el == null) return state.close(id);
+        if (el.hasAttribute("data-easing")) return;
+        // its frame eases away, the windows below following. Then it closes, nothing moving
+        el.setAttribute("data-easing", "");
+        Object.assign(el.style, { minHeight: "0px", maxHeight: `${el.offsetHeight}px`, overflow: "hidden" });
+        void el.offsetHeight; // laid out from there, so the transition runs
+        el.style.transition = `${easeTransition}, max-height ${easeMs}ms ease-in-out`;
+        el.style.maxHeight = "0px";
+        el.style.flexGrow = "0";
+        window.setTimeout(() => state.close(id), easeMs);
+      },
       collapse(id) {
         const el = stack.rootEl?.querySelector<HTMLElement>(`[data-stack-id="${id}"]`);
         const bar = el?.querySelector("header");
         if (el == null || bar == null || el.dataset.open !== "true") return state.toggleShade(id);
-        if (el.hasAttribute("data-collapsing")) return; // a second press meanwhile, which would open it again
+        if (el.hasAttribute("data-easing")) return; // a second press meanwhile, which would open it again
         // its frame eases to its bar, contents showing, the windows below following. Then it folds, nothing moving
-        el.setAttribute("data-collapsing", "");
         el.style.minHeight = `${el.offsetHeight}px`;
-        void el.offsetHeight; // laid out from there, so the transition runs
-        el.style.transition = collapseTransition;
-        el.style.minHeight = `${bar.offsetHeight}px`;
-        el.style.flexGrow = "0";
+        // folded first, else its `min-h-32` returns for a moment
+        stack.easeFrame(el, bar.offsetHeight, "0", () => flushSync(() => state.toggleShade(id)));
+      },
+      easeFrame(el, minPx, flexGrow, then) {
+        el.setAttribute("data-easing", "");
+        void el.offsetHeight; // laid out from where it is, so the transition runs
+        el.style.transition = easeTransition;
+        el.style.minHeight = `${minPx}px`;
+        el.style.flexGrow = flexGrow;
         window.setTimeout(() => {
-          flushSync(() => state.toggleShade(id)); // folded first, else its `min-h-32` returns for a moment
+          then?.();
           el.style.transition = el.style.minHeight = "";
-          el.removeAttribute("data-collapsing");
-        }, collapseMs);
+          el.removeAttribute("data-easing");
+        }, easeMs);
+      },
+      easeOpen(el) {
+        // held at its bar, then its frame eases to its share, the windows below following
+        const share = el.style.flexGrow;
+        el.style.minHeight = `${el.querySelector("header")?.offsetHeight ?? 0}px`;
+        el.style.flexGrow = "0";
+        stack.easeFrame(el, stackMinPx, share);
+      },
+      expand(id) {
+        const el = stack.rootEl?.querySelector<HTMLElement>(`[data-stack-id="${id}"]`);
+        if (el == null) return state.toggleShade(id);
+        if (el.dataset.open === "true" || el.hasAttribute("data-easing")) return;
+        flushSync(() => state.toggleShade(id));
+        stack.easeOpen(el);
       },
       hoverChoice(e) {
         const { choice, drag } = stack;
@@ -86,6 +117,7 @@ export function Stack() {
               ? target.closest("header")
               : null;
         if (bar === null) return;
+        e.preventDefault(); // else a press on an edge starts a text selection, which autoscrolls the window above
         const at = els.findIndex((el) => el.contains(bar));
         const open = els.filter((el) => el.dataset.open === "true");
         const folded = (el: undefined | HTMLElement) => (el !== undefined && el.dataset.open !== "true" ? el : null);
@@ -192,8 +224,12 @@ export function Stack() {
           const foldId = folding.dataset.stackId as string;
           const flexById = sharesOf([...drag.heights.keys()].filter((el) => choice?.over === "move" || el !== folding));
           // let go anywhere but "move", it collapses
-          if (choice?.over === "move") return state.moveInStack(drag.own, choice.dir, flexById);
-          return state.setStackFlex(flexById, foldId);
+          if (choice?.over === "move") {
+            stack.moves++; // the windows slide to their new places
+            return state.moveInStack(drag.own, choice.dir, flexById);
+          }
+          state.setStackFlex(flexById);
+          return stack.collapse(foldId);
         }
         state.setStackFlex(sharesOf([...drag.heights.keys()]));
       },
@@ -228,6 +264,17 @@ export function Stack() {
 
   useEffect(() => stack.onPointerUp, []);
 
+  // a window just added opens from its bar, so the others make room for it gradually
+  useLayoutEffect(() => {
+    const ids = ordered.map((x) => x.id);
+    const added = stack.shownIds === null ? [] : ids.filter((id) => !stack.shownIds?.has(id));
+    stack.shownIds = new Set(ids);
+    for (const id of added) {
+      const el = stack.rootEl?.querySelector<HTMLElement>(`[data-stack-id="${id}"]`);
+      if (el?.dataset.open === "true") stack.easeOpen(el);
+    }
+  }, [ordered]);
+
   return (
     // `layoutScroll` so a slide is measured within its scroll
     <motion.div
@@ -240,11 +287,11 @@ export function Stack() {
       {ordered.map((win, i) => {
         const open = win.shadedH === undefined;
         return (
-          // a move or a fold slides it to its new place. Measured only then, as a drag sizes it directly
+          // only a move slides it to its new place. Any other change eases its share, its contents in step
           <motion.div
             key={win.id}
             layout="position"
-            layoutDependency={layoutKey}
+            layoutDependency={stack.moves}
             transition={moveTransition}
             data-stack-id={win.id}
             data-open={open}
@@ -258,7 +305,12 @@ export function Stack() {
               items={state.items}
               peek={win.id === stack.unfoldingId}
               showAll={false}
-              stack={{ last: i === ordered.length - 1, collapse: stack.collapse }}
+              stack={{
+                last: i === ordered.length - 1,
+                close: stack.close,
+                collapse: stack.collapse,
+                expand: stack.expand,
+              }}
             />
             {!touchDevice && i < ordered.length - 1 && <div data-stack-edge className={edgeClass} />}
           </motion.div>
@@ -269,7 +321,7 @@ export function Stack() {
           // over the window they would collapse: let go over one to choose it
           <motion.div
             key="choices"
-            className={choicesClass}
+            className={cn(choicesClass, stack.choice.dir < 0 && "flex-col-reverse")}
             style={{ left: stack.choice.x, top: stack.choice.y }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -296,8 +348,16 @@ type StackState = {
   choice: null | Choice;
   /** The choices, over the contents of the window they would collapse */
   choiceAt(drag: Drag, folding: HTMLElement, dir: -1 | 1): Choice;
+  /** Eases a window's frame away, then closes it, as its close box asks */
+  close(id: string): void;
   /** Eases an open window to its bar, contents showing, then folds it, as its "-" box or a tap on its bar asks */
   collapse(id: string): void;
+  /** Eases its frame to a least height and share, then clears the least height, `then` run first */
+  easeFrame(el: HTMLElement, minPx: number, flexGrow: string, then?: () => void): void;
+  /** Holds an open window at its bar's height, then eases it to its share */
+  easeOpen(el: HTMLElement): void;
+  /** Opens a folded window from its bar, as a tap on its bar asks */
+  expand(id: string): void;
   /** Whether the dragged bar's window is first in the stack, `dir` up, or last, down: it has nowhere to move that way */
   isEdge(drag: Drag, dir: -1 | 1): boolean;
   /** Notes the choice under the finger: "move", else "collapse", which dims the window it would fold */
@@ -335,7 +395,11 @@ type StackState = {
   setFolding(e: PointerEvent, drag: Drag, folding: null | HTMLElement, dir: -1 | 1): void;
   /** Marks the bar dragged, with a short buzz on touch */
   showDrag(drag: Drag, shown: boolean): void;
+  /** How many times a window was moved up or down, so a move alone slides the windows */
+  moves: number;
   rootEl: null | HTMLDivElement;
+  /** The windows last shown, so one added opens from its bar. Null until mounted */
+  shownIds: null | Set<string>;
   /** The folded window being dragged open, whose contents show meanwhile */
   unfoldingId: null | string;
   /** Grows a folded window's frame `px` towards the finger, within the room the other leaves */
@@ -359,8 +423,11 @@ type Unfold = { el: HTMLElement; from: number; grow: number; shrink: null | HTML
 const foldingClass = tw("transition-opacity data-folding:opacity-50");
 /** Pixels past a window's least height a grip is dragged to be offered the choices */
 const foldPx = 40;
-/** As wide as its pills: placed at the centre, it would otherwise get only the room to the stack's right edge */
-const choicesClass = tw("absolute z-20 flex w-max gap-2 -translate-x-1/2 -translate-y-1/2");
+/**
+ * One above the other, "move" further the way it was dragged, so moving takes the longer drag. Reversed for up.
+ * As wide as its pills: placed at the centre, it would otherwise get only the room to the stack's right edge
+ */
+const choicesClass = tw("absolute z-20 flex flex-col w-max gap-6 -translate-x-1/2 -translate-y-1/2");
 const choiceClass = tw(
   "inline-flex items-center justify-center h-9 px-4 whitespace-nowrap rounded-full border border-mac-edge bg-mac-window text-mac-text text-sm leading-none font-bold shadow select-none",
 );
@@ -368,10 +435,10 @@ const choiceClass = tw(
 const choiceOverClass = tw("bg-mac-select text-mac-on-select");
 /** Pixels the finger moves back, away from the choices, to dismiss them */
 const cancelPx = 24;
-/** How long a window takes to ease to its bar as it collapses */
-const collapseMs = 300;
-const collapseTransition = `flex-grow ${collapseMs}ms ease-in-out, min-height ${collapseMs}ms ease-in-out`;
-/** A window's slide to its new place in the stack, after a move or a fold */
+/** How long a window takes to ease to or from its bar */
+const easeMs = 300;
+const easeTransition = `flex-grow ${easeMs}ms ease-in-out, min-height ${easeMs}ms ease-in-out`;
+/** A window's slide to its new place in the stack, after a move */
 const moveTransition = { duration: 0.25, ease: "easeOut" } as const;
 /** A window's bottom edge, an invisible strip to drag with a mouse, as the desktop's edges are */
 const edgeClass = tw("absolute inset-x-0 -bottom-1 z-10 h-2 cursor-row-resize");

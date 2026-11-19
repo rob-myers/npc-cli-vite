@@ -41,8 +41,8 @@
   --color-sh-variable: #7a6224;
 
   /* SkipNet's classic desktop, in greys */
-  --color-mac-desk: #a3a3a3;
-  --color-mac-desk-dot: #959595;
+  --color-mac-desk: #3c3c3c;
+  --color-mac-desk-dot: #4a4a4a;
   --color-mac-window: #fbfbfb;
   --color-mac-edge: #1c1c1c;
   --color-mac-shadow: #1c1c1c;
@@ -101,4 +101,54 @@
   --color-mac-muted: #8a8a8a;
   --color-mac-select: #d6d6d6;
   --color-mac-on-select: #000000;
+}
+
+/* A light tab in a dark page: @theme's values again */
+.theme-light {
+  --color-background: var(--color-gray-200);
+  --color-on-background: var(--color-black);
+  --color-button-background: var(--color-zinc-100);
+  --color-spinner: var(--color-zinc-400);
+  --color-scrollbar: var(--color-zinc-400);
+
+  --color-term-inset: #ffffff;
+  --color-term-fence: #fbfbfb;
+  --color-term-surface: #e6e6e6;
+  --color-term-hover: #ededed;
+  --color-term-hover-strong: #dfdfdf;
+  --color-term-border: #c4c4c4;
+  --color-term-border-subtle: #dcdcdc;
+  --color-term-foreground: #1a1a1a;
+  --color-term-muted: #6b6b6b;
+  --color-term-faint: #a0a0a0;
+  --color-term-accent: #8a6a00;
+  --color-term-focus: #6f86b5;
+  --color-term-running: #1449c4;
+  --color-term-danger: #b3261e;
+  --color-term-paused: #5f6b7a;
+  --color-term-ok: #15803d;
+
+  --color-term-dashboard: initial;
+
+  --color-sh-command: #1f2937;
+  --color-sh-comment: #5d7a5d;
+  --color-sh-flag: #7a6448;
+  --color-sh-keyword: #6b4c86;
+  --color-sh-number: #7a6448;
+  --color-sh-operator: #445c66;
+  --color-sh-string: #4a6b2f;
+  --color-sh-text: #3a3a3a;
+  --color-sh-variable: #7a6224;
+
+  --color-mac-desk: #3c3c3c;
+  --color-mac-desk-dot: #4a4a4a;
+  --color-mac-window: #fbfbfb;
+  --color-mac-edge: #1c1c1c;
+  --color-mac-shadow: #1c1c1c;
+  --color-mac-title: #f0f0f0;
+  --color-mac-stripe: #9a9a9a;
+  --color-mac-text: #111111;
+  --color-mac-muted: #6b6b6b;
+  --color-mac-select: #1c1c1c;
+  --color-mac-on-select: #ffffff;
 }

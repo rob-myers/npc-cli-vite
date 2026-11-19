@@ -1,3 +1,4 @@
+import type { ThemeName } from "@npc-cli/theme";
 import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { keys } from "@npc-cli/util/legacy/generic";
 import z from "zod";
@@ -8,6 +9,7 @@ const mirrored: Record<UiRegistryKey, true> = {
   Audio: true,
   Decorator: true,
   Jsh: true,
+  JshPrelude: true,
   MapEdit: true,
   SkipNet: true,
   Tabs: true,
@@ -38,6 +40,8 @@ const FlatBaseUiMetaSchema = z.looseObject({
   title: z.string(),
   /** Its tab's content is scaled by this (CSS `zoom`) */
   zoom: z.number().optional(),
+  /** Its tab's theme. `auto` follows the page's, and unset is its ui's `defaultTheme`, else `auto` */
+  theme: z.enum(["auto", "light", "dark"]).optional(),
   /** UI class identifier */
   uiKey: z.literal(keys(mirrored)),
 });
@@ -56,3 +60,14 @@ export type UiInstanceMeta = z.infer<typeof BaseUiMetaSchema>;
 export const defineUi = <T extends UiPackageDef>(uiDef: T) => {
   return uiDef;
 };
+
+/** Its tab's theme as chosen, else its ui's default, else `auto` */
+export function chosenThemeOf(meta: UiInstanceMeta, def: UiPackageDef) {
+  return meta.theme ?? def.defaultTheme ?? "auto";
+}
+
+/** The theme its tab shows, given the page's */
+export function themeOfUi(meta: UiInstanceMeta, def: UiPackageDef, pageTheme: ThemeName): ThemeName {
+  const chosen = chosenThemeOf(meta, def);
+  return chosen === "auto" ? pageTheme : chosen;
+}

@@ -1,6 +1,7 @@
 import { AudioUiMetaSchema } from "@npc-cli/ui__audio/schema";
 import { DecoratorUiMetaSchema } from "@npc-cli/ui__decorator/schema";
 import { JshUiSchema } from "@npc-cli/ui__jsh/schema";
+import { JshPreludeUiMetaSchema } from "@npc-cli/ui__jsh-prelude/schema";
 import { MapEditUiMetaSchema } from "@npc-cli/ui__map-edit/schema";
 import { SkipNetUiMetaSchema } from "@npc-cli/ui__skip-net/schema";
 import { TabsUiMetaSchema } from "@npc-cli/ui__tabs/schema";
@@ -16,6 +17,7 @@ export const uiSchemas = {
   Audio: AudioUiMetaSchema,
   Decorator: DecoratorUiMetaSchema,
   Jsh: JshUiSchema,
+  JshPrelude: JshPreludeUiMetaSchema,
   MapEdit: MapEditUiMetaSchema,
   SkipNet: SkipNetUiMetaSchema,
   Tabs: TabsUiMetaSchema,

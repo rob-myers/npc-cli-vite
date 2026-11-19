@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 444" width="760" height="444" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs>
+<marker id="down" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker>
+</defs>
+<rect width="760" height="444" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">autorun: where its commands come from, and where they run</text>
+
+<!-- two sources -->
+<rect x="60" y="56" width="310" height="74" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="76" fill="#e6e6e6" font-weight="600">toggled on</text>
+<text x="76" y="94" fill="#9aa0a6" font-size="12">a <tspan font-family="ui-monospace, monospace">#&#160;@bootable</tspan> command's toggle in SkipNet</text>
+<text x="76" y="110" fill="#9aa0a6" font-size="12">kept in its World's entries, with its window's tty</text>
+<text x="76" y="124" fill="#9aa0a6" font-size="12">(ShellFence, AutorunToggle)</text>
+
+<rect x="390" y="56" width="310" height="74" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="406" y="76" fill="#e6e6e6" font-weight="600">on by default</text>
+<text x="406" y="94" fill="#9aa0a6" font-size="12"><tspan font-family="ui-monospace, monospace">#&#160;@bootable @default</tspan>, or =mobile, =desktop</text>
+<text x="406" y="110" fill="#9aa0a6" font-size="12">listed by the articles plugin, read before any</text>
+<text x="406" y="124" fill="#9aa0a6" font-size="12">article shows (virtual:skip-net-autorun)</text>
+
+<line x1="215" y1="130" x2="215" y2="150" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+<line x1="545" y1="130" x2="545" y2="150" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+
+<!-- store -->
+<rect x="60" y="152" width="640" height="74" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="76" y="172" fill="#e6e6e6" font-weight="600">the World's autorun (jsh-prelude store, per worldKey)</text>
+<text x="76" y="190" fill="#9aa0a6" font-size="12">entries: the defaults not turned off (<tspan font-family="ui-monospace, monospace">off</tspan>), then those toggled on, in that order</text>
+<text x="76" y="206" fill="#9aa0a6" font-size="12">the autorun switch, on by default. Saved in localStorage (jsh-prelude)</text>
+<text x="76" y="220" fill="#9aa0a6" font-size="12">shown in the pill's list, and in a JshPrelude tab</text>
+
+<line x1="380" y1="226" x2="380" y2="246" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+
+<!-- pill -->
+<rect x="60" y="248" width="640" height="74" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+<text x="76" y="268" fill="#8cc0ff" font-weight="600">PausedPill, which the app forwards into WorldView (WorldPausedPillContext)</text>
+<text x="76" y="286" fill="#9aa0a6" font-size="12">on a page load: runPrelude, if the switch is on</text>
+<text x="76" y="302" fill="#9aa0a6" font-size="12">on a World remount, or a press of reboot: rebootWorld</text>
+<text x="76" y="316" fill="#9aa0a6" font-size="12">ui/world knows only the slot. It never imports jsh-prelude</text>
+
+<line x1="380" y1="322" x2="380" y2="342" stroke="#7a8290" stroke-width="1.5" marker-end="url(#down)"/>
+
+<!-- ttys -->
+<rect x="60" y="344" width="640" height="74" rx="8" fill="#1d3329" stroke="#4ec98a"/>
+<text x="76" y="364" fill="#7fe0ad" font-weight="600">each command, in the background in its tty</text>
+<text x="76" y="382" fill="#9aa0a6" font-size="12">its window's tty, else the World's lowest-numbered one, e.g. tty-0 (worldTtyOf)</text>
+<text x="76" y="398" fill="#9aa0a6" font-size="12">held by the World's pause group until the World plays, so any unpause starts them</text>
+<text x="76" y="412" fill="#9aa0a6" font-size="12">skipped if already running. The tty logs what started: <tspan font-family="ui-monospace, monospace">autorun keys move player</tspan></text>
+</svg>

@@ -70,8 +70,8 @@ const devMcp = createStore<DevMcpState>()((_set, get) => ({
   },
 
   async query(fn, worldKey = "world-0", depth = 4) {
-    const w = queryClientApi.get([worldKey]);
-    if (w === undefined) throw Error(`${worldKey} not ready`);
+    const w = worldKey === "" ? undefined : queryClientApi.get([worldKey]);
+    if (w === undefined && worldKey !== "") throw Error(`${worldKey} not ready`);
     return toPlain(await fn(w), depth);
   },
 
