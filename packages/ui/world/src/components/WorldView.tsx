@@ -103,7 +103,6 @@ export function WorldView(props: React.PropsWithChildren) {
       canvas: null as any,
       pausedEl: null,
       warming: false,
-      scenePass: null,
       // "canonical" is what a save before the rename calls it
       cameraMode: ["embodied", "canonical"].includes(saved.cameraMode as string) ? "embodied" : defaultCameraMode,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
@@ -1191,14 +1190,14 @@ export function WorldView(props: React.PropsWithChildren) {
           try {
             await prepare?.();
             try {
-              // off the main thread, yielding between materials
-              await (state.scenePass?.compileAsync(renderer) ?? renderer.compileAsync(scene, camera));
-              // the pick pass has other attachments, so each material needs a second pipeline
+              // the pick pass has other attachments, so each material needs a second pipeline.
+              // Off the main thread, yielding between materials. The screen's pipelines compile on each material's first draw
               renderer.setMRT(state.npcMaskMrt);
               renderer.setRenderTarget(state.pickRT);
               await renderer.compileAsync(scene, camera);
               renderer.setMRT(null);
               renderer.setRenderTarget(null);
+              performance.mark(`${w.key}:warm-pick`);
               await state.renderPick({ u: 0.5, v: 0.5 }); // a pipeline's first draw costs too, in the driver
             } catch {
               // a nicety: the first draw or tap builds whatever this did not
@@ -1650,7 +1649,6 @@ export function WorldView(props: React.PropsWithChildren) {
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
-        state.scenePass = scenePass;
 
         // the silhouette the npc borders grow from, declared only whilst they are wanted — off, no
         // npc shader writes it. Shared with the pick pass, so both compile the same variant
@@ -1689,7 +1687,6 @@ export function WorldView(props: React.PropsWithChildren) {
         return () => {
           gl.render = originalRender;
           pipeline.dispose();
-          state.scenePass = null;
           state.npcMaskMrt = null;
           state.syncPickRT();
           w.npc?.syncOutlineMask();
@@ -2111,14 +2108,12 @@ export type State = {
   /** Whilst an animated `lookAt` runs — the follow button is lit by it */
   lookingAt: boolean;
   /**
-   * Restores what `prepare` does, then compiles the screen and pick passes, all with no frame drawn.
-   * So no material compiles on its first draw. The first warm boots the World.
+   * Runs `prepare`, then compiles the pick pass, with no frame drawn, so the first tap needn't.
+   * The first warm boots the World.
    */
   warmPipelines(prepare?: () => Promise<void>): Promise<void>;
   /** Whilst `warmPipelines` runs, when no frame may be drawn */
   warming: boolean;
-  /** The post pass's scene pass, else `null` */
-  scenePass: null | THREE.PassNode;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */

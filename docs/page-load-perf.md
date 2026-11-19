@@ -36,10 +36,10 @@ created on the thread that also finishes frames).
     on the CPU.
 - **Door labels are drawn once per boot.** Doors redraws them only when `labelsKey`
   (`gmsHash`, `hash`, `themeKey`, `lastHmr`) changes.
-- **`warmPipelines`** (`WorldView`). With no frame drawn (`frameloop: "never"`) it runs
-  `prepare`, then `compileAsync`s the post pass's scene pass and the pick pass. Dawn creates
-  those pipelines on worker threads. `onBootstrapMap` restores decor and npcs as that `prepare`,
-  so their shaders compile before their first draw. The warm then sets `w.e.bootedAt`.
+- **`warmPipelines`** (`WorldView`). With no frame drawn (`frameloop: "never"`) it
+  `compileAsync`s the pick pass, whose attachments differ from the screen's, so the first tap
+  needn't build every material a second pipeline. Dawn creates them on worker threads. The warm
+  then sets `w.e.bootedAt`. The screen's pipelines still compile on each material's first draw.
 - **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
   WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
   `useMeasure`'s `bounds`, which start at zero and would force a resize.
@@ -72,6 +72,9 @@ created on the thread that also finishes frames).
   build `Rect`/`Poly` instances anyway.
 - **Fitting a tty before loading xterm's WebGL renderer, or loading it after the first fit.** The
   first didn't stop the resize, and both use xterm's DOM renderer meanwhile.
+- **Warming the screen pass too, with decor and npcs restored inside the warm.** It held every
+  frame ~0.6 s longer at 4x CPU, on each refresh as well, though the layers had already drawn. A
+  refresh's warm went 1.08 s → 0.43 s without it.
 - **Hiding `worldGroup` until the warm, on a first map.** No layer's first draw then compiled on
   the GPU's frame thread, so a cold desktop's longest frame gap fell from 4.8 s to 2.2 s. But the
   World no longer appeared bit by bit: on a phone the boot looked worse, refreshes waited for the
