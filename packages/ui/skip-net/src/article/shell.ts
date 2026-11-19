@@ -39,7 +39,8 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
   }
   flush();
 
-  return chunks.flatMap(({ lines: ls, blankBefore }, index) => {
+  return chunks.flatMap(({ lines: chunkLines, blankBefore }, index) => {
+    const ls = chunkLines.filter((x) => bootLineRe.test(x) === false);
     const at = ls.findIndex((x) => !x.startsWith("#"));
     const src = (at === -1 ? [] : ls.slice(at)).join("\n").trim();
     if (src === "") {
@@ -52,10 +53,13 @@ export function splitExamples(blockKey: string, lines: string[]): Example[] {
       commentLines,
       src,
       args: parseArgTokens(src),
+      bootable: ls.length < chunkLines.length,
     };
   });
 }
 
+/** A comment line marking its command bootable, which is not shown */
+const bootLineRe = /^#\s*@bootable\s*$/;
 const keyRe = /([A-Za-z_][\w-]*):/g;
 /** A line that is a comment, indented or not */
 const commentLineRe = /^[ \t]*#.*$/gm;
@@ -148,6 +152,8 @@ export type Example = {
   /** Verbatim source, newlines preserved */
   src: string;
   args: ArgToken[];
+  /** Marked `# @bootable`, so a World's auto-boot may run it */
+  bootable: boolean;
 };
 
 /** Where a `key:value` arg lies in its example's source */

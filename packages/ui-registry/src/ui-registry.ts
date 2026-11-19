@@ -1,6 +1,7 @@
 import Audio from "@npc-cli/ui__audio";
 import Decorator from "@npc-cli/ui__decorator";
 import Jsh from "@npc-cli/ui__jsh";
+import JshPrelude from "@npc-cli/ui__jsh-prelude";
 import MapEdit from "@npc-cli/ui__map-edit";
 import SkipNet from "@npc-cli/ui__skip-net";
 import Tabs from "@npc-cli/ui__tabs";
@@ -17,6 +18,7 @@ export type UiRegistry = {
   Audio: typeof Audio;
   Decorator: typeof Decorator;
   Jsh: typeof Jsh;
+  JshPrelude: typeof JshPrelude;
   MapEdit: typeof MapEdit;
   SkipNet: typeof SkipNet;
   Tabs: typeof Tabs;
@@ -29,6 +31,7 @@ export const uiRegistryFactory = (): UiRegistry =>
     Audio,
     Decorator,
     Jsh,
+    JshPrelude,
     MapEdit,
     SkipNet,
     Tabs,

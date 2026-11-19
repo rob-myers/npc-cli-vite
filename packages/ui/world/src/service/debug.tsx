@@ -417,7 +417,10 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
   const [zoom, setZoom] = useState<null | SkinZoom>(null);
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => (next === false && zoom !== null ? setZoom(null) : onOpenChange(next))}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => (next === false && zoom !== null ? setZoom(null) : onOpenChange(next))}
+    >
       <Dialog.Portal container={container}>
         <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
@@ -446,7 +449,9 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
                 onClick={() => (setChosen(key), setZoom(null))}
                 className={cn(
                   "flex items-baseline gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium cursor-pointer",
-                  key === prefix ? "bg-slate-700 text-slate-100" : "text-slate-400 hover:bg-slate-800 hover:text-slate-200",
+                  key === prefix
+                    ? "bg-slate-700 text-slate-100"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200",
                 )}
               >
                 {key}
@@ -501,7 +506,12 @@ function SkinCard({
   index,
   width,
   onZoom,
-}: { skinKey: string; index: number; width: string; onZoom: (zoom: SkinZoom) => void }) {
+}: {
+  skinKey: string;
+  index: number;
+  width: string;
+  onZoom: (zoom: SkinZoom) => void;
+}) {
   const w = useContext(WorldContext);
   const skinEntry = w.npc.skin.manifest.byKey[skinKey];
   const { eyes, noEyes, ...rest } = skinEntry?.meta ?? {};

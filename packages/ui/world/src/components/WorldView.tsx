@@ -100,6 +100,7 @@ export function WorldView(props: React.PropsWithChildren) {
       pixelRatio: { native: 1, used: 1 },
       canvas: null as any,
       pausedEl: null,
+      preludeShown: true,
       warmingPick: false,
       // "canonical" is what a save before the rename calls it
       cameraMode: ["embodied", "canonical"].includes(saved.cameraMode as string) ? "embodied" : defaultCameraMode,
@@ -1113,7 +1114,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.isPointDiffDrag(last.down, getRelativePointer(e)) === true) {
           return; // drag is not a pick
         }
-        if (state.showsPaused() === true && state.isOverPaused(e.nativeEvent) === true) {
+        if (state.pausedLabel() === "paused" && state.isOverPaused(e.nativeEvent) === true) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
@@ -1125,6 +1126,10 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       isAiming() {
         return w.phasers?.isArmed(w.player.key) === true;
+      },
+      pausedLabel() {
+        if (w.firstPlay === "booting") return "booting";
+        return w.played === false && w.isMapChanging() ? "loading" : "paused";
       },
       showsPaused() {
         return w.disabled === true;
@@ -1754,6 +1759,9 @@ export function WorldView(props: React.PropsWithChildren) {
 
   useEffect(() => void w.menu.update?.(), [state.pixelRatio.used]); // `{}` until WorldMenu mounts
 
+  if (state.showsPaused()) state.preludeShown = w.played === false;
+  const pausedLabel = state.pausedLabel();
+
   return (
     <div className="unzoom size-full" ref={ref}>
       <Canvas
@@ -1839,29 +1847,46 @@ export function WorldView(props: React.PropsWithChildren) {
 
       {/* paused indicator, which is also how you resume: the menu's play button is a long way from
           where the eye is whilst playing, and the world's own centre is not */}
-      <button
-        type="button"
-        title="resume"
-        ref={state.ref("pausedEl")}
-        onClick={() => w.setDisabled(false)}
-        onWheel={state.forwardWheel}
-        // a press is still the camera's, so a pinch begun there still pinches — and no card beneath
-        // takes it. The tap that resumes is found by `onPointerUp`
-        onPointerDown={state.forwardPointer}
+      <div
         className={cn(
-          indicatorClassName,
           // over npc focus's labels (`z-20`)
-          "top-[40%] z-30 transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
+          "absolute left-1/2 top-[40%] z-30 -translate-x-1/2 -translate-y-1/2 select-none",
+          "flex flex-col bg-black/60 rounded-xl transition-opacity duration-500",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world
-          state.showsPaused() === false
-            ? "pointer-events-none opacity-0"
-            : "cursor-pointer opacity-100 hover:text-yellow-100",
+          state.showsPaused() === false ? "pointer-events-none opacity-0" : "opacity-100",
         )}
       >
-        <PlayIcon className="size-4 shrink-0" weight="fill" />
-        paused
-      </button>
+        <button
+          type="button"
+          title={pausedLabel === "paused" ? "resume" : pausedLabel}
+          ref={state.ref("pausedEl")}
+          onClick={() => w.setDisabled(false)}
+          onWheel={state.forwardWheel}
+          // a press is still the camera's, so a pinch begun there still pinches — and no card beneath
+          // takes it. The tap that resumes is found by `onPointerUp`
+          onPointerDown={state.forwardPointer}
+          className={cn(
+            "flex items-center justify-center gap-3 px-5 py-2 touch-none",
+            "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
+            pausedLabel !== "paused" ? "pointer-events-none opacity-60" : "cursor-pointer hover:text-yellow-100",
+          )}
+        >
+          {pausedLabel === "booting" ? (
+            <div className="size-3.5 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
+          ) : (
+            <PlayIcon className="size-4 shrink-0" weight="fill" />
+          )}
+          {pausedLabel}
+        </button>
+
+        {/* what runs before the first play, forwarded by the app */}
+        {w.prelude !== null && state.preludeShown && (
+          <div className="flex justify-center px-5 pb-2">
+            <w.prelude.Ui worldKey={w.key} container={w.rootEl} booting={w.firstPlay === "booting"} />
+          </div>
+        )}
+      </div>
 
       {/* busy indicator: something heavy is running e.g. a shader recompile — see `runBusy`.
           Informative only, so it takes no pointer events */}
@@ -2094,11 +2119,15 @@ export type State = {
   focus(): void;
   /** Whether the player's phaser is raised: a turn then keeps to one axis */
   isAiming(): boolean;
+  /** What the paused pill says. Only "paused" resumes on a press */
+  pausedLabel(): "loading" | "booting" | "paused";
   /** Whether the paused indicator shows */
   showsPaused(): boolean;
   /** Whether a pointer is over the paused pill — the resume tap, since the pill forwards its presses */
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
+  /** Does the pill show the prelude's row? Set whilst paused, so a fade out keeps it as it was */
+  preludeShown: boolean;
   /** Saves where the camera is, as the view to restore on load */
   persistCamera(): void;
   /** Opens the controls in the zoom stops the camera was saved in: a follow's are further out than the persisted */

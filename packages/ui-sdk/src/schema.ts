@@ -9,6 +9,7 @@ const mirrored: Record<UiRegistryKey, true> = {
   Audio: true,
   Decorator: true,
   Jsh: true,
+  JshPrelude: true,
   MapEdit: true,
   SkipNet: true,
   Tabs: true,

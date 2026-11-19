@@ -30,13 +30,15 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
       articleKey: articleKey ?? "",
       copiedSrc: runner.copiedSrc,
       ranId,
+      sessionKey: session.ttyMeta?.sessionKey ?? null,
+      worldKey: state.meta.worldKey,
       copy: runner.copySrc,
       run(exampleId, src) {
         setRanId(exampleId);
         runner.runSrc(src);
       },
     }),
-    [articleKey, runner.copiedSrc, ranId],
+    [articleKey, runner.copiedSrc, ranId, session.ttyMeta?.sessionKey, state.meta.worldKey],
   );
 
   if (articleKey === undefined || content === undefined) {

@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
+    "./prelude-slot": "./src/prelude-slot.ts",
     "./geomorph.d.ts": "./src/geomorph.d.ts",
     "./jsh-cli.d.ts": "./src/jsh-cli.d.ts",
     "./geomorph": "./src/service/geomorph.ts",

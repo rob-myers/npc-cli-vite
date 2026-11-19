@@ -5,7 +5,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, warn } from "@npc-cli/util/legacy/generic";
 import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -27,6 +27,7 @@ import {
   mapEditSymbolSavedEvent,
   roomLabelTexOpts,
 } from "../const.env";
+import { WorldPreludeContext, type WorldPreludeSlot } from "../prelude-slot";
 import type { WorldUiMeta } from "../schema";
 import { GameTime, type RealTime, realTime } from "../service/clock";
 import DerivedGmsData from "../service/DerivedGmsData";
@@ -83,6 +84,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       key: meta.worldKey,
       client: false,
       disabled: meta.disabled,
+      firstPlay: null,
+      played: meta.disabled === false, // a remount whilst playing plays at once
+      prelude: null,
       mapKey: meta.mapKey,
       rootEl: null as any,
       themeKey: `${theme}-theme`,
@@ -209,6 +213,27 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       helper,
 
+      async beginPlay() {
+        state.set({ firstPlay: "loading" });
+        while (state.isMapChanging()) {
+          await new Promise<void>((resolve) => {
+            const sub = state.events.subscribe({
+              next: (e) => e.key === "map-settled" && (sub.unsubscribe(), resolve()),
+            });
+          });
+        }
+        const { prelude } = state;
+        if (prelude !== null) {
+          state.set({ firstPlay: "booting" });
+          let timeoutId = 0;
+          await Promise.race([
+            prelude.run(state.key).catch((e) => warn("prelude failed", e)),
+            new Promise((resolve) => (timeoutId = window.setTimeout(resolve, preludeMaxMs))),
+          ]);
+          window.clearTimeout(timeoutId);
+        }
+        state.set({ firstPlay: null, played: true });
+      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -292,6 +317,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         }
         state.settledMapKey = state.mapKey;
         state.events.next({ key: "map-settled" });
+        state.played === false && state.update(); // the paused pill stops loading
       }, settledMs),
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
@@ -315,7 +341,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
-          draft.disabled = disabled ?? !state.disabled;
+          draft.disabled = disabled ?? !draft.disabled;
           delete draft.autoPaused; // by hand, so showing its tab won't undo it
         });
       },
@@ -409,7 +435,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     { reset: { helper: true } },
   );
 
-  state.disabled = meta.disabled;
+  state.prelude = useContext(WorldPreludeContext);
+  state.disabled = meta.disabled || state.played === false;
   state.mapKey = meta.mapKey;
   state.themeKey = `${theme}-theme`;
 
@@ -431,6 +458,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       scheduleClearWorldFlags(meta.worldKey);
     };
   }, []); // cache world
+
+  useEffect(() => {
+    if (meta.disabled === false && state.played === false && state.firstPlay === null) state.beginPlay();
+  }, [meta.disabled]); // first play
 
   useEffect(() => {
     if (!state.npc) return;
@@ -592,7 +623,14 @@ export type State = {
   key: WorldUiMeta["worldKey"];
   /** `w.net.isClient()` as a field — kept in sync by `use-world-net`'s `setPhase`/`teardown` */
   client: boolean;
+  /** Paused, else held before its first play */
   disabled: boolean;
+  /** Its first unpause waits on the map, then on `prelude` */
+  firstPlay: null | "loading" | "booting";
+  /** Has it played since mounting? */
+  played: boolean;
+  /** Run before its first play, if the app gives one */
+  prelude: null | WorldPreludeSlot;
   mapKey: string;
   /** Follows the site theme: what draws from `getTheme` redraws on it */
   themeKey: `${import("@npc-cli/ui-sdk/UiContext").ThemeName}-theme`;
@@ -709,6 +747,8 @@ export type State = {
   /** The connectionKeys `isReady` has said yes to */
   wasReadyFor: Set<string>;
 
+  /** Plays once the map has settled and `prelude` has run */
+  beginPlay(): Promise<void>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   foldTo(amount: number, ms?: number): Promise<void>;
@@ -760,6 +800,8 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
 
 /** How long the pending keys must stop changing before "map-settled" */
 const settledMs = 500;
+/** The first play waits on its prelude at most this long */
+const preludeMaxMs = 3000;
 
 /**
  * Flat, but not so flat that everything lands on the floor plane: at a few thousandths the

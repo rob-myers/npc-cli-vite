@@ -1,8 +1,9 @@
+import { preludeApi, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { hashText } from "@npc-cli/util/legacy/generic";
-import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, PlayIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, LightningIcon, PlayIcon } from "@phosphor-icons/react";
 import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { SkipNetContext } from "../context";
 import type { SkipNetUiMeta } from "../schema";
@@ -103,9 +104,12 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
         "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
       )}
     >
-      <button type="button" title="run" className={runButtonCss} onClick={() => run(example.id, src)}>
-        <PlayIcon weight="fill" className={runIconCss} />
-      </button>
+      <span className="flex items-center gap-1">
+        <button type="button" title="run" className={runButtonCss} onClick={() => run(example.id, src)}>
+          <PlayIcon weight="fill" className={runIconCss} />
+        </button>
+        {example.bootable && <BootToggle example={example} />}
+      </span>
       {commented ? (
         <code
           className={cn(codeCss, tokenCss.comment, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
@@ -136,6 +140,32 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
   );
 }
 
+/** Whether the World's auto-boot runs it, in this article's tty */
+function BootToggle({ example }: { example: Example }) {
+  const { articleKey, sessionKey, worldKey } = useContext(ArticleContext);
+  const on = usePrelude(worldKey).entries.some((x) => x.id === example.id);
+  const toggle = () =>
+    sessionKey !== null &&
+    preludeApi.toggle(worldKey, {
+      id: example.id,
+      articleKey,
+      sessionKey,
+      src: example.src,
+      comment: example.commentLines.join("\n"),
+    });
+  return (
+    <button
+      type="button"
+      title={on ? `auto-boot runs it in ${sessionKey}` : "run it on auto-boot"}
+      disabled={sessionKey === null}
+      className={cn(bootButtonCss, on && "text-term-accent border-term-accent/50 bg-term-accent/10")}
+      onClick={toggle}
+    >
+      <LightningIcon weight={on ? "fill" : "regular"} className={runIconCss} />
+    </button>
+  );
+}
+
 const touchDevice = isTouchDevice();
 /** How long after a resize its height is saved */
 const saveDelayMs = 300;
@@ -152,9 +182,16 @@ const iconButtonCss = cn(
   touchDevice ? "size-8" : "size-5",
 );
 const iconCss = touchDevice ? "size-4.5" : "size-3.5";
-/** The run button, left of an example's comment, larger than the rest */
-const runButtonCss = cn(
-  "shrink-0 grid place-items-center rounded border border-term-border-subtle cursor-pointer text-term-muted transition-colors hover:text-term-ok hover:border-term-ok/50 hover:bg-term-ok/10",
+/** A square button left of an example's comment, larger than the rest */
+const sideButtonCss = cn(
+  "shrink-0 grid place-items-center rounded border border-term-border-subtle cursor-pointer text-term-muted transition-colors",
   touchDevice ? "size-10" : "size-7",
 );
+/** The run button */
+const runButtonCss = cn(sideButtonCss, "hover:text-term-ok hover:border-term-ok/50 hover:bg-term-ok/10");
 const runIconCss = touchDevice ? "size-5" : "size-4";
+/** The auto-boot toggle, beside the run button and as large */
+const bootButtonCss = cn(
+  sideButtonCss,
+  "hover:text-term-accent hover:border-term-accent/50 hover:bg-term-accent/10 disabled:opacity-40",
+);

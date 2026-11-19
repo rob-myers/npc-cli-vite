@@ -218,7 +218,12 @@ function exposure(
       .add(roomLit.mul(sameRoom))
       .clamp(0, 1)
       // flat-shaded from `faceShadeDir`, half-Lambert: whatever the light, and steady as the camera turns
-      .mul(normalWorld.dot(vec3(toLight)).mul(faceShade / 2).add(1 - faceShade / 2))
+      .mul(
+        normalWorld
+          .dot(vec3(toLight))
+          .mul(faceShade / 2)
+          .add(1 - faceShade / 2),
+      )
       .mul(fold)
       .mul(dim)
   );
