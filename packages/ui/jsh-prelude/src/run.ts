@@ -5,6 +5,16 @@ import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { error, pause, warn } from "@npc-cli/util/legacy/generic";
 import { type PreludeEntry, preludeApi } from "./store";
 
+/**
+ * How this World came to mount, by the World its key last mounted with: a page `load`, a `remount`, or the `same` World.
+ * Outside React, as a World's remount remounts its pill too
+ */
+export function getMountStatus(worldKey: string, w: object): "load" | "remount" | "same" {
+  const last = lastWorldByKey.get(worldKey);
+  lastWorldByKey.set(worldKey, w);
+  return last === undefined ? "load" : last === w ? "same" : "remount";
+}
+
 /** Runs the World's prelude if autorun is on. Resolves once each command has started or been skipped */
 export async function runPrelude(worldKey: string): Promise<void> {
   const entries = preludeApi.entries(worldKey);
@@ -54,7 +64,7 @@ export async function rebootWorld(worldKey: string, onStep: (label: string) => v
     await until(() => session.ttyShell.isInteractive());
     await session.ttyShell.runProfile();
   });
-  await step("running prelude");
+  await step("autorun");
   await runPrelude(worldKey);
 }
 
@@ -154,6 +164,8 @@ function timeout() {
 }
 
 const noop = () => {};
+/** The World each key last mounted with. A hot reload of this module empties it, so the next remount is a `load` */
+const lastWorldByKey = new Map<string, object>();
 /** A pause after each reboot step, so each is seen */
 const stepPauseMs = 400;
 const pollMs = 250;

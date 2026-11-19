@@ -3,16 +3,15 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, PlayIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import { rebootWorld, runPrelude } from "./run";
+import { getMountStatus, rebootWorld, runPrelude } from "./run";
 import { preludeApi } from "./store";
 import { WorldPrelude } from "./WorldPrelude";
 
-/** The World's paused pill, which also runs its prelude on load. Its chevron shows autorun */
+/** The World's paused pill, which runs its prelude on a page load and reboots on a remount. Its chevron shows autorun */
 export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
   const state = useStateRef(
     (): State => ({
       open: false,
-      ranFor: null,
       step: null,
 
       async boot(task) {
@@ -31,10 +30,13 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
   );
 
   useEffect(() => {
-    if (state.ranFor === w || preludeApi.get(w.key).autorun === false) return;
-    state.ranFor = w; // once per World, even over a remount of the pill
-    state.set({ step: "booting" });
-    state.boot(() => runPrelude(w.key));
+    const mount = getMountStatus(w.key, w);
+    if (mount === "remount") {
+      state.reboot(); // its ttys' world jobs and listeners are the old World's
+    } else if (mount === "load" && preludeApi.get(w.key).autorun === true) {
+      state.set({ step: "booting" });
+      state.boot(() => runPrelude(w.key));
+    }
   }, [w]);
 
   useEffect(() => {
@@ -109,8 +111,6 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
 type State = {
   /** Is the autorun row shown? */
   open: boolean;
-  /** The World the prelude last ran for */
-  ranFor: null | PausedPillProps["w"];
   /** What runs, e.g. "booting" or a reboot's step, shown with a spinner */
   step: null | string;
   /** Runs `task` with a spinner, cleared after */
