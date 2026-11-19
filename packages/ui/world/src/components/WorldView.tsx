@@ -192,6 +192,7 @@ export function WorldView(props: React.PropsWithChildren) {
       npcOutline: saved.npcOutline,
       roomOutline: saved.fadeRoomOutlines,
       rgbShift: saved.rgbShift,
+      statsShown: saved.statsShown === true,
       extraFxEnabled: saved.extraFxEnabled === true,
       extraFxKey: parseExtraFxKey(saved.extraFxKey),
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
@@ -1640,6 +1641,12 @@ export function WorldView(props: React.PropsWithChildren) {
         w.e.syncFadeRooms();
         w.menu?.update();
       },
+      setStatsShown(next = !state.statsShown) {
+        state.statsShown = next;
+        store.patch({ statsShown: next });
+        state.update();
+        w.menu?.update();
+      },
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
@@ -1780,11 +1787,13 @@ export function WorldView(props: React.PropsWithChildren) {
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
         tabIndex={0}
       >
-        <Stats
-          showPanel={0}
-          className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
-          parent={{ current: w.rootEl }}
-        />
+        {state.statsShown && (
+          <Stats
+            showPanel={0}
+            className={cn(w.disabled && "pointer-events-none grayscale-100", "absolute! z-0! left-[unset]! right-0")}
+            parent={{ current: w.rootEl }}
+          />
+        )}
 
         <PerspectiveCamera
           fov={getCameraFov(bounds.width / bounds.height, state.cameraView.fov)}
@@ -2053,6 +2062,8 @@ export type State = {
   npcOutline: boolean;
   /** Whether `rgbShiftFx` runs */
   rgbShift: boolean;
+  /** Whether the frame-rate panel shows. Off by default: it redraws every frame */
+  statsShown: boolean;
   /** Whether `extraFx` runs */
   extraFxEnabled: boolean;
   extraFxKey: ExtraFxKey;
@@ -2227,6 +2238,7 @@ export type State = {
   setupPostProcessing(): () => void;
   /** Whether being lit shows at all — see `setNpcLit` */
   setLitNpcsEnabled(next?: boolean): void;
+  setStatsShown(next?: boolean): void;
 };
 
 /**

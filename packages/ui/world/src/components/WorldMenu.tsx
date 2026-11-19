@@ -304,6 +304,8 @@ export function WorldMenu() {
         return w.spots?.shown ?? false;
       case "context menu":
         return w.debug?.contextMenu ?? false;
+      case "fps":
+        return w.view.statsShown ?? false;
       case "hud bar":
         return w.hud?.getLayout() === "bar";
       case "hud left":
@@ -434,6 +436,9 @@ export function WorldMenu() {
         state.update();
         break;
       }
+      case "fps":
+        w.view.setStatsShown();
+        break;
       case "decorations": {
         const next = !w.debug?.decorShown;
         w.debug?.set({ decorShown: next });
@@ -1628,6 +1633,7 @@ const cameraModes: CameraModeType[] = ["free", "embodied"];
 const debugItems = [
   "context menu",
   "door ui",
+  "fps",
   "hud",
   "modals",
   "net",
