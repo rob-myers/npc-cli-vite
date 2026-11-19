@@ -18,6 +18,10 @@ const RESOLVED_AUTORUN_ID = `\0${AUTORUN_ID}`;
  */
 export function skipNetArticlesPlugin(): Plugin {
   let isDev = false;
+  /** Each virtual module's last code, so an edit changing neither reloads nothing */
+  const codeById = new Map<string, string>();
+  const codeOf = (id: string) =>
+    `export default ${JSON.stringify(id === RESOLVED_ID ? readArticles(isDev) : readAutorunFences())}`;
 
   return {
     name: "skip-net-articles",
@@ -31,8 +35,10 @@ export function skipNetArticlesPlugin(): Plugin {
     },
 
     load(id) {
-      if (id === RESOLVED_ID) return `export default ${JSON.stringify(readArticles(isDev))}`;
-      if (id === RESOLVED_AUTORUN_ID) return `export default ${JSON.stringify(readAutorunFences())}`;
+      if (id !== RESOLVED_ID && id !== RESOLVED_AUTORUN_ID) return;
+      const code = codeOf(id);
+      codeById.set(id, code);
+      return code;
     },
 
     configureServer(server) {
@@ -40,7 +46,7 @@ export function skipNetArticlesPlugin(): Plugin {
         if (!filePath.startsWith(ARTICLES_DIR) || !filePath.endsWith(".mdx")) return;
         for (const id of [RESOLVED_ID, RESOLVED_AUTORUN_ID]) {
           const mod = server.moduleGraph.getModuleById(id);
-          if (mod) void server.reloadModule(mod);
+          if (mod && codeOf(id) !== codeById.get(id)) void server.reloadModule(mod);
         }
       };
       server.watcher.on("add", onChange);
@@ -50,33 +56,39 @@ export function skipNetArticlesPlugin(): Plugin {
   };
 }
 
+/** Each article's total size and newest time over its own file and sections */
 function readArticles(isDev: boolean): Record<string, { bytes: number; modifiedMs: number }> {
-  return Object.fromEntries(
-    fs
-      .readdirSync(ARTICLES_DIR, { recursive: true, encoding: "utf8" })
-      .filter((x) => x.endsWith(".mdx"))
-      .map((x) => {
-        const file = path.join(ARTICLES_DIR, x);
-        const stat = fs.statSync(file);
-        return [
-          path.basename(x, ".mdx"),
-          { bytes: stat.size, modifiedMs: isDev ? stat.mtimeMs : (committedMs(file) ?? stat.mtimeMs) },
-        ];
-      }),
-  );
+  const byKey: Record<string, { bytes: number; modifiedMs: number }> = {};
+  for (const x of readArticleFiles()) {
+    const file = path.join(ARTICLES_DIR, x);
+    const stat = fs.statSync(file);
+    const modifiedMs = isDev ? stat.mtimeMs : (committedMs(file) ?? stat.mtimeMs);
+    const prev = byKey[toKey(x)] ?? { bytes: 0, modifiedMs: 0 };
+    byKey[toKey(x)] = { bytes: prev.bytes + stat.size, modifiedMs: Math.max(prev.modifiedMs, modifiedMs) };
+  }
+  return byKey;
 }
 
 /** Each shell fence with a `# @bootable @default` line (or `@default=mobile`, `=desktop`), its source as MDX gives it */
 function readAutorunFences(): { articleKey: string; src: string }[] {
+  return readArticleFiles().flatMap((x) => {
+    const text = fs.readFileSync(path.join(ARTICLES_DIR, x), "utf8");
+    return [...text.matchAll(fenceRe)].flatMap(([, lang, src]) =>
+      shellLangs.has(lang) && autorunLineRe.test(src) ? { articleKey: toKey(x), src } : [],
+    );
+  });
+}
+
+/** Paths under `ARTICLES_DIR` as `articles.ts` globs them: `{folder}/{key}.mdx` or `{folder}/{key}/{section}.mdx` */
+function readArticleFiles(): string[] {
   return fs
     .readdirSync(ARTICLES_DIR, { recursive: true, encoding: "utf8" })
-    .filter((x) => x.endsWith(".mdx"))
-    .flatMap((x) => {
-      const text = fs.readFileSync(path.join(ARTICLES_DIR, x), "utf8");
-      return [...text.matchAll(fenceRe)].flatMap(([, lang, src]) =>
-        shellLangs.has(lang) && autorunLineRe.test(src) ? { articleKey: path.basename(x, ".mdx"), src } : [],
-      );
-    });
+    .filter((x) => x.endsWith(".mdx") && [2, 3].includes(x.split(path.sep).length));
+}
+
+/** `npc/npc-spawn.mdx` or `npc/npc-spawn/001-foo.mdx` -> `npc-spawn` */
+function toKey(file: string) {
+  return file.split(path.sep)[1].replace(/\.mdx$/, "");
 }
 
 /** A fence at column 0: its language, then its lines each ending in a newline, as MDX hands them to `ShellFence` */

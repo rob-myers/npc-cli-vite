@@ -49,18 +49,23 @@ The chrome is greyscale, in `mac-*` colour tokens in `packages/app/src/styles/th
 
 ## Articles
 
-An article is an mdx file in a folder, `src/articles/{folder}/{key}.mdx`, e.g. `npc/npc-spawn.mdx`. Its key is its name alone, so names are unique across folders. They replaced the jobs library and the blog, and may replace items.
+An article has a key, e.g. `npc-controls`, unique across the folders of `src/articles`. Its mdx files are:
+
+- `{folder}/{key}.mdx`, its own file, shown first. It may be missing.
+- `{folder}/{key}/*.mdx`, its sections, shown after in name order, e.g. `npc-controls/001-device-input.mdx`. The name only orders a section: a heading is its own `# …`.
+
+Each file is shown in a frame of its own. Its sections share its key, so one window, chat thread, fence ids and folder entry (sizes summed, the newest date). They replaced the jobs library and the blog, and may replace items.
 
 - Each is a chunk of its own, loaded when first shown (`getArticle` in `articles.ts`). Folders follow `folderOrder`, and articles in each `articleOrder`. A stale `articleKey` gives way to the first (`articleKeyOf`).
 - `@mdx-js/rollup` in `packages/app/vite.config.ts` compiles them with no highlighter, so their fences stay raw.
 - `articleComponents` are in scope in each:
-  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands (`splitExamples` in `article/shell.ts`) and highlighted (`shell-highlight.ts`). Each shows only its comment, a larger run button on its left, copy and expand buttons on its right. Expand, or a click on the comment, shows its command beneath. One without a comment shows its command instead. Run runs it in the window's session (`useSessionRunner`). A fence resizes by its bottom-right corner, scrolling within, and its height is saved by fence id in `meta.fenceHeights`.
+  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands (`splitExamples` in `article/shell.ts`) and highlighted (`shell-highlight.ts`). Each shows only its comment, a larger run button on its left, copy and expand buttons on its right. Expand, or a click on the comment, shows its command beneath. One without a comment shows its command instead. Run runs it in the window's session (`useSessionRunner`). A fence is at most 10rem tall until resized by its bottom-right corner, scrolling within, and its height is saved by fence id in `meta.fenceHeights`. Its foot fades, with a down caret, whilst more is below.
   - A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), for amendments to attach to later.
   - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
   - `<Video id="…" />` is a YouTube video loaded on click (`article/Video.tsx`, lazy, so its library loads only with it), e.g. `video/demo`.
   - `<SideNote>…</SideNote>` is an info icon in the text, showing the note on hover or press (a base-ui Popover with `openOnHover`, since a Tooltip ignores presses).
   - `mdx.d.ts` types these tags in the editor, as the global `MDXProvidedComponents` the MDX extension reads.
-- Adding or renaming one reloads the page.
+- Adding or renaming a file reloads the page. An edit swaps it in place, with no spinner: `react()` in `vite.config.ts` includes `.mdx`, and `vite-plugin-skip-net-articles` reloads its virtual modules only when their content changes.
 
 ## Chat
 

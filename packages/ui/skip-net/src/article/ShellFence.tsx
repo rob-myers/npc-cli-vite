@@ -3,7 +3,7 @@ import { tokenCss } from "@npc-cli/cli/shell/sh-tokens";
 import { worldTtyOf } from "@npc-cli/ui__jsh-prelude/run";
 import { preludeApi, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Tip } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, LightningIcon, PlayIcon } from "@phosphor-icons/react";
 import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +23,15 @@ export function ShellFence(props: ComponentProps<"pre">) {
   }
   return <pre {...props} />;
 }
+
+/** Capped until its corner is dragged, which sets an inline height */
+const fenceClass = tw(
+  "group/fence not-prose my-3 py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence",
+);
+/** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
+const moreClass = tw(
+  "sticky bottom-0 h-6 -mt-6 flex items-end justify-center pointer-events-none bg-linear-to-t from-term-fence opacity-0 transition-opacity group-data-[more=true]/fence:opacity-100",
+);
 
 /** Its commands, in a box resized by its corner, its height saved */
 function ShellCommands({ src }: { src: string }) {
@@ -61,17 +70,37 @@ function ShellCommands({ src }: { src: string }) {
     };
   }, [fenceId]);
 
+  useEffect(() => {
+    const el = boxRef.current;
+    if (el === null) return;
+    const sync = () => {
+      el.dataset.more = String(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+    };
+    /** Its commands too, as one expanding changes what is below without resizing the box */
+    const observer = new ResizeObserver(sync);
+    observer.observe(el);
+    for (const child of el.children) observer.observe(child);
+    el.addEventListener("scroll", sync, { passive: true });
+    return () => {
+      observer.disconnect();
+      el.removeEventListener("scroll", sync);
+    };
+  }, [commands]);
+
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
     <div
       ref={boxRef}
       data-fence-id={fenceId}
-      className="not-prose my-3 py-1 min-h-10 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence"
+      className={fenceClass}
       style={savedPx === undefined ? undefined : { height: savedPx }}
     >
       {commands.map(({ example, segments }) => (
         <ShellCommand key={example.id} example={example} segments={segments} />
       ))}
+      <div className={moreClass}>
+        <CaretDownIcon weight="bold" className="size-3.5 text-term-muted" />
+      </div>
     </div>
   );
 }
@@ -161,13 +190,9 @@ function AutorunToggle({ example }: { example: Example }) {
   const tip = on ? `autoruns in ${tty ?? "no tty yet"}` : "add to autorun";
   return (
     <Tip content={tip}>
-      <button
-        type="button"
-        aria-pressed={on}
-        className={cn(autorunButtonCss, on && "text-term-accent border-term-accent/50 bg-term-accent/10")}
-        onClick={toggle}
-      >
-        <LightningIcon weight={on ? "fill" : "regular"} className={runIconCss} />
+      <button type="button" aria-pressed={on} className={cn(autorunButtonCss, on && autorunOnCss)} onClick={toggle}>
+        {on && <LightningIcon weight="fill" className={cn(runIconCss, "col-start-1 row-start-1 text-yellow-300")} />}
+        <LightningIcon className={cn(runIconCss, "col-start-1 row-start-1")} />
       </button>
     </Tip>
   );
@@ -205,3 +230,5 @@ const autorunButtonCss = cn(
   sideButtonCss,
   "mr-1.5 hover:text-term-accent hover:border-term-accent/50 hover:bg-term-accent/10",
 );
+/** Its bolt outlined in the foreground over a yellow fill */
+const autorunOnCss = tw("text-term-foreground hover:text-term-foreground");

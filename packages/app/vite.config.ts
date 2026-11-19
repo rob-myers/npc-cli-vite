@@ -32,7 +32,8 @@ export default defineConfig({
     }),
     /** Fences stay raw, so SkipNet's own components can highlight and run them */
     mdx(),
-    react(),
+    /** An mdx article is a refresh boundary, so an edit swaps it in place rather than reloading it */
+    react({ include: /\.(mdx|[jt]sx?)$/ }),
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
