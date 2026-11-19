@@ -83,5 +83,7 @@ export function ArticleSessionPicker({ win }: { win: SkipNetWindow }) {
   return <SessionPicker runner={runner} session={session} win={win} />;
 }
 
-/** A rounded frame around an article's text, though not its videos */
-const framedClass = tw("rounded-xl border border-mac-text/20 px-4 py-3");
+/** A rounded frame around each of an article's files, though not its videos */
+const framedClass = tw(
+  "flex flex-col gap-3 *:rounded-xl *:border *:border-mac-text/20 *:px-4 *:py-3 [&>section>:first-child]:mt-0 [&>section>:last-child]:mb-0",
+);

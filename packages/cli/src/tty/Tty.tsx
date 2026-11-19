@@ -38,6 +38,8 @@ export function Tty(props: Props) {
       bounds,
       canContOrStop: null as null | "CONT" | "STOP",
       disabled: props.disabled,
+      /** A fit was skipped whilst hidden. The next forces a resize, else a scrollbar may not show */
+      fitSkipped: false,
       isTouchDevice: isTouchDevice(),
       /** The process ids we actually paused, so we can resume them  */
       pausedPids: new Set<number>(),
@@ -47,9 +49,15 @@ export function Tty(props: Props) {
       reSource: {} as Record<string, true>,
 
       fitDebounced: debounce(() => {
-        // 🔔 fix scrollbar sync issue
-        baseRef.current?.xterm.forceResize();
-        baseRef.current?.fitAddon.fit();
+        const base = baseRef.current;
+        if (!base) return;
+        const el = containerRef.current; // not `bounds`, which starts at zero before it measures
+        if (!el?.offsetWidth || !el.offsetHeight) return void (state.fitSkipped = true); // hidden
+        const { xterm } = base.xterm;
+        const size = `${xterm.cols}x${xterm.rows}`;
+        base.fitAddon.fit(); // each resize reallocates the WebGL canvas, which waits on the GPU
+        if (state.fitSkipped && size === `${xterm.cols}x${xterm.rows}`) base.xterm.forceResize();
+        state.fitSkipped = false;
       }, 30),
 
       handleExternalMsg({ msg }: ExternalMessage) {

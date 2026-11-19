@@ -14,6 +14,7 @@ import {
   stepSets,
   warmAudio,
 } from "@npc-cli/ui__audio/engine";
+import { Task } from "@npc-cli/util";
 
 type Foot = {
   side: Side;
@@ -159,7 +160,12 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     w.e.keyedTick.delete("sounds");
     return;
   }
-  warmAudio();
+  /** Audio waits until the World has booted and the page is idle, as its samples would compete with the boot */
+  let ready = false;
+  void untilBootedAndIdle(w).then(() => {
+    ready = true;
+    warmAudio();
+  });
   const hearing: Hearing = {
     npcKeys: new Set(),
     gdKeys: new Set(),
@@ -170,7 +176,9 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
     moving: new Map(),
     doorsReadAt: 0,
   };
-  w.e.addKeyedListener("sounds", (e, w) => onSoundsEvent(e, w, hearing));
+  w.e.addKeyedListener("sounds", (e, w) => {
+    if (ready) onSoundsEvent(e, w, hearing);
+  });
   /** Each heard npc's feet, the player's among them */
   const feet = new Map<string, Feet>();
   /** Each heard npc's charge when last read, whilst charging */
@@ -183,6 +191,7 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
   let heard: JshCli.Npc[] = [];
   let foundAt = Number.NEGATIVE_INFINITY;
   w.e.addKeyedTick("sounds", (w) => {
+    if (!ready) return;
     const player = w.n[w.player.key];
     if (player === undefined) return;
     const now = w.gameTime.now();
@@ -247,6 +256,17 @@ export function sounds({ api, args, w }: JshCli.RunArg) {
 }
 
 /** The npcs in reach of the player, through open doors, within `reachMetres`, nearest first */
+/** Resolves once the World has booted, then once the page is idle */
+async function untilBootedAndIdle(w: JshCli.WorldState) {
+  await new Task().until(() => w.e.bootedAt > 0, bootWaitMs);
+  await new Promise((resolve) =>
+    "requestIdleCallback" in window ? requestIdleCallback(resolve) : setTimeout(resolve, 1000),
+  );
+}
+
+/** How long audio waits for the World to boot, before starting anyway */
+const bootWaitMs = 60000;
+
 function npcsInReach(w: JshCli.WorldState, player: JshCli.Npc) {
   const { x, z } = player.position;
   return w.npc.near

@@ -54,6 +54,8 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
       className={cn(
         // over npc focus's labels (`z-20`)
         "absolute left-1/2 top-[40%] z-30 -translate-x-1/2 -translate-y-1/2 select-none",
+        // its content's width: from `left-1/2` alone it gets half the World's, clipping "confirm" when narrow
+        "w-max max-w-[calc(100%-1rem)]",
         "flex flex-col items-center rounded-xl transition-[opacity,background-color] duration-500",
         state.open ? "bg-black/60" : "bg-black/35",
         // it stays mounted for the fade out, so it must stop taking clicks the moment it is not paused

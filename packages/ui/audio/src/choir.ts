@@ -1,4 +1,4 @@
-import { filter, gain, getPinkNoise, hall, osc, panner } from "./nodes";
+import { filter, gain, getPinkNoise, giveHall, osc, panner, takeHall } from "./nodes";
 import type { SampleBank } from "./samples";
 import type { HeldVoice, HoldParams } from "./sfx";
 import { sfxLevel } from "./synth";
@@ -25,7 +25,8 @@ export function choirVoice(ctx: AudioContext, dest: AudioNode): HeldVoice {
   out.connect(dest);
   const room = gain(ctx, 1);
   room.connect(out);
-  room.connect(gain(ctx, choirHallWet)).connect(hall(ctx)).connect(out);
+  const [wet, hallNode] = [gain(ctx, choirHallWet), takeHall(ctx)];
+  room.connect(wet).connect(hallNode).connect(out);
   const sources: AudioScheduledSourceNode[] = [];
   const start = <T extends AudioScheduledSourceNode>(source: T) => {
     source.start();
@@ -172,6 +173,14 @@ export function choirVoice(ctx: AudioContext, dest: AudioNode): HeldVoice {
       window.clearTimeout(timers.phrase);
       window.clearTimeout(timers.bowl);
       choirOut.stop(at);
+      // its hall is kept for the next choir, once faded out
+      window.setTimeout(
+        () => {
+          wet.disconnect();
+          giveHall(ctx, hallNode);
+        },
+        (at - ctx.currentTime + fadeOutSecs + 0.3) * 1000,
+      );
     },
   };
 }

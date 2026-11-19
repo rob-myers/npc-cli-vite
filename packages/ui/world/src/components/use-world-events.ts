@@ -20,6 +20,7 @@ import {
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
+import { probeWebRtcWhenIdle } from "../service/net-signaling";
 import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
 import type { AnimationClipKey } from "./NPCs";
@@ -29,6 +30,7 @@ import type { State as WorldState } from "./World";
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      bootedAt: 0,
       carried: structuredClone(persisted.getWorldStore(w.key).read().carried), // the default is shared
       changingMap: false,
       handling: new Set(),
@@ -588,13 +590,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-          // with everything drawn once, the pick pass compiles now rather than on the first tap.
-          // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
-          await w.view.warmPick();
+          // the pick pass compiles now, not on the first tap. Awaited: no frame is drawn meanwhile
+          await w.view.warmPipelines();
+
           if (firstBootstrap === true && playerWasSaved === false) {
             await player.panTo();
           }
         } finally {
+          state.setBooted(); // a failed restore boots too
           if (firstBootstrap === true) {
             // the first map is on screen as a flat hull: held a beat with the fade brought on,
             // then unfolded with a delayed floor fade-in
@@ -1470,6 +1473,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         (state.npcToAccess[npcKey] ??= {})[gdKey] = held;
         if (npcKey === w.player.key) w.hud?.update();
       },
+      setBooted() {
+        if (state.bootedAt > 0) return;
+        state.bootedAt = performance.now();
+        performance.mark(`${w.key}:booted`);
+        w.hud?.update();
+        void probeWebRtcWhenIdle().then(() => w.menu.update?.()); // its peers would stall the boot
+      },
       setNpcLit(npc, next = npc.lit === false) {
         if (npc.key === w.player.key) {
           return;
@@ -1982,6 +1992,10 @@ export type State = {
   takeItem(npcKey: string, decorKey: string): boolean;
   /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
   changingMap: boolean;
+  /** When the first map was on screen, its shaders warmed, else `0`. Never reset */
+  bootedAt: number;
+  /** Also probes WebRTC, once idle */
+  setBooted(): void;
   /** Doable to the npc using it or null */
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };

@@ -25,10 +25,10 @@
         document.documentElement.classList.add(`theme-${theme}`);
       })();
     </script>
-    <script defer id="umami-script" src="https://cloud.umami.is/script.js" data-website-id="e4022522-0f56-4db2-a68f-cf708b91da49"></script>
+    <script async id="umami-script" src="https://cloud.umami.is/script.js" data-website-id="e4022522-0f56-4db2-a68f-cf708b91da49"></script>
     <script>
       (function umamiEnvironment() {
-        // inline, so it beats the deferred umami script — which would otherwise get its automatic
+        // inline, so it beats the async umami script — which would otherwise get its automatic
         // pageview away before any module could disable it
         const local = location.hostname === 'localhost';
         document.getElementById('umami-script').dataset.tag = local ? 'localhost' : 'production';

@@ -13,7 +13,7 @@ type Session = {
   pending: { uiKey: string; ms: number }[];
   sentLoaded: boolean;
   timeoutId: undefined | ReturnType<typeof setTimeout>;
-  /** events raised before the deferred umami script ran */
+  /** events raised before the async umami script ran */
   queue: [string, EventData][];
 };
 

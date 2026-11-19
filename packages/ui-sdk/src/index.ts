@@ -11,7 +11,10 @@ export type UiBootstrapProps = {
 };
 
 export type UiPackageDef = {
-  ui: React.LazyExoticComponent<(props: any) => React.ReactNode>;
+  /** Lazy, unless it is on screen from the first render, e.g. `Tabs` */
+  ui: React.LazyExoticComponent<(props: any) => React.ReactNode> | ((props: any) => React.ReactNode);
+  /** Shown whilst a lazy `ui` loads, else a spinner */
+  loading?: () => React.ReactNode;
   bootstrap: null | ((props: UiBootstrapProps) => React.ReactNode);
   schema: z.ZodType<UiInstanceMeta>;
   /** It scales itself by `meta.zoom`, so `Tabs` leaves it unzoomed */

@@ -427,7 +427,7 @@ export default function WorldHud() {
   return (
     <>
       {/* at the World's top, clear of the bar wherever it is dragged */}
-      <div className={noticesClass}>
+      <div className={cn(noticesClass, !w.e?.bootedAt && "opacity-0")}>
         {/* on a line of its own, above the rest */}
         <AnimatePresence initial={false} mode="popLayout">
           {w.wasReadyFor.size === 0 && (
@@ -954,9 +954,12 @@ const itemsClass = tw("pointer-events-none flex min-w-0 overflow-x-auto p-1 [scr
 const columnBarClass = tw("pointer-events-none absolute top-0 z-10 select-none");
 const columnClass = tw("pointer-events-none relative flex flex-col items-center");
 const columnItemsClass = tw("pointer-events-none flex min-h-0 flex-col overflow-y-auto p-0 [scrollbar-width:none]");
-/** The hud-toasts: top centre, clear of the bar. Across the whole width, else a narrow World squeezes them */
+/**
+ * The hud-toasts: top centre, clear of the bar. Across the whole width, else a narrow World squeezes them.
+ * Hidden until the World arrives, then faded in by the compositor, which a busy boot cannot stall.
+ */
 const noticesClass = tw(
-  "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200",
+  "pointer-events-none absolute inset-x-0 top-5 z-10 flex select-none flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200 transition-opacity duration-500",
 );
 /**
  * A kept hud-toast. `gone`, from a frame callback, fades and shrinks its contents and collapses its width, so the others

@@ -48,7 +48,9 @@ function labelOf({ comment, src }: PreludeEntry) {
 export async function rebootWorld(worldKey: string, onStep: (label: string) => void): Promise<void> {
   const sessionKeys = findTtys(worldKey).flatMap(({ sessionKey }) => {
     const session = getSession(sessionKey);
-    return session !== undefined && liveProcesses(session).some(isWorldProcess) ? [sessionKey] : [];
+    // the shell's own `WORLD_KEY`, as a saved one can differ from its tab's, and `awaitWorld` waits on it
+    if (session === undefined || session.var.WORLD_KEY !== worldKey) return [];
+    return liveProcesses(session).some(isWorldProcess) ? [sessionKey] : [];
   });
   const step = async (label: string, run?: (session: Session) => unknown) => {
     onStep(label);
@@ -61,8 +63,8 @@ export async function rebootWorld(worldKey: string, onStep: (label: string) => v
 
   await step("killing jobs", killWorldJobs);
   await step("running profiles", async (session) => {
-    await until(() => session.ttyShell.isInteractive());
-    await session.ttyShell.runProfile();
+    if (await until(() => session.ttyShell.isInteractive(), interactiveWaitMs)) return session.ttyShell.runProfile();
+    warn(`reboot: ${session.key} never became interactive: its profile was not re-run`); // else it would hang
   });
   await step("autorun");
   await runPrelude(worldKey);
@@ -149,9 +151,9 @@ export function isRunning(session: Session, src: string) {
   return liveProcesses(session).some((p) => p.key === p.pgid && p.origSrc === src);
 }
 
-/** Polls `test` until it holds, else gives up after `waitMs` */
-async function until(test: () => boolean): Promise<boolean> {
-  const giveUpAt = Date.now() + waitMs;
+/** Polls `test` until it holds, else gives up after `giveUpMs` */
+async function until(test: () => boolean, giveUpMs = waitMs): Promise<boolean> {
+  const giveUpAt = Date.now() + giveUpMs;
   while (test() === false) {
     if (Date.now() > giveUpAt) return false;
     await new Promise((resolve) => setTimeout(resolve, pollMs));
@@ -171,3 +173,5 @@ const stepPauseMs = 400;
 const pollMs = 250;
 /** How long a step waits, e.g. on a tty which never boots */
 const waitMs = 20000;
+/** How long a reboot waits for a tty's prompt once its jobs are killed */
+const interactiveWaitMs = 2000;

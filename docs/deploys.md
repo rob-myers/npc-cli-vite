@@ -136,7 +136,7 @@ imports. Startup went from 209K to 216K gzip, and from 6 chunks to 16.
 
 Two hubs used to rename everything:
 
-- **`ui.store` imported `uiRegistry`**, which holds all eight `lazy(() => import(…))`, and every ui
+- **`ui.store` imported `uiRegistry`**, which holds every ui's `lazy(() => import(…))`, and every ui
   imports `ui.store`. It needs only keys, schemas and `getDefaultTabs`, so it now imports
   `@npc-cli/ui-registry/schemas` and `/default-ui`.
 - **Every chunk imported the entry**, which holds the route chunks' names and `jsh.worker`'s url

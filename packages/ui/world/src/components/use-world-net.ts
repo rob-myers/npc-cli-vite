@@ -20,7 +20,6 @@ import {
   InMemorySignaling,
   isSamePage,
   PortChannel,
-  probeWebRtc,
   type RemoteWorld,
   type SignalMsg,
   uidOf,
@@ -719,7 +718,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         // still-flat world (a fresh page) must also rise with its floor faded in
         w.view.forceUpdate(0.01);
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        await w.view.warmPick(); // as `onBootstrapMap` does: no frame is drawn whilst it runs
+        await w.view.warmPipelines(); // as `onBootstrapMap` does: no frame is drawn whilst it runs
 
         if (w.fold.amount < 1) {
           void w.view.veilCanvas(false, mapVeilMs);
@@ -973,7 +972,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
     // what lets live sessions ride out an HMR. Signaling (like the sessions) lives on `state`,
     // which survives the bounce, so it is only built once
     window.clearTimeout(state.teardownTimer);
-    void probeWebRtc(); // known by the time a same-page join comes
     if (state.signalingMem === null) {
       const mem = new InMemorySignaling(w.key);
       mem.onMessage((fromUid, msg) => state.onSignal(fromUid, msg));

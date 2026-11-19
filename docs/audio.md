@@ -36,6 +36,8 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
   The bar's sound hud-toast toggles it, kept in localStorage. Neither the World nor the engine imports the other.
 - **Autoplay.** Browsers start a context only after a press or key. The engine resumes on the next `pointerdown` or
   `keydown`. `warmAudio()` waits for one of those before making the engine, so nothing is refused at page load.
+- **Not during the boot.** jsh `sounds` calls `warmAudio()`, and plays anything, only once the World has booted
+  (`w.e.bootedAt`) and the page is idle. Its samples would otherwise compete with the boot on a phone.
 - **Samples.** All CC0, in named banks (`sampleFiles`), fetched as the engine is made, bar the lazy `psi`: 26 steps (216 KB) and the
   effects' layers (252 KB). `pickSample` never plays one twice running. A layer not yet loaded is left out.
 - **Hot reload.** The context, samples, listeners, config and status are kept on `import.meta.hot.data`.
@@ -164,6 +166,9 @@ renewed each tick, so a pause or psi lowered lets it die away. It swells in over
     and a few cents off their place (`detuneStray`).
   - In the hall, beside its own voices (`choirHallWet`).
 - **The hall** (`hall` in `nodes.ts`): 9 s of stone, losing its highs as it dies (`hallBright`, `hallDull`).
+  Setting a convolver's buffer prepares the impulse on the main thread, so halls are pooled per context:
+  a choir takes one (`takeHall`) and gives it back once faded out (`giveHall`). The engine prepares one whilst
+  idle (`warmHall`), so raising psi never stalls.
 - **A chant**: one of the two `psi` recordings, never the same twice running. The two are fetched together
   the first time either is wanted (270 KB), but each is decoded only once it is itself wanted (`hasSample`, a lazy
   bank's), as decoded each is about 2.2 MB. The choir sings until it has, then fades as the chant swells in. It is looped in code: each pass

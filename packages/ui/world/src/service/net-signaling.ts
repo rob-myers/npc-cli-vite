@@ -90,6 +90,13 @@ export function probeWebRtc(): Promise<boolean> {
     })().catch(() => done(false));
   }));
 }
+/** `probeWebRtc` once the page is idle: its peers hold the main thread a while */
+export function probeWebRtcWhenIdle() {
+  return new Promise<boolean>((resolve) => {
+    const run = () => void probeWebRtc().then(resolve);
+    "requestIdleCallback" in window ? requestIdleCallback(run, { timeout: 5000 }) : setTimeout(run, 1000);
+  });
+}
 let probing: undefined | Promise<boolean>;
 let probed: null | boolean = null;
 /** Same-page peers connect in well under this, if at all */

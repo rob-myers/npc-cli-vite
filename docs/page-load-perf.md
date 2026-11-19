@@ -1,115 +1,128 @@
 # Page load performance
 
-What was measured on 2026-09-11, what changed, and what was tried and dropped. The numbers are
-Lighthouse desktop (simulated throttling), reports kept in `e2e/`.
+The ONLY doc for how fast the page and its World load, and how to measure it.
 
-| report | what |
-|---|---|
-| `npc-cli-vite.netlify.app-2026…json` | the prod deploy that prompted this, run with a browser extension active (~330 ms of its TBT) |
-| `localhost-preview-before-…json` | `main` before any change, built and served locally with brotli |
-| `localhost-preview-after-…json` | the same machine and server, after |
+A first load can be slow in two ways:
+- **JavaScript on the main thread.** Measured with Lighthouse (2026-09-11): total blocking time
+  went from ~385 ms to under 40 ms. Reports are in `e2e/`.
+- **A cold GPU.** A deploy preview is a new origin, so a visitor's browser has no compiled
+  shaders for it (2026-11-19). The GPU process compiles them, and anything that waits on it
+  synchronously blocks the main thread.
 
-| metric | before | after |
+Cold GPU, production build, page opened in a fresh tab:
+
+| | before | after |
 |---|---|---|
-| total blocking time | 376–393 ms | 16–37 ms |
-| JS bootup | 1384 ms | ~785 ms |
-| `index` chunk scripting | 1030 ms | ~455 ms |
-| LCP (simulated) | 1482 ms | 1506 ms |
-| performance score | 0.64–0.77 | 0.80–0.93 |
+| main thread blocked | 8.2 s | 0.6 s |
+| longest task | 3.45 s | 0.34 s, xterm's WebGL start-up |
+| `booted` | — | ~14 s, bounded by the GPU's compiling |
 
-Paint was never the problem: first paint is ~0.6 s in both. The score was lost to main-thread
-JavaScript after first paint, and nearly all of that was the world booting under React's
-scheduler — which is why Lighthouse attributed it to the `index` chunk.
+On macOS, Metal caches compiled shaders per app, shared by every Chrome profile. With it warm, a
+boot blocks for ~0.4 s. A 4x CPU slowdown adds only ~1 s to a cold boot: the time is the GPU's.
 
-## Where the time went
+## Never wait on the GPU at boot
 
-A CPU profile of an unminified build (see *Measuring* below) put the boot's blocking time in
-this order:
+What waits on a busy GPU process: reading a canvas back (`getImageData`), a WebGL canvas
+changing size (Chrome checks `GLES2::GetGLError`), and a material's first draw (its pipeline is
+created on the thread that also finishes frames).
 
-1. **`TexArray.updateIndex`, ~630 ms.** Each floor and ceiling layer was written by
-   `getImageData` on a 3030² canvas (a 37 MB read-back) and a copy into a CPU mirror of the
-   whole `DataArrayTexture`, which three then uploaded again. Three floor layers, drawn twice
-   (hulls, then the full draw), plus two ceiling layers.
-2. **The shell parser's wasm, instantiated per parse.** `parse()` in `packages/parse-sh`
-   ran `WebAssembly.instantiate` of the 2.6 MB module and a fresh Go runtime for every line the
-   tty ran at boot.
-3. **`hashJson(assets)`, 50 ms.** The world's assets hashed via the pretty-printing
-   stringifier, over 1.3 MB of JSON.
-4. Skin SVG overlays fetched and rasterised before the world could show.
+- **`TexArray`'s `gpu` option** (`service/tex-array.ts`). The array keeps a `CanvasTexture` of its
+  canvas and fills a layer with `renderer.copyTextureToTexture`. Nothing is read back and there is
+  no CPU mirror. The floor, ceiling, obstacle and door-label arrays use it.
+  - Its canvas has no `willReadFrequently`, so the browser keeps it on the GPU.
+  - Its layers live only on the GPU. `update()` does nothing, and `WorldView.onCreated` redraws
+    them on a replacement GPU context.
+  - An array that passes `data` in, or is read back (`texSkin` by the debug skin viewer), stays
+    on the CPU.
+- **Door labels are drawn once per boot.** Doors redraws them only when `labelsKey`
+  (`gmsHash`, `hash`, `themeKey`, `lastHmr`) changes.
+- **`warmPipelines`** (`WorldView`). With no frame drawn (`frameloop: "never"`) it
+  `compileAsync`s the pick pass, whose attachments differ from the screen's, so the first tap
+  needn't build every material a second pipeline. Dawn creates them on worker threads. The warm
+  then sets `w.e.bootedAt`. The screen's pipelines still compile on each material's first draw.
+- **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
+  WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
+  `useMeasure`'s `bounds`, which start at zero and would force a resize.
+- **A tty redraws whenever it is seen again** (an `IntersectionObserver` in `BaseTty`). A phone may
+  drop a hidden WebGL canvas's pixels, which xterm can't know: switched back to, it stayed black
+  until tapped.
 
-## What changed
+## Little on the main thread
 
-- **`service/tex-array.ts` — the `gpu` option.** A `gpu: true` array keeps a `CanvasTexture`
-  of its own canvas and writes a layer with `renderer.copyTextureToTexture(src, tex, null,
-  (0, 0, layer))`: the canvas goes to the GPU as a texture upload, and the layer is filled by a
-  GPU-side copy. No read-back, no mirror. Per layer this is under 1 ms on the main thread
-  (measured headless and headed). The floor, ceiling and obstacle arrays opt in.
-  - the canvas is created **without** `willReadFrequently`, so the browser keeps it GPU-backed
-    and the upload is a blit rather than a CPU copy
-  - `tex.source.dataReady = false` with `needsUpdate = true`: three creates the array texture at
-    full size on first use without uploading the zero mirror. Without the `needsUpdate` three
-    stands in a 1x1 default texture and every copy fails validation
-  - the layers live only on the GPU. `update()` is a no-op for these arrays, and
-    `WorldView.onCreated` redraws floor, ceiling and obstacles on a replacement GPU context
-    (the Chrome cmd+shift+t double init the old `texFloor.update()` covered)
-  - arrays that pass `data` in, or are read back (`texSkin` by the debug skin viewer), stay on
-    the CPU path
-- **`packages/parse-sh/src/parse.ts`.** One instance, made on first use and kept. `go.run` is
-  not awaited: TinyGo's `main` returns at once and the exports stay callable; the run promise
-  resolves only on `proc_exit`, which never comes. Verified in node: four parses, one
-  instantiation, and a `ParseError` does not poison the next parse.
-- **`World.tsx`:** `hashJson(state.assets, false)` — 9 ms instead of 50.
-- **`NPCs.tsx`:** the sheet skins draw first; the SVG overlays are a second query that redraws
-  the affected skins when they arrive.
-- **`index.html`:** `<link rel="preload">` for `assets.json` and `sheets.json`. They start
-  ~830 ms earlier (during script evaluation rather than after the world mounts) and are neutral
-  to Lighthouse.
-- **`public/_headers`:** `/assets/*` immutable for a year on Netlify (prod was
-  `max-age=0, must-revalidate`).
+- **The shell parser's wasm is instantiated once** (`packages/parse-sh/src/parse.ts`), not per
+  parse. `go.run` is not awaited: TinyGo's `main` returns at once and the exports stay callable.
+- **`hashJson(state.assets, false)`** in `World.tsx`: 9 ms, where pretty-printing took 50.
+- **Skins draw from their sheets first.** The SVG overlays are a second query (`NPCs.tsx`).
+- **drei `<Stats>` is off in production**, behind the debug menu's **fps**.
+- **The WebRTC probe waits for the boot and an idle moment** (`probeWebRtcWhenIdle`).
+- **The hud-toasts wait for `bootedAt`**, then fade in on the compositor (`WorldHud`).
+
+## Nothing ahead of the app
+
+- **Umami's script is `async`** (`index.html`). As `defer` it ran before the app's module entry,
+  in document order, so a slow umami server held up the whole app.
+- **`assets.json` and `sheets.json` are preloaded** (`index.html`). They start during script
+  evaluation, not after the World mounts.
+- **`/assets/*` is immutable for a year** (`public/_headers`).
+- **`Tabs` isn't lazy** (`ui/tabs/src/index.ts`). Every pane's header shows on the first render,
+  not after a chunk arrives. It is 15 KB.
+- **A ui may give its own `loading`** (`UiPackageDef`), which `UiPortalContainer` shows whilst its
+  lazy code arrives, else a spinner. The World's is black (`WorldLoading`), so a phone sees the
+  header and the World's black, not a grey spinner first.
 
 ## Tried and dropped
 
-Each was measured on the same local server; none survived.
-
-- **`modulepreload` of the `World` chunk.** Starts its download ~380 ms earlier but doubled
-  the *observed* LCP (740 → 1500 ms): the parse and link of a 1.9 MB module lands on the main
-  thread just as the LCP element wants to paint.
-- **`preload` of `main.wasm`.** The parser is not needed until the tty runs a line; in the
-  Lighthouse window it is never fetched at all, so the preload only took bandwidth from
-  everything else. Simulated LCP rose by ~600 ms. `fetchpriority="low"` did not help the
-  simulation.
-- **Skipping zod validation of `assets.json` in prod.** The decode measured 12–24 ms, and the
-  codecs also build `Rect`/`Poly` instances from the JSON, so there is nothing to skip.
+- **`modulepreload` of the `World` chunk.** Its parse lands just as the LCP element paints, which
+  doubled the observed LCP.
+- **`preload` of `main.wasm`.** The parser isn't needed until a tty runs a line. The preload only
+  took bandwidth.
+- **Skipping zod validation of `assets.json` in production.** It costs 12–24 ms, and its codecs
+  build `Rect`/`Poly` instances anyway.
+- **Fitting a tty before loading xterm's WebGL renderer, or loading it after the first fit.** The
+  first didn't stop the resize, and both use xterm's DOM renderer meanwhile.
+- **Warming the screen pass too, with decor and npcs restored inside the warm.** It held every
+  frame ~0.6 s longer at 4x CPU, on each refresh as well, though the layers had already drawn. A
+  refresh's warm went 1.08 s → 0.43 s without it.
+- **Hiding `worldGroup` until the warm, on a first map.** No layer's first draw then compiled on
+  the GPU's frame thread, so a cold desktop's longest frame gap fell from 4.8 s to 2.2 s. But the
+  World no longer appeared bit by bit: on a phone the boot looked worse, refreshes waited for the
+  whole warm, and the floor arrived late.
 
 ## Still open
 
-- **A flaky layout shift, present on `main` before any of this.** In about half of runs the
-  right allotment pane (`div.split-view-view`) shifts with CLS 0.258, which alone moves the
-  score between ~0.80 and ~0.93. The pane sizes are presumably applied after the first paint.
-  Treat CLS as noise when comparing runs until it is fixed.
-- With TBT under 40 ms the score is now bounded by LCP (the Jobs library's first code block)
-  and the CLS above. The `World` chunk (1.9 MB, 267 KB unused on load) and the accessibility,
-  `robots.txt` and source-map audits from the original report are untouched.
+- **A cold boot is ~14 s**, bounded by the GPU compiling every pipeline. Only fewer shader
+  variants would shorten it.
+- **Frames stop for up to ~5 s on a cold boot**, whilst the layers' first draws compile their
+  pipelines on the GPU's frame thread. The main thread stays free meanwhile.
+- **A flaky layout shift.** In about half of Lighthouse runs the right allotment pane shifts
+  (CLS 0.258). Treat CLS as noise when comparing runs.
+- **The `World` chunk is 1.9 MB.**
 
 ## Measuring
 
-Lighthouse against `vite preview` is misleading: it does not compress the wasm, so the
-simulation sees 2.6 MB where prod sends 770 KB. Serve the build with something that does
-(`pnpm dlx serve -l 4174 dist` sends brotli, `application/wasm` included), then
+**Main-thread JavaScript, with Lighthouse.** `vite preview` doesn't compress the wasm, so serve
+the build with brotli (`pnpm dlx serve -l 4174 dist`), then
 
 ```sh
 pnpm dlx lighthouse@12 http://localhost:4174/ --preset=desktop --only-categories=performance \
   --chrome-flags="--headless=new --user-data-dir=/tmp/lh-profile" --output=json --output-path=out.json
 ```
 
-Run it two or three times; the simulated metrics are stable, the CLS is not. For a fair
-before/after, build `main` into another directory (`vite build --outDir dist-base`) and serve
-it on a second port.
+Run it two or three times. For a fair before/after, build `main` into another directory
+(`vite build --outDir dist-base`) and serve it on a second port. To see what is slow, profile an
+unminified build (`--minify false --sourcemap`). A native call such as `getImageData` is charged
+to the JS function that made it.
 
-To see *what* is slow, profile an unminified build: `vite build --outDir dist-prof --minify false
---sourcemap`, serve it, and record a CPU profile of a cold load — Chrome's performance panel, or
-`Profiler.start` / `Profiler.stop` over the DevTools protocol (node's built-in `WebSocket` is
-enough; no library needed). Aggregate self time by function. Two things to know when reading it:
-native calls such as `getImageData` are charged to the JS function that made them, and V8
-inlines small callees into their caller, so a hot `updateIndex` can be hiding three's copy
-functions inside it. Timing individual calls with `performance.now()` settles that.
+**A cold GPU, with a trace.**
+- Serve the build. Launch Chrome with its own `--user-data-dir`, a `--remote-debugging-port`, and
+  `--disable-backgrounding-occluded-windows`: a hidden window stops `requestAnimationFrame`.
+- Clear the Metal cache by moving `com.google.Chrome.helper/com.apple.metal` and
+  `com.apple.metalfe` (in `getconf DARWIN_USER_CACHE_DIR`) aside. Put them back afterwards.
+- Trace from the browser target (`Tracing.start`), then open the app with `Target.createTarget`.
+  Navigating from `about:blank` in the same tab adds a ~2 s `Shutdown` task a visitor never sees.
+- Find the renderer by its `world-0:*` marks (Timings row): each `pending` key clearing,
+  `map-settled`, the `warm` measure and `booted`. Long tasks are `ThreadControllerImpl::RunTask`
+  over 50 ms. `ReadbackImagePixels` or `GLES2::GetGLError` inside one is a wait on the GPU.
+  `FireAnimationFrame` shows when frames stopped.
+- Single cold runs vary. A slow third-party script, or other work on the machine, can shift the
+  whole boot.

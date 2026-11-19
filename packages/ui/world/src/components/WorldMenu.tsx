@@ -42,7 +42,7 @@ import {
 } from "../service/camera-view";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
-import { probeWebRtc, webRtcWorks } from "../service/net-signaling";
+import { webRtcWorks } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, type HudLayout, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
@@ -253,8 +253,6 @@ export function WorldMenu() {
 
   w.menu = state;
 
-  useEffect(() => void probeWebRtc().then(() => state.update()), []); // greys WebRTC if it cannot connect
-
   const y = useMotionValue(state.getClampedY(state.y));
   state.colY = y;
   const dragControls = useDragControls();
@@ -304,6 +302,8 @@ export function WorldMenu() {
         return w.spots?.shown ?? false;
       case "context menu":
         return w.debug?.contextMenu ?? false;
+      case "fps":
+        return w.view.statsShown ?? false;
       case "hud bar":
         return w.hud?.getLayout() === "bar";
       case "hud left":
@@ -337,14 +337,14 @@ export function WorldMenu() {
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setPostProcessingEnabled();
           state.update();
-          return w.view.warmPick();
+          return w.view.warmPipelines();
         });
         break;
       case "npc outline":
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setNpcOutlineEnabled();
           state.update();
-          return w.view.warmPick();
+          return w.view.warmPipelines();
         });
         break;
       case "rgb shift":
@@ -434,6 +434,9 @@ export function WorldMenu() {
         state.update();
         break;
       }
+      case "fps":
+        w.view.setStatsShown();
+        break;
       case "decorations": {
         const next = !w.debug?.decorShown;
         w.debug?.set({ decorShown: next });
@@ -1628,6 +1631,7 @@ const cameraModes: CameraModeType[] = ["free", "embodied"];
 const debugItems = [
   "context menu",
   "door ui",
+  "fps",
   "hud",
   "modals",
   "net",

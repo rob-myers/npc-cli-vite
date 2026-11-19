@@ -146,6 +146,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // a door seen edge-on samples the panel's rivets and lettering at a glancing angle, which
         // nearest-filtered is a crawl — see `TexArray.applyOpts`, where this also brings mipmaps
         anisotropy: touchDevice ? undefined : 4,
+        gpu: true, // a readback waits on a busy GPU: seconds of a cold boot
       }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS, anisotropy: 4 }),
       texSkinSlices: new TexArray({
@@ -291,6 +292,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           return;
         }
         state.settledMapKey = state.mapKey;
+        performance.mark(`${state.key}:map-settled`);
         state.events.next({ key: "map-settled" });
       }, settledMs),
       onTick() {
@@ -322,6 +324,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       setNextPending(partial) {
         const next = { ...state.pending };
         for (const [key, value] of entries(partial)) value ? (next[key] = true) : delete next[key];
+        for (const [key] of entries(state.pending)) if (!next[key]) performance.mark(`${state.key}:${key}`); // seen in a trace
         state.set({ pending: next });
         state.mapSettled();
       },

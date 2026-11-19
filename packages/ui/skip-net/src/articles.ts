@@ -1,12 +1,17 @@
 import { pause } from "@npc-cli/util/legacy/generic";
-import { type ComponentType, type LazyExoticComponent, lazy } from "react";
+import { type ComponentType, createElement, Fragment, type LazyExoticComponent, lazy } from "react";
 
 export type ArticleComponents = Record<string, ComponentType<any>>;
 type ArticleContent = ComponentType<{ components?: ArticleComponents }>;
 
-/** Not eager, so each article is a chunk of its own, fetched when first shown */
-const loaders = import.meta.glob<{ default: ArticleContent }>("./articles/*/*.mdx");
-const keyToLoader = new Map(Object.entries(loaders).map(([path, load]) => [toKey(path), load]));
+/** An article's own `{folder}/{key}.mdx`, and its sections `{folder}/{key}/*.mdx`. Each is a chunk, fetched when first shown */
+const loaders = import.meta.glob<{ default: ArticleContent }>(["./articles/*/*.mdx", "./articles/*/*/*.mdx"]);
+type Loader = (typeof loaders)[string];
+/** Each key's files: its own first, then its sections by name. Without `.mdx`, `{key}` sorts before `{key}/…` */
+const keyToLoaders = new Map<string, Loader[]>();
+for (const path of Object.keys(loaders).sort((a, b) => (a.slice(0, -4) < b.slice(0, -4) ? -1 : 1))) {
+  keyToLoaders.set(toKey(path), [...(keyToLoaders.get(toKey(path)) ?? []), loaders[path]]);
+}
 const keyToFolder = new Map(Object.keys(loaders).map((path) => [toKey(path), toFolder(path)]));
 
 /** Folder order. Unlisted folders follow, alphabetically */
@@ -42,8 +47,8 @@ export const articleFolders = [...new Set(keyToFolder.values())]
 /** Every article, folder by folder */
 export const articleKeys = articleFolders.flatMap((x) => x.articleKeys);
 
-if (import.meta.env.DEV && keyToLoader.size < Object.keys(loaders).length) {
-  console.warn("SkipNet: two articles share a name, so one is hidden", Object.keys(loaders));
+if (import.meta.env.DEV && Object.keys(loaders).some((path) => keyToFolder.get(toKey(path)) !== toFolder(path))) {
+  console.warn("SkipNet: two folders hold an article of one name, so one is hidden", Object.keys(loaders));
 }
 
 /** The folder holding the article, e.g. `npc` or `video` */
@@ -58,15 +63,34 @@ export function articleKeyOf(key: undefined | string): undefined | string {
 
 const lazyByKey = new Map<string, LazyExoticComponent<ArticleContent>>();
 
-/** The article's content, loaded on first render, at least `firstShowMs` in. A Suspense must be above it */
+/**
+ * The article's files one after another, loaded on first render, at least `firstShowMs` in.
+ * A Suspense must be above it.
+ */
 export function getArticle(key: string): undefined | LazyExoticComponent<ArticleContent> {
-  const load = keyToLoader.get(key);
-  if (load === undefined) return undefined;
+  const loads = keyToLoaders.get(key);
+  if (loads === undefined) return undefined;
   let Content = lazyByKey.get(key);
   if (Content === undefined) {
-    lazyByKey.set(key, (Content = lazy(() => Promise.all([load(), pause(firstShowMs)]).then(([m]) => m))));
+    lazyByKey.set(
+      key,
+      (Content = lazy(() =>
+        Promise.all([Promise.all(loads.map((load) => load())), pause(firstShowMs)]).then(([ms]) => ({
+          default: (props: { components?: ArticleComponents }) => Sections(ms, props),
+        })),
+      )),
+    );
   }
   return Content;
+}
+
+/** Each file in a `section` of its own, which `ArticlePane` frames */
+function Sections(ms: { default: ArticleContent }[], props: { components?: ArticleComponents }) {
+  return createElement(
+    Fragment,
+    null,
+    ...ms.map((m, i) => createElement("section", { key: i }, createElement(m.default, props))),
+  );
 }
 
 /** Its spinner shows at least this long, so it never just flickers */
@@ -76,12 +100,12 @@ function rank(order: string[], key: string) {
   return order.indexOf(key) + 1 || Number.POSITIVE_INFINITY;
 }
 
-/** `./articles/npc/npc-spawn.mdx` -> `npc-spawn` */
+/** `./articles/npc/npc-spawn.mdx` or `./articles/npc/npc-spawn/001-foo.mdx` -> `npc-spawn` */
 function toKey(path: string) {
-  return path.replace(/^.*\/(.+)\.mdx$/, "$1");
+  return path.replace(/^\.\/articles\/[^/]+\/([^/]+?)(\.mdx|\/[^/]+\.mdx)$/, "$1");
 }
 
 /** `./articles/npc/npc-spawn.mdx` -> `npc` */
 function toFolder(path: string) {
-  return path.replace(/^.*\/(.+)\/[^/]+\.mdx$/, "$1");
+  return path.replace(/^\.\/articles\/([^/]+)\/.*$/, "$1");
 }

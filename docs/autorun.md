@@ -81,12 +81,12 @@ The autorun list shows each command's tty. If that tty has been closed, it shows
 
 ![reboot's steps](autorun/autorun-reboot.svg)
 
-`rebootWorld(worldKey, onStep)` in `run.ts` acts on every tty that belongs to the World (`WORLD_KEY`) and is running a process with the ptag `WORLD`. Every jsh/world process has that ptag, including those that opt out of World pauses (`docs/jsh-pause.md`).
+`rebootWorld(worldKey, onStep)` in `run.ts` acts on every tty that belongs to the World and is running a process with the ptag `WORLD`. A tty belongs by its shell's own `WORLD_KEY`, which `awaitWorld` waits on. Its tab's saved `WORLD_KEY` can differ, e.g. from an older layout, and such a tty would never reach its prompt. Every jsh/world process has that ptag, including those that opt out of World pauses (`docs/jsh-pause.md`).
 
 The three steps run in all of those ttys at once:
 
 1. **killing jobs**: kills the foreground job, if there is one (`killSessionLeader`, like ctrl-c). Then kills every job that has a `WORLD` process (`sessionApi.kill`, like the Jobs panel's x).
-2. **running profiles**: waits for the prompt, then runs the tty's profile again (`ttyShell.runProfile`). Its `awaitWorld` creates a new pause group, and the profile's listeners attach to the current World.
+2. **running profiles**: waits for the prompt, then runs the tty's profile again (`ttyShell.runProfile`). A tty without its prompt within 2s (`interactiveWaitMs`) is skipped with a warning, so it can't hang the reboot. Its `awaitWorld` creates a new pause group, and the profile's listeners attach to the current World.
 3. **autorun**: runs autorun (`runPrelude`), if the switch is on.
 
 Each step shows in the pill with a spinner, and is printed in each tty, e.g. `reboot killing jobs`. After each step there is a short pause (`stepPauseMs`, 400ms) so you can see it.

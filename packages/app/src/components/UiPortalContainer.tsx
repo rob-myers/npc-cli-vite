@@ -1,6 +1,6 @@
 import { TabThemeContext } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import type { UiInstanceMeta, UiStoreByIdEntry } from "@npc-cli/ui-sdk";
+import type { UiInstanceMeta, UiPackageDef, UiStoreByIdEntry } from "@npc-cli/ui-sdk";
 import { recordUiLoad } from "@npc-cli/ui-sdk/analytics";
 import { themeOfUi } from "@npc-cli/ui-sdk/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -43,7 +43,7 @@ const UiPortal = ({ meta, portal, everSeen }: UiStoreByIdEntry) => {
         <UiContext.Provider value={ctxt}>
           <TabThemeContext.Provider value={theme}>
             <UiErrorBoundary meta={meta}>
-              <Suspense fallback={<Spinner />}>
+              <Suspense fallback={(def as UiPackageDef).loading?.() ?? <Spinner />}>
                 <ReportLoad meta={meta} startedAt={startedAt} />
                 {simulatedStaleUi === meta.uiKey ? (
                   <SimulatedChunkFailure uiKey={meta.uiKey} />
