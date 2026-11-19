@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 372" width="760" height="372" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+<defs>
+<marker id="right" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker>
+</defs>
+<rect width="760" height="372" rx="10" fill="#1b1d22"/>
+<text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">when autorun runs, told apart by the World each key last mounted with</text>
+<text x="24" y="52" fill="#9aa0a6" font-size="12">getMountStatus in run.ts: nothing remembered, a different World, or the same one</text>
+
+<!-- row: page load -->
+<rect x="24" y="70" width="250" height="52" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="40" y="91" fill="#e6e6e6" font-weight="600">a page load</text>
+<text x="40" y="108" fill="#9aa0a6" font-size="12">nothing remembered for the key</text>
+<line x1="274" y1="96" x2="306" y2="96" stroke="#7a8290" stroke-width="1.5" marker-end="url(#right)"/>
+<rect x="308" y="70" width="428" height="52" rx="8" fill="#1d3329" stroke="#4ec98a"/>
+<text x="324" y="91" fill="#7fe0ad" font-weight="600">autorun, if the switch is on</text>
+<text x="324" y="108" fill="#9aa0a6" font-size="12">the pill says "booting" until each command has started</text>
+
+<!-- row: remount -->
+<rect x="24" y="136" width="250" height="52" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="40" y="157" fill="#e6e6e6" font-weight="600">a World remount</text>
+<text x="40" y="174" fill="#9aa0a6" font-size="12">e.g. the World menu's, a new <tspan font-family="ui-monospace, monospace">w</tspan></text>
+<line x1="274" y1="162" x2="306" y2="162" stroke="#7a8290" stroke-width="1.5" marker-end="url(#right)"/>
+<rect x="308" y="136" width="428" height="52" rx="8" fill="#33291a" stroke="#e0b050"/>
+<text x="324" y="157" fill="#f0c870" font-weight="600">reboot, whatever the switch says</text>
+<text x="324" y="174" fill="#9aa0a6" font-size="12">its ttys' world jobs and listeners belong to the old World</text>
+
+<!-- row: same World -->
+<rect x="24" y="202" width="250" height="52" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="40" y="223" fill="#e6e6e6" font-weight="600">only the pill remounts</text>
+<text x="40" y="240" fill="#9aa0a6" font-size="12">the same <tspan font-family="ui-monospace, monospace">w</tspan>, e.g. a hot reload</text>
+<line x1="274" y1="228" x2="306" y2="228" stroke="#7a8290" stroke-width="1.5" marker-end="url(#right)"/>
+<rect x="308" y="202" width="428" height="52" rx="8" fill="#22252b" stroke="#3a404a" stroke-dasharray="4 3"/>
+<text x="324" y="223" fill="#9aa0a6" font-weight="600">nothing</text>
+<text x="324" y="240" fill="#9aa0a6" font-size="12">what runs keeps running</text>
+
+<!-- row: map change -->
+<rect x="24" y="268" width="250" height="52" rx="8" fill="#262a31" stroke="#3a404a"/>
+<text x="40" y="289" fill="#e6e6e6" font-weight="600">a map change</text>
+<text x="40" y="306" fill="#9aa0a6" font-size="12">the same <tspan font-family="ui-monospace, monospace">w</tspan>, a new mapKey</text>
+<line x1="274" y1="294" x2="306" y2="294" stroke="#7a8290" stroke-width="1.5" marker-end="url(#right)"/>
+<rect x="308" y="268" width="428" height="52" rx="8" fill="#22252b" stroke="#3a404a" stroke-dasharray="4 3"/>
+<text x="324" y="289" fill="#9aa0a6" font-weight="600">nothing</text>
+<text x="324" y="306" fill="#9aa0a6" font-size="12">its jobs are held from map-changing until npcs-restored</text>
+
+<text x="24" y="348" fill="#9aa0a6" font-size="12">Switching autorun on later runs nothing until the next page load, remount or reboot.</text>
+</svg>

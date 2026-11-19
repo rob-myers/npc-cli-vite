@@ -95,7 +95,7 @@ later descendants.
   `/lib`, and the same for every session. Every module under `jsh/world/` gets `{ WORLD_PAUSABLE: true, WORLD: true }`, found with
   `import.meta.glob`; dotted helpers such as `plan.main.ts` are excluded. The `run` builtin adds a
   module's defaults to its process, but only where a tag is absent.
-- **`WORLD`** (`worldPtag`, `jsh/world/ptag.const.ts`) says a process is the World's, whatever its pausability: opting out never clears it. A reboot kills the jobs having one (`docs/jsh-prelude.md`).
+- **`WORLD`** (`worldPtag`, `jsh/world/ptag.const.ts`) says a process is the World's, whatever its pausability: opting out never clears it. A reboot kills the jobs having one (`docs/autorun.md`).
 - **Opting out:** `api.setPausable("world", false)`, i.e. the ptag `WORLD_PAUSABLE: false`, stops a
   process making its job a member, releasing any hold it had, and children spawned afterwards inherit
   `false`. An inherited `false` beats a module default, so an opted-out process's descendants stay out.
