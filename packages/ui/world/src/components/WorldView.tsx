@@ -1190,6 +1190,7 @@ export function WorldView(props: React.PropsWithChildren) {
           state.warmingPick = true;
           state.syncRenderMode();
           await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
+          const startMark = performance.mark(`${w.key}:warm-pick`);
           try {
             renderer.setMRT(state.npcMaskMrt);
             renderer.setRenderTarget(state.pickRT);
@@ -1207,6 +1208,7 @@ export function WorldView(props: React.PropsWithChildren) {
             renderer.setRenderTarget(null);
             state.warmingPick = false;
             state.syncRenderMode();
+            performance.measure(`${w.key}:warm-pick`, startMark.name);
           }
         });
       },

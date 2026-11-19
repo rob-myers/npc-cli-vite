@@ -291,6 +291,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           return;
         }
         state.settledMapKey = state.mapKey;
+        performance.mark(`${state.key}:map-settled`);
         state.events.next({ key: "map-settled" });
       }, settledMs),
       onTick() {
@@ -322,6 +323,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       setNextPending(partial) {
         const next = { ...state.pending };
         for (const [key, value] of entries(partial)) value ? (next[key] = true) : delete next[key];
+        for (const [key] of entries(state.pending)) if (!next[key]) performance.mark(`${state.key}:${key}`); // seen in a trace
         state.set({ pending: next });
         state.mapSettled();
       },
