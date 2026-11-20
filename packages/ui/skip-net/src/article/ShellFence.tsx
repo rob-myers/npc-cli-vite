@@ -24,9 +24,9 @@ export function ShellFence(props: ComponentProps<"pre">) {
   return <pre {...props} />;
 }
 
-/** Capped until its corner is dragged, which sets an inline height */
+/** Capped until its corner is dragged, which sets an inline height. A container, so a narrow one stacks its rows */
 const fenceClass = tw(
-  "group/fence not-prose my-3 py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence",
+  "@container group/fence not-prose my-3 py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence",
 );
 /** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
 const moreClass = tw(
@@ -131,28 +131,29 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
         example.blankBefore > 0 && "mt-0.5",
         // run, comment, then copy and expand. Expanded, its command goes under the comment
         "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
+        narrowRowCss,
       )}
     >
       <button
         type="button"
         title={sessionKey === null ? "no tty to run in" : "run"}
         disabled={sessionKey === null}
-        className={runButtonCss}
+        className={cn(runButtonCss, "@max-xs:order-3")}
         onClick={() => run(example.id, src)}
       >
         <PlayIcon weight="fill" className={runIconCss} />
       </button>
       {commented ? (
         <code
-          className={cn(codeCss, tokenCss.comment, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
+          className={cn(codeCss, tokenCss.comment, narrowTextCss, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
           onClick={toggle}
         >
           {example.commentLines.join("\n")}
         </code>
       ) : (
-        command
+        <div className={cn(narrowTextCss, "min-w-0")}>{command}</div>
       )}
-      <span className="flex items-center gap-0.5">
+      <span className="flex items-center gap-0.5 @max-xs:order-4 @max-xs:justify-self-end">
         {example.bootable && <AutorunToggle example={example} />}
         <button type="button" title="copy" className={iconButtonCss} onClick={() => copy(src)}>
           {copiedSrc === src ? <CheckIcon className={cn(iconCss, "text-term-ok")} /> : <CopyIcon className={iconCss} />}
@@ -168,7 +169,9 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
           </button>
         )}
       </span>
-      {commented && expanded && <div className="col-start-2 col-span-2 mt-0.5">{command}</div>}
+      {commented && expanded && (
+        <div className="col-start-2 col-span-2 mt-0.5 @max-xs:order-2 @max-xs:col-start-1">{command}</div>
+      )}
     </div>
   );
 }
@@ -199,6 +202,10 @@ function AutorunToggle({ example }: { example: Example }) {
 }
 
 const touchDevice = isTouchDevice();
+/** A row in a narrow fence: its text across the top, then run on the left and the rest on the right */
+const narrowRowCss = tw("@max-xs:grid-cols-[auto_1fr] @max-xs:gap-y-1");
+/** Its comment, or uncommented command, across a narrow row */
+const narrowTextCss = tw("@max-xs:order-1 @max-xs:col-span-2");
 /** How long after a resize its height is saved */
 const saveDelayMs = 300;
 /** MDX's class for a fence's language, `sh` or the like */
