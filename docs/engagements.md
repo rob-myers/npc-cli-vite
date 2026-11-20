@@ -149,13 +149,17 @@ A hit reacts to its point and its way (`w.npc.hit`'s `impact`, from `strike`).
 
 ### Kill
 
-A `kill` plays the hit's pain clip, then holds them still (`anim.dead`, `holdStill`).
+A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 
-- Its end pose is `hitConfig.dead` by posture: `collapsed` stood, else their pacified clip. It is paused at `deadSecs`.
+- Stood, they fall back dead (`hitConfig.die`, `die_back`), held on its last frame: on their back, arms a little out, the
+  head about 1m behind where they stood.
+- Falling, they need `hitConfig.lieWidth` either side. A wall or obstacle nearer has their agent pinned that far off it
+  (`roomToLie`, by `npc.roomAhead`), so they slide clear as they fall.
+- Sat, lain or already collapsed, their pose freezes (`hitConfig.dead`, paused at `deadSecs`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
 - `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now.
-- To come: falls by the shot's way, ending lain, fitted between walls.
+- To come: falling forwards when shot from behind, a crumple where there is no room to lie, and turning to fit.
 
 ## Targeting
 

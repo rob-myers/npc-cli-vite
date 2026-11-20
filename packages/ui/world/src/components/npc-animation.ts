@@ -405,6 +405,7 @@ export class NpcAnimation {
     /** Held down already, e.g. collapsed: they stay so, rather than sink again */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false;
     const sink = outcome === "down" && posture === "stand" && region === "torso" && held === false;
+    if (outcome === "kill" && posture === "stand") return hitConfig.die;
     return sink ? hitConfig.sink : hitConfig.clips[posture][region];
   }
 
@@ -417,11 +418,12 @@ export class NpcAnimation {
     this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: this.hurt?.key ?? null, dead: true });
   }
 
-  /** Killed: their pose stops at `hitConfig.deadSecs`, eyes shut and not breathing */
+  /** Killed: their pose stops, eyes shut and not breathing. A clip played once stops at its end, else at `deadSecs` */
   holdStill() {
-    const action = this.mixer.existingAction(this.npc.clips[this.restKey]);
+    const clip = this.npc.clips[this.restKey];
+    const action = this.mixer.existingAction(clip);
     if (action !== null) {
-      action.time = hitConfig.deadSecs;
+      action.time = onceClips.has(this.restKey) ? clip.duration : hitConfig.deadSecs;
       action.paused = true; // `setPose` resets it, so the next pose plays
     }
     if (this.breath.on === true) this.setBreathing(false);
@@ -622,6 +624,25 @@ export class NpcAnimation {
     fore.written.copy(fore.bone.quaternion.multiplyQuaternions(tmpSwingTo, tmpTwistFrom));
   }
 
+  /** Falling dead, they need `hitConfig.lieWidth` either side: a wall nearer has their agent pinned away from it */
+  roomToLie() {
+    const { npc } = this;
+    const { nodeRef } = npc;
+    if (nodeRef === null) return;
+    const half = hitConfig.lieWidth;
+    const ry = npc.rotation.y;
+    const side = { x: Math.cos(ry), y: -Math.sin(ry) };
+    const roomOn = (sign: number) => {
+      const way = { x: sign * side.x, y: sign * side.y };
+      return npc.roomAhead(npc.point, nodeRef, half, way, way).room;
+    };
+    /** Metres along `side`: away from whichever side is short, never past the other */
+    const shift = Math.max(0, half - roomOn(-1)) - Math.max(0, half - roomOn(1));
+    if (Math.abs(shift) < 0.02) return;
+    const to = { x: npc.point.x + shift * side.x, y: npc.point.y + shift * side.y };
+    npc.pinTo(this.w.npc.getClosestPoly(to));
+  }
+
   /** Roll one lain onto `to`, a lie clip */
   rollOnto(to: AnimationClipKey) {
     const from = keyOf(this.idleClip);
@@ -694,7 +715,7 @@ export class NpcAnimation {
     const down = impact === undefined || impact.outcome === "down";
     /** What follows the clip: killed, the dead pose. One pacified stays so, whatever else hits them */
     const next = kill
-      ? hitConfig.dead[postureOf(keyOf(this.idleClip))]
+      ? (hitConfig.dead[postureOf(keyOf(this.idleClip))] ?? null)
       : key !== null && down && pacified === false
         ? (hitConfig.next[key] ?? held)
         : held;
@@ -702,6 +723,7 @@ export class NpcAnimation {
     if (key !== null) {
       this.dead = kill;
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
+      if (key === hitConfig.die) this.roomToLie();
     } else if (dead || this.eyes.look === "scared") {
       this.dead = false;
       this.setEyes("open");
@@ -1322,9 +1344,11 @@ export class NpcAnimation {
   tickHurt(delta: number) {
     const { hurt } = this;
     if (hurt === null || onceClips.has(hurt.key) === false) return;
+    const { duration } = this.npc.clips[hurt.key];
+    if (this.dead === true && hurt.secs >= duration) return; // held on its last frame
     hurt.secs += delta;
-    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
-    if (hurt.next === null) return this.setHurt(null);
+    if (hurt.secs < duration) return;
+    if (hurt.next === null) return this.dead === true ? this.holdStill() : this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
     this.setPose(hurt.next);
     if (this.dead === true) this.holdStill();
@@ -1580,6 +1604,7 @@ const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((
 const onceClips = new Set<AnimationClipKey>([
   ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
   hitConfig.sink,
+  hitConfig.die,
 ]);
 
 /** A pose stood still in, whose feet a stance may hold apart */
