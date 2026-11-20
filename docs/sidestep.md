@@ -1,6 +1,6 @@
 # Sidestep
 
-jsh `sidestep` (`packages/cli/src/jsh/world/sidestep.ts`, in the default PROFILE) has idle npcs make way for a walker coming at them or held up by them. It is a keyed tick, not a process. `sidestep off` removes it.
+jsh `sidestep` (`packages/cli/src/jsh/world/sidestep.ts`, in the default PROFILE) has idle npcs make way for a walker coming at them or held up by them. It is a keyed tick, not a process. A bare `sidestep` prints its settings, and the profile's `sidestep on` doesn't. `sidestep off` removes it.
 
 ![sidestep, overall](sidestep/sidestep-overview.svg)
 

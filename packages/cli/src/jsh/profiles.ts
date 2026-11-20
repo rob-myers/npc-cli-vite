@@ -7,7 +7,7 @@ awaitWorld
 predicates
 inventory
 comms
-sidestep
+sidestep on
 sounds
 spots auto
 

@@ -12,6 +12,7 @@ import { heading, headingOf, pathOf, SidestepLookout, table } from "./sidestep-l
 /**
  * Npcs make way for a walker coming at them or held up by them
  * - idempotent since it attaches a keyed listener
+ * - bare, it also prints its settings, which `on` leaves out
  * - chooses sidestep kind via its SkipNet pane
  * - `kind:` and `back:` set that item's picks, and a number tunes the kind, e.g. `reach:2`.
  * - `--debug` logs each choice and why to the tty, and moreover draws in-world lines, until killed.
@@ -20,6 +21,7 @@ import { heading, headingOf, pathOf, SidestepLookout, table } from "./sidestep-l
  *
  * ```sh
  * sidestep
+ * sidestep on
  * sidestep --debug
  * sidestep --debug rob kate
  * sidestep kind:turn back:home
@@ -46,9 +48,13 @@ export async function* sidestep(ct: JshCli.RunArg) {
     yield* perfStatus(watcher.s);
     return;
   }
-  const { debug, ...picks } = api.jsArg(args, { "--debug": "debug" }) as { debug?: boolean } & Record<string, unknown>;
+  const quiet = args[0] === "on";
+  const { debug, ...picks } = api.jsArg(quiet ? args.slice(1) : args, { "--debug": "debug" }) as {
+    debug?: boolean;
+  } & Record<string, unknown>;
   setChoices(picks);
   watchWalkers(w);
+  if (args.length === 0) yield watcher?.s.choices;
   if (debug === true)
     yield* watchChoices(
       ct,
