@@ -24,7 +24,7 @@ import { heading, headingOf, pathOf, SidestepLookout, table } from "./sidestep-l
  * sidestep --debug rob kate
  * sidestep kind:turn back:home
  * sidestep kind:wall reach:2
- * sidestep chain:true
+ * sidestep chain:false
  * sidestep status
  * sidestep off
  * ```
@@ -409,7 +409,7 @@ function debugChoices(): SidestepDebugState {
     tune: tuneOf(saved?.tune),
     returns: { ...returnDefaults, ...saved?.returns },
     open: { tune: true, returns: true, ...saved?.open },
-    chain: saved?.chain ?? false,
+    chain: saved?.chain ?? true,
   };
   sharedFolder.sidestep = choices; // the pane writes to it as they are picked
   return choices;

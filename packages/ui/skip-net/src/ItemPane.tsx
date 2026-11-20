@@ -1,16 +1,29 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ReactNode, useRef } from "react";
+import { FitWindow } from "./desktop/FitWindow";
+import { articleRows, itemCols } from "./desktop/windows";
+import type { SkipNetWindow } from "./schema";
 
-/** One mounted item, else how to mount it */
-export function ItemPane(props: { item?: JshCli.SkipNetItem; itemKey?: string; worldKey: string }) {
-  const { item, itemKey, worldKey } = props;
-  if (item === undefined) {
-    return <div className="p-2 text-mac-muted">{`run \`${itemKey}\` in a ${worldKey} session`}</div>;
-  }
+/** One mounted item, else how to mount it. In a window being fitted, fits it to the item */
+export function ItemPane(props: {
+  item?: JshCli.SkipNetItem;
+  itemKey?: string;
+  worldKey: string;
+  win?: SkipNetWindow;
+}) {
+  const { item, itemKey, win, worldKey } = props;
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <div className="size-full overflow-auto p-2">
-      <ItemBoundary item={item}>
-        <item.Component />
-      </ItemBoundary>
+      {item === undefined ? (
+        <div className="text-mac-muted">{`run \`${itemKey}\` in a ${worldKey} session`}</div>
+      ) : (
+        <div ref={contentRef} className={win ? "w-max" : undefined}>
+          <ItemBoundary item={item}>
+            <item.Component />
+          </ItemBoundary>
+        </div>
+      )}
+      {win?.fit && <FitWindow contentRef={contentRef} win={win} maxRows={articleRows} maxCols={itemCols} />}
     </div>
   );
 }

@@ -3,13 +3,14 @@ import { cn, Spinner, tw } from "@npc-cli/util";
 import { Suspense, useContext, useMemo, useRef, useState } from "react";
 import { articleFolderOf, articleKeyOf, getArticle } from "../articles";
 import { SkipNetContext } from "../context";
+import { FitWindow } from "../desktop/FitWindow";
+import { articleRows } from "../desktop/windows";
 import { SessionPicker } from "../SessionPicker";
 import type { SkipNetWindow } from "../schema";
 import { useSessionRunner } from "../use-session-runner";
 import { useWindowSession } from "../use-window-session";
 import { articleComponents } from "./components";
 import { ArticleContext, type ArticleCtxt } from "./context";
-import { FitHeight } from "./FitHeight";
 
 /** An article, its commands run in the window's session */
 export function ArticlePane({ win }: { win: SkipNetWindow }) {
@@ -67,7 +68,7 @@ export function ArticlePane({ win }: { win: SkipNetWindow }) {
             >
               {content}
             </article>
-            {win.fit && <FitHeight key={articleKey} articleRef={articleRef} win={win} />}
+            {win.fit && <FitWindow key={articleKey} contentRef={articleRef} win={win} maxRows={articleRows} />}
           </Suspense>
         </ArticleContext.Provider>
       </div>

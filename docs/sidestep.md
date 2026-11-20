@@ -17,7 +17,7 @@ The diagrams are in `docs/sidestep/`. `diagrams.py` there regenerates heldUp's s
 
 `SidestepLookout` (`sidestep-lookout.ts`) decides who is in whose way, from its two methods' numbered stages. It is jsh's alone: `sidestep status` is the way in.
 
-**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, are passed over (`ownMove`): they make way, never ask for it, so one npc's step cannot set others off. Tick `chain` in its pane, or `sidestep chain:true`, to let them look too, e.g. to watch how a crowd behaves.
+**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, look too by default (`chain`), so one npc's step may set others off through a crowd. Untick `chain` in its pane, or `sidestep chain:false`, and they are passed over (`ownMove`): they make way, never ask for it.
 
 **Coming** (`coming`) runs over every walker each tick. Seen from above, with rob (`W`) walking right:
 
@@ -159,8 +159,8 @@ Tuning is in metres, its defaults (`tuneDefaults`) in brackets:
   - a picker of the kind every npc tries next: `aside`, `turn`, `shuffle`, `back`, `wall`, `doorway`, `stand`;
   - a number field for each of that kind's tuning, e.g. `wall`'s `reach`. Its keys stay out of the World, and Enter gives the World the keys back;
   - a picker of where they go back to once the walker has gone: `last` (the default), `home` or `stay`. Unless `stay`, a field each for `clear` and `idle` follows: when they go back (`returnDefaults`).
-  - Each set of fields sits under a toggle ("▸ tuning", "▸ when"), open or shut as last left (`open`), and shown only when it has fields.
-  - a `chain` checkbox, off by default: sidestep's own movers look too, so steps may chain through a crowd.
+  - Each picker heads a section, "make way" and "go back", whose caret shows or hides its fields, as last left (`open`). A section without fields has no caret.
+  - a `chain` checkbox, on by default: sidestep's own movers look too, so steps may chain through a crowd.
   - All are kept in `/shared/sidestep` (`debugChoices`), which the watcher and the item both read and write, so a re-run, a hot reload or a page reload keeps them. Tuning added since keeps its default (`tuneOf`).
   - `sidestep kind:wall back:home reach:2 clear:2` sets them from jsh (`setChoices`), e.g. for the examples below. A number tunes the kind, or going back, and one neither takes says what does: `wall takes: reach, clear, idle`.
 - `sidestepConfig` in `sidestep.ts` holds the rest: `reactSecs`, `back` (the picker's default), `says` and the settle and return constants.

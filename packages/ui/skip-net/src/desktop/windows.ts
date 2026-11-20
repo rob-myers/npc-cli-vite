@@ -17,6 +17,8 @@ export const freeCompactor = getCompactor(null, true);
 
 /** A new article window's height, which fitting to its article never exceeds */
 export const articleRows = 24;
+/** A new item window's width, which fitting to its item never exceeds */
+export const itemCols = 20;
 
 /** A window's height in pixels, `rows` tall */
 export function pxOfRows(rows: number) {
@@ -105,7 +107,7 @@ export function newWindow(windows: SkipNetWindow[], content: SkipNetContent): Sk
   const x = last === undefined || last.x + cascadeCells + w > desktopCols ? 0 : last.x + cascadeCells;
   const y = last === undefined ? 0 : last.y + cascadeCells;
   const z = (frontOf(windows)?.z ?? 0) + 1;
-  const fit = content.kind === "article" || undefined;
+  const fit = content.kind === "article" || content.kind === "item" || undefined;
   return { ...content, id: `w${last === undefined ? 1 : idNum(last) + 1}`, x, y, w, h, z, fit };
 }
 
@@ -168,5 +170,5 @@ const sizes: Record<SkipNetKind, [number, number]> = {
   folder: [20, 12],
   /** Tall enough for a thread with no comments yet */
   chat: [24, 17],
-  item: [20, 16],
+  item: [itemCols, 16],
 };
