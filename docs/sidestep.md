@@ -162,7 +162,15 @@ Tuning is in metres, its defaults (`tuneDefaults`) in brackets:
   - Each picker heads a section, "make way" and "go back", whose caret shows or hides its fields, as last left (`open`). A section without fields has no caret.
   - a `chain` checkbox, on by default: sidestep's own movers look too, so steps may chain through a crowd.
   - All are kept in `/shared/sidestep` (`debugChoices`), which the watcher and the item both read and write, so a re-run, a hot reload or a page reload keeps them. Tuning added since keeps its default (`tuneOf`).
-  - `sidestep kind:wall back:home reach:2 clear:2` sets them from jsh (`setChoices`), e.g. for the examples below. A number tunes the kind, or going back, and one neither takes says what does: `wall takes: reach, clear, idle`.
+  - `sidestep kind:wall back:home reach:2 clear:2` sets them from jsh (`setChoices`), e.g. for the examples below. A number tunes the kind, or going back, and one neither takes says what does: `wall takes: reach, clear, idle, chain`. `kind:none` is `stand`.
+  - A "per npc in {mapKey}" section lists each npc's own rule on this map, greyed if not spawned, each with an x to remove it. It is not edited here.
+
+## Per npc
+
+- An npc's own rule overrides the pane's choices for them alone, field by field, e.g. only `kind`. It is kept in `/shared/map/{mapKey}/pred` (`sidestepRules`), so per map, and outlives the npc, so a respawn keeps it.
+- `sidestep for:rob,kate kind:wall back:home reach:2` sets it, merged into any already there. `sidestep for:rob` prints rob's choices, and `sidestep for:rob reset` drops the rule.
+- Each is read live (`choicesFor`): `kind` and `tune` by the npc making way, `back` and `returns` by the npc going back, and `chain` by the mover. So `for:` needs no restart.
+- A bare `sidestep` prints the pane's choices, then, if any, this map's rules as one object by npcKey.
 - `sidestepConfig` in `sidestep.ts` holds the rest: `reactSecs`, `back` (the picker's default), `says` and the settle and return constants.
 - Keep `reactSecs` short: a walker motionless for `stuckDuration` (0.8s) in all is stuck, and their move fails.
 - A running `sidestep --debug` goes quiet once `sidestep.ts` hot-reloads. Kill it and run it again.
@@ -269,4 +277,4 @@ cost (real ms)
   - dashed amber: `rob passed by kate`, from the walker to them, level with or behind his heading
 - teal: their way back, said as `kate returns: last 0.8m, rob 1.6m off` or `kate returns: home 1.2m after 2 steps, rob stopped 1.1m off`, else `kate didn't return: …` in red
 
-Each plan's lines replace that npc's last, all of a tick's drawn together in one redraw (`flush`, `w.debug.setPolylines`, where `null` removes a line). It asks only for a frame (`w.r3f.invalidate`). `w.view.forceUpdate` would run a tick, whose events queue another `flush`, freezing the page. With `chain`, skips whose walker is sidestep's own mover go unsaid and undrawn: in a crowd there are too many. For a big crowd, `sidestep --debug rob` keeps it to what involves rob. Choices are World events (`key: "sidestep"`), so `events` shows them too. One `--debug` runs at a time: a new one ends the last (`endDebug`), whose cleanup leaves the new one's listener be.
+Each plan's lines replace that npc's last, all of a tick's drawn together in one redraw (`flush`, `w.debug.setPolylines`, where `null` removes a line). It asks only for a frame (`w.r3f.invalidate`). `w.view.forceUpdate` would run a tick, whose events queue another `flush`, freezing the page. With `chain`, skips whose walker is sidestep's own mover go unsaid and undrawn: in a crowd there are too many. For a big crowd, `sidestep --debug:rob` keeps it to what involves rob, and `--debug:rob,kate` to either. Choices are World events (`key: "sidestep"`), so `events` shows them too. One `--debug` runs at a time: a new one ends the last (`endDebug`), whose cleanup leaves the new one's listener be.

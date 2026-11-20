@@ -2,16 +2,18 @@
 
 import { cn, tw } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 /** Sidestep's SkipNet pane: the kind npcs try next, its limits, and where and when they go back */
-export function SidestepDebug({ w, s, kinds, backs }: Props) {
+export function SidestepDebug({ w, s, kinds, backs, rules }: Props) {
   const [, setTick] = useState(0);
+  useEffect(() => rules.listen(() => setTick((n) => n + 1)), [rules]);
   /** Redraws, and gives the keys back to the World */
   const touch = () => {
     setTick((n) => n + 1);
     w.view.focus();
   };
+
   /** A section's heading, its caret showing or hiding its fields when it has any */
   const heading = (name: keyof SidestepOpen, label: string, hasFields: boolean) =>
     hasFields ? (
@@ -64,64 +66,121 @@ export function SidestepDebug({ w, s, kinds, backs }: Props) {
   const tune = s.tune[s.kind];
   const hasTune = Object.keys(tune).length > 0;
   const hasReturns = s.back !== "stay";
+  const ruleRows = rules.list();
   return (
     <div className={rootClass}>
-      {heading("tune", "make way", hasTune)}
-      <div className={gridClass}>
-        <span className={labelClass}>kind</span>
-        <Picker
-          value={s.kind}
-          options={kinds}
-          title="debug: how npcs make way next"
-          className={pickerClass}
-          popupClassName={pickerPopupClass}
-          onChange={(kind) => {
-            s.kind = kind;
-            touch();
-          }}
-        />
-        {hasTune && s.open.tune && fields(tune, s.kind, (key) => `debug: ${s.kind}'s ${key}, in metres`)}
+      <div className={cn(boxClass, generalClass)}>
+        <div className={sectionClass}>
+          {heading("tune", "make way", hasTune)}
+          <div className={gridClass}>
+            <span className={labelClass}>kind</span>
+            <Picker
+              value={s.kind}
+              options={kinds}
+              title="debug: how npcs make way next"
+              className={pickerClass}
+              popupClassName={pickerPopupClass}
+              onChange={(kind) => {
+                s.kind = kind;
+                touch();
+              }}
+            />
+            {hasTune && s.open.tune && fields(tune, s.kind, (key) => `debug: ${s.kind}'s ${key}, in metres`)}
+          </div>
+        </div>
+
+        <div className={sectionClass}>
+          {heading("returns", "go back", hasReturns)}
+          <div className={gridClass}>
+            <span className={labelClass}>to</span>
+            <Picker
+              value={s.back}
+              options={backs}
+              title="debug: once the walker has gone, back to their last spot, to home, or not at all"
+              className={pickerClass}
+              popupClassName={pickerPopupClass}
+              onChange={(back) => {
+                s.back = back;
+                touch();
+              }}
+            />
+            {hasReturns && s.open.returns && fields(s.returns, "back", (key) => returnTitles[key])}
+          </div>
+        </div>
+
+        <label
+          className={chainClass}
+          title="debug: npcs stepping aside or going back look too, so one's step may set others off"
+        >
+          <input
+            type="checkbox"
+            defaultChecked={s.chain}
+            className={checkClass}
+            onChange={(e) => {
+              s.chain = e.target.checked;
+              touch();
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          chain
+          <span className={labelClass}>others look too</span>
+        </label>
       </div>
 
-      {heading("returns", "go back", hasReturns)}
-      <div className={gridClass}>
-        <span className={labelClass}>to</span>
-        <Picker
-          value={s.back}
-          options={backs}
-          title="debug: once the walker has gone, back to their last spot, to home, or not at all"
-          className={pickerClass}
-          popupClassName={pickerPopupClass}
-          onChange={(back) => {
-            s.back = back;
-            touch();
-          }}
-        />
-        {hasReturns && s.open.returns && fields(s.returns, "back", (key) => returnTitles[key])}
-      </div>
-
-      <label
-        className={chainClass}
-        title="debug: npcs stepping aside or going back look too, so one's step may set others off"
-      >
-        <input
-          type="checkbox"
-          defaultChecked={s.chain}
-          className={checkClass}
-          onChange={(e) => {
-            s.chain = e.target.checked;
-            touch();
-          }}
-          onKeyDown={(e) => e.stopPropagation()}
-        />
-        chain
-        <span className={labelClass}>others look too</span>
-      </label>
+      {ruleRows.length > 0 && (
+        <div className={cn(boxClass, rulesClass)}>
+          {heading("rules", `per npc in ${w.mapKey}`, true)}
+          {s.open.rules && (
+            <div className={gridClass}>
+              {ruleRows.map(({ npcKey, text, spawned }) => (
+                <Fragment key={npcKey}>
+                  <span
+                    className={cn(ruleClass, spawned === false && "opacity-50")}
+                    title={`debug: sidestep for:${npcKey}`}
+                  >
+                    {npcKey} <span className={labelClass}>{text}</span>
+                  </span>
+                  <button
+                    type="button"
+                    className={removeClass}
+                    title={`debug: remove ${npcKey}'s rule`}
+                    onClick={() => {
+                      rules.remove(npcKey);
+                      touch();
+                    }}
+                  >
+                    ×
+                  </button>
+                </Fragment>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-type Props = { w: JshCli.WorldState; s: SidestepDebugState; kinds: WW.SidestepYield[]; backs: SidestepBack[] };
+type Props = {
+  w: JshCli.WorldState;
+  s: SidestepDebugState;
+  kinds: WW.SidestepYield[];
+  backs: SidestepBack[];
+  rules: SidestepRules;
+};
+
+/** One npc's own sidestep over the defaults: only the fields it sets */
+export type SidestepRule = Partial<Pick<SidestepDebugState, "kind" | "back" | "chain">> & {
+  tune?: Partial<Record<WW.SidestepYield, Record<string, number>>>;
+  returns?: Partial<SidestepReturns>;
+};
+
+/** The per-npc rules as the pane lists them, greyed if not spawned, each removable */
+export type SidestepRules = {
+  list(): { npcKey: string; text: string; spawned: boolean }[];
+  listen(onChange: () => void): () => void;
+  remove(npcKey: string): void;
+};
 
 /** What the hud's sidestep item reads and sets: the watcher's own */
 export type SidestepDebugState = {
@@ -135,8 +194,8 @@ export type SidestepDebugState = {
   chain: boolean;
 };
 
-/** The item's sections of fields: the kind's tuning, and when they go back */
-export type SidestepOpen = { tune: boolean; returns: boolean };
+/** The item's sections of fields: the kind's tuning, when they go back, and per-npc rules */
+export type SidestepOpen = { tune: boolean; returns: boolean; rules: boolean };
 
 /** Metres their walker must be from the spot before they go back: `clear`, else `idle` once the walker has stopped */
 export type SidestepReturns = { clear: number; idle: number };
@@ -149,8 +208,13 @@ const returnTitles: Record<string, string> = {
   idle: "debug: or once their walker has stopped this far from it",
 };
 
-/** Sections of label and value rows, in SkipNet's greys */
-const rootClass = tw("flex flex-col gap-1.5 w-full max-w-60 p-1 font-mono text-xs text-mac-text");
+/** The defaults, then this map's rules, each a tinted box in SkipNet's greys */
+const rootClass = tw("flex flex-col gap-3 w-full max-w-60 p-1 font-mono text-xs text-mac-text @sm:max-w-[34rem]");
+const sectionClass = tw("flex flex-col gap-1.5");
+const boxClass = tw("flex flex-col gap-1.5 rounded border border-mac-edge p-1.5");
+/** One column, else side by side in a wide enough container, e.g. SkipNet stacked */
+const generalClass = tw("bg-mac-text/[0.07] @sm:grid @sm:grid-cols-2 @sm:items-start @sm:gap-x-5");
+const rulesClass = tw("bg-mac-select/20");
 const headingClass = tw(
   "flex items-center gap-1 pb-0.5 border-b border-mac-edge text-left text-[10px] uppercase tracking-widest text-mac-muted",
 );
@@ -164,5 +228,7 @@ const pickerPopupClass = tw(
 const inputClass = tw(
   "w-12 rounded border border-mac-edge bg-mac-window px-1 text-right text-mac-text outline-none focus:border-mac-select [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none",
 );
-const chainClass = tw("flex items-center gap-1.5 pl-3 cursor-pointer");
+const chainClass = tw("flex items-center gap-1.5 pl-3 cursor-pointer @sm:col-span-2");
 const checkClass = tw("cursor-pointer accent-mac-select");
+const ruleClass = tw("min-w-0 break-words");
+const removeClass = tw("justify-self-end cursor-pointer px-1 text-mac-muted hover:text-mac-text");

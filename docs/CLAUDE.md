@@ -181,6 +181,10 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Between its doables they hop, at most `doableLook` each, e.g. toilet, toilet, sink, then out.
   - A walk onto its floor is refused as at a locked door: it stops outside and fails `room full` (`docs/doors.md`). So do `spawn` and `warp` onto it.
   - Refused, they shake their head (`w.e.roomFull`, which gives the error).
+- **Predicates over npcs** are Sets and Maps by npcKey in `/shared/map/{mapKey}/pred` (`pred.ts`), so per map.
+  - Most last only whilst the npc does, e.g. `picked`, `parked`, `padded`: removing them forgets it (`forget`).
+  - Some outlive them, still per map, e.g. `sidestep`'s per-npc rules (`sidestepRules`). A respawn keeps them.
+  - What applies to every map stays out of it, e.g. `/shared/sidestep`, sidestep's defaults.
 - **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
   - `act park` records via `parked.mark`. A move, respawn or removal unparks.
 - `padded` beside it is the same for `act pad`: by npcKey, the room they were stood with to walk right round them (`by`, from walls and from others).

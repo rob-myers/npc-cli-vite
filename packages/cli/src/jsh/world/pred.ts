@@ -1,6 +1,11 @@
 import { defaultNpcLabelColor } from "@npc-cli/ui__world/const.npc";
 import { sharedMapSlot } from "./shared.service";
+import type { SidestepRule } from "./sidestep-debug";
 
+/**
+ * Sets and Maps over npcs, by npcKey, kept per map.
+ * Most last only whilst the npc does (`forget`), but `sidestep` outlives them.
+ */
 type Predicates = {
   everPicked: Set<string>;
   lastPicked: null | string;
@@ -10,6 +15,8 @@ type Predicates = {
   parked: Map<string, number[]>;
   /** By npcKey, the room `pad` stood them clear by, of walls and doorways, and of everyone else */
   padded: Map<string, { walls: number; npcs: number }>;
+  /** By npcKey, their own sidestep over `/shared/sidestep`, kept for a respawn */
+  sidestep: Map<string, SidestepRule>;
   // ...
 };
 
@@ -24,6 +31,7 @@ const pred = sharedMapSlot<Predicates>("pred", () => ({
   player: null,
   parked: new Map(),
   padded: new Map(),
+  sidestep: new Map(),
 }));
 
 pred.setHandler(function onWorldEvent(e, w) {
@@ -81,6 +89,7 @@ function restorePred(mapKey: string) {
   if (p.picked instanceof Set === false) p.picked = new Set();
   if (p.padded instanceof Map === false) p.padded = new Map();
   if (p.parked instanceof Map === false) p.parked = new Map();
+  if (p.sidestep instanceof Map === false) p.sidestep = new Map();
   if (typeof p.lastPicked !== "string") p.lastPicked = null;
   if (typeof p.player !== "string") p.player = null;
   return p;
@@ -117,6 +126,11 @@ function forget(p: Predicates, npcKey: string) {
   p.everPicked.delete(npcKey);
   if (p.lastPicked === npcKey) p.lastPicked = null;
 }
+
+/** `sidestep`'s per-npc rules on this map. An object, so no shell function is made of it */
+export const sidestepRules = {
+  get: () => pred.get().sidestep,
+};
 
 /** `park`'s and `pad`'s side — objects, so no shell function is made of them. One or the other */
 export const parked = {
