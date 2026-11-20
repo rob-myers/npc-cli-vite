@@ -51,7 +51,6 @@ import {
   createFadeRooms,
   type FadeRooms,
   type FadeRoomsMode,
-  fadeRoomsModeByKey,
   MODE_FADE_SECS,
   nextFadeRoomsMode,
   parseFadeRoomsMode,
@@ -1044,12 +1043,6 @@ export function WorldView(props: React.PropsWithChildren) {
           if (w.pickMenu?.closeFocused() !== true) uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
-        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
-          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
-          if (e.repeat === false) {
-            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
-            w.menu?.update();
-          }
         } else if (e.key === "0") {
           if (e.repeat === false) {
             w.spots?.toggle();

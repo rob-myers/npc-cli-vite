@@ -246,16 +246,9 @@ export function roomsInViewFrom(w: WorldType, grKey: Geomorph.GmRoomKey): Geomor
  */
 export type FadeRoomsMode = "sight" | "sense" | "ship";
 
-/** Which key selects which mode */
-export const fadeRoomsModeByKey: Record<string, FadeRoomsMode> = {
-  "1": "sight",
-  "2": "sense",
-  "3": "ship",
-};
-
-/** The next mode round, for the fade button: `1` to `2` to `3` and back */
+/** The fade button's next mode on a tap: `sight` and `sense` in turn. `ship` takes a long press. */
 export function nextFadeRoomsMode(mode: FadeRoomsMode): FadeRoomsMode {
-  return mode === "sight" ? "sense" : mode === "sense" ? "ship" : "sight";
+  return mode === "sight" ? "sense" : "sight";
 }
 
 /** `mode` if it is one, else the default — stored settings are not to be trusted */
