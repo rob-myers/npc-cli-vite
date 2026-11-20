@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 790 286" width="790" height="286" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="790" height="286" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">act: one npc behaviour, played by hand until done or killed</text>
+  <rect x="24" y="56" width="180" height="110" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="38" y="75" fill="#e6e6e6" font-size="13" font-weight="600">say</text>
+  <text x="38" y="92" fill="#9aa0a6" font-size="12">count rob to:10</text>
+  <text x="38" y="107" fill="#9aa0a6" font-size="12"></text>
+  <text x="38" y="122" fill="#9aa0a6" font-size="12">numbers, up or down</text>
+  <rect x="216" y="56" width="180" height="110" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="230" y="75" fill="#e6e6e6" font-size="13" font-weight="600">look</text>
+  <text x="230" y="92" fill="#9aa0a6" font-size="12">face rob wall</text>
+  <text x="230" y="107" fill="#9aa0a6" font-size="12"></text>
+  <text x="230" y="122" fill="#9aa0a6" font-size="12">a wall, an npc or a spot</text>
+  <rect x="408" y="56" width="180" height="110" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="422" y="75" fill="#8cc0ff" font-size="13" font-weight="600">go to a spot</text>
+  <text x="422" y="92" fill="#9aa0a6" font-size="12">avoid, hide: unseen by from:</text>
+  <text x="422" y="107" fill="#9aa0a6" font-size="12">park: against a wall</text>
+  <text x="422" y="122" fill="#9aa0a6" font-size="12">pad: room to walk round</text>
+  <text x="422" y="137" fill="#9aa0a6" font-size="12">nudge: away from from:</text>
+  <rect x="600" y="56" width="180" height="110" rx="8" fill="#1f3a2c" stroke="#4ec98a"/>
+  <text x="614" y="75" fill="#4ec98a" font-size="13" font-weight="600">walk a graph</text>
+  <text x="614" y="92" fill="#9aa0a6" font-size="12">patrol test-patrol</text>
+  <text x="614" y="107" fill="#9aa0a6" font-size="12"></text>
+  <text x="614" y="122" fill="#9aa0a6" font-size="12">stop, look, halt on</text>
+  <text x="614" y="137" fill="#9aa0a6" font-size="12">a sighting</text>
+  <text x="24" y="196" fill="#e6e6e6" font-size="13">act &lt;verb&gt; &lt;npc&gt; …, or npc first: act kate avoid:rob away:3</text>
+  <rect x="24" y="214" width="236" height="24" rx="12" fill="#2a2618" stroke="#d8b46a"/>
+  <text x="36" y="230" fill="#e8c880" font-size="12">game time: pauses with the World</text>
+  <rect x="270" y="214" width="168" height="24" rx="12" fill="#2a2618" stroke="#d8b46a"/>
+  <text x="282" y="230" fill="#e8c880" font-size="12">&amp; runs several together</text>
+  <rect x="452" y="214" width="222" height="24" rx="12" fill="#2a2618" stroke="#d8b46a"/>
+  <text x="464" y="230" fill="#e8c880" font-size="12">a kill stops every npc it moves</text>
+  <rect x="24" y="248" width="210" height="24" rx="12" fill="#262a31" stroke="#3a404a"/>
+  <text x="36" y="264" fill="#e6e6e6" font-size="12">park, pad: marked in pred</text>
+  <rect x="248" y="248" width="196" height="24" rx="12" fill="#262a31" stroke="#3a404a"/>
+  <text x="260" y="264" fill="#e6e6e6" font-size="12">a stalled walk is given up</text>
+  <rect x="458" y="248" width="236" height="24" rx="12" fill="#262a31" stroke="#3a404a"/>
+  <text x="470" y="264" fill="#e6e6e6" font-size="12">avoid, sat or lain: gets up first</text>
+</svg>

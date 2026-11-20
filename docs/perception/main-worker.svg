@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 324" width="780" height="324" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="780" height="324" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">Perception: asked on main, answered on the nav worker</text>
+  <rect x="30" y="60" width="300" height="220" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="44" y="79" fill="#e6e6e6" font-size="13" font-weight="600">main</text>
+  <text x="46" y="104" fill="#e6e6e6" font-size="12" font-weight="600">spotQuery(ct, queries)</text>
+  <text x="46" y="120" fill="#9aa0a6" font-size="12">a batch, one round trip, pause and kill</text>
+  <text x="46" y="148" fill="#e6e6e6" font-size="12" font-weight="600">spotQueryDetached(w, …)</text>
+  <text x="46" y="164" fill="#9aa0a6" font-size="12">the same from no process, e.g. sidestep</text>
+  <text x="46" y="192" fill="#e6e6e6" font-size="12" font-weight="600">npcs snapshotted</text>
+  <text x="46" y="208" fill="#9aa0a6" font-size="12">their point and rooms, as sent</text>
+  <text x="46" y="236" fill="#e6e6e6" font-size="12" font-weight="600">door feed: perception-door</text>
+  <text x="46" y="252" fill="#9aa0a6" font-size="12">open on door-opening, shut on door-closed</text>
+  <rect x="450" y="60" width="300" height="220" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="464" y="79" fill="#8cc0ff" font-size="13" font-weight="600">nav worker</text>
+  <text x="466" y="104" fill="#8cc0ff" font-size="12" font-weight="600">bulk copy</text>
+  <text x="466" y="120" fill="#9aa0a6" font-size="12">hide, hidden, list, view</text>
+  <text x="466" y="148" fill="#8cc0ff" font-size="12" font-weight="600">fast copy</text>
+  <text x="466" y="164" fill="#9aa0a6" font-size="12">sees, seenBy, of, get, at, explain…</text>
+  <text x="466" y="192" fill="#8cc0ff" font-size="12" font-weight="600">setup per map (jsh-setup)</text>
+  <text x="466" y="208" fill="#9aa0a6" font-size="12">spot files, sightOccluders, hullPairs</text>
+  <text x="466" y="236" fill="#8cc0ff" font-size="12" font-weight="600">answerSpotQueries</text>
+  <text x="466" y="252" fill="#9aa0a6" font-size="12">static lists first, lines only for the rest</text>
+  <path d="M330,120 L446,120" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <text x="388" y="112" fill="#9aa0a6" font-size="11" text-anchor="middle">queries</text>
+  <path d="M330,230 L446,230" fill="none" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+  <text x="388" y="222" fill="#e8c880" font-size="11" text-anchor="middle">doors</text>
+  <path d="M450,170 L334,170" fill="none" stroke="#4ec98a" stroke-width="1.5" marker-end="url(#green)"/>
+  <text x="392" y="162" fill="#4ec98a" font-size="11" text-anchor="middle">answers</text>
+  <text x="30" y="306" fill="#9aa0a6" font-size="12">A respawn rejects what was pending. The next request sets it up again, keeping the navmesh.</text>
+</svg>

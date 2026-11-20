@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 342" width="740" height="342" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="740" height="342" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">act patrol: each guard&#x27;s phase, ticked every 0.25 game s</text>
+  <rect x="40" y="102" width="140" height="64" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="54" y="121" fill="#8cc0ff" font-size="13" font-weight="600">walk</text>
+  <text x="54" y="138" fill="#9aa0a6" font-size="12">to their next node</text>
+  <text x="54" y="153" fill="#9aa0a6" font-size="12">stalled: skip it</text>
+  <rect x="220" y="102" width="140" height="64" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="234" y="121" fill="#e6e6e6" font-size="13" font-weight="600">stop</text>
+  <text x="234" y="138" fill="#9aa0a6" font-size="12">secs, facing</text>
+  <text x="234" y="153" fill="#9aa0a6" font-size="12">the way they came</text>
+  <rect x="400" y="102" width="140" height="64" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="414" y="121" fill="#e6e6e6" font-size="13" font-weight="600">left</text>
+  <text x="414" y="138" fill="#9aa0a6" font-size="12">lookSecs, lookDeg</text>
+  <text x="414" y="153" fill="#9aa0a6" font-size="12">to one side</text>
+  <rect x="580" y="102" width="140" height="64" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="594" y="121" fill="#e6e6e6" font-size="13" font-weight="600">right</text>
+  <text x="594" y="138" fill="#9aa0a6" font-size="12">lookSecs, lookDeg</text>
+  <text x="594" y="153" fill="#9aa0a6" font-size="12">to the other</text>
+  <path d="M180,134 L216,134" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M360,134 L396,134" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M540,134 L576,134" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M650,102 L650,62 L110,62 L110,98" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <text x="380" y="56" fill="#9aa0a6" font-size="12" text-anchor="middle">on to the next node</text>
+  <path d="M290,102 L290,80 L130,80 L130,98" fill="none" stroke="#d8b46a" stroke-width="1.5" marker-end="url(#yellow)"/>
+  <text x="210" y="96" fill="#e8c880" font-size="11" text-anchor="middle">at a turn back</text>
+  <path d="M40,186 L720,186" fill="none" stroke="#e06c6c" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M450,186 L450,228" fill="none" stroke="#e06c6c" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#red)"/>
+  <text x="462" y="212" fill="#f0a0a0" font-size="12">a sighting, any phase: guard-spotted</text>
+  <rect x="330" y="232" width="240" height="64" rx="8" fill="#3a2426" stroke="#e06c6c"/>
+  <text x="344" y="251" fill="#f0a0a0" font-size="13" font-weight="600">halt</text>
+  <text x="344" y="268" fill="#9aa0a6" font-size="12">face whom they saw, say Halt!</text>
+  <text x="344" y="283" fill="#9aa0a6" font-size="12">until 3 s unseen</text>
+  <path d="M330,264 L20,264 L20,134 L36,134" fill="none" stroke="#4ec98a" stroke-width="1.5" marker-end="url(#green)"/>
+  <text x="36" y="284" fill="#4ec98a" font-size="12">then the nearest node of the walk</text>
+  <text x="24" y="324" fill="#9aa0a6" font-size="12">A psi distract ends stop, left or right early. say:&quot;&quot; walks on silent, leaving it to a script.</text>
+</svg>

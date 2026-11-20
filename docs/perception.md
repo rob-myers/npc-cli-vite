@@ -10,6 +10,8 @@ Perception answers spot and sight queries: where npcs might stand, and who sees 
 | worker | `packages/cli/src/jsh/world/worker/spots.ts` | the map's spots, and `answerSpotQueries` |
 | shared | `packages/ui/world/src/service/spot-sight.ts` | what blocks sight (`sightOccluders`), and how the static lists are made |
 
+![main and the nav worker](perception/main-worker.svg)
+
 The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup: `plan.main.ts` on main, `worker/plan.worker.ts` there. See `docs/workers.md`.
 
 ## Queries
@@ -45,6 +47,10 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 - **Rooms in view** (`seeRooms`) come from `w.e.roomsInView`, which walks the room graph through doors seen through. It is cached by room until a door changes.
 
 ## `sees` with an npc
+
+`sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. `--los` asks for line of sight alone, ignoring eyes and facing, e.g. `sees --los --all abe ben`. Both exit 1 if none, for `if` and `while`.
+
+![sees, step by step](perception/sees-steps.svg)
 
 Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).

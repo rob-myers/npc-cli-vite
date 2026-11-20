@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 326" width="960" height="326" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="960" height="326" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">A graph: made, saved as one JSON file, read by behaviours</text>
+  <rect x="30" y="66" width="250" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="44" y="85" fill="#e6e6e6" font-size="13" font-weight="600">Decorator graph tab</text>
+  <text x="44" y="102" fill="#9aa0a6" font-size="12">drag, connect, insert, meta</text>
+  <text x="44" y="117" fill="#9aa0a6" font-size="12">each edit saves (DEV)</text>
+  <rect x="30" y="156" width="250" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="44" y="175" fill="#e6e6e6" font-size="13" font-weight="600">jsh graph save my-path</text>
+  <text x="44" y="192" fill="#9aa0a6" font-size="12">path: or cycle: points</text>
+  <text x="44" y="207" fill="#9aa0a6" font-size="12">pick events, [x, y], spot keys</text>
+  <rect x="350" y="66" width="270" height="58" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="364" y="85" fill="#8cc0ff" font-size="13" font-weight="600">POST /api/scenario/file/graph/…</text>
+  <text x="364" y="102" fill="#9aa0a6" font-size="12">DEV only, zod-checked</text>
+  <text x="364" y="117" fill="#9aa0a6" font-size="12">DELETE removes it</text>
+  <rect x="350" y="186" width="270" height="58" rx="8" fill="#1f3a2c" stroke="#4ec98a"/>
+  <text x="364" y="205" fill="#4ec98a" font-size="13" font-weight="600">scenario/graph/{slug}.json</text>
+  <text x="364" y="222" fill="#9aa0a6" font-size="12">packages/media/src/</text>
+  <text x="364" y="237" fill="#9aa0a6" font-size="12">keyed graph/{slug}</text>
+  <rect x="690" y="66" width="240" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="704" y="85" fill="#e6e6e6" font-size="13" font-weight="600">Read</text>
+  <text x="704" y="102" fill="#9aa0a6" font-size="12">DEV: GET /api/scenario</text>
+  <text x="704" y="117" fill="#9aa0a6" font-size="12">build: virtual:scenario</text>
+  <rect x="690" y="156" width="240" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="704" y="175" fill="#e6e6e6" font-size="13" font-weight="600">graphs (graph.ts)</text>
+  <text x="704" y="192" fill="#9aa0a6" font-size="12">find, resolve, closedWalk</text>
+  <rect x="690" y="231" width="240" height="43" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="704" y="250" fill="#8cc0ff" font-size="13" font-weight="600">act patrol, graph walk</text>
+  <text x="704" y="267" fill="#9aa0a6" font-size="12">behaviours walk it</text>
+  <path d="M280,92 L346,92" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M280,184 L315,184 L315,110 L346,110" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M485,124 L485,182" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M620,216 L655,216 L655,92 L686,92" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M810,124 L810,152" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M810,199 L810,227" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M686,110 L650,110 L650,290 L14,290 L14,92 L26,92" fill="none" stroke="#d8b46a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#yellow)"/>
+  <text x="400" y="308" fill="#e8c880" font-size="12" text-anchor="middle">scenario-changed: the Decorator and readers reload</text>
+</svg>

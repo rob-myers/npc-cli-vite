@@ -1,15 +1,17 @@
 # Graphs
 
-A graph is a directed multigraph on one map, with free-form `meta` on the graph, each node and each edge. Edges run `from` to `to`, and two may join the same nodes either way. An `undirected` graph is read as its symmetric closure: each edge may also be taken backwards. It knows nothing of behaviour. jsh commands read graphs and act on them, e.g. `act patrol`. Graphs are made and edited in the Decorator, or by jsh `sc`.
+A graph is a directed multigraph on one map, with free-form `meta` on the graph, each node and each edge. Edges run `from` to `to`, and two may join the same nodes either way. An `undirected` graph is read as its symmetric closure: each edge may also be taken backwards. It knows nothing of behaviour. jsh commands read graphs and act on them, e.g. `act patrol`. Graphs are made and edited in the Decorator, or by jsh `graph`.
+
+![a graph, made, saved and read](graphs/graph-flow.svg)
 
 ## The data
 
-A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenario/graph/{slug}.json`, keyed `graph/{slug}`. It is saved and served as every entry is (`docs/scenarios.md`, Entry files). The schema is `GraphEntrySchema` in `ui/world/src/scenario.schema.ts`.
+One JSON file each, `packages/media/src/scenario/graph/{slug}.json`, keyed `graph/{slug}` and served as in Entry files below. Its schema is `GraphEntrySchema` (`ui/world/src/scenario.schema.ts`).
 
 | Field | Default | |
 | --- | --- | --- |
 | `mapKey` | | The map its nodes are on |
-| `undirected` | `false` | Each edge may also be taken backwards. A new graph has it, from the Decorator or `sc save` |
+| `undirected` | `false` | Each edge may also be taken backwards. A new graph has it, from the Decorator or `graph save` |
 | `meta` | `{}` | The graph's own |
 | `nodes` | | At least one: `{ id, at, spot?, meta }` |
 | `edges` | `[]` | `{ id, from, to, meta }`, by node id |
@@ -20,17 +22,17 @@ A scenario entry of kind `graph`, one JSON file each: `packages/media/src/scenar
 - **Edges** must join two different nodes that exist. Any number may join the same pair, either way, each with its own meta.
 - **Meta** is any JSON object. Behaviours read the keys they know, e.g. `secs` on a node for `act patrol`. Nothing checks them.
 
-## jsh `sc`
+## jsh `graph`
 
-`packages/cli/src/jsh/world/scenario.ts`. Saving and removing need the dev server.
+`packages/cli/src/jsh/world/graph.ts`, beside `graphs`. Saving and removing need the dev server.
 
 | | |
 | --- | --- |
-| `sc ls graph` | This map's graphs, a line each. `--all` for every map's |
-| `sc get graph/my-path` | The entry, as a value |
-| `sc save graph/my-path path:$( pick 3 ) [directed] [name:…]` | Nodes `n0`… through the points, joined in turn by edges `e0`…. `cycle:<points>` joins the last to the first too. Undirected unless `directed`, else as saved. Points are pick events, `[x, y]` or spot keys, which the nodes keep as `spot` |
-| `sc walk graph/my-path` | Its closed walk, e.g. `n0 n1 n2 n1` |
-| `sc rm graph/my-path` | |
+| `graph ls` | This map's graphs, a line each. `--all` for every map's |
+| `graph get my-path` | The entry, as a value |
+| `graph save my-path path:$( pick 3 ) [directed] [name:…]` | Nodes `n0`… through the points, joined in turn by edges `e0`…. `cycle:<points>` joins the last to the first too. Undirected unless `directed`, else as saved. Points are pick events, `[x, y]` or spot keys, which the nodes keep as `spot` |
+| `graph walk my-path` | Its closed walk, e.g. `n0 n1 n2 n1` |
+| `graph rm my-path` | |
 
 Saved over, a graph keeps what is not given. Its nodes and edges are replaced only when points are given, and its meta is always kept.
 
@@ -67,13 +69,15 @@ A behaviour is jsh code reading a graph. `graphs` in `packages/cli/src/jsh/world
 | `graphs.find(ct, nameOrValue)` | A saved graph by `{slug}` or `graph/{slug}`, else a graph value, on this map |
 | `graphs.resolve(ct, graph)` | Each node's point by id: its spot's, else `at`, saying so if its spot is gone |
 | `graphs.closedWalk(graph)` | Node ids walked round and round, crossing every edge |
-| `graphs.toNodes(ct, points)`, `graphs.edgesThrough(nodes, cycle)` | Nodes and edges from points, as `sc save` makes them |
+| `graphs.toNodes(ct, points)`, `graphs.edgesThrough(nodes, cycle)` | Nodes and edges from points, as `graph save` makes them |
 
 Route strategies are written in jsh, beside the behaviour that uses them. As yet there is one, `closedWalk`:
 
 - **Every node balanced** (an even number of edges if undirected, else as many in as out, parallel edges each counted): an Euler circuit, crossing each edge once. A cycle is walked round.
 - **Else, undirected:** a depth-first walk crossing each edge there and back. A path is walked back and forth, and a tree is toured.
 - **Else, not undirected:** an error, as is a graph not connected. It starts at the first node.
+
+![closedWalk on a path, a cycle and a tree](graphs/closed-walk.svg)
 
 ### Patrolling: `act patrol`
 
@@ -98,6 +102,8 @@ One loop (`walkPatrol`) ticks every 0.25 game seconds for all of them, so a kill
 | `left`, `right` | `lookSecs` each, `lookDeg` either side of that way |
 | `halt` | Facing whom they saw, until 3 s unseen. Then they walk to the nearest node of the walk and go on |
 
+![a guard's phases](graphs/patrol-phases.svg)
+
 A psi distract ends a guard's `stop`, `left` or `right` early.
 
 Each tick they look for whom they watch with `perceive`, as `sees` does. A sighting emits `guard-spotted` (`npcKey`, `seen`, `graph`), again only after 3 s unseen. Then they halt and say `say` (default `Halt!`) for 3 s. With `say:""` they walk on silent, leaving the sighting to a script: `events 'e => e.key === "guard-spotted"' | …`.
@@ -109,3 +115,19 @@ Each tick they look for whom they watch with `perceive`, as `sees` does. A sight
 - **A halt that ends.** A guard halts until 3 s after losing sight, so someone always in view holds them for good. Give it a limit, or step closer.
 - **Spacing kept.** Several guards drift together after a halt or a stall. They could slow or wait to keep their spacing.
 - **An in-World overlay** of graphs, as the spots overlay.
+
+## Entry files
+
+Authored in DEV and shipped as data. One JSON file per entry, `packages/media/src/scenario/{kind}/{slug}.json`, its key `{kind}/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) is a union by `kind`, as yet only `graph`.
+
+`scripts/src/vite-plugin-scenario.ts` provides them:
+
+| | DEV | production |
+|---|---|---|
+| read | `GET /api/scenario`, every entry by key | `virtual:scenario`, bundled |
+| write | `POST` / `DELETE /api/scenario/file/{kind}/{slug}`, zod-checked | read-only |
+| change | the watcher sends `scenario-changed`, and readers reload | |
+
+A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder. The DEV endpoints load the schema with `ssrLoadModule`, kinds included, so a schema edit needs no restart. An edit to the plugin itself does.
+
+The schema and the loader live in `ui/world` (`scenario.schema.ts`, `service/scenario-shared.ts`), so the Decorator and jsh use them without depending on a panel.

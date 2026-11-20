@@ -7,7 +7,7 @@ import { type GraphTarget, metaOf, withMeta } from "./graph-edit";
 
 /**
  * The graph tab: this map's graphs, then the chosen one's nodes, edges and meta, then other maps' graphs.
- * In DEV a graph can be made, deleted, renamed and its meta edited — see `docs/npc-graphs.md`
+ * In DEV a graph can be made, deleted, renamed and its meta edited — see `docs/graphs.md`
  */
 export function GraphSidebar({
   graphs,

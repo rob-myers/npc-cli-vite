@@ -129,7 +129,7 @@ changes. `plan.main.ts` exports:
 - **`requestDetached(w, op)`** sends one from no process, e.g. a keyed tick or an `act` verb, which waits on
   it through its own `Task`.
 
-The ops are played by jsh `act park`, `act pad` and `act nudge` (`act.ts`, see `docs/scenarios.md`), and by
+The ops are played by jsh `act park`, `act pad` and `act nudge` (`act.ts`, see `docs/acts.md`), and by
 `sidestep.ts`. `debug_boundary` (`debug.ts`) draws exactly the segments `park` sees.
 
 **To add an op:** add a member of `WW.JshOp`, an entry in `WW.JshOutput` and a function on `ops`.

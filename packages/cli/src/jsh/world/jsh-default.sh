@@ -4,4 +4,4 @@ source /etc/util.js.sh
 
 source /etc/{core,demo,debug,decor}.js.sh
 
-source /etc/{act,audio,comms,pred,scenario,sidestep,spot}.js.sh
+source /etc/{act,audio,comms,graph,pred,sidestep,spot}.js.sh
