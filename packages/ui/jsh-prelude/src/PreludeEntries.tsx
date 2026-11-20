@@ -5,8 +5,8 @@ import { cn, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { worldTtyOf } from "./run";
 import { type PreludeEntry, preludeApi, usePrelude } from "./store";
+import { worldTtyOf } from "./ttys";
 
 /** The commands a World autoruns, in order, each removable */
 export function PreludeEntries({ worldKey }: { worldKey: string }) {

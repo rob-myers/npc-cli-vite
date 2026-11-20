@@ -3,9 +3,11 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, PlayIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import { getMountStatus, rebootWorld, runPrelude } from "./run";
 import { preludeApi } from "./store";
 import { WorldPrelude } from "./WorldPrelude";
+
+/** The shell, which autorun and reboot drive, loads only once a World has mounted */
+const loadRun = () => import("./run");
 
 /** The World's paused pill, which runs its prelude on a page load and reboots on a remount. Its chevron shows autorun */
 export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
@@ -24,19 +26,21 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
         }
       },
       reboot() {
-        state.boot(() => rebootWorld(w.key, (step) => state.set({ step })));
+        state.boot(async () => (await loadRun()).rebootWorld(w.key, (step) => state.set({ step })));
       },
     }),
   );
 
   useEffect(() => {
-    const mount = getMountStatus(w.key, w);
-    if (mount === "remount") {
-      state.reboot(); // its ttys' world jobs and listeners are the old World's
-    } else if (mount === "load" && preludeApi.get(w.key).autorun === true) {
-      state.set({ step: "booting" });
-      state.boot(() => runPrelude(w.key));
-    }
+    void loadRun().then(({ getMountStatus, runPrelude }) => {
+      const mount = getMountStatus(w.key, w);
+      if (mount === "remount") {
+        state.reboot(); // its ttys' world jobs and listeners are the old World's
+      } else if (mount === "load" && preludeApi.get(w.key).autorun === true) {
+        state.set({ step: "booting" });
+        state.boot(() => runPrelude(w.key));
+      }
+    }, error);
   }, [w]);
 
   useEffect(() => {

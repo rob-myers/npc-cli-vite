@@ -66,6 +66,10 @@ created on the thread that also finishes frames).
 - **`/assets/*` is immutable for a year** (`public/_headers`).
 - **`Tabs` isn't lazy** (`ui/tabs/src/index.ts`). Every pane's header shows on the first render,
   not after a chunk arrives. It is 15 KB.
+- **The entry holds only what the first render needs.** `PausedPill` loads `run.ts`, and with it the
+  shell, xterm and the parser, once a World has mounted. map-edit's root no longer re-exports
+  `map-node-api`, whose geometry pulled in `polygon-clipping` and `poly2tri`. That took the entry's
+  static graph from 532 KB to 338 KB gzipped.
 - **A ui may give its own `loading`** (`UiPackageDef`), which `UiPortalContainer` shows whilst its
   lazy code arrives, else a spinner. The World's is black (`WorldLoading`), so a phone sees the
   header and the World's black, not a grey spinner first.
