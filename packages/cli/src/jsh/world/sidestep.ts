@@ -6,25 +6,39 @@ import { createElement } from "react";
 import { ansi } from "../../shell/const";
 import { sharedFolder } from "../../shell/session";
 import { npcQuery, requestDetached } from "./plan.main";
-import { type SidestepBack, SidestepDebug, type SidestepDebugState, type SidestepReturns } from "./sidestep-debug";
+import { sidestepRules } from "./pred";
+import {
+  type SidestepBack,
+  SidestepDebug,
+  type SidestepDebugState,
+  type SidestepReturns,
+  type SidestepRule,
+  type SidestepRules,
+} from "./sidestep-debug";
 import { heading, headingOf, pathOf, SidestepLookout, table } from "./sidestep-lookout";
 
 /**
  * Npcs make way for a walker coming at them or held up by them
  * - idempotent since it attaches a keyed listener
+ * - bare, it also prints its settings, which `on` leaves out
  * - chooses sidestep kind via its SkipNet pane
  * - `kind:` and `back:` set that item's picks, and a number tunes the kind, e.g. `reach:2`.
  * - `--debug` logs each choice and why to the tty, and moreover draws in-world lines, until killed.
- * - npcKey operands restrict to those npcs
+ * - `--debug:rob,kate` restricts it to those npcs
+ * - `for:rob,kate` sets their own rule on this map, `reset` drops it, and alone it prints theirs
  * - `status` says whom the lookout tested since it was last asked — see `docs/sidestep.md`
  *
  * ```sh
  * sidestep
+ * sidestep on
  * sidestep --debug
- * sidestep --debug rob kate
+ * sidestep --debug:rob,kate
+ * sidestep for:rob,kate kind:wall back:home
+ * sidestep for:rob
+ * sidestep for:rob reset
  * sidestep kind:turn back:home
  * sidestep kind:wall reach:2
- * sidestep chain:true
+ * sidestep chain:false
  * sidestep status
  * sidestep off
  * ```
@@ -46,14 +60,54 @@ export async function* sidestep(ct: JshCli.RunArg) {
     yield* perfStatus(watcher.s);
     return;
   }
-  const { debug, ...picks } = api.jsArg(args, { "--debug": "debug" }) as { debug?: boolean } & Record<string, unknown>;
+  const quiet = args[0] === "on";
+  const {
+    debug,
+    for: npcKeys,
+    reset,
+    ...picks
+  } = api.jsArg(quiet ? args.slice(1) : args, { "--debug": "debug" }) as Record<string, unknown>;
+  if (npcKeys !== undefined) return yield* forNpcs(`${npcKeys}`.split(",").filter(Boolean), picks, reset === true);
+  if (reset !== undefined) throw Error("reset needs for:, e.g. sidestep for:rob reset");
   setChoices(picks);
   watchWalkers(w);
-  if (debug === true)
-    yield* watchChoices(
-      ct,
-      args.filter((arg) => arg.startsWith("-") === false && arg.includes(":") === false),
-    );
+  if (args.length === 0) yield* settings();
+  if (debug !== undefined) yield* watchChoices(ct, debug === true ? [] : `${debug}`.split(","));
+}
+
+/** `for:` npcs' own rules: `reset` drops them, then picks set them. With neither, each one's choices */
+function* forNpcs(npcKeys: string[], picks: Record<string, unknown>, reset: boolean): Generator<unknown> {
+  if (npcKeys.length === 0) throw Error("for: takes npcKeys, e.g. for:rob,kate");
+  const rules = sidestepRules.get();
+  const defaults = watcher?.s.choices ?? debugChoices();
+  const setting = Object.keys(picks).length > 0;
+  if (reset === false && setting === false) {
+    for (const npcKey of npcKeys) {
+      const { open: _, ...shown } = choicesOf(defaults, rules.get(npcKey));
+      yield { npcKey, ...shown };
+    }
+    return;
+  }
+  for (const npcKey of npcKeys) {
+    if (reset === true) rules.delete(npcKey);
+    if (setting === false) continue;
+    const rule = rules.get(npcKey) ?? {};
+    mergeRule(rule, ruleOf(picks, rule.kind ?? defaults.kind));
+    rules.set(npcKey, rule);
+  }
+  if (watcher !== null) notifyRules(watcher.s);
+}
+
+/** Redraws the pane's per-npc list */
+function notifyRules(s: Sidestep) {
+  for (const onChange of s.rulesChanged) onChange();
+}
+
+/** The defaults at `/shared/sidestep`, then any rules on this map as one object by npcKey */
+function* settings(): Generator<unknown> {
+  yield watcher?.s.choices;
+  const rules = sidestepRules.get();
+  if (rules.size > 0) yield Object.fromEntries(rules);
 }
 
 /** The running watcher's lookout and state, for `sidestep status` */
@@ -72,15 +126,32 @@ function watchWalkers(w: JshCli.WorldState) {
     skipped: new Map(),
     stepping: new Map(),
     perf: newPerf(),
+    rulesChanged: new Set(),
   };
   const look = new SidestepLookout(w);
   watcher = { look, s };
+  const rules: SidestepRules = {
+    list: () =>
+      [...sidestepRules.get()].map(([npcKey, rule]) => ({
+        npcKey,
+        text: ruleText(rule),
+        spawned: w.n[npcKey] !== undefined,
+      })),
+    listen: (onChange) => {
+      s.rulesChanged.add(onChange);
+      return () => void s.rulesChanged.delete(onChange);
+    },
+    remove: (npcKey) => void sidestepRules.get().delete(npcKey),
+  };
   w.skipNet?.add({
     key: "sidestep",
     title: "sidestep",
-    Component: () => createElement(SidestepDebug, { w, s: s.choices, kinds: sidestepKinds, backs: sidestepBacks }),
+    Component: () =>
+      createElement(SidestepDebug, { w, s: s.choices, kinds: sidestepKinds, backs: sidestepBacks, rules }),
   });
   w.e.addKeyedListener("sidestep", (e, w) => {
+    // after `pred` points at the new map's rules
+    if (e.key === "map-settled") queueMicrotask(() => notifyRules(s));
     if (w.client === true) return;
     if (e.key === "npc-hurt" && e.clip === "collapsed") s.fell.set(e.npcKey, w.gameTime.now());
     look.onEvent(e, w);
@@ -95,7 +166,7 @@ function watchWalkers(w: JshCli.WorldState) {
     /** Why they cannot make way now, else `null` */
     const isFree = (npc: JshCli.Npc) => (s.stepping.has(npc.key) ? "stepping" : whyNot(w, npc, s));
     /** Sidestep's own steps and returns, which make way rather than ask for it */
-    const ownMove = (key: string) => s.choices.chain !== true && isOwnMover(s, key);
+    const ownMove = (key: string) => isOwnMover(s, key) && choicesFor(s, key).chain !== true;
 
     look.forget(w, now);
     for (const { walker, npc, eta } of look.coming(w, now, isFree, ownMove)) {
@@ -132,6 +203,8 @@ type Sidestep = {
   stepping: Map<string, Stepping>;
   /** What it cost since the last `sidestep status` */
   perf: Perf;
+  /** The pane's redraws, on a `for:` change */
+  rulesChanged: Set<() => void>;
 };
 
 /** A step under way: where to once planned, its stage and since when, and their `spawns` then, for `sidestep status` */
@@ -207,12 +280,13 @@ function makeWay(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc, s: S
   noteStage(w, s, npc, "planning");
 
   const asked = performance.now();
+  const { kind, tune, back } = choicesFor(s, npc.key);
   void Promise.resolve()
     .then(() =>
       requestDetached(w, {
         key: "sidestep",
-        kind: s.choices.kind,
-        tune: s.choices.tune,
+        kind,
+        tune,
         npc: { ...npcQuery(w, npc), dragged: npc.anim.dragged },
         walker: { ...npcQuery(w, walker), path: pathOf(walker), heading: headingOf(walker) },
         others: othersNear(w, npc, walker, s.stepping),
@@ -226,7 +300,7 @@ function makeWay(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc, s: S
       noteStage(w, s, npc, "reacting", to);
       const [lo, hi] = sidestepConfig.reactSecs;
       await w.e.wait(lo + Math.random() * (hi - lo));
-      if (whyNot(w, npc, s) === null) await perform(w, npc, walker, choice, s);
+      if (whyNot(w, npc, s) === null) await perform(w, npc, walker, choice, s, back);
     })
     .catch((e) => warn(`sidestep: ${e}`))
     .finally(() => s.stepping.delete(npc.key));
@@ -250,6 +324,7 @@ async function perform(
   walker: JshCli.Npc,
   { kind, to, via, face, faceWalker, faceFirst, shuffle }: WW.SidestepPlan,
   s: Sidestep,
+  back: SidestepBack,
 ) {
   const { lines, chance } = sidestepConfig.says;
   if (lines.length > 0 && Math.random() < chance)
@@ -267,7 +342,7 @@ async function perform(
     fails: 0,
   };
   // the player is never walked back: where they go is theirs
-  if (to !== null && s.choices.back !== "stay" && npc.key !== w.player.key) s.home.set(npc.key, home);
+  if (to !== null && back !== "stay" && npc.key !== w.player.key) s.home.set(npc.key, home);
   const free = npc.anim.hurt === null && npc.anim.face.aim === null;
   /** Eased round whilst stepping, dropped at rest: to face the walker, else to `face` from the start */
   const aimAt = faceWalker === true ? walker.point : faceFirst === true ? face : null;
@@ -302,16 +377,16 @@ async function perform(
  * moved off their last step by anything else
  */
 function returnBack(w: JshCli.WorldState, s: Sidestep) {
-  if (s.choices.back === "stay") return void s.home.clear();
   const { returnExact, returnSlack } = sidestepConfig;
   for (const [npcKey, home] of s.home) {
     const npc = w.n[npcKey];
-    if (npc === undefined) {
+    const { back, returns } = returnOf(s, npcKey);
+    if (npc === undefined || back === "stay") {
       s.home.delete(npcKey);
       continue;
     }
     if (home.returning === true || s.stepping.has(npcKey) || npc.isMoving() === true) continue;
-    const to = backTo(s, home);
+    const to = backTo(back, home);
     const pushed = npc.distanceTo(home.last);
     const forgets = pushed > returnSlack ? `pushed ${pushed.toFixed(2)}m off` : null;
     if (forgets !== null || npc.distanceTo(to) <= returnExact) {
@@ -319,12 +394,12 @@ function returnBack(w: JshCli.WorldState, s: Sidestep) {
       if (forgets !== null) emit(w, npcKey, home.walker, "forget", false, forgets);
       continue;
     }
-    const { off, stopped, gone } = walkerGone(w, home.walker, to, s.choices.returns);
+    const { off, stopped, gone } = walkerGone(w, home.walker, to, returns);
     if (gone === false || whyNot(w, npc, s) !== null) continue;
 
     home.returning = true;
     const steps = `${home.steps} step${home.steps === 1 ? "" : "s"}`;
-    const away = `${s.choices.back} ${npc.distanceTo(to).toFixed(1)}m${s.choices.back === "home" ? ` after ${steps}` : ""}`;
+    const away = `${back} ${npc.distanceTo(to).toFixed(1)}m${back === "home" ? ` after ${steps}` : ""}`;
     const where = off === undefined ? "gone" : `${stopped ? "stopped " : ""}${off.toFixed(1)}m off`;
     emit(w, npcKey, home.walker, "return", true, `${away}, ${home.walker} ${where}`, [
       { points: [npc.point, to].map(drawPoint), role: "back" },
@@ -350,8 +425,15 @@ function returnBack(w: JshCli.WorldState, s: Sidestep) {
   }
 }
 
+/** Where and when `npcKey` goes back, their rule over the pane's. Merged only if their rule tunes `returns` */
+function returnOf(s: Sidestep, npcKey: string) {
+  const rule = sidestepRules.get().get(npcKey);
+  const returns = rule?.returns === undefined ? s.choices.returns : { ...s.choices.returns, ...rule.returns };
+  return { back: rule?.back ?? s.choices.back, returns };
+}
+
 /** Where `home` goes back to as `back` says: home itself, else where their latest step began */
-const backTo = (s: Sidestep, home: Home) => (s.choices.back === "home" ? home.at : home.prev);
+const backTo = (back: SidestepBack, home: Home) => (back === "home" ? home.at : home.prev);
 
 /** Whether `walker` has gone from `to`: `clear` of it, or `idle` of it once stopped. Gone from the World counts */
 function walkerGone(w: JshCli.WorldState, walker: string, to: Geom.VectJson, returns: SidestepReturns) {
@@ -388,8 +470,9 @@ function* homeStatus(w: JshCli.WorldState, s: Sidestep): Generator<string> {
   const rows = [...s.home].flatMap(([npcKey, home]) => {
     const npc = w.n[npcKey];
     if (npc === undefined) return [];
-    const to = backTo(s, home);
-    const { off, gone } = walkerGone(w, home.walker, to, s.choices.returns);
+    const { back, returns } = returnOf(s, npcKey);
+    const to = backTo(back, home);
+    const { off, gone } = walkerGone(w, home.walker, to, returns);
     const why = home.returning
       ? "returning"
       : s.stepping.has(npcKey)
@@ -408,8 +491,8 @@ function debugChoices(): SidestepDebugState {
     back: saved?.back ?? sidestepConfig.back,
     tune: tuneOf(saved?.tune),
     returns: { ...returnDefaults, ...saved?.returns },
-    open: { tune: true, returns: true, ...saved?.open },
-    chain: saved?.chain ?? false,
+    open: { tune: true, returns: true, rules: true, ...saved?.open },
+    chain: saved?.chain ?? true,
   };
   sharedFolder.sidestep = choices; // the pane writes to it as they are picked
   return choices;
@@ -421,29 +504,66 @@ function tuneOf(saved?: Partial<WW.SidestepTune>) {
   return Object.fromEntries(kinds.map((k) => [k, { ...tuneDefaults[k], ...saved?.[k] }])) as WW.SidestepTune;
 }
 
-/** Sets the hud item's picks, e.g. from `kind:wall back:home reach:2 clear:2`, which the next watcher reads. A number tunes the kind, or going back */
-function setChoices({ kind, back, ...rest }: Record<string, unknown>) {
+/** Sets the hud item's picks, e.g. from `kind:wall back:home reach:2 clear:2`, which the next watcher reads */
+function setChoices(picks: Record<string, unknown>) {
   const choices = debugChoices();
+  mergeRule(choices, ruleOf(picks, choices.kind));
+}
+
+/** Picks as a rule. A number tunes the picked kind, else `current`, or going back. `kind:none` is `stand` */
+function ruleOf({ kind, back, ...rest }: Record<string, unknown>, current: WW.SidestepYield): SidestepRule {
+  const rule: SidestepRule = {};
   if (kind !== undefined) {
-    if (sidestepKinds.includes(kind as WW.SidestepYield) === false) throw Error(`kind: ${sidestepKinds.join(", ")}`);
-    choices.kind = kind as WW.SidestepYield;
+    const picked = kind === "none" ? "stand" : kind;
+    if (sidestepKinds.includes(picked as WW.SidestepYield) === false)
+      throw Error(`kind: ${sidestepKinds.join(", ")}, none`);
+    rule.kind = picked as WW.SidestepYield;
   }
   if (back !== undefined) {
     if (sidestepBacks.includes(back as SidestepBack) === false) throw Error(`back: ${sidestepBacks.join(", ")}`);
-    choices.back = back as SidestepBack;
+    rule.back = back as SidestepBack;
   }
-  const [tune, returns]: Record<string, number>[] = [choices.tune[choices.kind], choices.returns];
+  const tuned = rule.kind ?? current;
   for (const [key, value] of Object.entries(rest)) {
-    if (key === "chain" && typeof value === "boolean") {
-      choices.chain = value;
-      continue;
-    }
-    if (typeof value !== "number") continue; // e.g. npcs for --debug
-    const into = key in returns ? returns : key in tune ? tune : null;
-    if (into === null)
-      throw Error(`${choices.kind} takes: ${[...Object.keys(tune), ...Object.keys(returns)].join(", ")}`);
-    into[key] = value;
+    if (key === "chain" && typeof value === "boolean") rule.chain = value;
+    else if (typeof value === "number" && key in returnDefaults) rule.returns = { ...rule.returns, [key]: value };
+    else if (typeof value === "number" && key in tuneDefaults[tuned])
+      rule.tune = { ...rule.tune, [tuned]: { ...rule.tune?.[tuned], [key]: value } };
+    else
+      throw Error(
+        `${tuned} takes: ${[...Object.keys(tuneDefaults[tuned]), ...Object.keys(returnDefaults), "chain"].join(", ")}`,
+      );
   }
+  return rule;
+}
+
+/** Writes `rule` over `into`, kind by kind */
+function mergeRule(into: SidestepRule, rule: SidestepRule) {
+  if (rule.kind !== undefined) into.kind = rule.kind;
+  if (rule.back !== undefined) into.back = rule.back;
+  if (rule.chain !== undefined) into.chain = rule.chain;
+  if (rule.returns !== undefined) into.returns = { ...into.returns, ...rule.returns };
+  for (const [kind, tune] of Object.entries(rule.tune ?? {}))
+    into.tune = { ...into.tune, [kind]: { ...into.tune?.[kind as WW.SidestepYield], ...tune } };
+}
+
+/** The defaults with `rule` over them */
+function choicesOf(defaults: SidestepDebugState, rule?: SidestepRule): SidestepDebugState {
+  if (rule === undefined) return defaults;
+  const choices = { ...defaults, tune: { ...defaults.tune }, returns: { ...defaults.returns } };
+  mergeRule(choices, rule);
+  return choices;
+}
+
+/** How `npcKey` makes way and goes back: their rule on this map over the pane's */
+const choicesFor = (s: Sidestep, npcKey: string) => choicesOf(s.choices, sidestepRules.get().get(npcKey));
+
+/** A rule as `for:` takes it, e.g. `kind:wall reach:2`. Another kind's tuning is prefixed, e.g. `aside.by:1` */
+function ruleText({ tune = {}, returns = {}, ...rest }: SidestepRule) {
+  const pairs = (values: object, prefix = "") =>
+    Object.entries(values).map(([key, value]) => `${prefix}${key}:${value}`);
+  const tuned = Object.entries(tune).flatMap(([kind, values]) => pairs(values, kind === rest.kind ? "" : `${kind}.`));
+  return [...pairs(rest), ...tuned, ...pairs(returns)].join(" ");
 }
 
 /** The ways of making way, and where they go back to, as the hud's item and `kind:` / `back:` take them */

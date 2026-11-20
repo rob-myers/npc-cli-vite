@@ -236,6 +236,7 @@ function WindowBody({ win }: { win: SkipNetWindow }) {
           item={state.items.find((x) => x.key === win.itemKey)}
           itemKey={win.itemKey}
           worldKey={state.meta.worldKey}
+          win={win}
         />
       );
   }

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 367" width="780" height="367" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="780" height="367" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">sees between npcs: does a see b?</text>
+  <rect x="60" y="56" width="400" height="58" rx="8" fill="#1f2d42" stroke="#5aa0f0"/>
+  <text x="74" y="75" fill="#8cc0ff" font-size="13" font-weight="600">1  Eyes and facing</text>
+  <text x="74" y="92" fill="#9aa0a6" font-size="12">on main (perceive): eyes open, b within 60° of facing</text>
+  <text x="74" y="107" fill="#9aa0a6" font-size="12">skipped by --los</text>
+  <path d="M460,72 L518,72" fill="none" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+  <rect x="524" y="60" width="230" height="24" rx="12" fill="#3a2426" stroke="#e06c6c"/>
+  <text x="536" y="76" fill="#f0a0a0" font-size="12">no</text>
+  <path d="M260,114 L260,130" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <rect x="60" y="132" width="400" height="43" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="74" y="151" fill="#e6e6e6" font-size="13" font-weight="600">2  Rooms</text>
+  <text x="74" y="168" fill="#9aa0a6" font-size="12">b in a room a has in view (seeRooms)</text>
+  <path d="M460,148 L518,148" fill="none" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+  <rect x="524" y="136" width="230" height="24" rx="12" fill="#3a2426" stroke="#e06c6c"/>
+  <text x="536" y="152" fill="#f0a0a0" font-size="12">no</text>
+  <path d="M260,175 L260,191" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <rect x="60" y="193" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="74" y="212" fill="#e6e6e6" font-size="13" font-weight="600">3  The lists</text>
+  <text x="74" y="229" fill="#9aa0a6" font-size="12">every pair of their spots, doors as they stand</text>
+  <text x="74" y="244" fill="#9aa0a6" font-size="12">always holds only inside each spot&#x27;s region</text>
+  <path d="M460,209 L518,209" fill="none" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+  <rect x="524" y="197" width="230" height="24" rx="12" fill="#3a2426" stroke="#e06c6c"/>
+  <text x="536" y="213" fill="#f0a0a0" font-size="12">never: no</text>
+  <path d="M460,237 L518,237" fill="none" stroke="#4ec98a" stroke-width="1.5" marker-end="url(#green)"/>
+  <rect x="524" y="225" width="230" height="24" rx="12" fill="#1f3a2c" stroke="#4ec98a"/>
+  <text x="536" y="241" fill="#4ec98a" font-size="12">always: yes, unless b crouched</text>
+  <path d="M260,251 L260,267" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <rect x="60" y="269" width="400" height="58" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="74" y="288" fill="#e6e6e6" font-size="13" font-weight="600">4  Lines</text>
+  <text x="74" y="305" fill="#9aa0a6" font-size="12">a&#x27;s eyes to b&#x27;s head: centre, and 0.15 m either side</text>
+  <text x="74" y="320" fill="#9aa0a6" font-size="12">a low obstacle stops a line at or below its top</text>
+  <path d="M460,285 L518,285" fill="none" stroke="#4ec98a" stroke-width="1.5" marker-end="url(#green)"/>
+  <rect x="524" y="273" width="230" height="24" rx="12" fill="#1f3a2c" stroke="#4ec98a"/>
+  <text x="536" y="289" fill="#4ec98a" font-size="12">one clear: seen</text>
+  <path d="M460,313 L518,313" fill="none" stroke="#e06c6c" stroke-width="1.5" marker-end="url(#red)"/>
+  <rect x="524" y="301" width="230" height="24" rx="12" fill="#3a2426" stroke="#e06c6c"/>
+  <text x="536" y="317" fill="#f0a0a0" font-size="12">all stopped: not seen</text>
+  <path d="M48,134 L36,134 L36,325 L48,325" fill="none" stroke="#9aa0a6" stroke-width="1.5"/>
+  <text x="24" y="229.5" fill="#9aa0a6" font-size="12" text-anchor="middle" transform="rotate(-90 24 229.5)">cached: seesCache</text>
+  <text x="60" y="349" fill="#9aa0a6" font-size="12">Each step runs only if the one before leaves it open. 2 to 4 run on the nav worker.</text>
+</svg>

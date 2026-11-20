@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 298" width="770" height="298" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="770" height="298" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">closedWalk: the route act patrol walks round and round</text>
+  <rect x="20" y="52" width="230" height="200" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="34" y="72" fill="#e6e6e6" font-size="13" font-weight="600">path, undirected</text>
+  <rect x="270" y="52" width="230" height="200" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="284" y="72" fill="#e6e6e6" font-size="13" font-weight="600">cycle, directed</text>
+  <rect x="520" y="52" width="230" height="200" rx="8" fill="#262a31" stroke="#3a404a"/>
+  <text x="534" y="72" fill="#e6e6e6" font-size="13" font-weight="600">tree, undirected</text>
+  <path d="M65,140 L135,140" fill="none" stroke="#7a8290" stroke-width="1.5"/>
+  <path d="M135,140 L205,140" fill="none" stroke="#7a8290" stroke-width="1.5"/>
+  <circle cx="65" cy="140" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="65" y="144" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n0</text>
+  <circle cx="135" cy="140" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="135" y="144" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n1</text>
+  <circle cx="205" cy="140" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="205" y="144" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n2</text>
+  <text x="34" y="210" fill="#e6e6e6" font-size="12">walk: n0 n1 n2 n1 …</text>
+  <text x="34" y="230" fill="#9aa0a6" font-size="12">back and forth</text>
+  <path d="M346.0,100.0 L423.0,100.0" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M440.0,116.0 L440.0,153.0" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M424.0,170.0 L347.0,170.0" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <path d="M330.0,154.0 L330.0,117.0" fill="none" stroke="#7a8290" stroke-width="1.5" marker-end="url(#next)"/>
+  <circle cx="330" cy="100" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="330" y="104" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n0</text>
+  <circle cx="440" cy="100" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="440" y="104" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n1</text>
+  <circle cx="440" cy="170" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="440" y="174" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n2</text>
+  <circle cx="330" cy="170" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="330" y="174" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n3</text>
+  <text x="284" y="210" fill="#e6e6e6" font-size="12">walk: n0 n1 n2 n3 …</text>
+  <text x="284" y="230" fill="#9aa0a6" font-size="12">round: each edge once (Euler)</text>
+  <path d="M635,95 L575,160" fill="none" stroke="#7a8290" stroke-width="1.5"/>
+  <path d="M635,95 L695,140" fill="none" stroke="#7a8290" stroke-width="1.5"/>
+  <path d="M695,140 L695,190" fill="none" stroke="#7a8290" stroke-width="1.5"/>
+  <circle cx="635" cy="95" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="635" y="99" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n0</text>
+  <circle cx="575" cy="160" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="575" y="164" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n1</text>
+  <circle cx="695" cy="140" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="695" y="144" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n2</text>
+  <circle cx="695" cy="190" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="695" y="194" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">n3</text>
+  <text x="534" y="222" fill="#e6e6e6" font-size="12">walk: n0 n1 n0 n2 n3 n2 …</text>
+  <text x="534" y="240" fill="#9aa0a6" font-size="12">toured: each edge there and back</text>
+  <text x="24" y="280" fill="#9aa0a6" font-size="12">Directed and unbalanced, or not connected: an error. The walk starts at the first node.</text>
+</svg>

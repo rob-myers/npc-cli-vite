@@ -278,6 +278,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.key === "Shift") return void (state.isDoubleTap("Shift", e.timeStamp) && state.toggleStrafe());
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.code === "Space") {
+          if (isButtonTarget(e) || w.disabled === true) return; // a focused button's own, and no far look whilst paused
           e.preventDefault();
           return state.setFarLook(true); // raised, it aims too
         }
@@ -779,3 +780,7 @@ export type State = {
   /** Spawns the player in a random room, preferring `spawnRoomLabels` — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
+
+/** Whether a key went to something Space presses, e.g. the paused pill's chevron */
+const isButtonTarget = (e: KeyboardEvent) =>
+  e.target instanceof Element && e.target.closest("button, [role=button], a[href], summary") !== null;

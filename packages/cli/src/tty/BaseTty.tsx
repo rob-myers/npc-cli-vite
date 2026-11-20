@@ -1,5 +1,6 @@
 import { useThemeName } from "@npc-cli/theme";
 import { cn, useBeforeUnloadOrVisibilityChange, useEffectNonStrict, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal as XTermTerminal } from "@xterm/xterm";
@@ -101,7 +102,8 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     });
 
     xterm.loadAddon((state.fitAddon = new FitAddon()));
-    xterm.loadAddon((state.webglAddon = new WebglAddon()));
+    /** On desktop it keeps its last frame for a tab's drag preview. A phone's GPU pays more for that. */
+    xterm.loadAddon((state.webglAddon = new WebglAddon(!isTouchDevice())));
     state.webglAddon.onContextLoss(() => {
       state.webglAddon.dispose(); // 🚧 WIP
     });

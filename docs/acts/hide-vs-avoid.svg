@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 372" width="760" height="372" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13">
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5aa0f0"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4ec98a"/></marker><marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e06c6c"/></marker><marker id="yellow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d8b46a"/></marker></defs>
+  <rect width="760" height="372" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">act hide is avoid judged strictly, so it goes further</text>
+  <rect x="40" y="60" width="260" height="210" fill="#262a31" stroke="#5a606c" stroke-width="3"/>
+  <rect x="300" y="60" width="200" height="210" fill="#262a31" stroke="#5a606c" stroke-width="3"/>
+  <rect x="500" y="60" width="220" height="210" fill="#262a31" stroke="#5a606c" stroke-width="3"/>
+  <line x1="300" y1="150" x2="300" y2="200" stroke="#1b1d22" stroke-width="5"/>
+  <line x1="300" y1="150" x2="300" y2="200" stroke="#d8b46a" stroke-width="3"/>
+  <line x1="500" y1="210" x2="500" y2="250" stroke="#1b1d22" stroke-width="5"/>
+  <line x1="500" y1="210" x2="500" y2="250" stroke="#d8b46a" stroke-width="3"/>
+  <text x="52" y="80" fill="#9aa0a6" font-size="12">room A</text>
+  <text x="312" y="80" fill="#9aa0a6" font-size="12">room B</text>
+  <text x="512" y="80" fill="#9aa0a6" font-size="12">room C</text>
+  <path d="M118,175 L430,175" fill="none" stroke="#e06c6c" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <circle cx="110" cy="175" r="14" fill="#1f2d42" stroke="#5aa0f0" stroke-width="1.5"/>
+  <text x="110" y="179" fill="#8cc0ff" font-size="11" text-anchor="middle" font-weight="600">rob</text>
+  <circle cx="200" cy="245" r="14" fill="#262a31" stroke="#3a404a" stroke-width="1.5"/>
+  <text x="200" y="249" fill="#e6e6e6" font-size="11" text-anchor="middle" font-weight="600">kate</text>
+  <circle cx="430" cy="175" r="9" fill="#2a2618" stroke="#d8b46a" stroke-width="2"/>
+  <circle cx="650" cy="120" r="9" fill="#1f3a2c" stroke="#4ec98a" stroke-width="2"/>
+  <path d="M214,238 L300,185 L418,178" fill="none" stroke="#d8b46a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#yellow)"/>
+  <path d="M212,236 L300,192 L500,230 L640,128" fill="none" stroke="#4ec98a" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#green)"/>
+  <text x="380" y="205" fill="#e8c880" font-size="12" font-weight="600">avoid</text>
+  <text x="612" y="178" fill="#4ec98a" font-size="12" font-weight="600">hide</text>
+  <rect x="40" y="290" width="330" height="24" rx="12" fill="#2a2618" stroke="#d8b46a"/>
+  <text x="52" y="306" fill="#e8c880" font-size="12">avoid: unseen as the doors stand</text>
+  <rect x="390" y="290" width="330" height="24" rx="12" fill="#1f3a2c" stroke="#4ec98a"/>
+  <text x="402" y="306" fill="#4ec98a" font-size="12">hide: unseen with its room&#x27;s doors open</text>
+  <text x="40" y="340" fill="#9aa0a6" font-size="12">She opens the door going in, so hide judges it open: rob would see into room B.</text>
+  <text x="40" y="356" fill="#9aa0a6" font-size="12">Both skip spots others stand at or head for, and want away metres from a watcher who sees.</text>
+</svg>

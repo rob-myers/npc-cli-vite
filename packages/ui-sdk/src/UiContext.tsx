@@ -33,6 +33,8 @@ export type LayoutApi = {
   toggleOrientation(uiId: string): void;
   getPanePosition(uiId: string): { vertical: boolean; index: number; siblingCount: number } | null;
   getPaneCount(): number;
+  /** Brings a ui on screen: its Tabs' current tab, its panes unhidden */
+  showUi(uiId: string): void;
 };
 
 export type OverrideContextMenuOpts = {
@@ -51,5 +53,6 @@ export function getFallbackLayoutApi(): LayoutApi {
     toggleOrientation: () => {},
     getPanePosition: () => null,
     getPaneCount: () => 1,
+    showUi: () => {},
   };
 }

@@ -8,7 +8,7 @@ import { isPaused, npcQuery, parkedNow, requestDetached, roomOthers } from "./pl
 import { padded, parked } from "./pred";
 
 /**
- * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.
+ * An npc acting on the spots about them, until done or killed — see `docs/acts.md`.
  * `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
  * Npc first, a verb takes its main option as `<verb>:<value>`. `park` and `pad` take several npcs
  *
@@ -293,7 +293,7 @@ async function postGuard(ctx: Ctx, g: GuardStart, i: number) {
 }
 
 /**
- * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/npc-graphs.md`.
+ * Until killed, each tick: every guard walks, stops, looks left, looks right, or is halted — see `docs/graphs.md`.
  * One loop for all, so a kill or a pause holds them at once
  */
 async function walkPatrol(

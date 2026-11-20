@@ -1,13 +1,119 @@
-import { type GraphEdge, type GraphEntry, GraphEntrySchema, type GraphNode } from "@npc-cli/ui__world/scenario.schema";
-import { loadScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
+import {
+  type GraphEdge,
+  type GraphEntry,
+  GraphEntrySchema,
+  type GraphNode,
+  isScenarioKey,
+  type ScenarioEntry,
+} from "@npc-cli/ui__world/scenario.schema";
+import { deleteScenarioEntry, loadScenarioEntries, saveScenarioEntry } from "@npc-cli/ui__world/scenario-shared";
 import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { toPrecision } from "@npc-cli/util/legacy/generic";
 import { spotPoints } from "./perception.main";
 
-/** For `sc` and the behaviours reading graphs, e.g. `act patrol`: kept off the shell as an object — see `docs/npc-graphs.md` */
+/**
+ * Graphs, as saved in `packages/media/src/scenario/graph` — see `docs/graphs.md`.
+ * `ls` this map's, or every map's with `--all`. `get`, `save`, `walk` or `rm` one. Saving and removing need DEV
+ *
+ * ```sh
+ * graph ls
+ * graph list --all
+ * graph get test-patrol
+ * graph save my-path path:$( pick 3 )
+ * graph save my-loop cycle:$( [] g0r12-3 g0r12-4 g0r3-1 ) directed
+ * graph walk my-path
+ * graph rm my-path
+ * ```
+ */
+export async function* graph(ct: JshCli.RunArg) {
+  ct.api.setPausable("world", false); // nothing here waits on the World
+  const [sub, ...rest] = ct.args;
+  switch (sub) {
+    case "list":
+    case "ls": {
+      const all = rest.includes("--all");
+      for (const entry of Object.values(await loadScenarioEntries())) {
+        if (entry.kind !== "graph" || (all === false && entry.mapKey !== ct.w.mapKey)) continue;
+        yield summary(entry, all);
+      }
+      return;
+    }
+    case "get":
+      yield await getEntry(rest[0]);
+      return;
+    case "save":
+      return void (await saveGraph(ct, rest));
+    case "walk":
+      yield graphs.closedWalk(await graphs.find(ct, rest[0])).join(" ");
+      return;
+    case "rm": {
+      const { key } = await getEntry(rest[0]);
+      if (import.meta.env.DEV !== true) throw Error("removing needs the dev server");
+      await deleteScenarioEntry(key);
+      return;
+    }
+    default:
+      throw Error("usage: graph {list,ls,get,save,walk,rm} …");
+  }
+}
+
+/** A graph's key from `{slug}` or `graph/{slug}` */
+function keyOf(slug: undefined | string) {
+  const key = slug?.startsWith("graph/") ? slug : `graph/${slug}`;
+  if (slug === undefined || isScenarioKey(key) === false) throw Error(`expected {slug}: ${slug}`);
+  return key;
+}
+
+async function getEntry(slug: undefined | string) {
+  const key = keyOf(slug);
+  const entry = (await loadScenarioEntries())[key];
+  if (entry === undefined) throw Error(`not found: ${key}`);
+  return entry;
+}
+
+/** One line, e.g. `my-path 3 nodes 2 edges undirected` */
+function summary(entry: ScenarioEntry, all: boolean) {
+  const undirected = entry.undirected ? " undirected" : "";
+  return `${entry.key.slice("graph/".length)} ${entry.nodes.length} nodes ${entry.edges.length} edges${undirected}${all ? ` on ${entry.mapKey}` : ""}`;
+}
+
+/**
+ * A graph on this map through `path:` or `cycle:` points, else the saved one's nodes and edges.
+ * Options given replace the saved graph's. Its meta is kept
+ */
+async function saveGraph(ct: JshCli.RunArg, [slug, ...args]: string[]) {
+  const key = keyOf(slug);
+  if (import.meta.env.DEV !== true) throw Error("saving needs the dev server");
+  const opts = ct.api.jsArg(args) as {
+    path?: unknown[];
+    cycle?: unknown[];
+    directed?: boolean;
+    name?: string;
+  };
+  const prev = (await loadScenarioEntries())[key] as undefined | GraphEntry;
+  const given = Array.isArray(opts.cycle) ? opts.cycle : opts.path;
+  if (given === undefined && prev === undefined) throw Error("expected path:<points> or cycle:<points>");
+  /** Undirected unless `directed` is given */
+  const undirected = opts.directed === undefined ? (prev?.undirected ?? true) : !opts.directed;
+  const made = given === undefined ? undefined : await graphs.through(ct, given, Array.isArray(opts.cycle));
+  const entry = GraphEntrySchema.parse({
+    ...prev,
+    key,
+    kind: "graph",
+    name: opts.name ?? prev?.name ?? key.slice("graph/".length),
+    mapKey: made === undefined ? prev?.mapKey : ct.w.mapKey,
+    undirected,
+    nodes: made?.nodes ?? prev?.nodes,
+    edges: made?.edges ?? prev?.edges,
+  });
+  await saveScenarioEntry(entry);
+  ct.api.writeInfo(`saved ${summary(entry, true)}`);
+}
+
+/** For `graph` and the behaviours reading graphs, e.g. `act patrol`: kept off the shell as an object — see `docs/graphs.md` */
 export const graphs = {
   closedWalk,
-  /** A saved graph by `{slug}` or `graph/{slug}`, else a graph value, e.g. `$( sc get … )`: on this map */
+  /** A saved graph by `{slug}` or `graph/{slug}`, else a graph value, e.g. `$( graph get … )`: on this map */
   async find(ct: JshCli.RunArg, value: unknown): Promise<GraphEntry> {
     const key = typeof value === "string" ? (value.startsWith("graph/") ? value : `graph/${value}`) : null;
     const entry = key === null ? value : (await loadScenarioEntries())[key];

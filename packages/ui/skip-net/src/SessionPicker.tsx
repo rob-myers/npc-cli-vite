@@ -1,4 +1,6 @@
-import { Spinner } from "@npc-cli/util";
+import { UiContext } from "@npc-cli/ui-sdk/UiContext";
+import { isUiOnScreen } from "@npc-cli/ui-sdk/ui.store";
+import { cn, Spinner, tw } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { SkipNetContext } from "./context";
@@ -13,6 +15,8 @@ export function SessionPicker(props: Props) {
   const { runner, win } = props;
   const { ttyMetas, ttyMeta } = props.session;
   const state = useContext(SkipNetContext);
+  const { layoutApi, uiStore } = useContext(UiContext);
+  const onScreen = uiStore((s) => ttyMeta === null || isUiOnScreen(s, ttyMeta.id));
 
   return (
     <InTitle>
@@ -30,18 +34,36 @@ export function SessionPicker(props: Props) {
       {ttyMeta === null ? (
         <span className="text-term-danger">no tty</span>
       ) : (
-        <Picker
-          value={ttyMeta.sessionKey}
-          options={ttyMetas.map((x) => x.sessionKey)}
-          onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
-          title="the session commands run in"
-          className={titlePickerClass}
-          popupClassName={titlePickerPopupClass}
-        />
+        <>
+          <Picker
+            value={ttyMeta.sessionKey}
+            options={ttyMetas.map((x) => x.sessionKey)}
+            onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
+            title={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}
+            className={cn(titlePickerClass, !onScreen && offScreenClass)}
+            popupClassName={titlePickerPopupClass}
+          />
+          {!onScreen && (
+            <button
+              type="button"
+              className={offScreenButtonClass}
+              title={`bring ${ttyMeta.sessionKey} on screen`}
+              onClick={() => layoutApi.showUi(ttyMeta.id)}
+            >
+              show
+            </button>
+          )}
+        </>
       )}
     </InTitle>
   );
 }
+
+/** Amber, its tty being a hidden tab or in a hidden pane */
+const offScreenClass = tw("text-amber-700 dark:text-amber-400");
+const offScreenButtonClass = tw(
+  "skip-net-no-drag h-3.5 px-1 text-[11px] leading-none cursor-pointer text-mac-text hover:bg-mac-select/15",
+);
 
 type Props = {
   runner: SessionRunner;

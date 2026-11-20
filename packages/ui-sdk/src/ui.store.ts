@@ -189,6 +189,20 @@ export type PersistedPaneNode =
       hiddenIds?: number[];
     };
 
+/** Whether a ui is shown: its Tabs' current tab, if in one, in a pane no split hides */
+export function isUiOnScreen({ byId, persistedPanes }: UiStoreState, uiId: string): boolean {
+  const parentId = byId[uiId]?.meta.parentId;
+  if (parentId !== undefined && (byId[parentId]?.meta as { currentTabId?: string })?.currentTabId !== uiId) {
+    return false;
+  }
+  return isLeafShown(persistedPanes.root, parentId ?? uiId);
+}
+
+function isLeafShown(node: PersistedPaneNode, uiId: string): boolean {
+  if (node.type === "leaf") return node.uiId === uiId;
+  return node.children.some((child) => !node.hiddenIds?.includes(child.id) && isLeafShown(child, uiId));
+}
+
 /** The layout a first visit gets, with fresh uis — see `resetPanes` for going back to it */
 export function getDefaultPanes(): PersistedPanesLayout {
   const { tabs, toUi } = getDefaultTabs();

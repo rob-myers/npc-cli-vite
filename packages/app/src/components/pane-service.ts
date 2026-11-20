@@ -133,6 +133,24 @@ export function findLeafByUiId(node: PaneNode, uiId: string): Extract<PaneNode, 
   return null;
 }
 
+/** Unhides each pane between the root and the leaf holding `uiId` */
+export function revealLeafOf(uiId: string) {
+  const path = pathToLeaf(uiStore.getState().persistedPanes.root, uiId) ?? [];
+  path.forEach((node, i) => {
+    const child = path[i + 1];
+    if (node.type === "split" && child && node.hiddenIds?.includes(child.id)) showPane(node.id, child.id);
+  });
+}
+
+function pathToLeaf(node: PaneNode, uiId: string): PaneNode[] | null {
+  if (node.type === "leaf") return node.uiId === uiId ? [node] : null;
+  for (const child of node.children) {
+    const rest = pathToLeaf(child, uiId);
+    if (rest) return [node, ...rest];
+  }
+  return null;
+}
+
 function collectLeafUiIds(node: PaneNode): string[] {
   return paneTree.leaves(node).flatMap((leaf) => (leaf.uiId ? [leaf.uiId] : []));
 }

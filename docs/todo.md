@@ -1,18 +1,45 @@
 # TODO
 
-- 🚧 SkipNet refine
-  - extend articles
-  - refine code-fence component
-    - only comment by default, can expand to show code, can expand/collapse all
-    - can specify defaults
-    - World pause initially has persisted "autoboot" checkbox which runs defaults
-  - improve sidestep ui
-  - improve SkipLib top menu
-  - narrator ui
-  - change command `sc`
+- ✅ SkipNet refine
+  - ✅ improve SkipLib top menu
+  - ✅ refine code-fence component
+    - ✅ only show comment by default
+    - ✅ can expand to show code
+    - can expand/collapse all
+    - ✅ can specify `@bootable`
+    - ✅ can specify `@default` `@default=mobile` `@default=desktop`
+    - ✅ World pause initially has persisted "autoboot" checkbox which runs defaults
+  - ✅ article pickers should use "pop out" icon on right
+  - ✅ improve sidestep ui
+    - ✅ cleaner ui
+    - ✅ per-npc overrides
 
-- helper ui pointing user towards SkipNet
+- ❌ narrator ui
+- ✅ avoid World hogging resources on load
 
+- 🚧 change command `sc` to `graph`
+  - scenarios no longer exist
+- ✅ mobile paused should allow one-finger to rotate camera too
+- ✅ remove numeric shortcuts for sight/sense/ship-mode
+- ✅ can only enter ship-mode via long-press on WorldMenu button
+
+- 🚧 extend SkipNet articles
+  - ✅ support multipart articles
+  - 🚧 npc-controls
+
+- review skins again
+  - improve all mtf
+  - improve d-1
+  - try add more
+
+- improve phaser
+  - phaser itself
+  - beam
+  - hud/decor icon
+  - hit animations (blocked/ghost are fine)
+
+- helper ui pointing user towards SkipNet video
+  - also update GlobalMenu About modal
 
 After vid:
 
@@ -32,6 +59,9 @@ After vid:
 - experiment with WebMCP + WebMCP Tools Chrome Extension
   - https://aistudio.google.com/api-keys
 - phaser also shown in sense-mode
+- improve `phaser` command readability
+- might be nice idea for the command `jobs` to toggle open the jobs panel in Jsh
+  - this could go in jsh/util.js
 
 ## World
 

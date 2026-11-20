@@ -21,6 +21,7 @@ import {
   findPanePosition,
   initNextId,
   persistPanesToUi,
+  revealLeafOf,
   splitPane,
   swapPane,
   toggleOrientation,
@@ -71,6 +72,16 @@ function Index() {
       },
       getPaneCount() {
         return countPanes(uiStore.getState().persistedPanes.root);
+      },
+      showUi(uiId: string) {
+        const parentId = uiStore.getState().byId[uiId]?.meta.parentId;
+        if (parentId !== undefined) {
+          uiStore.setState((draft) => {
+            const tabs = draft.byId[parentId]?.meta as { currentTabId?: string } | undefined;
+            if (tabs) tabs.currentTabId = uiId;
+          });
+        }
+        revealLeafOf(parentId ?? uiId);
       },
     },
     theme,

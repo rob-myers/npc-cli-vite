@@ -33,7 +33,7 @@ const GraphEdgeSchema = z.object({
   meta: GraphMetaSchema,
 });
 
-/** A directed multigraph on one map, read by jsh behaviours, e.g. `act patrol {slug}` — see `docs/npc-graphs.md` */
+/** A directed multigraph on one map, read by jsh behaviours, e.g. `act patrol {slug}` — see `docs/graphs.md` */
 export const GraphEntrySchema = z
   .object({
     ...EntryBase,
@@ -56,7 +56,7 @@ export const GraphEntrySchema = z
     }
   });
 
-/** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/scenarios.md` */
+/** One file, `packages/media/src/scenario/{kind}/{slug}.json` — see `docs/graphs.md` */
 export const ScenarioEntrySchema = z.discriminatedUnion("kind", [GraphEntrySchema]);
 
 export type ScenarioEntry = z.infer<typeof ScenarioEntrySchema>;

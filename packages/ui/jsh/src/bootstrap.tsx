@@ -4,9 +4,9 @@ import { getTtyStore } from "@npc-cli/cli/shell/storage";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { CreateForm, CreateFormKey, CreateFormRow, useStateRef } from "@npc-cli/util";
 import { jsStringify, restoreFromPersistedJsStringify, warn } from "@npc-cli/util/legacy/generic";
-import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { JshUiMeta } from "./schema";
@@ -17,21 +17,19 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
   const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
-    invalid: false,
     sessionKey: uiStoreApi.getDefaultTitle("Jsh", "tty"), // e.g. tty-0
     worldKey: "world-0",
     profileKey: "default_profile" as ProfileKey,
+    /** Why `sessionKey` can't be made, else `null` */
+    getError(): string | null {
+      if (!sessionKeyRegex.test(state.sessionKey)) return "a session is tty-N, e.g. tty-2";
+      const { byId } = uiStore.getState();
+      const taken = Object.values(byId).some(
+        ({ meta }) => meta.uiKey === "Jsh" && (meta as JshUiMeta).sessionKey === state.sessionKey,
+      );
+      return taken ? `${state.sessionKey} already exists` : null;
+    },
     onClickCreate() {
-      if (state.invalid) return;
-
-      if (
-        Object.entries(uiStore.getState().byId).find(
-          ([_, { meta }]) => meta.uiKey === "Jsh" && meta.sessionKey === state.sessionKey,
-        )
-      ) {
-        return alert(`${state.sessionKey} already exists.`);
-      }
-
       state.prepareExtantPersistedSession(state.sessionKey);
 
       props.addInstance({
@@ -69,55 +67,38 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
     ]),
   );
 
+  const error = state.getError();
+
   return (
-    <div className="border flex w-full bg-black text-white">
-      <label className="flex border p-0.5 w-16">
-        <input
-          type="text"
-          autoCorrect="off"
-          className={cn("w-full p-1 border border-black/30 invalid:bg-red-400/30 outline-black")}
-          placeholder="sessionKey"
-          onChange={(e) => state.set({ sessionKey: e.currentTarget.value })}
-          onInput={(e) => state.set({ invalid: !e.currentTarget.checkValidity() })}
-          pattern="tty-[0-9]+"
-          value={state.sessionKey}
-          onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
+    <CreateForm error={error} onCreate={state.onClickCreate}>
+      <CreateFormKey
+        label="session"
+        value={state.sessionKey}
+        invalid={error !== null}
+        onChange={(sessionKey) => state.set({ sessionKey })}
+      />
+      <CreateFormRow label="world">
+        <Picker
+          value={state.worldKey}
+          options={worldKeys}
+          onChange={(worldKey) => state.set({ worldKey })}
+          title="the World its commands act on"
+          className="text-xs"
+          popupClassName="font-mono"
         />
-      </label>
-      <select
-        className="border p-0.5 bg-black text-green-600 font-mono text-sm"
-        value={state.worldKey}
-        onChange={(e) => state.set({ worldKey: e.currentTarget.value })}
-      >
-        {worldKeys.map((key) => (
-          <option key={key} value={key}>
-            {key}
-          </option>
-        ))}
-      </select>
-      <select
-        className="border p-0.5 bg-black text-green-600 font-mono text-sm flex-1"
-        value={state.profileKey}
-        onChange={(e) => state.set({ profileKey: e.currentTarget.value as ProfileKey })}
-      >
-        {profileKeys.map((key) => (
-          <option key={key} value={key}>
-            {key}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        className="p-2 text-sm cursor-pointer disabled:cursor-not-allowed"
-        disabled={state.invalid}
-        onClick={state.onClickCreate}
-      >
-        {state.invalid ? (
-          <WarningIcon className="size-6 fill-red-400" weight="duotone" />
-        ) : (
-          <PlusCircleIcon className="size-6" weight="duotone" />
-        )}
-      </button>
-    </div>
+      </CreateFormRow>
+      <CreateFormRow label="profile">
+        <Picker
+          value={state.profileKey}
+          options={profileKeys}
+          onChange={(profileKey) => state.set({ profileKey })}
+          title="what it runs on starting"
+          className="text-xs"
+          popupClassName="font-mono"
+        />
+      </CreateFormRow>
+    </CreateForm>
   );
 }
+
+const sessionKeyRegex = /^tty-\d+$/;

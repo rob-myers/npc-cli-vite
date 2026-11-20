@@ -212,7 +212,7 @@ The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to 
 
 ## Graphs
 
-The sidebar's **graph** tab lists this map's graphs, and draws the chosen one, editable in DEV. See In the Decorator in `docs/npc-graphs.md`.
+The sidebar's **graph** tab lists this map's graphs, and draws the chosen one, editable in DEV. See In the Decorator in `docs/graphs.md`.
 
 ## Not built yet
 

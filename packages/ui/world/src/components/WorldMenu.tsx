@@ -72,6 +72,7 @@ export function WorldMenu() {
       colY: null as any,
       debugHitOpen: false,
       dragged: false,
+      fadeTimer: 0,
       gmGraphsOpen: false,
       extraFxSelectOpen: false,
       menuWidth: saved.menuWidth,
@@ -104,6 +105,22 @@ export function WorldMenu() {
         if (state.unconfirmed !== null) {
           state.set({ unconfirmed: null });
         }
+      },
+      onFadePointerDown() {
+        state.fadeTimer = window.setTimeout(() => {
+          state.fadeTimer = 0;
+          if (state.dragged) return;
+          w.view.setFadeRoomsMode("ship");
+          state.update();
+        }, fadeLongPressMs);
+      },
+      onFadePointerUp() {
+        if (state.fadeTimer === 0) return; // a long press, already in `ship`
+        window.clearTimeout(state.fadeTimer);
+        state.fadeTimer = 0;
+        if (state.dragged) return;
+        w.view.setFadeRoomsMode();
+        state.update();
       },
       onExtraFxSelectOpenChange(open, reason) {
         if (open === false && reason === "item-press") return;
@@ -940,18 +957,17 @@ export function WorldMenu() {
           </button>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. Cycles `sight` to `sense` to `ship`, the same three the keys `1`,
-              `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
-              either fading mode switches that on too */}
+              `service/fade-rooms`. A tap swaps `sight` and `sense`, a long press enters `ship`.
+              The rooms fade INTO the post pass's backdrop, so asking for either fading mode
+              switches that on too */}
           <div
             data-keep-menu-open
-            title={w.view.fadeRoomsMode}
+            title={`${w.view.fadeRoomsMode} (hold for ship)`}
             className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
-            onClick={() => {
-              if (state.dragged) return;
-              w.view.setFadeRoomsMode();
-              state.update();
-            }}
+            onPointerDown={state.onFadePointerDown}
+            onPointerUp={state.onFadePointerUp}
+            onPointerLeave={() => window.clearTimeout(state.fadeTimer)}
+            onContextMenu={(e) => e.preventDefault()} // touch's own long press
           >
             {w.view.fadeRoomsMode === "sight" ? (
               <EyeIcon className="size-5 text-neutral-200" alt="sight" weight="bold" />
@@ -1531,6 +1547,12 @@ export type State = {
   skinDebugOpen: boolean;
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
+  /** The fade button's pending long press, else `0` */
+  fadeTimer: number;
+  /** A long press enters `ship`, once held long enough */
+  onFadePointerDown(): void;
+  /** A tap swaps `sight` and `sense` */
+  onFadePointerUp(): void;
   colEl: null | HTMLDivElement;
   /** The column's `y`, which the player's left column may push */
   colY: MotionValue<number>;
@@ -1618,6 +1640,8 @@ const rangeInputClass = (touch: boolean, width: string) =>
   );
 
 /** How long something stays unconfirmed, before it forgets it was ever clicked */
+/** How long the fade button is held to enter `ship` */
+const fadeLongPressMs = 500;
 const confirmMs = 5000;
 
 const minMenuWidth = 200;

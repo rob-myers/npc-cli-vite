@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, redrawForSnapshotEvent, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
@@ -51,7 +51,6 @@ import {
   createFadeRooms,
   type FadeRooms,
   type FadeRoomsMode,
-  fadeRoomsModeByKey,
   MODE_FADE_SECS,
   nextFadeRoomsMode,
   parseFadeRoomsMode,
@@ -706,8 +705,10 @@ export function WorldView(props: React.PropsWithChildren) {
         const shiftPx = rgbShiftPx.near + (rgbShiftPx.far - rgbShiftPx.near) * eased;
         state.rgbShiftFx.setAmount(shiftPx / Math.max(1, w.r3f.size.width));
 
-        // following, the camera needs no pan, so one finger moves where the player looks instead
-        controls.touchLook = state.follow === true ? w.player.dragLookTowards : null;
+        // following, the camera needs no pan, so one finger moves where the player looks instead.
+        // Paused they can't turn, so one finger turns the view about them
+        controls.touchLook = state.follow === true && w.disabled !== true ? w.player.dragLookTowards : null;
+        controls.touches.ONE = state.follow === true && w.disabled === true ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
 
         if (state.cameraMode !== "embodied") return;
 
@@ -1000,6 +1001,7 @@ export function WorldView(props: React.PropsWithChildren) {
           () => (w.e?.bootedAt ?? 0) > 0,
           () => w.r3f?.invalidate(),
         );
+        w.r3f.gl.domElement.addEventListener(redrawForSnapshotEvent, state.renderForSnapshot);
         // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
         // live only there — three re-uploads the rest from their mirrors, these are redrawn
         if (w.floor?.drawnMapKey != null) {
@@ -1008,6 +1010,9 @@ export function WorldView(props: React.PropsWithChildren) {
           void Promise.all([w.ceil.draw(), w.obs.draw()]).then(() => w.update());
         }
         w.update();
+      },
+      renderForSnapshot() {
+        if (w.r3f) w.r3f.gl.render(w.r3f.scene, w.r3f.camera);
       },
       holdFrontier() {
         if (w.player?.get() === undefined) return;
@@ -1040,12 +1045,6 @@ export function WorldView(props: React.PropsWithChildren) {
           if (w.pickMenu?.closeFocused() !== true) uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
-        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
-          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
-          if (e.repeat === false) {
-            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
-            w.menu?.update();
-          }
         } else if (e.key === "0") {
           if (e.repeat === false) {
             w.spots?.toggle();
@@ -2111,6 +2110,8 @@ export type State = {
   computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
   /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
+  /** Renders a frame at once, without a tick, so a copy in the same task reads it */
+  renderForSnapshot(): void;
   /** Whilst an animated `lookAt` runs — the follow button is lit by it */
   lookingAt: boolean;
   /**

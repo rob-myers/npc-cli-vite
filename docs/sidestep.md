@@ -1,6 +1,6 @@
 # Sidestep
 
-jsh `sidestep` (`packages/cli/src/jsh/world/sidestep.ts`, in the default PROFILE) has idle npcs make way for a walker coming at them or held up by them. It is a keyed tick, not a process. `sidestep off` removes it.
+jsh `sidestep` (`packages/cli/src/jsh/world/sidestep.ts`, in the default PROFILE) has idle npcs make way for a walker coming at them or held up by them. It is a keyed tick, not a process. A bare `sidestep` prints its settings, and the profile's `sidestep on` doesn't. `sidestep off` removes it.
 
 ![sidestep, overall](sidestep/sidestep-overview.svg)
 
@@ -17,7 +17,7 @@ The diagrams are in `docs/sidestep/`. `diagrams.py` there regenerates heldUp's s
 
 `SidestepLookout` (`sidestep-lookout.ts`) decides who is in whose way, from its two methods' numbered stages. It is jsh's alone: `sidestep status` is the way in.
 
-**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, are passed over (`ownMove`): they make way, never ask for it, so one npc's step cannot set others off. Tick `chain` in its pane, or `sidestep chain:true`, to let them look too, e.g. to watch how a crowd behaves.
+**Walkers.** Only moving npcs look. The lookout keeps them from `started-moving`, `stopped-moving` and `removed-npcs`. Each holds cached candidates: their room, and its doors with the room beyond each. Those are placed when they start and on `enter-room`, never per look. Npcs in a room come from the live `w.npc.roomToNpcs`, and a door's `open` from `w.door.byKey`. Sidestep's own movers, stepping aside or going back, look too by default (`chain`), so one npc's step may set others off through a crowd. Untick `chain` in its pane, or `sidestep chain:false`, and they are passed over (`ownMove`): they make way, never ask for it.
 
 **Coming** (`coming`) runs over every walker each tick. Seen from above, with rob (`W`) walking right:
 
@@ -159,10 +159,18 @@ Tuning is in metres, its defaults (`tuneDefaults`) in brackets:
   - a picker of the kind every npc tries next: `aside`, `turn`, `shuffle`, `back`, `wall`, `doorway`, `stand`;
   - a number field for each of that kind's tuning, e.g. `wall`'s `reach`. Its keys stay out of the World, and Enter gives the World the keys back;
   - a picker of where they go back to once the walker has gone: `last` (the default), `home` or `stay`. Unless `stay`, a field each for `clear` and `idle` follows: when they go back (`returnDefaults`).
-  - Each set of fields sits under a toggle ("▸ tuning", "▸ when"), open or shut as last left (`open`), and shown only when it has fields.
-  - a `chain` checkbox, off by default: sidestep's own movers look too, so steps may chain through a crowd.
+  - Each picker heads a section, "make way" and "go back", whose caret shows or hides its fields, as last left (`open`). A section without fields has no caret.
+  - a `chain` checkbox, on by default: sidestep's own movers look too, so steps may chain through a crowd.
   - All are kept in `/shared/sidestep` (`debugChoices`), which the watcher and the item both read and write, so a re-run, a hot reload or a page reload keeps them. Tuning added since keeps its default (`tuneOf`).
-  - `sidestep kind:wall back:home reach:2 clear:2` sets them from jsh (`setChoices`), e.g. for the examples below. A number tunes the kind, or going back, and one neither takes says what does: `wall takes: reach, clear, idle`.
+  - `sidestep kind:wall back:home reach:2 clear:2` sets them from jsh (`setChoices`), e.g. for the examples below. A number tunes the kind, or going back, and one neither takes says what does: `wall takes: reach, clear, idle, chain`. `kind:none` is `stand`.
+  - A "per npc in {mapKey}" section lists each npc's own rule on this map, greyed if not spawned, each with an x to remove it. It is not edited here.
+
+## Per npc
+
+- An npc's own rule overrides the pane's choices for them alone, field by field, e.g. only `kind`. It is kept in `/shared/map/{mapKey}/pred` (`sidestepRules`), so per map, and outlives the npc, so a respawn keeps it.
+- `sidestep for:rob,kate kind:wall back:home reach:2` sets it, merged into any already there. `sidestep for:rob` prints rob's choices, and `sidestep for:rob reset` drops the rule.
+- Each is read live (`choicesFor`): `kind` and `tune` by the npc making way, `back` and `returns` by the npc going back, and `chain` by the mover. So `for:` needs no restart.
+- A bare `sidestep` prints the pane's choices, then, if any, this map's rules as one object by npcKey.
 - `sidestepConfig` in `sidestep.ts` holds the rest: `reactSecs`, `back` (the picker's default), `says` and the settle and return constants.
 - Keep `reactSecs` short: a walker motionless for `stuckDuration` (0.8s) in all is stuck, and their move fails.
 - A running `sidestep --debug` goes quiet once `sidestep.ts` hot-reloads. Kill it and run it again.
@@ -269,4 +277,4 @@ cost (real ms)
   - dashed amber: `rob passed by kate`, from the walker to them, level with or behind his heading
 - teal: their way back, said as `kate returns: last 0.8m, rob 1.6m off` or `kate returns: home 1.2m after 2 steps, rob stopped 1.1m off`, else `kate didn't return: …` in red
 
-Each plan's lines replace that npc's last, all of a tick's drawn together in one redraw (`flush`, `w.debug.setPolylines`, where `null` removes a line). It asks only for a frame (`w.r3f.invalidate`). `w.view.forceUpdate` would run a tick, whose events queue another `flush`, freezing the page. With `chain`, skips whose walker is sidestep's own mover go unsaid and undrawn: in a crowd there are too many. For a big crowd, `sidestep --debug rob` keeps it to what involves rob. Choices are World events (`key: "sidestep"`), so `events` shows them too. One `--debug` runs at a time: a new one ends the last (`endDebug`), whose cleanup leaves the new one's listener be.
+Each plan's lines replace that npc's last, all of a tick's drawn together in one redraw (`flush`, `w.debug.setPolylines`, where `null` removes a line). It asks only for a frame (`w.r3f.invalidate`). `w.view.forceUpdate` would run a tick, whose events queue another `flush`, freezing the page. With `chain`, skips whose walker is sidestep's own mover go unsaid and undrawn: in a crowd there are too many. For a big crowd, `sidestep --debug:rob` keeps it to what involves rob, and `--debug:rob,kate` to either. Choices are World events (`key: "sidestep"`), so `events` shows them too. One `--debug` runs at a time: a new one ends the last (`endDebug`), whose cleanup leaves the new one's listener be.

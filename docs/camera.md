@@ -31,10 +31,11 @@ The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writin
 **Touch** (`onTouchStart`)
 - One finger pans, and two turn or pinch.
 - Whilst following, a one-finger drag moves where the player looks instead (`touchLook`), and a tap still picks. Two fingers turn or pinch as ever.
+- Whilst following and paused, the player can't turn, so a one-finger drag turns the view about them (`touches.ONE` is `ROTATE`). A pan would leave them, and the follow would pull it back on resuming.
 - A two-finger tap is a look, at their midpoint (`w.player.onTouch`).
 
 **Keys**
-- `1`, `2` and `3` select the fade mode: `sight`, `sense`, `ship` (`fadeRoomsModeByKey`). The menu's button cycles them.
+- No key sets the fade mode. The menu's button does: a tap swaps `sight` and `sense` (from `ship`, back to `sight`), and only a long press enters `ship`.
 - `0` toggles the spots overlay (`w.spots.toggle`), as the debug menu's **spots** does.
 - `-` and `+` (or `=`) step the camera's framing down or up through the presets, low, mid and high (`stepCameraPreset`), from whichever is nearest by fov.
 
