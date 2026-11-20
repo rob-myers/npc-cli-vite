@@ -198,6 +198,8 @@ export const fromAnimationClipKey = {
   crouch_strafe_right: true,
   crouch_walk: true,
   die_back: true,
+  die_crumple_back: true,
+  die_crumple_forward: true,
   die_forward: true,
   drop: true,
   drop_left: true,
@@ -437,8 +439,14 @@ export const hitConfig = {
   sink: "collapse" as ClipKey,
   /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
   die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
+  /** With no room to fall, they crumple where they stand, the same way: down onto their back, else folded forwards */
+  crumple: { back: "die_crumple_back", forward: "die_crumple_forward" } satisfies Record<string, ClipKey>,
   /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
   lieWidth: 0.45,
+  /** Metres of clear floor a fall dead needs along its way: behind them falling back, ahead falling forward */
+  lieLength: { back: 1.25, forward: 1.8 },
+  /** Radians a fall dead may turn to fit, tried in this order, before falling the other way */
+  fitTurns: [0, 0.5, -0.5, 1, -1],
   /** Seconds a hurt clip fades in over, so its first jolt reads */
   fadeInSecs: 0.08,
   /** Killed sat or lain, the pain clip goes on to this, held still at `deadSecs` into it. Stood, they `die` */
@@ -502,6 +510,8 @@ export const fadeSecs: Record<
   crouch_strafe_right: {},
   crouch_walk: {},
   die_back: {},
+  die_crumple_back: {},
+  die_crumple_forward: {},
   die_forward: {},
   drop: {},
   drop_left: {},
