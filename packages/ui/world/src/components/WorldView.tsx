@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, redrawForSnapshotEvent, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
@@ -1000,6 +1000,7 @@ export function WorldView(props: React.PropsWithChildren) {
           () => (w.e?.bootedAt ?? 0) > 0,
           () => w.r3f?.invalidate(),
         );
+        w.r3f.gl.domElement.addEventListener(redrawForSnapshotEvent, state.renderForSnapshot);
         // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
         // live only there — three re-uploads the rest from their mirrors, these are redrawn
         if (w.floor?.drawnMapKey != null) {
@@ -1008,6 +1009,9 @@ export function WorldView(props: React.PropsWithChildren) {
           void Promise.all([w.ceil.draw(), w.obs.draw()]).then(() => w.update());
         }
         w.update();
+      },
+      renderForSnapshot() {
+        if (w.r3f) w.r3f.gl.render(w.r3f.scene, w.r3f.camera);
       },
       holdFrontier() {
         if (w.player?.get() === undefined) return;
@@ -2111,6 +2115,8 @@ export type State = {
   computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
   /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
+  /** Renders a frame at once, without a tick, so a copy in the same task reads it */
+  renderForSnapshot(): void;
   /** Whilst an animated `lookAt` runs — the follow button is lit by it */
   lookingAt: boolean;
   /**

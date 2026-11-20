@@ -10,6 +10,7 @@ export * from "./hooks/use-effect-non-strict";
 export * from "./hooks/use-state-ref.js";
 export * from "./hooks/use-update";
 export * from "./service/broadcaster";
+export * from "./service/canvas-snapshot";
 export * from "./service/json-parser";
 export * from "./service/observable-to-async-it";
 export type { PaneEdge, PaneLeaf, PaneNode, PanePosition } from "./service/pane-tree";

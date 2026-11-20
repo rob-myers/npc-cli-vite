@@ -1,5 +1,6 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { pointerOutsideOfPreview } from "@atlaskit/pragmatic-drag-and-drop/element/pointer-outside-of-preview";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
 import { chosenThemeOf, themeOfUi } from "@npc-cli/ui-sdk/schema";
@@ -22,6 +23,7 @@ import {
 import { useContext, useEffect, useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
+import { renderTabDragPreview } from "./drag-preview";
 import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
@@ -329,27 +331,14 @@ function TabHeaderItem({
         onGenerateDragPreview: ({ nativeSetDragImage }) => {
           setCustomNativeDragPreview({
             nativeSetDragImage,
+            getOffset: pointerOutsideOfPreview({ x: "12px", y: "8px" }),
             render: ({ container }) => {
-              const preview = document.createElement("div");
-              Object.assign(preview.style, {
-                width: "100px",
-                height: "80px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--color-background, #222)",
-                color: "var(--color-on-background, #fff)",
-                border: "2px solid rgba(255,255,255,0.5)",
-                fontFamily: "monospace",
-                fontSize: "12px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                padding: "8px",
-                textAlign: "center",
-                wordBreak: "break-word",
-              });
-              preview.textContent = tab.title ?? id;
-              container.appendChild(preview);
+              const current = uiStoreApi.getUi(id)?.meta ?? tab; // e.g. renamed since this effect ran
+              renderTabDragPreview(
+                container,
+                { title: current.title ?? id, kind: current.uiKey },
+                document.querySelector<HTMLElement>(`[data-tab-content="${id}"]`),
+              );
             },
           });
         },
