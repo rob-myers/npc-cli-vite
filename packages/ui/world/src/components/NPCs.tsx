@@ -331,6 +331,8 @@ export default function NPCs() {
           npc.anim.tick(delta);
 
           if (npc.agentId === null) {
+            // a corpse's physics body goes where it lies, so a doorway it lies in is not clear, and stays open
+            if (npc.anim.fall != null) positions.push(npc.bodyUid, npc.position.x, npc.position.y, npc.position.z);
             continue;
           }
 

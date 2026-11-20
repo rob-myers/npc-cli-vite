@@ -163,9 +163,11 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
 - `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now.
-- A fall must fit (`fitDeath`, `fallFits`): clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead`), with no
-  one in their room standing in that strip (`w.npc.near.inReach`). The shot's way is tried first, turned by each of
-  `fitTurns` in turn, then the other way. The turn eases in over the fall (`tickFall`).
+- A fall must fit (`fitDeath`, `fallFits`): clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a
+  wall), with no
+  one in their room standing in that strip (`w.npc.near.inReach`). The shot's way is tried first, turned to fall along the shot
+  (`alongShot`, up to 90°) and then by each of `fitTurns`, then the other way at their own facing. A corpse's physics body
+  goes where it lies, so a doorway it lies in is not clear and its door stays open. The turn eases in over the fall (`tickFall`).
 - If none fits, they crumple where they stand, the shot's way (`hitConfig.crumple`): shot from in front, `die_crumple_back`
   sits them down hard and onto their back, knees up and fallen aside; else `die_crumple_forward` takes them onto their
   knees, then folded forwards. Both twist, arms on the floor, about 1.1m across.

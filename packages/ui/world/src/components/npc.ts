@@ -52,6 +52,8 @@ export class Npc {
   queryFilter!: QueryFilter;
   /** As `queryFilter`, but without the exemption for the node they stand on */
   strictQueryFilter!: QueryFilter;
+  /** Passes a doorway only whilst its door is open, e.g. for whether their body would fit lying there */
+  openDoorsFilter!: QueryFilter;
 
   bubbleOffset = new THREE.Vector3(0, 0, 0);
   geometry: THREE.BufferGeometry;
@@ -469,6 +471,15 @@ export class Npc {
       ...createDefaultQueryFilter(),
       passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, false),
     };
+
+    this.openDoorsFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => {
+        const { area } = getNodeByRef(navMesh, nodeRef);
+        if (nodeRef === this.nodeRef || isDoorAreaId(area) === false) return true;
+        return this.w.door.byKey[decodeDoorAreaId(area).gdKey]?.open === true;
+      },
+    };
   }
 
   isFading() {
@@ -598,6 +609,7 @@ export class Npc {
     depth: number,
     along: Geom.VectJson,
     heading: Geom.VectJson,
+    filter = this.queryFilter,
   ): { room: number; square: number; dir: Geom.VectJson } {
     const unit = Math.hypot(along.x, along.y) || 1;
     const [sx, sz] = [along.x / unit, along.y / unit];
@@ -610,7 +622,7 @@ export class Npc {
     const dir = { x: dx / ray, y: dz / ray };
     if (ahead < -Math.abs(right)) return { room: depth, square: 0, dir };
     const end: Vec3 = [point.x + dx, 0, point.y + dz];
-    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
+    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, filter);
     if (hit.t > 1) return { room: depth, square: 0, dir };
     // a doorway's own side is a jamb, passed alongside: never square on
     const last = hit.path.at(-1);

@@ -646,7 +646,7 @@ export class NpcAnimation {
     const side = { x: Math.cos(ry), y: -Math.sin(ry) };
     const roomOn = (sign: number) => {
       const way = { x: sign * side.x, y: sign * side.y };
-      return npc.roomAhead(npc.point, nodeRef, half, way, way).room;
+      return npc.roomAhead(npc.point, nodeRef, half, way, way, npc.openDoorsFilter).room;
     };
     /** Metres along `side`: away from whichever side is short, never past the other */
     const shift = Math.max(0, half - roomOn(-1)) - Math.max(0, half - roomOn(1));
@@ -671,10 +671,14 @@ export class NpcAnimation {
    * A fall dead that fits, as its clip and the turn it takes: the shot's way first, turned less before more,
    * then the other way. If none fits, they crumple where they stand
    */
-  fitDeath(key: AnimationClipKey): [AnimationClipKey, number] {
+  fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number] {
     const side: FallSide = key === hitConfig.die.back ? "back" : "forward";
-    for (const way of side === "back" ? fallSides : [...fallSides].reverse())
-      for (const turn of hitConfig.fitTurns) if (this.fallFits(way, turn)) return [hitConfig.die[way], turn];
+    for (const way of side === "back" ? fallSides : [...fallSides].reverse()) {
+      /** The shot's way is turned to fall along the shot: the other way keeps their facing */
+      const along = way === side && dir !== undefined ? alongShot(way, dir, this.npc.rotation.y) : 0;
+      for (const turn of hitConfig.fitTurns)
+        if (this.fallFits(way, along + turn)) return [hitConfig.die[way], along + turn];
+    }
     return [hitConfig.crumple[side], 0];
   }
 
@@ -687,7 +691,7 @@ export class NpcAnimation {
     const sign = side === "back" ? -1 : 1; // ahead is (-sin, -cos)
     const way = { x: -sign * Math.sin(ry), y: -sign * Math.cos(ry) };
     const length = hitConfig.lieLength[side];
-    if (npc.roomAhead(npc.point, nodeRef, length, way, way).room < length) return false;
+    if (npc.roomAhead(npc.point, nodeRef, length, way, way, npc.openDoorsFilter).room < length) return false;
     return this.w.npc.near.inReach(npc.key, 0).every((other) => {
       const [dx, dz] = [other.position.x - npc.position.x, other.position.z - npc.position.z];
       const along = dx * way.x + dz * way.y;
@@ -789,7 +793,7 @@ export class NpcAnimation {
     const kill = impact?.outcome === "kill";
     /** Radians they turn as they fall dead, to fit — see `fitDeath` */
     let turn = 0;
-    if (key !== null && dieClips.has(key)) [key, turn] = this.fitDeath(key);
+    if (key !== null && dieClips.has(key)) [key, turn] = this.fitDeath(key, impact?.dir);
     /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
@@ -1713,6 +1717,13 @@ const tmpFallTravel = new THREE.Vector2();
 /** Whether a shot along world `dir` pushes one facing `ry` backwards, i.e. it came from in front. Their front is -z */
 function pushedBack(dir: undefined | THREE.Vector3, ry: number) {
   return dir === undefined || dir.x * Math.sin(ry) + dir.z * Math.cos(ry) > 0;
+}
+
+/** Radians one facing `ry` turns so a fall to `side` goes along the shot's world `dir`. Their ahead is (-sin, -cos) */
+function alongShot(side: FallSide, dir: THREE.Vector3, ry: number) {
+  const sign = side === "forward" ? 1 : -1;
+  const want = Math.atan2(-sign * dir.x, -sign * dir.z);
+  return Math.atan2(Math.sin(want - ry), Math.cos(want - ry));
 }
 
 /** A pose stood still in, whose feet a stance may hold apart */
