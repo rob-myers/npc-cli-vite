@@ -198,6 +198,7 @@ export const fromAnimationClipKey = {
   crouch_strafe_right: true,
   crouch_walk: true,
   die_back: true,
+  die_forward: true,
   drop: true,
   drop_left: true,
   idle: true,
@@ -434,8 +435,8 @@ export const hitConfig = {
   } as Partial<Record<ClipKey, ClipKey>>,
   /** Put down stood, a torso hit sinks them where they stand into `collapsed` */
   sink: "collapse" as ClipKey,
-  /** Killed stood, they fall back dead, held on its last frame */
-  die: "die_back" as ClipKey,
+  /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
+  die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
   /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
   lieWidth: 0.45,
   /** Seconds a hurt clip fades in over, so its first jolt reads */
@@ -501,6 +502,7 @@ export const fadeSecs: Record<
   crouch_strafe_right: {},
   crouch_walk: {},
   die_back: {},
+  die_forward: {},
   drop: {},
   drop_left: {},
   idle: { shuffle: 0.15, shuffle_step: 0.2 },

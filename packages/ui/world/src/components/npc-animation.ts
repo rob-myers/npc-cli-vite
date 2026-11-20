@@ -166,6 +166,15 @@ export class NpcAnimation {
   };
   /** Killed: held still once their pain clip ends, until released — see `holdStill` */
   dead = false;
+  /** Falling dead: where they stood, their hips' offset then, and the slide off a near wall — see `tickFall` */
+  fall = null as null | {
+    start: THREE.Vector2;
+    from: THREE.Vector2;
+    shift: THREE.Vector2;
+    hips: THREE.Object3D;
+    /** What `tickFall` last wrote to their root */
+    wrote: THREE.Vector3;
+  };
   /** Whilst hurt, a hand on their wound — see `npc-clutch` */
   clutch = newClutch();
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
@@ -398,14 +407,15 @@ export class NpcAnimation {
   }
 
   /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
-  hitClipFor(part: null | string, outcome?: HitOutcome): null | AnimationClipKey {
+  hitClipFor(part: null | string, outcome?: HitOutcome, dir?: THREE.Vector3): null | AnimationClipKey {
     const region = hitConfig.region[part ?? ""];
     if (region === undefined) return null;
     const posture = postureOf(keyOf(this.idleClip));
     /** Held down already, e.g. collapsed: they stay so, rather than sink again */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false;
     const sink = outcome === "down" && posture === "stand" && region === "torso" && held === false;
-    if (outcome === "kill" && posture === "stand") return hitConfig.die;
+    if (outcome === "kill" && posture === "stand")
+      return hitConfig.die[pushedBack(dir, this.npc.rotation.y) ? "back" : "forward"];
     return sink ? hitConfig.sink : hitConfig.clips[posture][region];
   }
 
@@ -625,10 +635,10 @@ export class NpcAnimation {
   }
 
   /** Falling dead, they need `hitConfig.lieWidth` either side: a wall nearer has their agent pinned away from it */
-  roomToLie() {
+  roomToLie(): THREE.Vector2 {
     const { npc } = this;
     const { nodeRef } = npc;
-    if (nodeRef === null) return;
+    if (nodeRef === null) return new THREE.Vector2();
     const half = hitConfig.lieWidth;
     const ry = npc.rotation.y;
     const side = { x: Math.cos(ry), y: -Math.sin(ry) };
@@ -638,9 +648,48 @@ export class NpcAnimation {
     };
     /** Metres along `side`: away from whichever side is short, never past the other */
     const shift = Math.max(0, half - roomOn(-1)) - Math.max(0, half - roomOn(1));
-    if (Math.abs(shift) < 0.02) return;
-    const to = { x: npc.point.x + shift * side.x, y: npc.point.y + shift * side.y };
-    npc.pinTo(this.w.npc.getClosestPoly(to));
+    return Math.abs(shift) < 0.02 ? new THREE.Vector2() : new THREE.Vector2(shift * side.x, shift * side.y);
+  }
+
+  /** Falling dead, they leave the crowd: the clip carries them, and the npc goes with their hips — see `tickFall` */
+  startFall() {
+    const { npc } = this;
+    const hips = npc.group?.getObjectByName("hips");
+    if (hips === undefined) return;
+    const shift = this.roomToLie(); // whilst their agent still gives their poly
+    this.w.npc.removeAgents([npc], { keepPhysics: true });
+    const start = new THREE.Vector2(npc.position.x, npc.position.z);
+    const from = this.hipsOffset(hips, new THREE.Vector2());
+    this.fall = { start, from, shift, hips, wrote: new THREE.Vector3(Number.NaN) };
+  }
+
+  /** Their hips across the floor from where the npc stands */
+  hipsOffset(hips: THREE.Object3D, out: THREE.Vector2) {
+    hips.updateWorldMatrix(true, false);
+    const at = hips.getWorldPosition(tmpFallAt);
+    return out.set(at.x - this.npc.position.x, at.z - this.npc.position.z);
+  }
+
+  /**
+   * Falling dead, the npc moves as far as the clip has carried their hips, plus the slide eased in.
+   * Their root goes back as far, so they look the same, and their shadow and corpse are where their body is
+   */
+  tickFall() {
+    const f = this.fall;
+    const { hurt, npc } = this;
+    if (f == null || hurt === null || dieClips.has(hurt.key) === false) return; // undefined from before hmr
+    const root = f.hips.parent;
+    if (root?.parent == null) return;
+    if (root.position.equals(f.wrote)) return; // held at its end, the mixer leaves the root where this put it
+    const travel = this.hipsOffset(f.hips, tmpFallTravel).sub(f.from);
+    const u = Math.min(1, hurt.secs / this.npc.clips[hurt.key].duration);
+    const slide = u * u * (3 - 2 * u);
+    const [x, z] = [npc.position.x, npc.position.z];
+    npc.position.x = f.start.x + travel.x + slide * f.shift.x;
+    npc.position.z = f.start.y + travel.y + slide * f.shift.y;
+    // the root goes back by the travel, in its own parent's frame, so the body stays where the clip put it
+    const back = root.parent.worldToLocal(tmpFallAt.set(x + travel.x, 0, z + travel.y));
+    f.wrote.copy(root.position.sub(back.sub(root.parent.worldToLocal(tmpFallFrom.set(x, 0, z)))));
   }
 
   /** Roll one lain onto `to`, a lie clip */
@@ -723,10 +772,14 @@ export class NpcAnimation {
     if (key !== null) {
       this.dead = kill;
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
-      if (key === hitConfig.die) this.roomToLie();
+      if (dieClips.has(key)) this.startFall();
     } else if (dead || this.eyes.look === "scared") {
       this.dead = false;
       this.setEyes("open");
+      if (this.fall != null) {
+        this.fall = null;
+        this.w.npc.placeNpcAt(this.npc, this.w.npc.getClosestPoly(this.npc.position)); // back in the crowd
+      }
     }
     this.setPose(this.restKey, { force: key !== null, fade: key === null ? undefined : hitConfig.fadeInSecs });
     if (key === hitConfig.sink) this.setEyes("scared"); // until released
@@ -1111,6 +1164,7 @@ export class NpcAnimation {
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
+    this.tickFall();
     undoFlinch(this);
     // as the pose and its arms' clips left them, before either reads them again
     if (this.turn.written === true) {
@@ -1604,8 +1658,20 @@ const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((
 const onceClips = new Set<AnimationClipKey>([
   ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
   hitConfig.sink,
-  hitConfig.die,
+  ...Object.values(hitConfig.die),
 ]);
+
+const tmpFallAt = new THREE.Vector3();
+const tmpFallFrom = new THREE.Vector3();
+const tmpFallTravel = new THREE.Vector2();
+
+/** Clips they fall dead by */
+const dieClips = new Set<AnimationClipKey>(Object.values(hitConfig.die));
+
+/** Whether a shot along world `dir` pushes one facing `ry` backwards, i.e. it came from in front. Their front is -z */
+function pushedBack(dir: undefined | THREE.Vector3, ry: number) {
+  return dir === undefined || dir.x * Math.sin(ry) + dir.z * Math.cos(ry) > 0;
+}
 
 /** A pose stood still in, whose feet a stance may hold apart */
 function isStill(key: AnimationClipKey) {

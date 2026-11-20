@@ -267,18 +267,11 @@ export default function NPCs() {
       },
       hit(npcKey, part, impact) {
         const npc = state.npc[npcKey];
-        const clip = npc?.anim.hitClipFor(part, impact?.outcome) ?? null;
+        const dir = impact && new THREE.Vector3().subVectors(impact.at, impact.from).normalize();
+        const clip = npc?.anim.hitClipFor(part, impact?.outcome, dir) ?? null;
         if (npc === undefined || part === null || clip === null) return;
         npc.rejectAll(new Error("hit")); // a move's own catch idles them, onto the clip
-        npc.anim.setHurt(
-          clip,
-          impact && {
-            part,
-            at: impact.at.clone(),
-            dir: new THREE.Vector3().subVectors(impact.at, impact.from).normalize(),
-            outcome: impact.outcome,
-          },
-        );
+        npc.anim.setHurt(clip, impact && dir && { part, at: impact.at.clone(), dir, outcome: impact.outcome });
         w.events.next({ key: "npc-hit", npcKey, part, clip });
       },
       get(npcKey) {
