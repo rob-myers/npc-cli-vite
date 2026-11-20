@@ -1,6 +1,6 @@
 /// <reference path="./virtual.d.ts" />
 import fences from "virtual:skip-net-autorun";
-import { fenceIdOf, splitExamples } from "@npc-cli/cli";
+import { fenceIdOf, splitExamples } from "@npc-cli/cli/shell/sh-examples";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { PreludeEntry } from "./store";
 

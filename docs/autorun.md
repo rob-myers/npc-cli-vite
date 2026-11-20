@@ -95,6 +95,8 @@ Pressing reboot yourself asks for confirmation: the button shows "confirm", and 
 
 ## The paused pill
 
+`PausedPill` imports `run.ts` only once its World has mounted, so the shell stays out of the page's entry. `worldTtyOf` is in `ttys.ts`, which needs no shell.
+
 The app passes `PausedPill` to every World through `WorldPausedPillContext` (`ui/world/src/paused-pill.ts`), in `app/src/routes/index.tsx`. `WorldView` shows it instead of its own pill. This slot is the only part of autorun that ui/world knows about.
 
 `WorldView` gives the pill `resumeProps` for its resume button. With them, a tap resumes the World, and a pinch or wheel over the pill still moves the camera.

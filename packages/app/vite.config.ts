@@ -32,8 +32,8 @@ export default defineConfig({
     }),
     /** Fences stay raw, so SkipNet's own components can highlight and run them */
     mdx(),
-    /** An mdx article is a refresh boundary, so an edit swaps it in place rather than reloading it */
-    react({ include: /\.(mdx|[jt]sx?)$/ }),
+    /** Compiles .mdx too, so an article is a refresh boundary: an edit swaps it in place */
+    react(),
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
@@ -60,6 +60,42 @@ export default defineConfig({
         if (id.replace(/\\/g, "/").endsWith("/zod/v4/locales/index.js")) {
           return `export { default as en } from "./en.js";`;
         }
+      },
+    },
+
+    {
+      /** Imports each icon from its own module. Through the barrel, every icon is entry-reachable for `stableEntryPlugin` */
+      name: "phosphor-per-icon",
+      apply: "build",
+      transform(code) {
+        if (!code.includes('"@phosphor-icons/react"')) return;
+        return code.replace(/import\s*\{([^}]*)\}\s*from\s*"@phosphor-icons\/react";?/g, (all, names: string) => {
+          const specs = names
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean);
+          if (!specs.every((x) => /^\w+Icon(\s+as\s+\w+)?$/.test(x))) return all;
+          return specs
+            .map(
+              (x) =>
+                `import { ${x} } from "@phosphor-icons/react/dist/csr/${x.split(/\s/)[0].slice(0, -"Icon".length)}";`,
+            )
+            .join("\n");
+        });
+      },
+    },
+
+    {
+      /** The build rewrites the entry's script tag, dropping its `blocking="render"` */
+      name: "render-blocking-entry",
+      apply: "build",
+      transformIndexHtml: {
+        order: "post",
+        handler: (html) =>
+          html.replace(
+            /<script type="module" crossorigin src="([^"]+)">/,
+            '<script type="module" crossorigin src="$1" blocking="render">',
+          ),
       },
     },
 

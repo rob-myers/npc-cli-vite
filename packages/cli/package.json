@@ -11,6 +11,7 @@
     "./jsh/world/worker/register": "./src/jsh/world/worker/register.ts",
     "./shell/const": "./src/shell/const.ts",
     "./shell/sh-tokens": "./src/shell/sh-tokens.ts",
+    "./shell/sh-examples": "./src/shell/sh-examples.ts",
     "./shell/js-to-shell": "./src/shell/js-to-shell.ts",
     "./shell/query-client": "./src/shell/query-client.ts",
     "./shell/storage": "./src/shell/storage.ts",

@@ -15,7 +15,7 @@ Cold GPU, production build, page opened in a fresh tab:
 |---|---|---|
 | main thread blocked | 8.2 s | 0.6 s |
 | longest task | 3.45 s | 0.34 s, xterm's WebGL start-up |
-| `booted` | — | ~14 s, bounded by the GPU's compiling |
+| `booted` | — | ~14 s, bounded by the GPU's compiling; ~5 s with pipelines deferred and Chrome's painting warm |
 
 On macOS, Metal caches compiled shaders per app, shared by every Chrome profile. With it warm, a
 boot blocks for ~0.4 s. A 4x CPU slowdown adds only ~1 s to a cold boot: the time is the GPU's.
@@ -39,7 +39,13 @@ created on the thread that also finishes frames).
 - **`warmPipelines`** (`WorldView`). With no frame drawn (`frameloop: "never"`) it
   `compileAsync`s the pick pass, whose attachments differ from the screen's, so the first tap
   needn't build every material a second pipeline. Dawn creates them on worker threads. The warm
-  then sets `w.e.bootedAt`. The screen's pipelines still compile on each material's first draw.
+  then sets `w.e.bootedAt`.
+- **Until booted, three creates pipelines asynchronously** (`deferPipelines`, `service/defer-pipelines.ts`). It
+  patches three's pipeline cache and backend: a draw or compute needing a new pipeline asks Dawn
+  for it off the GPU's frame thread, and is skipped until it is ready. So the World still appears
+  bit by bit, each part once compiled. three itself creates them synchronously, which compiled
+  each on the thread that puts frames on screen: up to 4 s without a frame. After `booted` three
+  is as it was.
 - **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
   WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
   `useMeasure`'s `bounds`, which start at zero and would force a resize.
@@ -66,6 +72,14 @@ created on the thread that also finishes frames).
 - **`/assets/*` is immutable for a year** (`public/_headers`).
 - **`Tabs` isn't lazy** (`ui/tabs/src/index.ts`). Every pane's header shows on the first render,
   not after a chunk arrives. It is 15 KB.
+- **The entry holds only what the first render needs.** `PausedPill` loads `run.ts`, and with it the
+  shell, xterm and the parser, once a World has mounted. map-edit's root no longer re-exports
+  `map-node-api`, whose geometry pulled in `polygon-clipping` and `poly2tri`. Nothing in it uses
+  `motion`: `GlobalMenu` drags by hand, and its items (`GlobalMenuItems`), `AboutModal` and
+  `EdgeBar` are lazy. That took the entry's static graph from 532 KB to 285 KB gzipped.
+- **Each icon is imported from its own module** (`phosphor-per-icon`, `vite.config.ts`). Through
+  Phosphor's barrel every icon is entry-reachable, so `stableEntryPlugin` put icons only lazy uis
+  use into chunks the entry loads.
 - **A ui may give its own `loading`** (`UiPackageDef`), which `UiPortalContainer` shows whilst its
   lazy code arrives, else a spinner. The World's is black (`WorldLoading`), so a phone sees the
   header and the World's black, not a grey spinner first.
@@ -87,13 +101,14 @@ created on the thread that also finishes frames).
   the GPU's frame thread, so a cold desktop's longest frame gap fell from 4.8 s to 2.2 s. But the
   World no longer appeared bit by bit: on a phone the boot looked worse, refreshes waited for the
   whole warm, and the floor arrived late.
+- **Compiling each new mesh before it draws** (`renderer.compileAsync` on a hidden layer). three
+  keys `compileAsync`'s pipelines apart from the draw's, so each was created again, synchronously.
 
 ## Still open
 
-- **A cold boot is ~14 s**, bounded by the GPU compiling every pipeline. Only fewer shader
-  variants would shorten it.
-- **Frames stop for up to ~5 s on a cold boot**, whilst the layers' first draws compile their
-  pipelines on the GPU's frame thread. The main thread stays free meanwhile.
+- **A cold boot takes ~5 s to `booted`** (2026-11-20), bounded by the GPU compiling every
+  pipeline. Only fewer shader variants would shorten it.
+- **One 1.5 s freeze early in a cold boot**, a Metal compile before the World is on screen.
 - **A flaky layout shift.** In about half of Lighthouse runs the right allotment pane shifts
   (CLS 0.258). Treat CLS as noise when comparing runs.
 - **The `World` chunk is 1.9 MB.**
@@ -116,8 +131,16 @@ to the JS function that made it.
 **A cold GPU, with a trace.**
 - Serve the build. Launch Chrome with its own `--user-data-dir`, a `--remote-debugging-port`, and
   `--disable-backgrounding-occluded-windows`: a hidden window stops `requestAnimationFrame`.
-- Clear the Metal cache by moving `com.google.Chrome.helper/com.apple.metal` and
-  `com.apple.metalfe` (in `getconf DARWIN_USER_CACHE_DIR`) aside. Put them back afterwards.
+- Clear the Metal cache by moving `com.google.Chrome.helper/com.apple.metal`, `com.apple.metalfe`
+  and `com.apple.gpuarchiver` (in `getconf DARWIN_USER_CACHE_DIR`) aside. Put them back afterwards.
+  Every Chrome profile shares it, and incognito shares the GPU process, so neither is cold.
+- A cleared cache and a new profile also leave Chrome's own painting (Skia) cold, which a
+  visitor's Chrome is not: `RasterDecoderImpl::DoEndRasterCHROMIUM` stalls the GPU's frame thread
+  too. To warm it alone, first load the app with `navigator.gpu` hidden
+  (`Page.addScriptToEvaluateOnNewDocument`). three then runs the World on WebGL, whose shaders are
+  other Metal code. Then measure a first visit in a new tab.
+- `DeviceBase::APICreateRenderPipeline` or `APICreateComputePipeline` on the GPU process's main
+  thread (trace categories `gpu`, `gpu.dawn`) is a pipeline created synchronously.
 - Trace from the browser target (`Tracing.start`), then open the app with `Target.createTarget`.
   Navigating from `about:blank` in the same tab adds a ~2 s `Shutdown` task a visitor never sees.
 - Find the renderer by its `world-0:*` marks (Timings row): each `pending` key clearing,

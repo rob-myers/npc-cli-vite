@@ -195,7 +195,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     if (!hasMounted.current) {
       hasMounted.current = true;
       // the Tabs focused before a reload takes focus again — once its content has had a moment to
-      // mount, and once more after the page's fade in, for content that arrives late
+      // mount, and once more for content that arrives late
       if (uiStore.getState().persistedPanes.focusedTabsUiId === meta.id) {
         const timeouts = [0, 400].map((ms) => setTimeout(state.focusCurrent, ms));
         return () => timeouts.forEach(clearTimeout);

@@ -9,5 +9,3 @@ export default defineUi({
   bootstrap: null,
   schema: MapEditUiMetaSchema,
 });
-
-export * from "./map-node-api";
