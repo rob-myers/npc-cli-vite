@@ -8,11 +8,9 @@ import { ArrowsInIcon, GearIcon } from "@phosphor-icons/react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { isWebMcpOn, setWebMcpOn } from "../web-mcp";
+import type GlobalMenuItemsType from "./GlobalMenuItems";
 import { countPanes, resetPanes } from "./pane-service";
 
-const loadItems = () => import("./GlobalMenuItems");
-/** Loaded on a first hover or press */
-const GlobalMenuItems = lazy(loadItems);
 /** Loaded on its first open */
 const AboutModal = lazy(() => import("./AboutModal").then((m) => ({ default: m.AboutModal })));
 
@@ -22,6 +20,8 @@ export function GlobalMenu() {
   const paneCount = useStore(uiStore, (s) => countPanes(s.persistedPanes.root));
 
   const state = useStateRef(() => ({
+    /** Its items, loaded on a first hover or press. It opens only once they are, so never empty */
+    Items: null as null | typeof GlobalMenuItemsType,
     rootEl: null as null | HTMLDivElement,
     /** Its vertical offset, dragged and saved */
     y: getInitialY(),
@@ -42,6 +42,9 @@ export function GlobalMenu() {
       // a reset half-asked-for is forgotten with the menu
       state.set({ menuOpen: false, resetArmed: false });
     },
+    async loadItems() {
+      state.Items ??= (await import("./GlobalMenuItems")).default;
+    },
     onAbout() {
       state.set({ aboutOpen: true, aboutMounted: true });
     },
@@ -53,7 +56,7 @@ export function GlobalMenu() {
     onPointerDown(e: React.PointerEvent) {
       // base-ui opens on pointerdown, whereas we open on click, so a drag never opens us
       state.canOpen = state.menuOpen === false;
-      void loadItems();
+      void state.loadItems();
       const [startY, fromY] = [e.clientY, state.y];
       let dragging = false;
       const onMove = (e: PointerEvent) => {
@@ -94,14 +97,18 @@ export function GlobalMenu() {
     onTriggerClick() {
       if (state.canOpen === true) {
         state.canOpen = false;
-        state.set({ menuOpen: true, resetArmed: false });
+        void state.open();
       }
     },
     onTriggerKeyDown(e: React.KeyboardEvent) {
       if ((e.key === "Enter" || e.key === " ") && state.menuOpen === false) {
         e.preventDefault();
-        state.set({ menuOpen: true, resetArmed: false });
+        void state.open();
       }
+    },
+    async open() {
+      await state.loadItems();
+      state.set({ menuOpen: true, resetArmed: false });
     },
   }));
 
@@ -121,7 +128,7 @@ export function GlobalMenu() {
           top: vpOffset.y,
         }}
         onPointerDown={state.onPointerDown}
-        onPointerEnter={loadItems}
+        onPointerEnter={state.loadItems}
       >
         <Menu.Root open={state.menuOpen} onOpenChange={state.onOpenChange} modal={false}>
           <Menu.Trigger
@@ -137,8 +144,8 @@ export function GlobalMenu() {
           <Menu.Portal>
             <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
               <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40">
-                <Suspense fallback={null}>
-                  <GlobalMenuItems
+                {state.Items && (
+                  <state.Items
                     paneCount={paneCount}
                     resetArmed={state.resetArmed}
                     trackingOff={state.trackingOff}
@@ -148,7 +155,7 @@ export function GlobalMenu() {
                     onToggleTracking={state.onToggleTracking}
                     onToggleWebMcp={state.onToggleWebMcp}
                   />
-                </Suspense>
+                )}
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
