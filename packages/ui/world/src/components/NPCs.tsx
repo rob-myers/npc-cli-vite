@@ -53,7 +53,7 @@ import { getWorldStore } from "../service/storage";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
-import { emptyAnimationClip, NpcAnimation } from "./npc-animation";
+import { emptyAnimationClip, type HitOutcome, NpcAnimation } from "./npc-animation";
 import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
@@ -265,12 +265,20 @@ export default function NPCs() {
           null,
         );
       },
-      hit(npcKey, part) {
+      hit(npcKey, part, impact) {
         const npc = state.npc[npcKey];
         const clip = npc?.anim.hitClipFor(part) ?? null;
         if (npc === undefined || part === null || clip === null) return;
         npc.rejectAll(new Error("hit")); // a move's own catch idles them, onto the clip
-        npc.anim.setHurt(clip);
+        npc.anim.setHurt(
+          clip,
+          impact && {
+            part,
+            at: impact.at.clone(),
+            dir: new THREE.Vector3().subVectors(impact.at, impact.from).normalize(),
+            outcome: impact.outcome,
+          },
+        );
         w.events.next({ key: "npc-hit", npcKey, part, clip });
       },
       get(npcKey) {
@@ -945,8 +953,12 @@ export type State = {
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
-  /** A phaser's beam reached `part` of them: stops them, and plays its clip if it has one */
-  hit(npcKey: string, part: null | string): void;
+  /** A phaser's beam reached `part` of them, at `impact.at` from `impact.from`: stops them, and plays its clip if it has one */
+  hit(
+    npcKey: string,
+    part: null | string,
+    impact?: { at: THREE.Vector3; from: THREE.Vector3; outcome: HitOutcome },
+  ): void;
   /** The skin of that key, else the first whose key begins with it, else `defaultSkinKey` */
   findSkinKey(prefix?: string): string;
   getSkinIndexBySkinKey(skinKey: string): number;

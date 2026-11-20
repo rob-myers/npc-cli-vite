@@ -5,6 +5,7 @@ import { armourConfig } from "../const.npc";
 import { type ArmourStreaks, createArmourStreaks, MAX_ARMOUR_STREAKS, streakAttrs } from "../service/armour";
 import { bodyPart } from "../service/phaser-beam";
 import type { Npc } from "./npc";
+import { flinch } from "./npc-flinch";
 import { WorldContext } from "./world-context";
 
 /** Armour: struck, they flinch, and the shot glances off the face it met in a spray of sparks — see `docs/engagements.md` */
@@ -36,7 +37,7 @@ export default function NpcArmour() {
         const again = state.bursts.findIndex((b) => b.npc === npc);
         if (again !== -1) state.bursts.splice(again, 1);
         state.bursts.push({ npc, at: at.clone(), streaks, startSecs: w.gameTime.now() });
-        npc.anim.flinch?.(part, at, d); // absent on an instance from before hmr
+        flinch(npc.anim, part, at, d);
         state.write();
         state.onTick(); // shown at once, even paused
       },

@@ -560,7 +560,7 @@ export default function Phasers() {
         /** A ghost passes it on. Anyone else is where the burst ends, rather than following them as they writhe */
         const landOn = (on: Npc, target: NpcTarget, outcome: JshCli.ShotOutcome, at: THREE.Vector3) => {
           if (outcome === "ghost") w.npcGhost?.struck(on);
-          state.land(npc, on, target.part, outcome);
+          state.land(npc, on, target.part, outcome, at, tip ?? from);
           if (outcome === "ghost") return;
           if (outcome === "armour") w.npcArmour?.flash(on, target.part, at, tip ?? from);
           arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
@@ -575,13 +575,14 @@ export default function Phasers() {
         arm.target = arm.firedSecs = null;
         w.hud?.update();
       },
-      land(npc, dst, part, outcome) {
-        if (outcome === "hit") w.npc.hit(dst.key, part);
+      land(npc, dst, part, outcome, at, from) {
+        const hits = outcome === "hit" || outcome === "down" || outcome === "kill";
+        if (hits) w.npc.hit(dst.key, part, { at, from, outcome });
         w.events.next({ key: "npc-shot", by: npc.key, npcKey: dst.key, part, outcome });
-        if (outcome !== "hit" && npc.key === w.player.key) w.hud?.say(outcome);
+        if (hits === false && npc.key === w.player.key) w.hud?.say(outcome);
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
-        if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined && lower(theirs))
+        if (hits && dst.anim.hurt !== null && theirs !== undefined && lower(theirs))
           w.events.next({ key: "phasers", armed: false, npcKeys: [dst.key] });
       },
       meetPart(npc, arm, dst, to) {
@@ -1152,8 +1153,15 @@ export type State = PhaserResources & {
   meetPart(npc: Npc, arm: ArmEntry, dst: Npc, to: NpcTarget): boolean;
   /** Whom a shot passing its target meets beyond, short of the wall, ghosts passed through: `shot.beyond` */
   passOn(npc: Npc, arm: ArmEntry, shot: ArmShot): void;
-  /** A shot by `npc` reached `dst`'s `part`: its effect, its event, and a word to the player if it did not hit */
-  land(npc: Npc, dst: Npc, part: null | string, outcome: JshCli.ShotOutcome): void;
+  /** A shot by `npc` from `from` reached `dst`'s `part` at `at`: its effect, its event, and a word to the player if it did not hit */
+  land(
+    npc: Npc,
+    dst: Npc,
+    part: null | string,
+    outcome: JshCli.ShotOutcome,
+    at: THREE.Vector3,
+    from: THREE.Vector3,
+  ): void;
   sync(): void;
   /**
    * Each tick, their phaser from their entry, step by step: see "Each tick" in `docs/inventory.md`.

@@ -335,7 +335,39 @@ export const talkConfig = { pitch: 0.12, sway: 0.08, hz: 2.5, swayHz: 0.6, easeS
  * A shot armour took jolts them: radians the struck part turns at most, and seconds to that and in all.
  * Each bone it hangs from turns `falloff` as far as the one below.
  */
-export const flinchConfig = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 } as const;
+export const flinchConfig: FlinchTune = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 };
+
+/** A hit jolts them twice as hard. Whilst hurt they stay turned `hold` of the way. An arm turns `arms` as far */
+export const hitFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.6, hold: 0.3, arms: 0.4 };
+
+export type FlinchTune = {
+  rad: number;
+  peakSecs: number;
+  secs: number;
+  falloff: number;
+  hold?: number;
+  /** How far it turns an arm, of `rad`, and what the arm hangs from falls off from that. A full turn takes it into the body */
+  arms?: number;
+};
+
+/**
+ * Whilst hurt a hand goes to the wound, if in reach. It eases in and out over `easeSecs`,
+ * and stays `lingerSecs` after they recover, unless they move.
+ */
+export const clutchConfig = {
+  /** Metres off the torso or a limb the hand rests: its half-thickness, as the forearm lies along it */
+  palm: 0.08,
+  /** Metres off the head the hand rests: it meets it end-on */
+  palmHead: 0.03,
+  /** Metres the hand may cross past their middle, e.g. onto the other arm */
+  cross: 0.25,
+  /** Metres from the shoulder a hand on its own side must be, else it takes the front: nearer, the arm folds up */
+  sideMin: 0.25,
+  /** Metres the elbow keeps off the chest: out past its side, or in front, and down from the reach */
+  elbow: 0.1,
+  easeSecs: 0.5,
+  lingerSecs: 1.5,
+} as const;
 
 type ClipKey = keyof typeof fromAnimationClipKey;
 export type HitRegion = "head" | "torso" | `${"arm" | "leg"}_${"left" | "right"}`;
@@ -397,6 +429,9 @@ export const hitConfig = {
     sit_pain_head: "sit_pacified",
     lie_pain_head: "lie_pacified",
   } as Partial<Record<ClipKey, ClipKey>>,
+  /** Killed, the pain clip goes on to this, by posture, held still at `deadSecs` into it */
+  dead: { stand: "collapsed", sit: "sit_pacified", lie: "lie_pacified" } satisfies Record<string, ClipKey>,
+  deadSecs: 0,
 };
 
 /** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */

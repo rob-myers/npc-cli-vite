@@ -192,6 +192,8 @@ declare namespace JshCli {
         key: "npc-hurt";
         npcKey: string;
         clip: null | import("./components/NPCs").AnimationClipKey;
+        /** Killed: held still once the pain clip ends */
+        dead: boolean;
       }
     | {
         /** About to look at (if close enough), then fade onto, a free doable */
@@ -239,7 +241,7 @@ declare namespace JshCli {
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };
   /** How a shot at someone ends: one whose line meets no part of them passes, and has none */
-  type ShotOutcome = "hit" | "ghost" | "armour";
+  type ShotOutcome = "hit" | "down" | "ghost" | "armour" | "kill";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

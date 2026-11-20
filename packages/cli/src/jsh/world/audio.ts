@@ -427,7 +427,7 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge });
       break;
     case "npc-shot":
-      heard(e.by, e.npcKey) && playAt(w, e.outcome, e.npcKey);
+      heard(e.by, e.npcKey) && playAt(w, e.outcome === "down" || e.outcome === "kill" ? "hit" : e.outcome, e.npcKey);
       break;
     case "phaser-struck":
       e.what !== "nothing" && heard(e.by) && getAudio().sfx("hit", heardAt(w, e.at)); // as a shot striking anyone
