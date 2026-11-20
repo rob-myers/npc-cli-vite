@@ -267,7 +267,7 @@ export default function NPCs() {
       },
       hit(npcKey, part, impact) {
         const npc = state.npc[npcKey];
-        const clip = npc?.anim.hitClipFor(part) ?? null;
+        const clip = npc?.anim.hitClipFor(part, impact?.outcome) ?? null;
         if (npc === undefined || part === null || clip === null) return;
         npc.rejectAll(new Error("hit")); // a move's own catch idles them, onto the clip
         npc.anim.setHurt(

@@ -103,10 +103,13 @@ Its pain clip plays once. After a `hit` they go back to rest, or to what they we
 | part | after |
 | --- | --- |
 | head | `pacified` (or `{sit,lie}_pacified`) loops |
-| body, stood | `collapsed` loops: sat on the floor, slumped, breathing hard |
+| body, stood | `collapse` plays instead of `pain_high` (`hitConfig.sink`), then `collapsed` loops: sat on the floor, slumped, breathing hard |
 | body sat or lain, or a limb | back to rest: `breathe`, `sit` or `lie` |
 
-- A head shot's clip ends slumped, so goes straight on. `pain_high` fades into `collapsed` over `pacifyFadeSecs`.
+- A head shot's clip ends slumped, so goes straight on.
+- `collapse` (1.65s) is a stunned sway, then the left knee gives and they sink where they stand. It ends on `collapsed`'s
+  first frame, so goes straight on. Their eyes are `scared` from then until released.
+- A hurt clip fades in over `hitConfig.fadeInSecs`, so its first jolt reads.
 - Collapsed, the right forearm lies across the lap, so a gun in hand stays clear of others' feet.
 - Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
 - Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is

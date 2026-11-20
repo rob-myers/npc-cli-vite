@@ -182,6 +182,7 @@ export const fromAnimationClipKey = {
   breathe: true,
   check_wrist: true,
   check_wrist_avoid: true,
+  collapse: true,
   collapsed: true,
   collapsed_drag: true,
   crouch: true,
@@ -337,8 +338,8 @@ export const talkConfig = { pitch: 0.12, sway: 0.08, hz: 2.5, swayHz: 0.6, easeS
  */
 export const flinchConfig: FlinchTune = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 };
 
-/** A hit jolts them twice as hard. Whilst hurt they stay turned `hold` of the way. An arm turns `arms` as far */
-export const hitFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.6, hold: 0.3, arms: 0.4 };
+/** A hit jolts them twice as hard, peaking later. Whilst hurt they stay turned `hold` of the way. An arm turns `arms` as far */
+export const hitFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.6, peakSecs: 0.1, hold: 0.3, arms: 0.4 };
 
 export type FlinchTune = {
   rad: number;
@@ -424,11 +425,16 @@ export const hitConfig = {
    * stood. Any other goes back to rest, or to whatever they were in before
    */
   next: {
+    collapse: "collapsed",
     pain_head: "pacified",
     pain_high: "collapsed",
     sit_pain_head: "sit_pacified",
     lie_pain_head: "lie_pacified",
   } as Partial<Record<ClipKey, ClipKey>>,
+  /** Put down stood, a torso hit sinks them where they stand into `collapsed` */
+  sink: "collapse" as ClipKey,
+  /** Seconds a hurt clip fades in over, so its first jolt reads */
+  fadeInSecs: 0.08,
   /** Killed, the pain clip goes on to this, by posture, held still at `deadSecs` into it */
   dead: { stand: "collapsed", sit: "sit_pacified", lie: "lie_pacified" } satisfies Record<string, ClipKey>,
   deadSecs: 0,
@@ -474,6 +480,7 @@ export const fadeSecs: Record<
   breathe: { shuffle: 0.15, shuffle_step: 0.2 },
   check_wrist: {},
   check_wrist_avoid: {},
+  collapse: { collapsed: 0 },
   collapsed: {},
   collapsed_drag: {},
   crouch: {},

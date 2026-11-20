@@ -398,9 +398,14 @@ export class NpcAnimation {
   }
 
   /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
-  hitClipFor(part: null | string): null | AnimationClipKey {
+  hitClipFor(part: null | string, outcome?: HitOutcome): null | AnimationClipKey {
     const region = hitConfig.region[part ?? ""];
-    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
+    if (region === undefined) return null;
+    const posture = postureOf(keyOf(this.idleClip));
+    /** Held down already, e.g. collapsed: they stay so, rather than sink again */
+    const held = this.hurt !== null && onceClips.has(this.hurt.key) === false;
+    const sink = outcome === "down" && posture === "stand" && region === "torso" && held === false;
+    return sink ? hitConfig.sink : hitConfig.clips[posture][region];
   }
 
   /** Hit whilst collapsed: a stood pain clip would stand them, so they stay down, jolted. Killed, they stop there */
@@ -697,11 +702,12 @@ export class NpcAnimation {
     if (key !== null) {
       this.dead = kill;
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
-    } else if (dead) {
+    } else if (dead || this.eyes.look === "scared") {
       this.dead = false;
       this.setEyes("open");
     }
-    this.setPose(this.restKey, { force: key !== null });
+    this.setPose(this.restKey, { force: key !== null, fade: key === null ? undefined : hitConfig.fadeInSecs });
+    if (key === hitConfig.sink) this.setEyes("scared"); // until released
     this.w.r3f?.invalidate();
     if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key, dead: this.dead });
   }
@@ -1571,9 +1577,10 @@ const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
 const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((byRegion) => byRegion.head));
 
 /** Hit clips played once, then left */
-const onceClips = new Set<AnimationClipKey>(
-  Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
-);
+const onceClips = new Set<AnimationClipKey>([
+  ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
+  hitConfig.sink,
+]);
 
 /** A pose stood still in, whose feet a stance may hold apart */
 function isStill(key: AnimationClipKey) {
