@@ -14,7 +14,8 @@ import {
   DotsThreeOutlineIcon,
   MinusIcon,
   MoonIcon,
-  PlayCircleIcon,
+  PauseIcon,
+  PlayIcon,
   PlusCircleIcon,
   PlusIcon,
   SunIcon,
@@ -414,6 +415,28 @@ function TabHeaderItem({
               align="start"
               sideOffset={2}
             >
+              {tab.pausable === true && (
+                <>
+                  <button
+                    type="button"
+                    title={tab.disabled ? "resume" : "pause"}
+                    className={popoverButtonClass}
+                    onPointerDown={() =>
+                      uiStoreApi.setUiMeta(tab.id, (draft) => {
+                        draft.disabled = !draft.disabled;
+                        delete draft.autoPaused;
+                      })
+                    }
+                  >
+                    {tab.disabled ? (
+                      <PlayIcon className="size-3.5" weight="fill" />
+                    ) : (
+                      <PauseIcon className="size-3.5" weight="fill" />
+                    )}
+                  </button>
+                  <span className="self-stretch w-px my-1 bg-on-background/15" />
+                </>
+              )}
               <button
                 type="button"
                 title="zoom out"
@@ -451,24 +474,6 @@ function TabHeaderItem({
                 </button>
               ))}
             </BasicPopover>
-            {tab.pausable === true && (
-              <button
-                type="button"
-                className="ml-0.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  uiStoreApi.setUiMeta(tab.id, (draft) => {
-                    draft.disabled = !draft.disabled;
-                    delete draft.autoPaused;
-                  });
-                }}
-              >
-                <PlayCircleIcon
-                  weight="duotone"
-                  className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
-                />
-              </button>
-            )}
             <button
               type="button"
               title={state.closeArmed ? "press again to close" : "close tab"}
