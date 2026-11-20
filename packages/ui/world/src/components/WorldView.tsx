@@ -45,6 +45,7 @@ import {
   getZoomStops,
   stepCameraPreset,
 } from "../service/camera-view";
+import { deferPipelines } from "../service/defer-pipelines";
 import { createExtraFx, type ExtraFx, type ExtraFxKey, parseExtraFxKey, warpExtraFxUv } from "../service/extra-fx";
 import {
   createFadeRooms,
@@ -994,6 +995,11 @@ export function WorldView(props: React.PropsWithChildren) {
         // override THREE.WebGPURenderer
         w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
         w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.texDoorLabel.renderer = w.r3f.gl;
+        deferPipelines(
+          w.r3f.gl,
+          () => (w.e?.bootedAt ?? 0) > 0,
+          () => w.r3f?.invalidate(),
+        );
         // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
         // live only there — three re-uploads the rest from their mirrors, these are redrawn
         if (w.floor?.drawnMapKey != null) {
