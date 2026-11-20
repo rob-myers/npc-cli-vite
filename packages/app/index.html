@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
     />
-    <title>NPC CLI</title>
+    <title>SCP NPC-CLI</title>
     <!-- fetched by the world as soon as it mounts: on their way whilst the scripts still evaluate -->
     <link rel="preload" href="/assets.json" as="fetch" crossorigin />
     <link rel="preload" href="/sheets.json" as="fetch" crossorigin />
@@ -39,9 +39,10 @@
         }
       })();
     </script>
+    <!-- in the head, as only there may it hold the first paint until the app has rendered -->
+    <script type="module" src="/src/main.tsx" blocking="render"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

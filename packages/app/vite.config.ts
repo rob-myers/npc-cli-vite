@@ -32,8 +32,8 @@ export default defineConfig({
     }),
     /** Fences stay raw, so SkipNet's own components can highlight and run them */
     mdx(),
-    /** An mdx article is a refresh boundary, so an edit swaps it in place rather than reloading it */
-    react({ include: /\.(mdx|[jt]sx?)$/ }),
+    /** Compiles .mdx too, so an article is a refresh boundary: an edit swaps it in place */
+    react(),
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
@@ -60,6 +60,20 @@ export default defineConfig({
         if (id.replace(/\\/g, "/").endsWith("/zod/v4/locales/index.js")) {
           return `export { default as en } from "./en.js";`;
         }
+      },
+    },
+
+    {
+      /** The build rewrites the entry's script tag, dropping its `blocking="render"` */
+      name: "render-blocking-entry",
+      apply: "build",
+      transformIndexHtml: {
+        order: "post",
+        handler: (html) =>
+          html.replace(
+            /<script type="module" crossorigin src="([^"]+)">/,
+            '<script type="module" crossorigin src="$1" blocking="render">',
+          ),
       },
     },
 

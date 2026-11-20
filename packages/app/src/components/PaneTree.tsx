@@ -85,7 +85,8 @@ export function PaneTree({ node }: { node: PaneNode }) {
         key={`${node.id}-${isVertical}`}
         ref={state.ref("allotment")}
         vertical={isVertical}
-        defaultSizes={node.sizes}
+        // without sizes, allotment places its panes only after the first paint, overlapping till then
+        defaultSizes={node.sizes ?? node.children.map(() => 100)}
         snap
         onChange={(sizes) => (state.sizes = sizes)}
         onDragEnd={(sizes) => setSizes(node.id, sizes)}

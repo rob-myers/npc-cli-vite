@@ -8,7 +8,6 @@ import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
 import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
-import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { PaneTree } from "../components/PaneTree";
@@ -30,6 +29,8 @@ import { UiPortalContainer } from "../components/UiPortalContainer";
 
 export const Route = createFileRoute("/")({
   component: Index,
+  /** In the entry, so the first render (holding the first paint) needn't wait on a chunk */
+  codeSplitGroupings: [],
 });
 
 function Index() {
@@ -105,14 +106,7 @@ function Index() {
     <UiContext.Provider value={{ ...contextValue, theme }}>
       <WorldPausedPillContext.Provider value={PausedPill}>
         <PaneTreeWrapper overrideContextMenuRef={overrideContextMenuRef}>
-          <motion.div
-            className="h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: ready ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {ready && <PaneTree node={root} />}
-          </motion.div>
+          <div className="h-full">{ready && <PaneTree node={root} />}</div>
         </PaneTreeWrapper>
         <UiPortalContainer />
       </WorldPausedPillContext.Provider>
