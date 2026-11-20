@@ -1,13 +1,14 @@
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
-import { cn, useStateRef } from "@npc-cli/util";
-import { BookOpenTextIcon } from "@phosphor-icons/react";
+import { useStateRef } from "@npc-cli/util";
 import { Allotment, type AllotmentHandle } from "allotment";
-import { motion } from "motion/react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { PaneNode } from "./pane-service";
-import { setPaneHidden, setSizes, showPane } from "./pane-service";
+import { setPaneHidden, setSizes } from "./pane-service";
+
+/** Shown only once a pane is hidden, so its drag needn't load with the page */
+const EdgeBar = lazy(() => import("./EdgeBar"));
 
 export function PaneTree({ node }: { node: PaneNode }) {
   const state = useStateRef(() => ({
@@ -66,13 +67,15 @@ export function PaneTree({ node }: { node: PaneNode }) {
     return (
       // the centring transform stays out here, so the drag transform has this element to itself
       <div className={`absolute z-10 ${posClass[edge]}`}>
-        <EdgeBar
-          nodeId={node.id}
-          panes={children}
-          // slides along the edge it sits on, not away from it
-          axis={isVertical ? "x" : "y"}
-          constraintsRef={state.containerRef}
-        />
+        <Suspense fallback={null}>
+          <EdgeBar
+            nodeId={node.id}
+            panes={children}
+            // slides along the edge it sits on, not away from it
+            axis={isVertical ? "x" : "y"}
+            constraintsRef={state.containerRef}
+          />
+        </Suspense>
       </div>
     );
   };
@@ -99,69 +102,6 @@ export function PaneTree({ node }: { node: PaneNode }) {
         ))}
       </Allotment>
     </div>
-  );
-}
-
-/**
- * The indicators for a split's hidden panes: click one to show that pane again,
- * or drag the group along the edge it sits on.
- */
-function EdgeBar({
-  axis,
-  constraintsRef,
-  nodeId,
-  panes,
-}: {
-  axis: "x" | "y";
-  constraintsRef: React.RefObject<HTMLDivElement | null>;
-  nodeId: number;
-  panes: PaneNode[];
-}) {
-  const state = useStateRef(() => ({
-    dragged: false,
-    nodeId,
-
-    onDragStart() {
-      state.dragged = true;
-    },
-    onDragEnd() {
-      // cleared a frame late, else the click ending the drag would still show the pane
-      requestAnimationFrame(() => (state.dragged = false));
-    },
-    onPaneClick(e: React.MouseEvent<HTMLButtonElement>) {
-      if (state.dragged === false) {
-        showPane(state.nodeId, Number(e.currentTarget.dataset.childId));
-      }
-    },
-  }));
-
-  state.nodeId = nodeId; // its handlers run long after this render
-
-  return (
-    <motion.div
-      className="touch-none select-none"
-      drag={axis}
-      dragConstraints={constraintsRef}
-      dragElastic={0.05}
-      dragMomentum={false}
-      onDragStart={state.onDragStart}
-      onDragEnd={state.onDragEnd}
-    >
-      {panes.map((child) => (
-        <button
-          key={child.id}
-          type="button"
-          data-child-id={child.id}
-          className={cn(
-            "px-4 py-2 mb-2 text-xs rounded cursor-pointer",
-            "text-on-background/50 bg-background hover:border hover:border-on-background/25 hover:text-on-background",
-          )}
-          onClick={state.onPaneClick}
-        >
-          <BookOpenTextIcon className="size-6" />
-        </button>
-      ))}
-    </motion.div>
   );
 }
 

@@ -68,8 +68,12 @@ created on the thread that also finishes frames).
   not after a chunk arrives. It is 15 KB.
 - **The entry holds only what the first render needs.** `PausedPill` loads `run.ts`, and with it the
   shell, xterm and the parser, once a World has mounted. map-edit's root no longer re-exports
-  `map-node-api`, whose geometry pulled in `polygon-clipping` and `poly2tri`. That took the entry's
-  static graph from 532 KB to 338 KB gzipped.
+  `map-node-api`, whose geometry pulled in `polygon-clipping` and `poly2tri`. Nothing in it uses
+  `motion`: `GlobalMenu` drags by hand, and its items (`GlobalMenuItems`), `AboutModal` and
+  `EdgeBar` are lazy. That took the entry's static graph from 532 KB to 285 KB gzipped.
+- **Each icon is imported from its own module** (`phosphor-per-icon`, `vite.config.ts`). Through
+  Phosphor's barrel every icon is entry-reachable, so `stableEntryPlugin` put icons only lazy uis
+  use into chunks the entry loads.
 - **A ui may give its own `loading`** (`UiPackageDef`), which `UiPortalContainer` shows whilst its
   lazy code arrives, else a spinner. The World's is black (`WorldLoading`), so a phone sees the
   header and the World's black, not a grey spinner first.

@@ -64,6 +64,28 @@ export default defineConfig({
     },
 
     {
+      /** Imports each icon from its own module. Through the barrel, every icon is entry-reachable for `stableEntryPlugin` */
+      name: "phosphor-per-icon",
+      apply: "build",
+      transform(code) {
+        if (!code.includes('"@phosphor-icons/react"')) return;
+        return code.replace(/import\s*\{([^}]*)\}\s*from\s*"@phosphor-icons\/react";?/g, (all, names: string) => {
+          const specs = names
+            .split(",")
+            .map((x) => x.trim())
+            .filter(Boolean);
+          if (!specs.every((x) => /^\w+Icon(\s+as\s+\w+)?$/.test(x))) return all;
+          return specs
+            .map(
+              (x) =>
+                `import { ${x} } from "@phosphor-icons/react/dist/csr/${x.split(/\s/)[0].slice(0, -"Icon".length)}";`,
+            )
+            .join("\n");
+        });
+      },
+    },
+
+    {
       /** The build rewrites the entry's script tag, dropping its `blocking="render"` */
       name: "render-blocking-entry",
       apply: "build",
