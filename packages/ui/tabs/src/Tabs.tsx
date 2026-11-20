@@ -310,9 +310,26 @@ function TabHeaderItem({
 
   const state = useStateRef(() => ({
     tabEl: null as HTMLDivElement | null,
+    /** A first press arms the close button, a second within `closeArmMs` closes */
+    closeArmed: false,
+    closeTimer: 0,
     isDragging: false,
     isDropTarget: false,
+    onClickClose(e: React.MouseEvent) {
+      e.stopPropagation();
+      window.clearTimeout(state.closeTimer);
+      if (state.closeArmed) {
+        state.closeArmed = false;
+        return onDeleteTab();
+      }
+      state.set({ closeArmed: true });
+      state.closeTimer = window.setTimeout(() => state.set({ closeArmed: false }), closeArmMs);
+    },
   }));
+
+  if (!isCurrentTab) state.closeArmed = false; // hidden whilst not current, so no re-render needed
+
+  useEffect(() => () => window.clearTimeout(state.closeTimer), []);
 
   useEffect(() => {
     const el = state.tabEl;
@@ -386,24 +403,6 @@ function TabHeaderItem({
 
         {isCurrentTab && (
           <>
-            {tab.pausable === true && (
-              <button
-                type="button"
-                className="ml-0.5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  uiStoreApi.setUiMeta(tab.id, (draft) => {
-                    draft.disabled = !draft.disabled;
-                    delete draft.autoPaused;
-                  });
-                }}
-              >
-                <PlayCircleIcon
-                  weight="duotone"
-                  className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
-                />
-              </button>
-            )}
             <BasicPopover
               trigger={<DotsThreeOutlineIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />}
               triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
@@ -415,10 +414,6 @@ function TabHeaderItem({
               align="start"
               sideOffset={2}
             >
-              <button type="button" title="close tab" className={popoverButtonClass} onPointerDown={onDeleteTab}>
-                <XIcon className="size-3.5" />
-              </button>
-              <span className="self-stretch w-px my-1 bg-on-background/15" />
               <button
                 type="button"
                 title="zoom out"
@@ -456,6 +451,32 @@ function TabHeaderItem({
                 </button>
               ))}
             </BasicPopover>
+            {tab.pausable === true && (
+              <button
+                type="button"
+                className="ml-0.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  uiStoreApi.setUiMeta(tab.id, (draft) => {
+                    draft.disabled = !draft.disabled;
+                    delete draft.autoPaused;
+                  });
+                }}
+              >
+                <PlayCircleIcon
+                  weight="duotone"
+                  className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
+                />
+              </button>
+            )}
+            <button
+              type="button"
+              title={state.closeArmed ? "press again to close" : "close tab"}
+              className={cn(closeButtonClass, state.closeArmed && closeArmedClass)}
+              onClick={state.onClickClose}
+            >
+              <XIcon className="size-3" />
+            </button>
           </>
         )}
       </div>
@@ -516,6 +537,14 @@ const popoverButtonClass = tw(
   "grid place-items-center size-6 rounded cursor-pointer text-on-background/70 transition-colors hover:bg-on-background/10 hover:text-on-background",
 );
 const zoomStep = 0.1;
+const closeButtonClass = tw(
+  "grid place-items-center size-5 ml-0.5 rounded border border-transparent cursor-pointer text-on-background/60 transition-colors hover:text-on-background hover:bg-on-background/10",
+);
+/** Armed, a second press closes the tab */
+const closeArmedClass = tw(
+  "text-[#900] border-on-background/30 hover:text-[#900] dark:text-[#f99] dark:hover:text-[#f99]",
+);
+const closeArmMs = 3000;
 /** A tab's theme: the page's, or always light or dark */
 const themeChoices = [
   { key: "auto", Icon: CircleHalfIcon },
