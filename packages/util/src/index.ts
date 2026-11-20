@@ -1,4 +1,5 @@
 export * from "./components/BasicPopover";
+export * from "./components/CreateForm";
 export * from "./components/PopoverArrow";
 export * from "./components/Spinner";
 export * from "./components/Tip";

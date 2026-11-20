@@ -1,7 +1,6 @@
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
-import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import { CreateForm, CreateFormKey, useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 import type { WorldUiMeta } from "./schema";
 
@@ -9,53 +8,37 @@ export default function WorldBootstrap(props: UiBootstrapProps): React.ReactNode
   const { uiStore, uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(() => ({
-    invalid: false,
-    worldKey: uiStoreApi.getDefaultTitle("World", "world") as WorldKey,
+    worldKey: uiStoreApi.getDefaultTitle("World", "world") as string,
+    /** Why `worldKey` can't be made, else `null` */
+    getError(): string | null {
+      if (!worldKeyRegex.test(state.worldKey)) return "a World is world-N, e.g. world-2";
+      const taken = Object.values(uiStore.getState().byId).some(
+        ({ meta }) => meta.uiKey === "World" && (meta as WorldUiMeta).worldKey === state.worldKey,
+      );
+      return taken ? `${state.worldKey} already exists` : null;
+    },
     onClickCreate() {
-      if (state.invalid) return;
-
-      for (const [_, { meta }] of Object.entries(uiStore.getState().byId)) {
-        if (meta.uiKey === "World" && meta.worldKey === state.worldKey) {
-          return alert(`${"World"}: worldKey ${state.worldKey} already exists.`);
-        }
-      }
-
       props.addInstance({
-        worldKey: state.worldKey,
+        worldKey: state.worldKey as WorldKey,
         title: state.worldKey, // title matches worldKey
       } satisfies Partial<WorldUiMeta>);
     },
   }));
 
+  const error = state.getError();
+
   return (
-    <div className="border flex w-full bg-black text-white">
-      <label className="flex border p-0.5 w-22">
-        <input
-          type="text"
-          autoCorrect="off"
-          className={cn("w-full p-1 border border-black/30 invalid:bg-red-400/30 outline-black")}
-          placeholder="worldKey"
-          onChange={(e) => state.set({ worldKey: e.currentTarget.value as WorldKey })}
-          onInput={(e) => state.set({ invalid: !e.currentTarget.checkValidity() })}
-          pattern="world-[0-9]+"
-          value={state.worldKey}
-          onKeyDown={(e) => e.key === "Enter" && state.onClickCreate()}
-        />
-      </label>
-      <button
-        type="button"
-        className="p-2 text-sm cursor-pointer disabled:cursor-not-allowed"
-        disabled={state.invalid}
-        onClick={state.onClickCreate}
-      >
-        {state.invalid ? (
-          <WarningIcon className="size-6 fill-red-400" weight="duotone" />
-        ) : (
-          <PlusCircleIcon className="size-6" weight="duotone" />
-        )}
-      </button>
-    </div>
+    <CreateForm error={error} onCreate={state.onClickCreate}>
+      <CreateFormKey
+        label="world"
+        value={state.worldKey}
+        invalid={error !== null}
+        onChange={(worldKey) => state.set({ worldKey })}
+      />
+    </CreateForm>
   );
 }
 
 type WorldKey = `world-${number}`;
+
+const worldKeyRegex = /^world-\d+$/;
