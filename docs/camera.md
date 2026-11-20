@@ -31,6 +31,7 @@ The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writin
 **Touch** (`onTouchStart`)
 - One finger pans, and two turn or pinch.
 - Whilst following, a one-finger drag moves where the player looks instead (`touchLook`), and a tap still picks. Two fingers turn or pinch as ever.
+- Whilst following and paused, the player can't turn, so a one-finger drag turns the view about them (`touches.ONE` is `ROTATE`). A pan would leave them, and the follow would pull it back on resuming.
 - A two-finger tap is a look, at their midpoint (`w.player.onTouch`).
 
 **Keys**
