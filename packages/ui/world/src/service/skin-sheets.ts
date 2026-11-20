@@ -63,11 +63,9 @@ const eyeDraw = {
   lash: 0.3,
   /** Texels a pupil moves to look aside or up */
   gaze: 2,
-  /** Scared: texels the opening grows each way, up to a width and height. Then its grey, and the pupil's size as a share of its own */
-  wideGrow: 2,
-  wideMax: [8, 10],
-  wideWhite: 217,
-  widePupil: 0.6,
+  /** Scared: the opening grows up by this share of its height, and the pupil's size as a share of its own */
+  wideUp: 0.25,
+  widePupil: 0.8,
 };
 
 /**
@@ -83,7 +81,7 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
   const skinX = ox + ow + size / 16;
   /** A column of the white beside the pupil. A dot eye has none, so skin shows instead */
   const whiteX = Math.floor(px > ox ? (ox + px) / 2 : px + pw < ox + ow ? (px + pw + ox + ow) / 2 : skinX);
-  const { lash, gaze, wideGrow, wideMax, wideWhite, widePupil } = eyeDraw;
+  const { lash, gaze, wideUp, widePupil } = eyeDraw;
 
   /** An eye that is dark around a bright iris, which keeps its dark */
   const centreRow = Math.floor(oy + oh / 2);
@@ -131,11 +129,9 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
     if (frame === "right") look(gaze, 0);
     if (frame === "none") each(ox, oy, ow, oh, (x, y) => paint(x, y, [skinX, y]));
     if (frame === "scared") {
-      const growX = Math.max(0, Math.min(wideGrow, (wideMax[0] - ow) / 2));
-      const growY = Math.max(0, Math.min(wideGrow, (wideMax[1] - oh) / 2));
-      each(ox - growX, oy - growY, ow + 2 * growX, oh + 2 * growY, (x, y) =>
-        paint(x, y, inverted ? [whiteX, centreRow] : wideWhite),
-      );
+      // the lids lift, the eye's own white showing above the iris: no wider or paler, so each skin keeps its eyes
+      const up = Math.round(oh * wideUp);
+      each(ox, oy - up, ow, oh + up, (x, y) => paint(x, y, [whiteX, inverted ? centreRow : Math.max(y, oy)]));
       const [w, h] = [pw * widePupil, ph * widePupil];
       const centre: [number, number] = [Math.floor(px + pw / 2), Math.floor(py + ph / 2)];
       each(px + (pw - w) / 2, py + (ph - h) / 2, w, h, (x, y) => paint(x, y, centre));
