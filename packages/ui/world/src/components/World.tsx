@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { isPlaygroundMapKey, isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { Broadcaster, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
+import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
@@ -541,7 +541,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   return (
     <WorldContext.Provider value={state}>
       {/* layers placed over the 3D view undo their tab's zoom, so they line up with it */}
-      <div ref={state.ref("rootEl")} className="relative size-full [&>.unzoom]:[zoom:calc(1/var(--tab-zoom,1))]">
+      <div
+        ref={state.ref("rootEl")}
+        className={cn(
+          "relative size-full [&>.unzoom]:[zoom:calc(1/var(--tab-zoom,1))]",
+          // black like its loading screen, until `WorldView` and its veil mount
+          state.rootEl === null && "bg-black",
+        )}
+      >
         {state.rootEl && (
           <WorldView>
             <ambientLight intensity={ambientLightIntensity} color="#fff" />
