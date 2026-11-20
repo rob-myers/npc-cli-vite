@@ -839,7 +839,7 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
   // not in a doorway, whose sides would read as a wall
   if (next.meta?.preventArrive !== true || npc.nodeRef === null || (w.e.npcToDoors[npc.key]?.inside ?? null) !== null)
     return npc.anim.setNearWall(false);
-  const { armInNear, armInLean, walkSquare } = npcConfig.dist;
+  const { armInNear, armInLean, armInSide, walkSquare } = npcConfig.dist;
   const near = armInNear[npc.anim.hurry === true ? "run" : "walk"];
   const to = w.helper.parseGroundPoint(next);
   const go = { x: to.x - npc.position.x, y: to.y - npc.position.z };
@@ -851,7 +851,13 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
   const { room, square, dir } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
   /** Square on, and not a post, e.g. a thin wall between doors */
   const ahead = square >= walkSquare && npc.clearBeside(npc.point, npc.nodeRef, dir, room) === false;
-  npc.anim.setNearWall(room >= near ? false : ahead ? "ahead" : "beside", room);
+  /** The gun's side, right of the way they face: a wall alongside, or one the arm turns towards */
+  const right = npc.isStrafing() === true ? { x: -along.y, y: along.x } : { x: -go.y, y: go.x };
+  /** A wall by the gun: right of the way they go, else as they face now whilst it is in, e.g. mid-turn */
+  const beside = () =>
+    npc.roomAhead(npc.point, npc.nodeRef, armInSide, right, right).room < armInSide ||
+    (npc.anim.armIn !== null && npc.anim.isWallByArm());
+  npc.anim.setNearWall(room < near ? (ahead ? "ahead" : "beside") : beside() ? "beside" : false, room);
 }
 
 /**

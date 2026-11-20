@@ -107,6 +107,8 @@ export const npcConfig = {
     postMargin: 0.3,
     /** Not strafing, `roomAhead`'s ray leans this share of `strafeWallSpan` right of the way they go, the gun's side */
     armInLean: 0.45,
+    /** A wall within this to the right of the way they face draws their right arm in. It is where the arm swings */
+    armInSide: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
     circling: 0.6,
   },

@@ -235,7 +235,8 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - Prototype in a tty. Keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
 - Separately, `web-mcp-tools.ts` offers the ttys to a browser agent through WebMCP, once switched on in the main menu (`docs/mcp.md`, WebMCP).
 - Whilst Claude drives it, a banner at the top of the page says "mcp testing".
-- Unpause the World before a test moves or turns anyone.
+- Unpause the World freely, without asking, e.g. before a test moves or turns anyone. Re-pause it after if it was paused.
+- Test it yourself rather than asking the user to repro, and say what you are thinking as you go.
 - A result ending `[user input since last call: …]` means the user took over: stop and ask.
 - If state seems off mid-test, ask whether they interacted before calling it a bug.
 

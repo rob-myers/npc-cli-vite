@@ -664,6 +664,18 @@ export class NpcAnimation {
     if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
   }
 
+  /** Whether a wall is within `armInSide` ahead of them or to their right, the gun's side */
+  isWallByArm() {
+    const { nodeRef, point, rotation } = this.npc;
+    if (nodeRef === null) return false;
+    const { armInSide } = npcConfig.dist;
+    const [ahead, right] = [
+      { x: -Math.sin(rotation.y), y: -Math.cos(rotation.y) },
+      { x: Math.cos(rotation.y), y: -Math.sin(rotation.y) },
+    ];
+    return [ahead, right].some((way) => this.npc.roomAhead(point, nodeRef, armInSide, way, way).room < armInSide);
+  }
+
   /**
    * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood, it draws their right arm in whilst free,
    * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side. `room` is how far off the wall is
@@ -684,7 +696,7 @@ export class NpcAnimation {
     if (this.upper.target === 0 || this.upper.key !== this.armIn) this.armIn = null;
     if (want === (this.armIn !== null)) return;
     if (this.armIn !== null) {
-      this.setUpper(null);
+      this.setUpper(null, { byWall: false }); // no wall near by now: at rest by one, `startIdle` keeps it in
       this.armIn = null;
     } else if (this.upper.target === 0) {
       this.armIn = this.w.phasers?.holds(this.npc.key) === true ? "phaser_aim_avoid" : "idle";
@@ -877,7 +889,8 @@ export class NpcAnimation {
       return;
     }
 
-    this.setNearWall(false); // at rest, e.g. let go, killed or no longer the player
+    // at rest by a wall the arm stays in, else the next step flicks it. Else let go, e.g. killed or no longer the player
+    this.setNearWall(this.armIn !== null && this.isWallByArm() ? "beside" : false);
     this.npc.last.idleTime = this.w.gameTime.now();
     const agent = this.npc.agent;
 
