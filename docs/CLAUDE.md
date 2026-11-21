@@ -237,7 +237,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - Whilst Claude drives it, a banner at the top of the page says "mcp testing".
 - Unpause the World freely, without asking, e.g. before a test moves or turns anyone. Re-pause it after if it was paused.
 - Test it yourself rather than asking the user to repro, and say what you are thinking as you go.
-- A result ending `[user input since last call: …]` means the user took over: stop and ask.
+- A result ending `[user input since last call: …]` means the user is using the page. Wait a few seconds and call again, at most twice: once a result has none, carry on, re-reading any state the test relies on first. Still busy after that, stop and ask.
 - If state seems off mid-test, ask whether they interacted before calling it a bug.
 
 **Before EVERY call, write its input as a code fence**: the `jsh` line as `sh`, the `query` function as `js`, else its arguments. That message is the fence ALONE, with no other text. The VS Code extension shows a call's result but not its input, and it drops a fence that follows prose.

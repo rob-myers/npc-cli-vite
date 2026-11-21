@@ -37,20 +37,13 @@ import {
   talkConfig,
   upperFadeSecs,
 } from "../const.npc";
+import { addCorpseCollider, bodyCrosses, type CorpseBody } from "../service/corpse-body";
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import { newClutch, takeClutch, tickClutch } from "./npc-clutch";
 import { type Flinch, flinch, tickFlinch, undoFlinch } from "./npc-flinch";
-import {
-  addCorpseCollider,
-  bodyCrosses,
-  type CorpseBody,
-  newOverBody,
-  removeCorpseCollider,
-  tickOverBody,
-  undoOverBody,
-} from "./npc-over-body";
+import { newOverBody, removeCorpseCollider, tickOverBody, undoOverBody } from "./npc-over-body";
 import { letGo, newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -470,7 +463,7 @@ export class NpcAnimation {
     }
     if (this.breath.on === true) this.setBreathing(false);
     this.setEyes("shut");
-    if (this.fall != null && this.fall.body == null) this.fall.body = addCorpseCollider(this);
+    if (this.fall != null && this.fall.body == null) this.fall.body = addCorpseCollider(this.npc);
   }
 
   /**

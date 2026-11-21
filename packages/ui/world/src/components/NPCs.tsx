@@ -39,6 +39,7 @@ import {
   npcSpawnConfig,
 } from "../const.npc";
 import { mirrorClip } from "../service/clips";
+import { postCorpseCollider } from "../service/corpse-body";
 import {
   addBodyPartAttr,
   addEmptyBillboardOffset,
@@ -57,7 +58,7 @@ import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
 import { emptyAnimationClip, type HitOutcome } from "./npc-animation";
-import { postCorpseCollider, removeCorpseCollider } from "./npc-over-body";
+import { removeCorpseCollider } from "./npc-over-body";
 import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
@@ -663,7 +664,7 @@ export default function NPCs() {
       syncCorpseColliders() {
         for (const npc of Object.values(state.npc)) {
           const body = npc.anim.fall?.body;
-          if (body != null) postCorpseCollider(w, npc.key, body);
+          if (body != null) postCorpseCollider(npc, body);
         }
       },
       syncOutlineMask() {
