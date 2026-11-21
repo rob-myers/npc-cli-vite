@@ -2,7 +2,7 @@ import { url } from "@npc-cli/media";
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
-import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
+import { entries, hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { deltaAngle } from "maath/misc";
@@ -32,11 +32,14 @@ import {
   defaultBreathTune,
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
+  mirroredClips,
   npcConfig,
   npcMaterialConfig,
   npcScale,
   npcSpawnConfig,
 } from "../const.npc";
+import { mirrorClip } from "../service/clips";
+import { postCorpseCollider } from "../service/corpse-body";
 import {
   addBodyPartAttr,
   addEmptyBillboardOffset,
@@ -44,6 +47,7 @@ import {
   mergeWithGroupAttr,
 } from "../service/geometry";
 import { helper } from "../service/helper";
+import { npcHot, swapNpcClasses } from "../service/npc-hot";
 import { createNpcMaterial, type NpcMaterial } from "../service/npc-material";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
@@ -53,7 +57,8 @@ import { getWorldStore } from "../service/storage";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
-import { emptyAnimationClip, NpcAnimation } from "./npc-animation";
+import { emptyAnimationClip, type HitOutcome } from "./npc-animation";
+import { removeCorpseCollider } from "./npc-over-body";
 import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
@@ -183,22 +188,13 @@ export default function NPCs() {
 
         /**
          * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
-         * - we update the prototypes
+         * - we update the prototypes and add fields (`swapNpcClasses`)
          * - we update the materials
          * - we update epochMs
          * - BUT currently don't support add/remove/change other properties
          */
+        swapNpcClasses(Object.values(state.npc));
         for (const npc of Object.values(state.npc)) {
-          Object.setPrototypeOf(npc, Npc.prototype);
-          Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
-          // fields added since, and to its plain objects e.g. `upper` — else they read `undefined`
-          for (const [key, value] of Object.entries(new NpcAnimation(npc))) {
-            const had = (npc.anim as unknown as Record<string, unknown>)[key];
-            if (had === undefined) Object.assign(npc.anim, { [key]: value });
-            else if (value?.constructor === Object && had?.constructor === Object)
-              Object.assign(npc.anim, { [key]: { ...value, ...had } });
-          }
-
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
 
@@ -265,12 +261,13 @@ export default function NPCs() {
           null,
         );
       },
-      hit(npcKey, part) {
+      hit(npcKey, part, impact) {
         const npc = state.npc[npcKey];
-        const clip = npc?.anim.hitClipFor(part) ?? null;
+        const dir = impact && new THREE.Vector3().subVectors(impact.at, impact.from).normalize();
+        const clip = npc?.anim.hitClipFor(part, impact?.outcome, dir) ?? null;
         if (npc === undefined || part === null || clip === null) return;
         npc.rejectAll(new Error("hit")); // a move's own catch idles them, onto the clip
-        npc.anim.setHurt(clip);
+        npc.anim.setHurt(clip, impact && dir && { part, at: impact.at.clone(), dir, outcome: impact.outcome });
         w.events.next({ key: "npc-hit", npcKey, part, clip });
       },
       get(npcKey) {
@@ -330,6 +327,8 @@ export default function NPCs() {
           npc.anim.tick(delta);
 
           if (npc.agentId === null) {
+            // a corpse's physics body goes where it lies, so a doorway it lies in is not clear, and stays open
+            if (npc.anim.fall != null) positions.push(npc.bodyUid, npc.position.x, npc.position.y, npc.position.z);
             continue;
           }
 
@@ -479,6 +478,7 @@ export default function NPCs() {
 
         if (keepPhysics === true) return;
 
+        for (const npc of npcs) removeCorpseCollider(npc.anim);
         // physics worker will fire exit colliders
         w.physics.worker.postMessage({
           type: "remove-physics-bodies",
@@ -661,6 +661,12 @@ export default function NPCs() {
         state.dimNode.value = next;
         w.r3f?.invalidate(); // a uniform write draws nothing by itself, the frameloop being on demand
       },
+      syncCorpseColliders() {
+        for (const npc of Object.values(state.npc)) {
+          const body = npc.anim.fall?.body;
+          if (body != null) postCorpseCollider(npc, body);
+        }
+      },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
         // this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`, the
@@ -789,6 +795,7 @@ export default function NPCs() {
     );
     // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
     for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
+    for (const [key, from] of entries(mirroredClips)) if (from !== undefined) clips[key] = mirrorClip(clips[from], key);
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
@@ -801,9 +808,14 @@ export default function NPCs() {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
       if (staleClips.length === 0 || npc.group === null) continue; // unmounted: the mount shows it
+      const posed = staleClips.find((clip) => clip.name === npc.anim.pose);
+      const { time = 0, paused = false, timeScale = 1 } = (posed && npc.anim.mixer.existingAction(posed)) ?? {};
       npc.anim.mixer.stopAllAction();
       for (const oldClip of staleClips) npc.anim.mixer.uncacheClip(oldClip);
       npc.anim.setPose(npc.anim.pose, { fade: 0, force: true });
+      // where it was, e.g. a corpse held at the end of their fall, rather than played again
+      const action = npc.anim.mixer.existingAction(clips[npc.anim.pose]);
+      if (action !== null) Object.assign(action, { time, paused, timeScale });
       // at once: stopping left the bind pose, and no tick comes whilst paused
       npc.anim.mixer.update(0);
       npc.anim.tickUpper(0);
@@ -814,6 +826,7 @@ export default function NPCs() {
   }, [queryData]);
 
   w.r3fStore = useReactThreeFiberStore();
+  if (import.meta.env.DEV) npcHot.npcs = () => Object.values(state.npc); // for a hot update React misses
 
   useEffect(
     () => void (import.meta.env.DEV && state.devHotReload()),
@@ -887,6 +900,8 @@ export type State = {
   setAmbient(next: number, sameRoom: number): void;
   /** Sets `dimNode`'s value — called by `WorldMenu`'s slider, never `.value` directly */
   setBrightness(next: number): void;
+  /** Puts back corpses' sensors, e.g. once the physics world is rebuilt */
+  syncCorpseColliders(): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
   /** Their material and uniforms — see `service/npc-material` */
@@ -945,8 +960,12 @@ export type State = {
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
-  /** A phaser's beam reached `part` of them: stops them, and plays its clip if it has one */
-  hit(npcKey: string, part: null | string): void;
+  /** A phaser's beam reached `part` of them, at `impact.at` from `impact.from`: stops them, and plays its clip if it has one */
+  hit(
+    npcKey: string,
+    part: null | string,
+    impact?: { at: THREE.Vector3; from: THREE.Vector3; outcome: HitOutcome },
+  ): void;
   /** The skin of that key, else the first whose key begins with it, else `defaultSkinKey` */
   findSkinKey(prefix?: string): string;
   getSkinIndexBySkinKey(skinKey: string): number;

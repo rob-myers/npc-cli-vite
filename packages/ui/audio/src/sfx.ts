@@ -1,3 +1,4 @@
+import { bodySfx } from "./body";
 import { chantVoice, choirVoice } from "./choir";
 import { type DoorVoice, doorSfx, doorVoice } from "./doors";
 import { itemSfx } from "./items";
@@ -9,9 +10,10 @@ import { sfxLevel } from "./synth";
 
 /** The sound effects, synthesised over a few recorded layers — see `docs/audio.md` */
 export const sfxKeys = [
-  ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "ghost"] as const),
+  ...(["raise", "lower", "charged", "fire", "cool", "hit", "armour", "struck", "ghost"] as const),
   ...(["opened", "closed", "lock", "unlock", "hold", "unhold", "denied"] as const),
   ...(["sit", "lie", "stand", "put", "take"] as const),
+  ...(["fall", "tread"] as const),
 ];
 export type SfxKey = (typeof sfxKeys)[number];
 
@@ -48,7 +50,7 @@ export function playSfx(key: SfxKey, c: SfxContext) {
   window.setTimeout(() => out.disconnect(), (c.at - c.ctx.currentTime + sfxSecs) * 1000);
 }
 
-const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx, ...postureSfx, ...itemSfx };
+const sfx: Record<SfxKey, SfxBuilder> = { ...phaserSfx, ...doorSfx, ...postureSfx, ...itemSfx, ...bodySfx };
 
 /** The bus an effect plays through: the World's own sounds through `world`, the phaser's through `fx` */
 export const sfxBus = (key: SfxKey) => (key in phaserSfx ? "fx" : "world");

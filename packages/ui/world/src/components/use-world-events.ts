@@ -391,6 +391,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const arm = w.n?.[npcKey]?.anim.upperLeft;
         return arm?.key === "psi" && arm.target === 1;
       },
+      makeWayFor(npc) {
+        for (const { npc: other, to } of npc.anim.inTheWay())
+          void state.move({ npcKey: other.key, to, fast: true, near: true }).catch(() => {}); // else they stay put
+      },
       async move(opts) {
         const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
@@ -920,6 +924,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.meta.gdKey;
               state.trackDoorway(npc.key, e.meta.gdKey);
             }
+            // a corpse's own body lies on its sensor
+            if (typeof e.meta.corpse === "string" && e.meta.corpse !== npc.key)
+              npc.anim.overBody?.on.add(e.meta.corpse);
 
             state.onEnterCollider(e, npc);
             break;
@@ -955,6 +962,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (state.npcToDoors[e.npcKey]) state.npcToDoors[e.npcKey].inside = null;
               if (state.insideDoorways.get(npc.key)?.gdKey === e.meta.gdKey) state.insideDoorways.delete(npc.key);
             }
+            if (typeof e.meta.corpse === "string") npc.anim.overBody?.on.delete(e.meta.corpse);
 
             state.onExitCollider(e, npc);
             break;
@@ -1018,6 +1026,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "item-handled":
           case "npc-toggled":
           case "npc-posed":
+          case "corpse-stepped":
+          case "npc-fell":
           case "npc-hit":
           case "npc-hurt":
           case "npc-shot":
@@ -1095,6 +1105,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
               lit: npc.lit === true ? true : undefined,
               access: state.getHeldDoors(npc.key),
+              dead: npc.anim.dead === true ? npc.anim.hurt?.key : undefined,
             })),
           },
         });
@@ -1411,7 +1422,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access, dead } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -1425,6 +1436,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            // lying where they fell, as they were left
+            if (dead !== undefined && dead in w.npc.clips) spawned?.anim.restoreDead(dead as AnimationClipKey);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
@@ -1699,6 +1712,28 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         // those in the player's room are lit more
         if (w.npc != null) w.npc.playerRoom = w.n[w.player.key]?.roomSlot.value ?? neverShownSlot;
+      },
+      async takeHit(npcKey, part, impact) {
+        const npc = w.n[npcKey];
+        if (npc === undefined || npc.anim.staggering === true) return; // killed already
+        const dir = impact && new THREE.Vector3().subVectors(impact.at, impact.from).normalize();
+        const clip = impact?.outcome === "kill" ? npc.anim.hitClipFor(part, impact.outcome, dir) : null;
+        const to = npc.anim.staggerSpot(clip, dir)?.at;
+        const from = npc.position.clone();
+        const ry = npc.rotation.y;
+        /** Ahead of them, the fall slides them there instead, hidden by its stumble — see `anim.fitDeath` */
+        const behind = to !== undefined && (to.x - from.x) * -Math.sin(ry) + (to.y - from.z) * -Math.cos(ry) < 0;
+        let hit = impact;
+        if (to !== undefined && behind && impact !== undefined) {
+          npc.anim.staggering = true;
+          await state.move({ npcKey, to, backwards: true }).catch(() => {}); // stopped short, they fall where they are
+          npc.anim.staggering = false;
+          if (w.n[npcKey] !== npc) return; // removed meanwhile
+          const moved = npc.position.clone().sub(from);
+          hit = { ...impact, at: impact.at.clone().add(moved), from: impact.from.clone().add(moved) };
+        }
+        w.npc.hit(npcKey, part, hit);
+        state.makeWayFor(npc);
       },
       takeItem(npcKey, decorKey) {
         const def = w.decor.runtime.defByKey[decorKey];
@@ -1988,6 +2023,8 @@ export type State = {
   restoreAccess(saved: Pick<persisted.PersistedNpc, "key" | "access">): void;
   /** Gives or takes a door's key — the one way to write `npcToAccess`, so the bar hears */
   setAccess(npcKey: string, gdKey: Geomorph.GmDoorKey, held: boolean): void;
+  /** A phaser's hit. Killed stood with no room to fall, they stagger to where there is, then fall — see `anim.staggerSpot` */
+  takeHit(...args: Parameters<import("./NPCs").State["hit"]>): Promise<void>;
   /** Starts taking a runtime decor with `meta.item` off the map — `false` if it is no item, in another room, or they have no room */
   takeItem(npcKey: string, decorKey: string): boolean;
   /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
@@ -2098,6 +2135,8 @@ export type State = {
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
+  /** Whoever living is where `npc` falls dead steps aside, the player too — see `anim.inTheWay` */
+  makeWayFor(npc: Npc): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
   /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`. One with no wall between first */
   besideDoable(

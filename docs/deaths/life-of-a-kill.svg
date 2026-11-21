@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12">
+  <style>
+    .stage { fill: #e6e6e6; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+    .panel { fill: #262a31; stroke: #3a404a; }
+    .fn { fill: #e6e6e6; font-size: 13px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; }
+    .file { fill: #5aa0f0; font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+    .note { fill: #9aa0a6; font-size: 12px; }
+    .arrow { fill: none; stroke: #7a8290; stroke-width: 1.5; }
+  </style>
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker></defs>
+  <rect width="960" height="540" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">The life of a kill: each stage's code, and the file it lives in</text>
+
+  <g transform="translate(8 44)">
+    <text x="12" y="22" class="stage">1 · SHOT LANDS</text>
+    <rect x="8" y="34" width="172" height="400" rx="10" class="panel"/>
+    <text x="200" y="22" class="stage">2 · DECIDE</text>
+    <rect x="196" y="34" width="172" height="400" rx="10" class="panel"/>
+    <text x="388" y="22" class="stage">3 · FALL</text>
+    <rect x="384" y="34" width="172" height="400" rx="10" class="panel"/>
+    <text x="576" y="22" class="stage">4 · LIE</text>
+    <rect x="572" y="34" width="172" height="400" rx="10" class="panel"/>
+    <text x="764" y="22" class="stage">5 · GET UP</text>
+    <rect x="760" y="34" width="172" height="400" rx="10" class="panel"/>
+
+    <text x="20" y="62" class="fn">Phasers.land</text>
+    <text x="20" y="77" class="file">Phasers.tsx</text>
+    <text x="20" y="94" class="note">outcome from the hud badge</text>
+    <text x="20" y="109" class="note">(forceShot, saved per World)</text>
+    <text x="20" y="146" class="fn">npc-shot</text>
+    <text x="20" y="161" class="file">jsh audio.ts</text>
+    <text x="20" y="178" class="note">sounds: hit, armour, ghost</text>
+
+    <text x="208" y="62" class="fn">w.e.takeHit</text>
+    <text x="208" y="77" class="file">use-world-events.ts</text>
+    <text x="208" y="94" class="note">a stagger spot behind?</text>
+    <text x="208" y="109" class="note">walk back to it first</text>
+    <text x="208" y="146" class="fn">w.npc.hit</text>
+    <text x="208" y="161" class="file">NPCs.tsx</text>
+    <text x="208" y="178" class="note">hitClipFor: part, outcome,</text>
+    <text x="208" y="193" class="note">and the shot's way</text>
+    <text x="208" y="230" class="fn">anim.setHurt</text>
+    <text x="208" y="245" class="file">npc-animation.ts</text>
+    <text x="208" y="262" class="note">hit, down: a pain clip</text>
+    <text x="208" y="277" class="note">kill: fitDeath, mirror, rate</text>
+
+    <text x="396" y="62" class="fn">fitDeath</text>
+    <text x="396" y="77" class="file">npc-death.ts</text>
+    <text x="396" y="94" class="note">the fit ladder: see below</text>
+    <text x="396" y="131" class="fn">startFall · tickFall</text>
+    <text x="396" y="146" class="file">npc-death.ts</text>
+    <text x="396" y="163" class="note">agent gone; the npc follows</text>
+    <text x="396" y="178" class="note">the hips (carry); turn, slide</text>
+    <text x="396" y="215" class="fn">makeWayFor</text>
+    <text x="396" y="230" class="file">use-world-events.ts</text>
+    <text x="396" y="247" class="note">the living step aside</text>
+    <text x="396" y="262" class="note">(anim.inTheWay)</text>
+    <text x="396" y="299" class="fn">npc-fell</text>
+    <text x="396" y="314" class="file">tickFall → jsh audio.ts</text>
+    <text x="396" y="331" class="note">hips near the floor: a thud</text>
+
+    <text x="584" y="62" class="fn">holdStill</text>
+    <text x="584" y="77" class="file">npc-animation.ts</text>
+    <text x="584" y="94" class="note">held at its end, eyes shut</text>
+    <text x="584" y="131" class="fn">addCorpseCollider</text>
+    <text x="584" y="146" class="file">service/corpse-body.ts</text>
+    <text x="584" y="163" class="note">hull, and a rect sensor</text>
+    <text x="584" y="200" class="fn">tickOverBody</text>
+    <text x="584" y="215" class="file">npc-over-body.ts</text>
+    <text x="584" y="232" class="note">walkers' feet lift; a step</text>
+    <text x="584" y="247" class="note">jolts it (corpse-stepped)</text>
+    <text x="584" y="284" class="fn">persistNpcs</text>
+    <text x="584" y="299" class="file">use-world-events.ts</text>
+    <text x="584" y="316" class="note">saved with the map's npcs,</text>
+    <text x="584" y="331" class="note">laid again (restoreDead)</text>
+    <text x="584" y="368" class="fn">rebindFall</text>
+    <text x="584" y="383" class="file">npc-death.ts</text>
+    <text x="584" y="400" class="note">onto a refetched mesh</text>
+
+    <text x="772" y="62" class="fn">revive · startRise</text>
+    <text x="772" y="77" class="file">npc.ts · npc-death.ts</text>
+    <text x="772" y="94" class="note">get_up_back / _forward</text>
+    <text x="772" y="131" class="fn">tickRise · carry</text>
+    <text x="772" y="146" class="file">npc-death.ts</text>
+    <text x="772" y="163" class="note">body, label and shadow</text>
+    <text x="772" y="178" class="note">rise together</text>
+    <text x="772" y="215" class="fn">finishRise</text>
+    <text x="772" y="230" class="file">npc-death.ts</text>
+    <text x="772" y="247" class="note">breathe, back in the crowd</text>
+    <text x="772" y="284" class="fn">dead toggle</text>
+    <text x="772" y="299" class="file">PickMenu.tsx</text>
+    <text x="772" y="316" class="note">kill or revive by hand</text>
+
+    <path d="M180,234 L194,234" class="arrow" marker-end="url(#next)"/>
+    <path d="M368,234 L382,234" class="arrow" marker-end="url(#next)"/>
+    <path d="M556,234 L570,234" class="arrow" marker-end="url(#next)"/>
+    <path d="M744,234 L758,234" class="arrow" marker-end="url(#next)"/>
+    <path d="M846,434 L846,462 L94,462 L94,438" class="arrow" marker-end="url(#next)"/>
+    <text x="470" y="482" text-anchor="middle" class="note">alive again: the next shot starts over. A hit or down stops at stage 2.</text>
+  </g>
+</svg>

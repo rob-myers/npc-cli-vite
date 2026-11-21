@@ -2,7 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
-import { parsePhysicsBodyKey } from "../service/physics-bijection";
+import { corpseOf, parsePhysicsBodyKey } from "../service/physics-bijection";
 import { getDecorCollidersPayload, getPhysicsDoorsPayload } from "../service/worker-data";
 import { useWorkerLoadRetry } from "./use-worker-load-retry";
 import { WorldContext } from "./world-context";
@@ -35,6 +35,13 @@ export default function PhysicsWorker() {
             npcKey,
             type,
             meta: { ...door.connector.meta, ...helper.getGmDoorId(subKey) },
+          });
+        } else if (corpseOf(subKey) !== null) {
+          w.events.next({
+            key: isEnter === true ? "enter-collider" : "exit-collider",
+            npcKey,
+            type,
+            meta: { corpse: corpseOf(subKey) },
           });
         } else {
           const decor = w.decor.byKey[subKey];
@@ -82,6 +89,7 @@ export default function PhysicsWorker() {
           case "world-setup-response": {
             state.physicsRebuilds++;
             if (w.decor?.ready === true) w.decor.syncStaticColliders(); // a fresh world has only runtime ones
+            w.npc?.syncCorpseColliders();
             break;
           }
           default:

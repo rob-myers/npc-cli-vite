@@ -17,6 +17,16 @@ export function addBodyKeyUidRelation(bodyKey: WW.PhysicsBodyKey, lookups: Physi
   return bodyUid;
 }
 
+/** A fallen npc's rect sensor, for others to step over */
+export function corpseColliderKey(npcKey: string) {
+  return `corpse-${npcKey}`;
+}
+
+/** The corpse's npcKey a collider's key is for, else `null` */
+export function corpseOf(colliderKey: string) {
+  return colliderKey.startsWith("corpse-") ? colliderKey.slice("corpse-".length) : null;
+}
+
 export function npcToBodyKey(npcKey: string) {
   return `npc ${npcKey}` as const;
 }

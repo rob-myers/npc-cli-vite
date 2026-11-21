@@ -8,12 +8,14 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
-| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`) |
+| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`, `hitDown`). The dead are in `docs/deaths.md` |
+| `ui/world/src/components/npc-flinch.ts` | a jolt from a shot, and a hit's held lean (`flinch`, `tickFlinch`) |
+| `ui/world/src/components/npc-clutch.ts` | a hand on the wound (`takeClutch`, `tickClutch`) |
 | `ui/world/src/components/NpcGhost.tsx` | ghost: a dot screen, `w.npcGhost` |
 | `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig` |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig`, `hitFlinchConfig`, `clutchConfig` |
 
 ## How a shot ends
 
@@ -23,13 +25,15 @@ Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one
 
 | outcome | the beam | effect |
 | --- | --- | --- |
-| `hit` | lands on the part | see [What a hit does](#what-a-hit-does) |
+| `hit` | lands on the part | see [What a hit does](#what-a-hit-does): they recover after |
+| `down` | lands on the part | a hit that puts them down, collapsed or pacified |
 | `ghost` | passes through them, once they are a dot screen | see [Ghost](#ghost) |
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
+| `kill` | lands on the part | a hit that leaves them dead: see `docs/deaths.md` |
 
 - **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
 - **The badge** shows on the phaser slot whilst **phaser** is ticked under **debug** in the World menu's **hud** select
-  (`w.debug.hudDebugShown`, persisted per World). A click cycles it through `hit`, `ghost` and `armour`. Unticking it
+  (`w.debug.hudDebugShown`, persisted per World). A click cycles it through `hit`, `down`, `ghost`, `armour` and `kill`. Unticking it
   resets it to `hit`.
 - **A shot whose line meets no part of them**, from the muzzle through the dot, has no outcome and sends no `npc-shot`.
   It passes there, e.g. they moved since it was aimed.
@@ -85,7 +89,7 @@ Fired with no one targeted (`w.phasers.fireAlong`), a shot runs straight along t
 it first meets one: at its side, or down through its top or up through its underside (`acrossStop`). Nothing within
 `partDepth` of the part's middle stops it, e.g. a thigh on its seat. Stopped, it never lands.
 
-As a beam reaches its target, and no shield or obstacle stops it, a `hit` outcome has `w.npc.hit` play a clip on them. The clip depends on the part
+As a beam reaches its target, and no shield or obstacle stops it, a `hit`, `down` or `kill` outcome has `w.npc.hit` play a clip on them. The clip depends on the part
 locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
 
 | part | stood | sat / lain |
@@ -94,24 +98,59 @@ locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`)
 | chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
 | an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
 
-Its pain clip plays once, then (`hitConfig.next`):
+Its pain clip plays once. After a `hit` they go back to rest, or to what they were in. After a `down` (`hitConfig.next`):
 
 | part | after |
 | --- | --- |
 | head | `pacified` (or `{sit,lie}_pacified`) loops |
-| body, stood | `collapsed` loops: sat on the floor, slumped, breathing hard |
+| body, stood | `collapse` plays instead of `pain_high` (`hitConfig.sink`), then `collapsed` loops: sat on the floor, slumped, breathing hard |
 | body sat or lain, or a limb | back to rest: `breathe`, `sit` or `lie` |
 
-- A head shot's clip ends slumped, so goes straight on. `pain_high` fades into `collapsed` over `pacifyFadeSecs`.
+- A head shot's clip ends slumped, so goes straight on.
+- `collapse` (1.65s) is a stunned sway, then the left knee gives and they sink where they stand. It ends on `collapsed`'s
+  first frame, so goes straight on. Their eyes are `scared` from then until released.
+- A hurt clip fades in over `hitConfig.fadeInSecs`, so its first jolt reads.
 - Collapsed, the right forearm lies across the lap, so a gun in hand stays clear of others' feet.
 - Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
 - Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is
   lowered, and `move`, `look` and arming are refused.
 - A shove (`w.e.move`'s `shove`, e.g. jsh `sidestep`) still moves one pacified, or one collapsed. Collapsed, they
   scoot back-first in `collapsed_drag` (`anim.dragged`), at `dragConfig.speed`, turning as they go.
-- Pain on someone already pacified or collapsed leaves them as they were after, though a head shot pacifies one collapsed.
+- Pain on someone already pacified or collapsed leaves them as they were after.
+  A stood pain clip never plays on one collapsed (`hitDown`), a head shot's included: they stay down, jolted, a hand on
+  the new wound.
   A head shot on someone pacified has no effect, nor does the label, or no part.
 - One lock hits once. Hits are not mirrored over the network.
+
+### Where it lands
+
+A hit reacts to its point and its way (`w.npc.hit`'s `impact`, from `strike`).
+
+- **A jolt.** The struck part, and the bones it hangs from, turn away from the shot (`flinch` with `hitFlinchConfig`).
+  Whilst pacified or collapsed they stay turned `hold` of the way. Released, it eases out.
+- **A hand on the wound** (`npc-clutch.ts`, `clutchConfig`). The left hand, or the right for a left-arm wound, reaches
+  for where it landed, held in that bone's frame (`clutch.wound`), by `reachTo`.
+  - On the head or torso (`coreParts`) it goes on the front, or the front half of the side towards the hand, whichever
+    is nearer the wound, never the back. A side point within `sideMin` of the shoulder takes the front instead, else the
+    arm folds up. So a shot in the back is held at the flank or front, and one behind the head at the temple.
+  - The face is chosen once a wound (`clutch.face`), else it could flip mid-reach as they move.
+  - On a limb, the palm goes on the side of the bone it reaches without crossing the body, leaning to the front.
+  - The palm rests `palm` off the surface, the hand's half-thickness, as the forearm lies along it. On the head,
+    met end-on, `palmHead`.
+  - It runs last each tick, after the flinch and the stance, so the hand meets the wound where they leave it.
+  - It crosses their middle by `cross` at most. A point across the torso, up to just over its top, goes onto the
+    front of the chest's or stomach's box (`bodyPart`). So a wound on the other arm is clutched on the chest beside it.
+  - The elbow heads in front of the chest as far as the hand crosses their middle (`elbowWay`, `reachTo`'s
+    `elbowTo`), so the arm crosses in front of the body. A hand on its own side has the elbow out beside them, unless
+    it is raised, e.g. at the temple, which brings the elbow forwards.
+  - Only within reach, e.g. not a shin whilst stood. It stays `lingerSecs` after they recover, or are released,
+    unless they move or the arm takes a pose. It eases in and out over `easeSecs`.
+- Their body faces `-z` in its bones' frames, turned by `npc.rotation.y`, so ahead is `(-sin, -cos)`. Their group is not turned.
+
+### Kill
+
+A `kill` leaves them dead. Stood, they fall the way the shot pushes, where a body fits, and others may walk over the
+corpse. See `docs/deaths.md`.
 
 ## Targeting
 

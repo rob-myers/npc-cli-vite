@@ -28,6 +28,7 @@ import {
   otherNpcLabelColor,
 } from "../const.npc";
 import { helper } from "../service/helper";
+import { bodyPartPoint } from "../service/phaser-beam";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import type { AnimationClipKey } from "./NPCs";
@@ -52,6 +53,8 @@ export class Npc {
   queryFilter!: QueryFilter;
   /** As `queryFilter`, but without the exemption for the node they stand on */
   strictQueryFilter!: QueryFilter;
+  /** Passes a doorway only whilst its door is open, e.g. for whether their body would fit lying there */
+  openDoorsFilter!: QueryFilter;
 
   bubbleOffset = new THREE.Vector3(0, 0, 0);
   geometry: THREE.BufferGeometry;
@@ -72,7 +75,7 @@ export class Npc {
   labelShift: undefined | number;
   labelFloor: null | number = null;
   /** Their label's glide to a new shift, `t` from `0` to `1`, whilst under way — see `easeLabel` */
-  labelMove: null | { from: number; to: number; t: number } = null;
+  labelMove: null | { from: number; to: number; t: number; secs?: number } = null;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
   /** `1` draws their body as a dot screen, but not their label or outline — see `NpcGhost` */
@@ -277,7 +280,7 @@ export class Npc {
   easeLabel(delta: number) {
     const move = this.labelMove;
     if (move == null) return; // `undefined` on an npc made before a hot reload
-    move.t = Math.min(1, move.t + delta / labelMoveSecs);
+    move.t = Math.min(1, move.t + delta / (move.secs ?? labelMoveSecs));
     this.labelYShiftUniform.value = move.from + (move.to - move.from) * move.t;
     if (move.t === 1) this.labelMove = null;
     this.w.r3f?.invalidate(); // the frameloop is on demand
@@ -469,6 +472,15 @@ export class Npc {
       ...createDefaultQueryFilter(),
       passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, false),
     };
+
+    this.openDoorsFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => {
+        const { area } = getNodeByRef(navMesh, nodeRef);
+        if (nodeRef === this.nodeRef || isDoorAreaId(area) === false) return true;
+        return this.w.door.byKey[decodeDoorAreaId(area).gdKey]?.open === true;
+      },
+    };
   }
 
   isFading() {
@@ -490,6 +502,19 @@ export class Npc {
 
   isStrafing() {
     return this.anim.strafe;
+  }
+
+  /** Killed at once, as by a shot in the chest from in front: they fall dead, staggering first if need be */
+  kill() {
+    const at = bodyPartPoint(this, "chest", new THREE.Vector3());
+    const ry = this.rotation.y;
+    const from = at.clone().add(new THREE.Vector3(-Math.sin(ry), 0, -Math.cos(ry))); // their front is -z
+    return this.w.e.takeHit(this.key, "chest", { at, from, outcome: "kill" });
+  }
+
+  /** Back to life: fallen, they get up first (`deathConfig.getUp`), else they are let go at once */
+  revive() {
+    this.anim.setHurt(null);
   }
 
   /**
@@ -598,6 +623,7 @@ export class Npc {
     depth: number,
     along: Geom.VectJson,
     heading: Geom.VectJson,
+    filter = this.queryFilter,
   ): { room: number; square: number; dir: Geom.VectJson } {
     const unit = Math.hypot(along.x, along.y) || 1;
     const [sx, sz] = [along.x / unit, along.y / unit];
@@ -610,7 +636,7 @@ export class Npc {
     const dir = { x: dx / ray, y: dz / ray };
     if (ahead < -Math.abs(right)) return { room: depth, square: 0, dir };
     const end: Vec3 = [point.x + dx, 0, point.y + dz];
-    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, this.queryFilter);
+    const hit = raycast(this.w.nav.navMesh, nodeRef, [point.x, 0, point.y], end, filter);
     if (hit.t > 1) return { room: depth, square: 0, dir };
     // a doorway's own side is a jamb, passed alongside: never square on
     const last = hit.path.at(-1);
@@ -630,14 +656,14 @@ export class Npc {
     this.setLabelYShift(this.labelShift ?? this.labelYShiftUniform.value);
   }
 
-  /** Snaps their label to `shift`, else glides it if `ease` whilst they are seen and the World runs */
-  setLabelYShift(shift: number, ease = false) {
+  /** Snaps their label to `shift`, else glides it over `secs` if `ease`, whilst they are seen and the World runs */
+  setLabelYShift(shift: number, ease = false, secs = labelMoveSecs) {
     const glide = ease && this.labelShift !== undefined && !this.w.disabled && this.colorScale.value !== 0;
     this.labelShift = shift;
     // no lower than its floor, e.g. above a top bunk over them
     const to = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
     const u = this.labelYShiftUniform;
-    this.labelMove = glide ? { from: u.value, to, t: 0 } : null;
+    this.labelMove = glide ? { from: u.value, to, t: 0, secs } : null;
     if (!glide) u.value = to;
     this.w.r3f?.invalidate();
   }

@@ -339,7 +339,7 @@ export function WorldMenu() {
       const next = shown.includes(key) ? shown.filter((k) => k !== key) : [...shown, key];
       w.debug.set({ hudDebugShown: next });
       if (key === "phaser" && next.includes(key) === false) w.debug.set({ forceShot: "hit" }); // hidden, back to hitting
-      store.patch({ hudDebugShown: next });
+      store.patch({ hudDebugShown: next, forceShot: w.debug.forceShot });
       w.hud?.update();
       state.update();
       return;

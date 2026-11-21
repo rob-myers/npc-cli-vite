@@ -350,8 +350,9 @@ export default function WorldHud() {
       )}
       onClick={(e) => {
         e.stopPropagation();
-        const at = shotCycle.indexOf(w.debug.forceShot);
-        w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+        const forceShot = shotCycle[(shotCycle.indexOf(w.debug.forceShot) + 1) % shotCycle.length];
+        w.debug.set({ forceShot });
+        store.patch({ forceShot });
         state.update();
         w.view.focus();
       }}
@@ -1256,7 +1257,7 @@ type SlotMenuItem = { label: string; run(): void };
 type Kept = { label: string; title: string; end?: () => void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
-const shotCycle: JshCli.ShotOutcome[] = ["hit", "ghost", "armour"];
+const shotCycle: JshCli.ShotOutcome[] = ["hit", "down", "ghost", "armour", "kill"];
 /** A debug badge on the bar: the shot's, or a mounted item's error */
 const debugBadgeClass = tw(
   "cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!",

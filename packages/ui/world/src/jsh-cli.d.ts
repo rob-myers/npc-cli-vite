@@ -188,10 +188,22 @@ declare namespace JshCli {
         outcome: ShotOutcome;
       } & Shot)
     | {
+        /** Falling dead, their body hit the floor — see `tickFall` */
+        key: "npc-fell";
+        npcKey: string;
+      }
+    | {
+        /** A foot of theirs came down on a corpse — see `npc-over-body` */
+        key: "corpse-stepped";
+        npcKey: string;
+      }
+    | {
         /** Their hurt clip changed, e.g. a pain clip went on to `collapsed`: `null` is released */
         key: "npc-hurt";
         npcKey: string;
         clip: null | import("./components/NPCs").AnimationClipKey;
+        /** Killed: held still once the pain clip ends */
+        dead: boolean;
       }
     | {
         /** About to look at (if close enough), then fade onto, a free doable */
@@ -239,7 +251,7 @@ declare namespace JshCli {
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };
   /** How a shot at someone ends: one whose line meets no part of them passes, and has none */
-  type ShotOutcome = "hit" | "ghost" | "armour";
+  type ShotOutcome = "hit" | "down" | "ghost" | "armour" | "kill";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

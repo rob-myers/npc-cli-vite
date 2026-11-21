@@ -8,6 +8,7 @@ import { type EyeFrame, type EyesKey, eyeFrames } from "../const.both";
 import {
   agentConfig,
   breathConfig,
+  deathConfig,
   defaultBreathTune,
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
@@ -19,6 +20,7 @@ import {
   gaitStride,
   headShakeConfig,
   hitConfig,
+  hitFlinchConfig,
   lieAim,
   lieHeadMaxRad,
   lieRoll,
@@ -34,9 +36,29 @@ import {
   talkConfig,
   upperFadeSecs,
 } from "../const.npc";
+import { addCorpseCollider, type CorpseBody } from "../service/corpse-body";
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
+import { newClutch, takeClutch, tickClutch } from "./npc-clutch";
+import {
+  dieClips,
+  finishRise,
+  fitDeath,
+  inTheWay,
+  mirrorOf,
+  pushedBack,
+  rebindFall,
+  restoreDead,
+  riseClips,
+  staggerSpot,
+  startFall,
+  startRise,
+  tickFall,
+  tickRise,
+} from "./npc-death";
+import { type Flinch, flinch, tickFlinch, undoFlinch } from "./npc-flinch";
+import { newOverBody, removeCorpseCollider, tickOverBody, undoOverBody } from "./npc-over-body";
 import { letGo, newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -160,13 +182,47 @@ export class NpcAnimation {
     key: AnimationClipKey;
     secs: number;
     next: null | AnimationClipKey;
+    /** How fast its clip plays, e.g. a death's — see `deathConfig.dieRate` */
+    rate?: number;
   };
+  /** Killed: held still once their pain clip ends, until released — see `holdStill` */
+  dead = false;
+  /** Killed with no room to fall, they stagger to where there is first — see `staggerSpot` */
+  staggering = false;
+  /** Falling dead: where they stood, their hips' offset then, and the slide off a near wall — see `tickFall` */
+  fall = null as null | {
+    start: THREE.Vector2;
+    from: THREE.Vector2;
+    shift: THREE.Vector2;
+    hips: THREE.Object3D;
+    /** Their facing then, and how far they turn as they fall, to fit */
+    ry: number;
+    turn: number;
+    /** What `tickFall` last wrote to their root */
+    wrote: THREE.Vector3;
+    /** Whether their body has hit the floor, and `npc-fell` been emitted */
+    landed?: boolean;
+    /** Lying still, where their body lies, for others to step over — see `npc-over-body` */
+    body?: null | CorpseBody;
+  };
+  /** Getting up revived: their root held back by `offset` as it lay, so their body stays — see `tickRise` */
+  rise = null as null | {
+    offset: THREE.Vector3;
+    wrote: THREE.Vector3;
+    /** Where the npc was, and their hips' offset from it on the clip's first frame, as `fall`'s */
+    start: THREE.Vector2;
+    from: null | THREE.Vector2;
+  };
+  /** Whilst hurt, a hand on their wound — see `npc-clutch` */
+  clutch = newClutch();
+  /** Over a corpse, their feet lift — see `npc-over-body` */
+  overBody = newOverBody();
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
   /** Whilst they speak: seconds left, seconds in, how far the head's motion is eased in, and whether `talk_left` is ours */
   talking = { secs: 0, t: 0, weight: 0, gesture: false };
   /** A jolt from a shot armour took, easing out, else `null` — see `flinch` */
-  flinchAt = null as null | { secs: number; bones: FlinchBone[] };
+  flinchAt = null as null | Flinch;
   /** Their eyes, ticked only whilst `busy`: blinking, or shifty — see `docs/skin-slices.md` */
   eyes = {
     busy: false,
@@ -212,7 +268,7 @@ export class NpcAnimation {
 
   /** Collapsed on the floor: a move scoots them back-first in `collapsed_drag` */
   get dragged() {
-    return this.hurt?.key === "collapsed";
+    return this.hurt?.key === "collapsed" && this.dead !== true;
   }
 
   /** The four directional gaits a strafe blends: a short move's, else by how low they crouch, else running or walking as `pose` shows */
@@ -345,26 +401,6 @@ export class NpcAnimation {
     Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0, head: false, held: 0 });
   }
 
-  /** A shot landing `at` along `dir` jolts `part`, and the bones it hangs from, away from it */
-  flinch(part: null | string, at: THREE.Vector3, dir: THREE.Vector3) {
-    const group = this.npc.group;
-    if (group === null) return;
-    this.undoFlinch(); // else what it last wrote stays
-    const { rad, falloff } = flinchConfig;
-    let bone = group.getObjectByName(part !== null && flinchBones.has(part) ? part : "stomach") ?? null;
-    const bones: FlinchBone[] = [];
-    for (let weight = 1; bone !== null && flinchBones.has(bone.name); bone = bone.parent, weight *= falloff) {
-      bone.updateWorldMatrix(true, false);
-      const axis = new THREE.Vector3().crossVectors(tmpLever.subVectors(at, bone.getWorldPosition(tmpPivot)), dir);
-      if (axis.lengthSq() < 1e-8) continue;
-      const parent = bone.parent?.getWorldQuaternion(tmpParentQuat).invert() ?? tmpParentQuat.identity();
-      const [before, written] = [new THREE.Quaternion(), new THREE.Quaternion(Number.NaN)];
-      bones.push({ bone, axis: axis.normalize().applyQuaternion(parent), rad: rad * weight, before, written });
-    }
-    this.flinchAt = bones.length === 0 ? null : { secs: 0, bones };
-    this.w.r3f?.invalidate();
-  }
-
   /** The way their head faces, as a rotation about the vertical. Their own facing whilst it looks nearly straight up or down */
   getLookY() {
     const head = this.upperHead.entry?.bone;
@@ -411,9 +447,38 @@ export class NpcAnimation {
   }
 
   /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
-  hitClipFor(part: null | string): null | AnimationClipKey {
+  hitClipFor(part: null | string, outcome?: HitOutcome, dir?: THREE.Vector3): null | AnimationClipKey {
     const region = hitConfig.region[part ?? ""];
-    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
+    if (region === undefined) return null;
+    const posture = postureOf(keyOf(this.idleClip));
+    /** Held down already, e.g. collapsed: they stay so, rather than sink again */
+    const held = this.hurt !== null && onceClips.has(this.hurt.key) === false;
+    const sink = outcome === "down" && posture === "stand" && region === "torso" && held === false;
+    if (outcome === "kill" && posture === "stand")
+      return deathConfig.die[pushedBack(dir, this.npc.rotation.y) ? "back" : "forward"];
+    return sink ? hitConfig.sink : hitConfig.clips[posture][region];
+  }
+
+  /** Hit whilst collapsed: a stood pain clip would stand them, so they stay down, jolted. Killed, they stop there */
+  hitDown(impact?: HitImpact) {
+    takeClutch(this.clutch, this, impact);
+    if (impact?.outcome !== "kill") return;
+    this.dead = true;
+    this.holdStill();
+    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: this.hurt?.key ?? null, dead: true });
+  }
+
+  /** Killed: their pose stops, eyes shut and not breathing. A clip played once stops at its end, else at `deadSecs` */
+  holdStill() {
+    const clip = this.npc.clips[this.restKey];
+    const action = this.mixer.existingAction(clip);
+    if (action !== null) {
+      action.time = onceClips.has(this.restKey) ? clip.duration : deathConfig.deadSecs;
+      action.paused = true; // `setPose` resets it, so the next pose plays
+    }
+    if (this.breath.on === true) this.setBreathing(false);
+    this.setEyes("shut");
+    if (this.fall != null && this.fall.body == null) this.fall.body = addCorpseCollider(this.npc);
   }
 
   /**
@@ -565,8 +630,19 @@ export class NpcAnimation {
     return this.nearWall === "ahead" && (this.strafe === true || this.wallRoom < npcConfig.dist.walkNear);
   }
 
-  /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
-  reachTo(side: Side, to: THREE.Vector3, weight: number) {
+  /** As the pose left the arm, before `held` reached with it, unless its clip has written it since */
+  putBackArm(side: Side, held?: { written: boolean; base: THREE.Quaternion[]; wrote: THREE.Quaternion[] }) {
+    if (held?.written !== true) return;
+    const { bones } = this.upperOf(side);
+    for (let i = 0; i < 2; i++) {
+      const bone = bones[i]?.bone;
+      if (bone?.quaternion.equals(held.wrote[i]) === true) bone.quaternion.copy(held.base[i]);
+    }
+    held.written = false;
+  }
+
+  /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow goes towards `elbowTo`, else stays its side */
+  reachTo(side: Side, to: THREE.Vector3, weight: number, elbowTo?: THREE.Vector3) {
     const [upper, fore] = this.upperOf(side).bones;
     if (fore === undefined || upper.bone.parent === null) return;
     upper.bone.updateWorldMatrix(true, true);
@@ -578,10 +654,11 @@ export class NpcAnimation {
     const [l1, l2] = [arm.length(), tip.distanceTo(arm)];
     const d = THREE.MathUtils.clamp(reach.length(), 1e-4, (l1 + l2) * 0.999);
     reach.normalize();
-    // two bones to a point: the elbow lies `along` the reach and `out` from it, towards where it is now
+    // two bones to a point: the elbow lies `along` the reach and `out` from it, towards `elbowTo`, else where it is now
     const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
     const out = Math.sqrt(Math.max(0, l1 * l1 - along * along));
-    const pole = tmpPole.copy(arm).addScaledVector(reach, -arm.dot(reach)).normalize();
+    const hint = elbowTo ?? arm;
+    const pole = tmpPole.copy(hint).addScaledVector(reach, -hint.dot(reach)).normalize();
     const elbow = tmpAlong.copy(reach).multiplyScalar(along).addScaledVector(pole, out).normalize();
     const swing = turnWithin(upper.bone.parent, arm.normalize(), elbow, Math.PI, weight);
     if (swing !== null) upper.written.copy(upper.bone.quaternion.premultiply(swing));
@@ -591,7 +668,26 @@ export class NpcAnimation {
     const tipNow = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(from).normalize();
     const want = reach.multiplyScalar(d).add(shoulder).sub(from).normalize();
     const bend = turnWithin(upper.bone, tipNow, want, Math.PI, weight);
-    if (bend !== null) fore.written.copy(fore.bone.quaternion.premultiply(bend));
+    if (bend === null) return;
+    // the forearm keeps its roll about its length, as an elbow does: else it turns within the cuff
+    splitTwist(fore.bone.quaternion, tmpSwingFrom, tmpTwistFrom);
+    splitTwist(fore.bone.quaternion.premultiply(bend), tmpSwingTo, tmpTwistTo);
+    fore.written.copy(fore.bone.quaternion.multiplyQuaternions(tmpSwingTo, tmpTwistFrom));
+  }
+
+  /** The living where their fall lies, with where they step aside to — see `npc-death` */
+  inTheWay() {
+    return inTheWay(this);
+  }
+
+  /** Dead as restored, e.g. from a save, held at the end of `clip` — see `npc-death` */
+  restoreDead(clip: AnimationClipKey) {
+    restoreDead(this, clip);
+  }
+
+  /** Where they stagger to, killed by `clip` with no room to fall here — see `npc-death` */
+  staggerSpot(clip: null | AnimationClipKey, dir?: THREE.Vector3) {
+    return staggerSpot(this, clip, dir);
   }
 
   /** Roll one lain onto `to`, a lie clip */
@@ -651,17 +747,68 @@ export class NpcAnimation {
   }
 
   /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
-  setHurt(key: null | AnimationClipKey) {
+  setHurt(key: null | AnimationClipKey, impact?: HitImpact) {
+    const dead = this.dead === true;
+    if (impact !== undefined) flinch(this, impact.part, impact.at, impact.dir, dead ? flinchConfig : hitFlinchConfig);
+    if (key !== null && dead) return; // a corpse only jolts
+    if (key === null && dead && startRise(this) === true) return; // a fallen corpse gets up first
+    const kill = impact?.outcome === "kill";
+    /** Radians they turn as they fall dead, to fit — see `fitDeath` */
+    let [turn, slide] = [0, null as null | Geom.VectJson];
+    if (key !== null && dieClips.has(key)) {
+      [key, turn, slide] = fitDeath(this, key, impact?.dir);
+      if (Math.random() < 0.5) key = mirrorOf.get(key) ?? key; // either way round
+    }
     /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
-    if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
+    if (key !== null && kill === false && pacified && (isPacified(key) || headClips.has(key))) return;
+    if (key !== null && held === "collapsed" && postureOf(key) === "stand") return this.hitDown(impact);
     const changed = key !== (this.hurt?.key ?? null);
-    // pacified, they stay so, whatever else hits them
-    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
-    this.setPose(this.restKey, { force: key !== null });
+    /** Put down: collapsed or pacified after, as `hitConfig.next`. Else they recover. A clip set by hand always is */
+    const down = impact === undefined || impact.outcome === "down";
+    /** What follows the clip: killed, the dead pose. One pacified stays so, whatever else hits them */
+    const next = kill
+      ? (deathConfig.dead[postureOf(keyOf(this.idleClip))] ?? null)
+      : key !== null && down && pacified === false
+        ? (hitConfig.next[key] ?? held)
+        : held;
+    const rate = key !== null && dieClips.has(key) ? THREE.MathUtils.randFloat(...deathConfig.dieRate) : 1;
+    this.hurt = key === null ? null : { key, secs: 0, next, rate };
+    if (key !== null) {
+      this.dead = kill;
+      this.rise = null; // e.g. killed again as they get up
+      takeClutch(this.clutch, this, impact);
+      if (dieClips.has(key)) startFall(this, turn, slide);
+    } else if (dead || this.eyes.look === "scared" || this.fall != null) {
+      this.dead = false;
+      this.setEyes("open");
+      if (this.fall != null) {
+        removeCorpseCollider(this);
+        finishRise(this);
+        this.fall = null;
+        // back in the crowd, on the nearest poly: none near, they stay where they lie
+        const near = this.w.npc.getClosestPoly(this.npc.position, 0.5);
+        if (near.success === true) this.w.npc.placeNpcAt(this.npc, near);
+      }
+    }
+    this.setPose(this.restKey, { force: key !== null, fade: key === null ? undefined : hitConfig.fadeInSecs });
+    if (key !== null) this.mixer.existingAction(this.npc.clips[key])?.setEffectiveTimeScale(rate);
+    if (key === hitConfig.sink) this.setEyes("scared"); // until released
     this.w.r3f?.invalidate();
-    if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
+    if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key, dead: this.dead });
+  }
+
+  /** Whether a wall is within `armInSide` ahead of them or to their right, the gun's side */
+  isWallByArm() {
+    const { nodeRef, point, rotation } = this.npc;
+    if (nodeRef === null) return false;
+    const { armInSide } = npcConfig.dist;
+    const [ahead, right] = [
+      { x: -Math.sin(rotation.y), y: -Math.cos(rotation.y) },
+      { x: Math.cos(rotation.y), y: -Math.sin(rotation.y) },
+    ];
+    return [ahead, right].some((way) => this.npc.roomAhead(point, nodeRef, armInSide, way, way).room < armInSide);
   }
 
   /**
@@ -684,7 +831,7 @@ export class NpcAnimation {
     if (this.upper.target === 0 || this.upper.key !== this.armIn) this.armIn = null;
     if (want === (this.armIn !== null)) return;
     if (this.armIn !== null) {
-      this.setUpper(null);
+      this.setUpper(null, { byWall: false }); // no wall near by now: at rest by one, `startIdle` keeps it in
       this.armIn = null;
     } else if (this.upper.target === 0) {
       this.armIn = this.w.phasers?.holds(this.npc.key) === true ? "phaser_aim_avoid" : "idle";
@@ -753,6 +900,7 @@ export class NpcAnimation {
       this.restUpper = null;
     }
     const crouchMove = isCrouch(this.pose) || isCrouch(next); // their label glides
+    const rising = riseClips.has(next); // their label rises with them, over the whole clip
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
@@ -760,9 +908,15 @@ export class NpcAnimation {
     this.posture = postureOf(next);
     // sat or lain they are elsewhere, and a hold easing out would slide them on the seat
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
-    this.headY = this.w.npc.headYByPose[next];
-    this.npc.setBubbleHeight(bubbleHeightForClip(next));
-    this.npc.setLabelYShift(labelYShiftForClip(next), crouchMove);
+    /** The pose they look to be in: a fall dead starts stood, but they end lain */
+    const looks = dieClips.has(next) ? "lie" : next;
+    this.headY = this.w.npc.headYByPose[looks];
+    this.npc.setBubbleHeight(bubbleHeightForClip(looks));
+    this.npc.setLabelYShift(
+      labelYShiftForClip(looks),
+      crouchMove || looks !== next || rising,
+      rising ? clips[next].duration : undefined,
+    );
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
@@ -877,7 +1031,8 @@ export class NpcAnimation {
       return;
     }
 
-    this.setNearWall(false); // at rest, e.g. let go, killed or no longer the player
+    // at rest by a wall the arm stays in, else the next step flicks it. Else let go, e.g. killed or no longer the player
+    this.setNearWall(this.armIn !== null && this.isWallByArm() ? "beside" : false);
     this.npc.last.idleTime = this.w.gameTime.now();
     const agent = this.npc.agent;
 
@@ -1028,22 +1183,19 @@ export class NpcAnimation {
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
-    this.undoFlinch();
+    rebindFall(this);
+    tickFall(this);
+    tickRise(this);
+    undoFlinch(this);
     // as the pose and its arms' clips left them, before either reads them again
     if (this.turn.written === true) {
       for (const { bone, base, written } of this.turn.bones)
         if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
       this.turn.written = false;
     }
-    const { support } = this; // undefined on an instance from before hmr
-    if (support?.written === true) {
-      // as the pose left the arm, unless its clip has written it since
-      for (let i = 0; i < 2; i++) {
-        const bone = this.upperLeft.bones[i]?.bone;
-        if (bone?.quaternion.equals(support.wrote[i]) === true) bone.quaternion.copy(support.base[i]);
-      }
-      support.written = false;
-    }
+    this.putBackArm("left", this.support);
+    this.putBackArm(this.clutch?.side ?? "left", this.clutch);
+    undoOverBody(this.overBody);
     this.tickLieLook(delta);
     this.tickUpper(delta);
     this.tickHead(delta);
@@ -1057,7 +1209,10 @@ export class NpcAnimation {
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
-    this.tickFlinch(delta); // last, over what every other wrote
+    if (this.overBody !== undefined) tickOverBody(this.overBody, this, delta);
+    tickFlinch(this, delta); // over what every other wrote
+    // last, so the hand meets the wound where the flinch and stance leave it
+    if (this.clutch !== undefined) tickClutch(this.clutch, this, delta);
 
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
@@ -1148,7 +1303,6 @@ export class NpcAnimation {
   /** After the right arm aims: the left hand reaches the phaser's `supportConfig.grip`, by `support.weight` */
   tickSupport(delta: number) {
     const s = this.support;
-    if (s === undefined) return; // from before hmr
     const on = s.on === true && this.posture !== "lie";
     s.weight = THREE.MathUtils.clamp(s.weight + (on ? delta : -delta) / supportConfig.secs, 0, 1);
     if (s.weight === 0) return;
@@ -1217,20 +1371,6 @@ export class NpcAnimation {
     this.w.r3f?.invalidate();
   }
 
-  tickFlinch(delta: number) {
-    const f = this.flinchAt;
-    if (f == null) return; // undefined on an instance from before hmr
-    if ((f.secs += delta) >= flinchConfig.secs) return void (this.flinchAt = null); // undone already, this tick
-    const u = f.secs / flinchConfig.peakSecs;
-    /** `1` at `peakSecs`, easing back after */
-    const k = u * Math.exp(1 - u);
-    for (const b of f.bones) {
-      b.before.copy(b.bone.quaternion);
-      b.written.copy(b.bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(b.axis, b.rad * k)));
-    }
-    this.w.r3f?.invalidate();
-  }
-
   /** Turns the head over its pose: a shake, then talk. Nearly always nothing to do */
   tickHead(delta: number) {
     const { entry } = this.upperHead;
@@ -1280,12 +1420,15 @@ export class NpcAnimation {
   tickHurt(delta: number) {
     const { hurt } = this;
     if (hurt === null || onceClips.has(hurt.key) === false) return;
-    hurt.secs += delta;
-    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
-    if (hurt.next === null) return this.setHurt(null);
+    const { duration } = this.npc.clips[hurt.key];
+    if (this.dead === true && hurt.secs >= duration) return; // held on its last frame
+    hurt.secs += delta * (hurt.rate ?? 1);
+    if (hurt.secs < duration) return;
+    if (hurt.next === null) return this.dead === true ? this.holdStill() : this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
     this.setPose(hurt.next);
-    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: hurt.next });
+    if (this.dead === true) this.holdStill();
+    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: hurt.next, dead: this.dead });
   }
 
   /** Eases `lieLook` in or out: out once they no longer lie */
@@ -1297,10 +1440,11 @@ export class NpcAnimation {
     if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
   }
 
-  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom`. Never the player */
+  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom`. Never the player or the dead */
   tickRoomLit(delta: number) {
     const { roomLit, roomSlot } = this.npc;
-    const goal = roomSlot.value === this.w.npc.playerRoom && this.w.player?.is(this.npc.key) !== true ? 1 : 0;
+    const lit = this.dead !== true && this.w.player?.is(this.npc.key) !== true;
+    const goal = lit && roomSlot.value === this.w.npc.playerRoom ? 1 : 0;
     if (roomLit === undefined || roomLit.value === goal) return; // undefined on an npc from before hmr
     const step = (goal === 1 ? delta : -delta) / npcMaterialConfig.sameRoomSecs;
     roomLit.value = THREE.MathUtils.clamp(roomLit.value + step, 0, 1);
@@ -1310,7 +1454,7 @@ export class NpcAnimation {
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
   tickTurn(delta: number) {
     const { turn } = this;
-    if (this.posture !== "sit" && turn.head !== true) turn.target = turn.want = 0; // undefined from before hmr
+    if (this.posture !== "sit" && turn.head === false) turn.target = turn.want = 0;
     this.tickTurnAim(delta);
     /** How far an arm aims them: the torso then turns with the gun, not with their look */
     const aiming = this.posture === "sit" && this.upper.aim !== null ? this.upper.eased : 0;
@@ -1388,7 +1532,7 @@ export class NpcAnimation {
     /** Lain, their look turns the head whilst no arm aims it */
     const look = r.aim === null && this.lieLook.weight > 0 ? this.lieLook : null;
     const turned = this.headTurn.w !== 1; // still easing back from a look
-    const headAt = this.headAt ?? null; // undefined on an instance from before hmr
+    const { headAt } = this;
     if (entry === null || (l.key === null && r.key === null && look === null && headAt === null && turned === false))
       return;
     const { bone, base, written } = entry;
@@ -1489,13 +1633,6 @@ export class NpcAnimation {
     return tmpLean.identity();
   }
 
-  /** Puts back what the flinch last wrote, unless something has written over it since */
-  undoFlinch() {
-    const bones = this.flinchAt?.bones;
-    if (bones === undefined) return; // nearly always
-    for (const { bone, before, written } of bones) if (bone.quaternion.equals(written)) bone.quaternion.copy(before);
-  }
-
   upperOf(side: Side) {
     return side === "right" ? this.upper : this.upperLeft;
   }
@@ -1541,9 +1678,12 @@ const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
 const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((byRegion) => byRegion.head));
 
 /** Hit clips played once, then left */
-const onceClips = new Set<AnimationClipKey>(
-  Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
-);
+const onceClips = new Set<AnimationClipKey>([
+  ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
+  hitConfig.sink,
+  ...dieClips,
+  ...riseClips,
+]);
 
 /** A pose stood still in, whose feet a stance may hold apart */
 function isStill(key: AnimationClipKey) {
@@ -1651,7 +1791,7 @@ function upperOf(clip: THREE.AnimationClip) {
   return upper;
 }
 
-type Side = "left" | "right";
+export type Side = "left" | "right";
 const sides = ["left", "right"] as const;
 /** Which hands are at their head, this tick — see `tickTurn` */
 const held = { left: false, right: false };
@@ -1677,17 +1817,11 @@ function setSitArmVia([arm, forearm]: UpperBone[], [toArm, toForearm]: THREE.Qua
   toArm.setFromUnitVectors(elbow.normalize(), back).multiply(arm.base);
   toForearm.copy(toArm).invert().multiply(arm.base).multiply(forearm.base);
 }
-/** A bone a flinch turns, about `axis` in its parent's frame, and what it was before and after — see `flinch` */
-type FlinchBone = {
-  bone: THREE.Object3D;
-  axis: THREE.Vector3;
-  rad: number;
-  before: THREE.Quaternion;
-  written: THREE.Quaternion;
-};
+/** A phaser hit: the part met, where and which way, and its outcome */
+export type HitImpact = { part: string; at: THREE.Vector3; dir: THREE.Vector3; outcome: HitOutcome };
 
-/** Bones a flinch turns: the hips and legs stay, so the feet do */
-const flinchBones = new Set(["head", "chest", "stomach", "leftarm", "leftforearm", "rightarm", "rightforearm"]);
+/** A shot that hits: they recover, are put down, or die */
+export type HitOutcome = Extract<JshCli.ShotOutcome, "hit" | "down" | "kill">;
 
 /** A bone, the pose's rotation of it, ours as last written, and where a swap set out from — see `tickUpper` */
 type UpperBone = { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion };
@@ -1743,9 +1877,6 @@ const tmpChain = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
 /** The head bone's side axis, which it dips about as they speak */
 const talkAxis = new THREE.Vector3(1, 0, 0);
-const tmpParentQuat = new THREE.Quaternion();
-const tmpLever = new THREE.Vector3();
-const tmpPivot = new THREE.Vector3();
 /** An arm bone's swing and twist, from and via and to — see `splitTwist` */
 const tmpSwingFrom = new THREE.Quaternion();
 const tmpTwistFrom = new THREE.Quaternion();

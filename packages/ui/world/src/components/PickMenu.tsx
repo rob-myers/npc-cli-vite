@@ -498,6 +498,13 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
         >
           breath
         </Toggle>
+        <Toggle
+          on={npc.anim.dead}
+          title={npc.anim.dead ? "revive: they get up" : "kill: they fall dead"}
+          onClick={act(() => (npc.anim.dead ? npc.revive() : void npc.kill()))}
+        >
+          dead
+        </Toggle>
         {npcKey !== w.player?.key && (
           <Toggle on={npc.lit} onClick={act(() => w.e.setNpcLit(npc))}>
             lit

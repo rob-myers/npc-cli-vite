@@ -839,7 +839,8 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
   // not in a doorway, whose sides would read as a wall
   if (next.meta?.preventArrive !== true || npc.nodeRef === null || (w.e.npcToDoors[npc.key]?.inside ?? null) !== null)
     return npc.anim.setNearWall(false);
-  const { armInNear, armInLean, walkSquare } = npcConfig.dist;
+  const { nodeRef } = npc; // a const stays narrowed inside `beside`
+  const { armInNear, armInLean, armInSide, walkSquare } = npcConfig.dist;
   const near = armInNear[npc.anim.hurry === true ? "run" : "walk"];
   const to = w.helper.parseGroundPoint(next);
   const go = { x: to.x - npc.position.x, y: to.y - npc.position.z };
@@ -848,10 +849,16 @@ function heedWalls(w: JshCli.WorldState, npc: JshCli.Npc, next: MaybeMeta<JshCli
     npc.isStrafing() === true
       ? [{ x: -Math.sin(ry), y: -Math.cos(ry) }, go]
       : [go, { x: go.x - armInLean * go.y, y: go.y + armInLean * go.x }];
-  const { room, square, dir } = npc.roomAhead(npc.point, npc.nodeRef, near, along, heading);
+  const { room, square, dir } = npc.roomAhead(npc.point, nodeRef, near, along, heading);
   /** Square on, and not a post, e.g. a thin wall between doors */
-  const ahead = square >= walkSquare && npc.clearBeside(npc.point, npc.nodeRef, dir, room) === false;
-  npc.anim.setNearWall(room >= near ? false : ahead ? "ahead" : "beside", room);
+  const ahead = square >= walkSquare && npc.clearBeside(npc.point, nodeRef, dir, room) === false;
+  /** The gun's side, right of the way they face: a wall alongside, or one the arm turns towards */
+  const right = npc.isStrafing() === true ? { x: -along.y, y: along.x } : { x: -go.y, y: go.x };
+  /** A wall by the gun: right of the way they go, else as they face now whilst it is in, e.g. mid-turn */
+  const beside = () =>
+    npc.roomAhead(npc.point, nodeRef, armInSide, right, right).room < armInSide ||
+    (npc.anim.armIn !== null && npc.anim.isWallByArm());
+  npc.anim.setNearWall(room < near ? (ahead ? "ahead" : "beside") : beside() ? "beside" : false, room);
 }
 
 /**
@@ -1143,7 +1150,8 @@ export function play({ api, w }: JshCli.RunArg) {
  * A clip's own name shows it whole, releasing one in pain or pacified. A crouch, `crouch_half` or `crouch_cover`, is
  * kept, moving too, until another clip is shown.
  * `head` turns their head alone to an npc or point once, their body left as it is, until a bare `pose` lets it go.
- * `look` follows an npc so, within the neck's reach, until killed or replaced
+ * `look` follows an npc so, within the neck's reach, until killed or replaced.
+ * Several npcs are posed alike, skipping any who do not exist
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
@@ -1155,13 +1163,21 @@ export function play({ api, w }: JshCli.RunArg) {
  * pose rob head:[3,0,4]
  * pose rob look:npc-0
  * pose rob
+ * pose npc-{0..10} as:breathe
  * ```
  */
 export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args)) {
-  const [npcKey] = api.getJsOperands(args, opts);
-  if (npcKey === undefined)
-    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [look:npcKey]");
-  const npc = w.npc.get(npcKey);
+  const npcKeys = api.getJsOperands(args, opts);
+  if (npcKeys.length === 0)
+    throw Error(
+      "usage: pose npcKey… [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [look:npcKey]",
+    );
+  const npcs = npcKeys.length === 1 ? [w.npc.get(npcKeys[0])] : npcKeys.flatMap((key) => w.n[key] ?? []);
+  await Promise.all(npcs.map((npc) => poseOne(api, w, npc, opts)));
+}
+
+/** `pose` for one npc */
+async function poseOne(api: JshCli.RunArg["api"], w: JshCli.WorldState, npc: JshCli.Npc, opts: PoseOpts) {
   // bare, their head is let go
   if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head ?? opts.look) === undefined)
     return void poseHead(api, w, npc, null, false);
@@ -1634,6 +1650,7 @@ export async function spawn(
     npc: "npcKey",
     to: "at",
     skin: "as",
+    towards: "facing",
     "--facing": "facing",
     "--towards": "facing",
   }),

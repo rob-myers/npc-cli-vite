@@ -48,7 +48,7 @@ and in `gen-skin-sheets`. Its thresholds are `tune` in that file, set on the ski
 | `half` | skin over the top half of the opening, its lower edge dark. An inverted eye's lid is outlined in the eye's dark instead |
 | `shut` | the same, over all of the opening |
 | `up`, `left`, `right` | the opening all white, then the pupil moved 2 texels, cut off at the opening |
-| `scared` | the opening grown up to 2 texels each way, to 8 by 10 at most, and pale grey, with a smaller pupil. An inverted eye keeps its dark |
+| `scared` | the opening grown upwards by a quarter of its height, no wider, and pale grey, with the pupil 0.8 its size. An inverted eye keeps its dark |
 | `none` | skin over the opening |
 
 `drawEyes` in `service/skin-sheets` draws them, both eyes at once, with numbers from `eyeDraw` beside it.

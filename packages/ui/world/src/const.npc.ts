@@ -107,6 +107,8 @@ export const npcConfig = {
     postMargin: 0.3,
     /** Not strafing, `roomAhead`'s ray leans this share of `strafeWallSpan` right of the way they go, the gun's side */
     armInLean: 0.45,
+    /** A wall within this to the right of the way they face draws their right arm in. It is where the arm swings */
+    armInSide: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
     circling: 0.6,
   },
@@ -180,6 +182,7 @@ export const fromAnimationClipKey = {
   breathe: true,
   check_wrist: true,
   check_wrist_avoid: true,
+  collapse: true,
   collapsed: true,
   collapsed_drag: true,
   crouch: true,
@@ -194,8 +197,16 @@ export const fromAnimationClipKey = {
   crouch_strafe_left: true,
   crouch_strafe_right: true,
   crouch_walk: true,
+  die_back: true,
+  die_back_mirror: true,
+  die_forward: true,
+  die_forward_mirror: true,
   drop: true,
   drop_left: true,
+  get_up_back: true,
+  get_up_back_mirror: true,
+  get_up_forward: true,
+  get_up_forward_mirror: true,
   idle: true,
   lie: true,
   lie_left: true,
@@ -249,6 +260,22 @@ export const fromAnimationClipKey = {
   phaser_aim: true,
   phaser_aim_avoid: true,
   walk: true,
+};
+
+/** Clips made at load by mirroring another (`mirrorClip`), so not in the glTF: each by the clip it mirrors */
+export const mirroredClips: Partial<Record<ClipKey, ClipKey>> = {
+  crouch_half_strafe_left: "crouch_half_strafe_right",
+  crouch_left: "crouch",
+  crouch_strafe_left: "crouch_strafe_right",
+  die_back_mirror: "die_back",
+  die_forward_mirror: "die_forward",
+  drop_left: "drop",
+  get_up_back_mirror: "get_up_back",
+  get_up_forward_mirror: "get_up_forward",
+  lie_right: "lie_left",
+  pain_arm_right: "pain_arm_left",
+  pain_leg_right: "pain_leg_left",
+  pick_up_left: "pick_up",
 };
 
 /** A rest clip with a fidget once a cycle, e.g. `pose rob as:shrug`, within its box: see `gen-clip-keys` */
@@ -333,7 +360,42 @@ export const talkConfig = { pitch: 0.12, sway: 0.08, hz: 2.5, swayHz: 0.6, easeS
  * A shot armour took jolts them: radians the struck part turns at most, and seconds to that and in all.
  * Each bone it hangs from turns `falloff` as far as the one below.
  */
-export const flinchConfig = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 } as const;
+export const flinchConfig: FlinchTune = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 };
+
+/** A hit jolts them twice as hard, peaking later. Whilst hurt they stay turned `hold` of the way. An arm turns `arms` as far */
+export const hitFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.6, peakSecs: 0.1, hold: 0.3, arms: 0.4 };
+
+/** A foot landing on a corpse jolts it a little */
+export const stepFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.12, peakSecs: 0.05, secs: 0.3 };
+
+export type FlinchTune = {
+  rad: number;
+  peakSecs: number;
+  secs: number;
+  falloff: number;
+  hold?: number;
+  /** How far it turns an arm, of `rad`, and what the arm hangs from falls off from that. A full turn takes it into the body */
+  arms?: number;
+};
+
+/**
+ * Whilst hurt a hand goes to the wound, if in reach. It eases in and out over `easeSecs`,
+ * and stays `lingerSecs` after they recover, unless they move.
+ */
+export const clutchConfig = {
+  /** Metres off the torso or a limb the hand rests: its half-thickness, as the forearm lies along it */
+  palm: 0.08,
+  /** Metres off the head the hand rests: it meets it end-on */
+  palmHead: 0.03,
+  /** Metres the hand may cross past their middle, e.g. onto the other arm */
+  cross: 0.25,
+  /** Metres from the shoulder a hand on its own side must be, else it takes the front: nearer, the arm folds up */
+  sideMin: 0.25,
+  /** Metres the elbow keeps off the chest: out past its side, or in front, and down from the reach */
+  elbow: 0.1,
+  easeSecs: 0.5,
+  lingerSecs: 1.5,
+} as const;
 
 type ClipKey = keyof typeof fromAnimationClipKey;
 export type HitRegion = "head" | "torso" | `${"arm" | "leg"}_${"left" | "right"}`;
@@ -390,11 +452,60 @@ export const hitConfig = {
    * stood. Any other goes back to rest, or to whatever they were in before
    */
   next: {
+    collapse: "collapsed",
     pain_head: "pacified",
     pain_high: "collapsed",
     sit_pain_head: "sit_pacified",
     lie_pain_head: "lie_pacified",
   } as Partial<Record<ClipKey, ClipKey>>,
+  /** Put down stood, a torso hit sinks them where they stand into `collapsed` */
+  sink: "collapse" as ClipKey,
+  /** Seconds a hurt clip fades in over, so its first jolt reads */
+  fadeInSecs: 0.08,
+};
+
+/** Killed: how they fall, fit and lie, and get up again — see `w.e.takeHit` */
+export const deathConfig = {
+  /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
+  die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
+  /** Revived, they get up by these, by the clip they fell by: one with none is let go at once */
+  getUp: {
+    die_back: "get_up_back",
+    die_back_mirror: "get_up_back_mirror",
+    die_forward: "get_up_forward",
+    die_forward_mirror: "get_up_forward_mirror",
+  } as Partial<Record<ClipKey, ClipKey>>,
+  /** A death plays at a random rate between these, so no two fall in step */
+  dieRate: [0.85, 1.15] as [number, number],
+  /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
+  lieWidth: 0.45,
+  /** Metres either side a fall keeps clear of others and corpses: less than `lieWidth`, so bodies may overlap a little */
+  othersWidth: 0.25,
+  /** Metres of clear floor a fall dead needs along its way: behind them falling back, ahead falling forward */
+  lieLength: { back: 1.25, forward: 1.8 },
+  /** Radians a fall dead may turn to fit, tried in this order, before falling the other way */
+  fitTurns: [0, 0.5, -0.5, 1, -1, 1.5, -1.5],
+  /** Radians a fall dead turns off the shot's line at most, either way, at random but mostly little: so the dead do not lie aligned */
+  fallJitter: 0.3,
+  /** Of a fall's clip, how far in its turn and slide are done: before their body reaches out, e.g. into a wall */
+  fitBy: 0.4,
+  /** Metres their hips are off the floor as a fall dead lands, when `npc-fell` is emitted, e.g. for its thud */
+  fellHipsY: 0.25,
+  /** Metres a stood npc killed with no room to fall may stagger, nearer first, to fall where there is */
+  staggerBy: [0.5, 1],
+  /** Killed sat or lain, the pain clip goes on to this, held still at `deadSecs` into it. Stood, they `die` */
+  dead: { sit: "sit_pacified", lie: "lie_pacified" } as Partial<Record<string, ClipKey>>,
+  deadSecs: 0,
+};
+
+/** Over a corpse, a sole clears their body by `clear`. Its sensor is `margin` wider */
+export const corpseConfig = {
+  clear: 0.03,
+  margin: 0.3,
+  /** Metres in from their body's edge its height ramps up over */
+  ramp: 0.04,
+  /** Metres a second their hips rise or drop, as they step on or off */
+  speed: 2,
 };
 
 /** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
@@ -437,6 +548,7 @@ export const fadeSecs: Record<
   breathe: { shuffle: 0.15, shuffle_step: 0.2 },
   check_wrist: {},
   check_wrist_avoid: {},
+  collapse: { collapsed: 0 },
   collapsed: {},
   collapsed_drag: {},
   crouch: {},
@@ -451,8 +563,16 @@ export const fadeSecs: Record<
   crouch_strafe_left: {},
   crouch_strafe_right: {},
   crouch_walk: {},
+  die_back: {},
+  die_back_mirror: {},
+  die_forward: {},
+  die_forward_mirror: {},
   drop: {},
   drop_left: {},
+  get_up_back: { breathe: 0 },
+  get_up_back_mirror: { breathe: 0 },
+  get_up_forward: { breathe: 0 },
+  get_up_forward_mirror: { breathe: 0 },
   idle: { shuffle: 0.15, shuffle_step: 0.2 },
   lie: { lie_left: 0.5, lie_right: 0.5 },
   lie_left: { lie: 0.5, lie_right: 0.6 },

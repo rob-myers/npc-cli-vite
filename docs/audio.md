@@ -14,6 +14,7 @@ doors' sounds, the Audio pane's desk, and the jsh commands that play them in the
 | `ui/audio/src/synth.ts` | builders the effects share: envelopes, noise, crackle, a recorded layer |
 | `ui/audio/src/nodes.ts` | node builders, a noise buffer, the room and the hall |
 | `ui/audio/src/items.ts` | items put down and taken up |
+| `ui/audio/src/body.ts` | a body falling dead, and a foot coming down on one |
 | `ui/audio/src/Audio.tsx` | the desk: a strip per channel, the help tour, the node graph |
 | `ui/audio/src/graph-data.ts` | the node graph's layout. Keep it in step with the engine |
 | `cli/src/jsh/world/audio.ts` | jsh `sounds` and `sfx`, and reading the player's footfalls |
@@ -103,11 +104,14 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | `charged` | the charge reaching full | a snap of current |
 | `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`) |
 | `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
-| `hit` | `npc-shot` hit, and `phaser-struck` | a recorded electric hum (`shock`, one): a shot striking anyone, or a wall |
-| `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
-| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then `hit` as it strikes beyond |
+| `hit` | `npc-shot` hit, down or kill | a recorded electric hum (`shock`, one): a shot striking someone |
+| `armour` | `npc-shot` armour | a recorded plate pitched down, the charge soaked up (`absorb`), sparks off it, and a low knock |
+| `struck` | `phaser-struck` | the charge soaked up alone (`absorb`): a shot striking a wall, door, obstacle or decor |
+| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then the charge soaked up beyond, as `struck` |
 
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
+- `absorb` is a shot's charge soaked up: its `shock` cut short, and a sawtooth sinking under it. Armour's lasts
+  `absorbSecs`, a wall's or door's longer, `struckSecs`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
 
 ## Door sounds
@@ -140,6 +144,17 @@ On the `world` bus (`posture.ts`): their clothes rustling (`cloth`).
 
 Only one settling onto it is heard: `npc-pre-do` comes first. One spawned onto it, as a map's npcs restored, is
 silent. Getting off is heard after either.
+
+## Body sounds
+
+On the `world` bus (`body.ts`), from samples other sounds use too.
+
+| key | when | sound |
+| --- | --- | --- |
+| `fall` | `npc-fell`: falling dead, their hips near the floor (`deathConfig.fellHipsY`, in `tickFall`) | their body slapping the deck (`book`, low), its plating under them (`armour`, lower), then their limbs: one of four ways it lands (`falls`). Then their head's knock, an arm flopping down, and half the time their gear's click, each a little early or late |
+| `tread` | `corpse-stepped`: a foot planted on a corpse (`npc-over-body`'s jolt) | a muffled thud, softer, and a rustle |
+
+One killed with walls all round collapses where they stand, with no fall, so no `fall` is heard.
 
 ## Psi
 
