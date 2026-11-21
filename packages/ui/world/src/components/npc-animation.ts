@@ -196,6 +196,14 @@ export class NpcAnimation {
     /** Lying still, where their body lies, for others to step over — see `npc-over-body` */
     body?: null | CorpseBody;
   };
+  /** Getting up revived: their root held back by `offset` as it lay, so their body stays — see `tickRise` */
+  rise = null as null | {
+    offset: THREE.Vector3;
+    wrote: THREE.Vector3;
+    /** Where the npc was, and their hips' offset from it on the clip's first frame, as `fall`'s */
+    start: THREE.Vector2;
+    from: null | THREE.Vector2;
+  };
   /** Whilst hurt, a hand on their wound — see `npc-clutch` */
   clutch = newClutch();
   /** Over a corpse, their feet lift — see `npc-over-body` */
@@ -797,6 +805,69 @@ export class NpcAnimation {
     });
   }
 
+  /**
+   * Revived from a fall, they get up by its `hitConfig.getUp` clip, their root held back as it lay.
+   * `false` if their fall has none, so they are let go at once
+   */
+  startRise() {
+    const { fall: f, hurt } = this;
+    const key = hurt === null ? undefined : hitConfig.getUp[hurt.key];
+    const root = f?.hips.parent;
+    if (f == null || hurt === null || key === undefined || root == null) return false;
+    const clip = this.npc.clips[hurt.key];
+    const end = rootAt(clip, true, new THREE.Vector3());
+    if (end === null) return false;
+    removeCorpseCollider(this);
+    this.dead = false;
+    this.setEyes("open");
+    const start = new THREE.Vector2(this.npc.position.x, this.npc.position.z);
+    this.rise = { offset: end.sub(root.position), wrote: new THREE.Vector3(Number.NaN), start, from: null };
+    this.hurt = { key, secs: 0, next: null };
+    this.setPose(key, { force: true, fade: hitConfig.fadeInSecs });
+    this.w.r3f?.invalidate();
+    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key, dead: false });
+    return true;
+  }
+
+  /**
+   * Getting up, their root is held back as it lay, and the npc follows their hips as `tickFall` does.
+   * So their body never jumps, and their label and shadow stay over it — see `startRise`
+   */
+  tickRise() {
+    const { fall: f, rise: r } = this;
+    const root = f?.hips.parent;
+    if (r == null || f == null || root?.parent == null || root.position.equals(r.wrote)) return;
+    root.position.sub(r.offset);
+    const travel = this.hipsOffset(f.hips, tmpFallTravel);
+    r.from ??= travel.clone(); // as they lay
+    travel.sub(r.from);
+    r.wrote.copy(this.carry(root, root.parent, travel, r.start.x + travel.x, r.start.y + travel.y));
+  }
+
+  /** Moves the npc to `x, z`, and their root back by `travel` in its parent's frame, so their body stays where the clip put it */
+  carry(root: THREE.Object3D, parent: THREE.Object3D, travel: THREE.Vector2, x: number, z: number) {
+    const { position } = this.npc;
+    const [x0, z0] = [position.x, position.z];
+    [position.x, position.z] = [x, z];
+    const back = parent.worldToLocal(tmpFallAt.set(x0 + travel.x, 0, z0 + travel.y));
+    return root.position.sub(back.sub(parent.worldToLocal(tmpFallFrom.set(x0, 0, z0))));
+  }
+
+  /** Stood up, the hold on their root goes and the npc moves by as much, so their body stays, now in their idle */
+  finishRise() {
+    const r = this.rise;
+    const root = this.fall?.hips.parent;
+    this.rise = null;
+    if (r == null || root?.parent == null) return;
+    const idle = rootAt(this.idleClip, false, tmpRiseTo);
+    if (idle === null) return;
+    root.parent.updateWorldMatrix(true, false);
+    const now = root.parent.localToWorld(tmpRiseFrom.copy(root.position));
+    const then = root.parent.localToWorld(idle);
+    this.npc.position.x += now.x - then.x;
+    this.npc.position.z += now.z - then.z;
+  }
+
   /** Their hips across the floor from where the npc stands */
   hipsOffset(hips: THREE.Object3D, out: THREE.Vector2) {
     hips.updateWorldMatrix(true, false);
@@ -808,6 +879,17 @@ export class NpcAnimation {
    * Falling dead, the npc moves as far as the clip has carried their hips, plus the slide eased in.
    * Their root goes back as far, so they look the same, and their shadow and corpse are where their body is
    */
+  /** On a new mesh, e.g. the glTF refetched, their fall moves onto its hips, and its root is written afresh */
+  rebindFall() {
+    const f = this.fall;
+    if (f == null) return; // nearly always
+    const hips = this.npc.group?.getObjectByName("hips");
+    if (hips === undefined || hips === f.hips) return;
+    f.hips = hips;
+    f.wrote.set(Number.NaN, Number.NaN, Number.NaN);
+    this.rise?.wrote.set(Number.NaN, Number.NaN, Number.NaN);
+  }
+
   tickFall() {
     const f = this.fall;
     const { hurt, npc } = this;
@@ -824,12 +906,8 @@ export class NpcAnimation {
     const u = Math.min(1, hurt.secs / (this.npc.clips[hurt.key].duration * hitConfig.fitBy));
     const slide = u * u * (3 - 2 * u);
     npc.rotation.y = f.ry + slide * (f.turn ?? 0); // undefined from before hmr
-    const [x, z] = [npc.position.x, npc.position.z];
-    npc.position.x = f.start.x + travel.x + slide * f.shift.x;
-    npc.position.z = f.start.y + travel.y + slide * f.shift.y;
-    // the root goes back by the travel, in its own parent's frame, so the body stays where the clip put it
-    const back = root.parent.worldToLocal(tmpFallAt.set(x + travel.x, 0, z + travel.y));
-    f.wrote.copy(root.position.sub(back.sub(root.parent.worldToLocal(tmpFallFrom.set(x, 0, z)))));
+    const [x, z] = [f.start.x + travel.x + slide * f.shift.x, f.start.y + travel.y + slide * f.shift.y];
+    f.wrote.copy(this.carry(root, root.parent, travel, x, z));
   }
 
   /** Roll one lain onto `to`, a lie clip */
@@ -893,6 +971,7 @@ export class NpcAnimation {
     const dead = this.dead === true;
     if (impact !== undefined) flinch(this, impact.part, impact.at, impact.dir, dead ? flinchConfig : hitFlinchConfig);
     if (key !== null && dead) return; // a corpse only jolts
+    if (key === null && dead && this.startRise() === true) return; // a fallen corpse gets up first
     const kill = impact?.outcome === "kill";
     /** Radians they turn as they fall dead, to fit — see `fitDeath` */
     let [turn, slide] = [0, null as null | Geom.VectJson];
@@ -918,13 +997,15 @@ export class NpcAnimation {
     this.hurt = key === null ? null : { key, secs: 0, next, rate };
     if (key !== null) {
       this.dead = kill;
+      this.rise = null; // e.g. killed again as they get up
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
       if (dieClips.has(key)) this.startFall(turn, slide);
-    } else if (dead || this.eyes.look === "scared") {
+    } else if (dead || this.eyes.look === "scared" || this.fall != null) {
       this.dead = false;
       this.setEyes("open");
       if (this.fall != null) {
         removeCorpseCollider(this);
+        this.finishRise();
         this.fall = null;
         // back in the crowd, on the nearest poly: none near, they stay where they lie
         const near = this.w.npc.getClosestPoly(this.npc.position, 0.5);
@@ -1039,6 +1120,7 @@ export class NpcAnimation {
       this.restUpper = null;
     }
     const crouchMove = isCrouch(this.pose) || isCrouch(next); // their label glides
+    const rising = riseClips.has(next); // their label rises with them, over the whole clip
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
@@ -1050,7 +1132,11 @@ export class NpcAnimation {
     const looks = dieClips.has(next) ? "lie" : next;
     this.headY = this.w.npc.headYByPose[looks];
     this.npc.setBubbleHeight(bubbleHeightForClip(looks));
-    this.npc.setLabelYShift(labelYShiftForClip(looks), crouchMove || looks !== next);
+    this.npc.setLabelYShift(
+      labelYShiftForClip(looks),
+      crouchMove || looks !== next || rising,
+      rising ? clips[next].duration : undefined,
+    );
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
@@ -1317,7 +1403,9 @@ export class NpcAnimation {
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
+    this.rebindFall();
     this.tickFall();
+    this.tickRise();
     undoFlinch(this);
     // as the pose and its arms' clips left them, before either reads them again
     if (this.turn.written === true) {
@@ -1816,11 +1904,15 @@ const mirrorOf = new Map(Object.entries(mirroredClips).map(([to, from]) => [from
 /** Clips they fall dead by, and their mirrors, which a death plays either at random */
 const dieClips = new Set(Object.values(hitConfig.die).flatMap((key) => [key, mirrorOf.get(key) ?? key]));
 
+/** Clips they get up by, revived */
+const riseClips = new Set(Object.values(hitConfig.getUp).flatMap((key) => key ?? []));
+
 /** Hit clips played once, then left */
 const onceClips = new Set<AnimationClipKey>([
   ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
   hitConfig.sink,
   ...dieClips,
+  ...riseClips,
 ]);
 
 /** The ways one may fall dead */
@@ -1842,6 +1934,14 @@ function fallWay(side: FallSide, ry: number) {
 
 const upAxis = new THREE.Vector3(0, 1, 0);
 const tmpFallAt = new THREE.Vector3();
+const tmpRiseFrom = new THREE.Vector3();
+const tmpRiseTo = new THREE.Vector3();
+
+/** Where `clip` has their root at its start, or `end`, in its parent's frame, else `null` for none */
+function rootAt(clip: THREE.AnimationClip, end: boolean, out: THREE.Vector3) {
+  const values = clip.tracks.find((t) => t.name === "skeleton-root.position")?.values;
+  return values === undefined ? null : out.fromArray(values, end ? values.length - 3 : 0);
+}
 const tmpFallFrom = new THREE.Vector3();
 const tmpFallTravel = new THREE.Vector2();
 

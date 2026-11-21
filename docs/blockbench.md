@@ -40,7 +40,7 @@ The model is `packages/media/src/blockbench/current/current.bbmodel`. Export it 
 Some clips are made at load by mirroring another, so they are in neither the `.bbmodel` nor the glTF. `mirroredClips` in `const.npc.ts` lists each by the clip it mirrors, and `NPCs` builds them with `mirrorClip` (`service/clips.ts`).
 
 - **How.** Left and right bones' tracks swap, rotations' `y` and `z` are negated, and positions' `x`. That is exact only because the rig rests unrotated and symmetric: keep it so.
-- **Which.** The left or right take of a symmetric clip: `crouch_left`, `drop_left`, `pick_up_left`, `lie_right`, `pain_arm_right`, `pain_leg_right`, and the left crouch strafes. Each matched its old Blockbench take to 0°. Also each death's mirror, `die_back_mirror` and `die_forward_mirror`, which a death plays at random.
+- **Which.** The left or right take of a symmetric clip: `crouch_left`, `drop_left`, `pick_up_left`, `lie_right`, `pain_arm_right`, `pain_leg_right`, and the left crouch strafes. Each matched its old Blockbench take to 0°. Also each death's mirror, `die_back_mirror` and `die_forward_mirror`, which a death plays at random, and each get-up's, `get_up_back_mirror` and `get_up_forward_mirror`.
 - **Editing one.** Edit the clip it mirrors: its mirror follows on the next export. Never make the mirror in Blockbench too, as the made one replaces it.
 - **Not for** clips whose sides differ on purpose, e.g. `strafe_*`, `shuffle_step_*` and `run_strafe_*`, whose lead foot or timing differs. Nor for one holding something in a hand: the item stays in the right hand whilst the arms swap.
 - `gen-clip-keys` writes only the right crouch strafes. Their left ones are mirrored at load.

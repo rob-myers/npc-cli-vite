@@ -203,6 +203,10 @@ export const fromAnimationClipKey = {
   die_forward_mirror: true,
   drop: true,
   drop_left: true,
+  get_up_back: true,
+  get_up_back_mirror: true,
+  get_up_forward: true,
+  get_up_forward_mirror: true,
   idle: true,
   lie: true,
   lie_left: true,
@@ -266,6 +270,8 @@ export const mirroredClips: Partial<Record<ClipKey, ClipKey>> = {
   die_back_mirror: "die_back",
   die_forward_mirror: "die_forward",
   drop_left: "drop",
+  get_up_back_mirror: "get_up_back",
+  get_up_forward_mirror: "get_up_forward",
   lie_right: "lie_left",
   pain_arm_right: "pain_arm_left",
   pain_leg_right: "pain_leg_left",
@@ -456,6 +462,13 @@ export const hitConfig = {
   sink: "collapse" as ClipKey,
   /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
   die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
+  /** Revived, they get up by these, by the clip they fell by: one with none is let go at once */
+  getUp: {
+    die_back: "get_up_back",
+    die_back_mirror: "get_up_back_mirror",
+    die_forward: "get_up_forward",
+    die_forward_mirror: "get_up_forward_mirror",
+  } as Partial<Record<ClipKey, ClipKey>>,
   /** A death plays at a random rate between these, so no two fall in step */
   dieRate: [0.85, 1.15] as [number, number],
   /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
@@ -551,6 +564,10 @@ export const fadeSecs: Record<
   die_forward_mirror: {},
   drop: {},
   drop_left: {},
+  get_up_back: { breathe: 0 },
+  get_up_back_mirror: { breathe: 0 },
+  get_up_forward: { breathe: 0 },
+  get_up_forward_mirror: { breathe: 0 },
   idle: { shuffle: 0.15, shuffle_step: 0.2 },
   lie: { lie_left: 0.5, lie_right: 0.5 },
   lie_left: { lie: 0.5, lie_right: 0.6 },

@@ -164,8 +164,18 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 - Sat, lain or already collapsed, their pose freezes (`hitConfig.dead`, paused at `deadSecs`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
-- `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now. `npc.kill()` kills them at once, as a
-  chest shot from in front would (`w.e.takeHit`).
+- `npc-hurt` carries `dead`. `npc.kill()` kills them at once, as a chest shot from in front would (`w.e.takeHit`).
+  An npc's menu (`PickMenu`) has a **dead** toggle: on, it kills them, off, it revives them.
+- **Getting up.** `npc.revive()`, or `pose npc-0 as:breathe`, is `setHurt(null)`. Fallen, they get up first, by
+  `hitConfig.getUp` of the clip they fell by, e.g. `get_up_back` (`startRise`). Its first frame is the death's last.
+  - Their root is held back as it lay (`rise.offset`), and the npc follows their hips as a fall does, the root going
+    back by as much (`tickRise`). So their body never jumps, and their label and shadow stay over it. Their label
+    rises over the whole clip.
+  - Stood, the hold goes and the npc moves by what is left (`finishRise`), then they are back in the crowd, in their
+    idle. The get-up's last frame is `breathe`'s first, so it hands on with no fade.
+  - `get_up_back` sits up, then rolls forward into a squat. `get_up_forward` pushes up onto hands and knees, then
+    kneels up over one foot. A fall with no get-up in `hitConfig.getUp` is let go at once.
+- A new mesh, e.g. the glTF refetched, moves a corpse's fall onto its hips (`rebindFall`), else it would jump.
 - Their label and bubble sit as a lain npc's, eased down as they fall (`labelYShiftForClip`).
 - A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
   - Clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).

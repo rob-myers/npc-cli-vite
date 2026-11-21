@@ -75,7 +75,7 @@ export class Npc {
   labelShift: undefined | number;
   labelFloor: null | number = null;
   /** Their label's glide to a new shift, `t` from `0` to `1`, whilst under way — see `easeLabel` */
-  labelMove: null | { from: number; to: number; t: number } = null;
+  labelMove: null | { from: number; to: number; t: number; secs?: number } = null;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
   /** `1` draws their body as a dot screen, but not their label or outline — see `NpcGhost` */
@@ -280,7 +280,7 @@ export class Npc {
   easeLabel(delta: number) {
     const move = this.labelMove;
     if (move == null) return; // `undefined` on an npc made before a hot reload
-    move.t = Math.min(1, move.t + delta / labelMoveSecs);
+    move.t = Math.min(1, move.t + delta / (move.secs ?? labelMoveSecs));
     this.labelYShiftUniform.value = move.from + (move.to - move.from) * move.t;
     if (move.t === 1) this.labelMove = null;
     this.w.r3f?.invalidate(); // the frameloop is on demand
@@ -512,6 +512,11 @@ export class Npc {
     return this.w.e.takeHit(this.key, "chest", { at, from, outcome: "kill" });
   }
 
+  /** Back to life: fallen, they get up first (`hitConfig.getUp`), else they are let go at once */
+  revive() {
+    this.anim.setHurt(null);
+  }
+
   /**
    * Can look at `npcKey`, point or angle.
    */
@@ -651,14 +656,14 @@ export class Npc {
     this.setLabelYShift(this.labelShift ?? this.labelYShiftUniform.value);
   }
 
-  /** Snaps their label to `shift`, else glides it if `ease` whilst they are seen and the World runs */
-  setLabelYShift(shift: number, ease = false) {
+  /** Snaps their label to `shift`, else glides it over `secs` if `ease`, whilst they are seen and the World runs */
+  setLabelYShift(shift: number, ease = false, secs = labelMoveSecs) {
     const glide = ease && this.labelShift !== undefined && !this.w.disabled && this.colorScale.value !== 0;
     this.labelShift = shift;
     // no lower than its floor, e.g. above a top bunk over them
     const to = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
     const u = this.labelYShiftUniform;
-    this.labelMove = glide ? { from: u.value, to, t: 0 } : null;
+    this.labelMove = glide ? { from: u.value, to, t: 0, secs } : null;
     if (!glide) u.value = to;
     this.w.r3f?.invalidate();
   }
