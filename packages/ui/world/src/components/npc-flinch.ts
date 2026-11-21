@@ -37,7 +37,7 @@ export function flinch(
 
 export function tickFlinch(anim: NpcAnimation, delta: number) {
   const f = anim.flinchAt;
-  if (f == null) return; // undefined on an instance from before hmr
+  if (f == null) return;
   const tune = f.tune ?? flinchConfig;
   const { hold = 0 } = tune;
   const holding = hold > 0 && anim.hurt !== null && anim.dead !== true;

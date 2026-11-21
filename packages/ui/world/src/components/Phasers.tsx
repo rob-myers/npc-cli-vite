@@ -669,10 +669,9 @@ export default function Phasers() {
           w.hud?.update();
           w.events.next({ key: "phasers", armed: false, npcKeys: [npc.key] });
         }
-        const { support } = npc.anim; // undefined on an instance from before hmr
         // a hand to steady it, once held a moment: a tap fires before it gets there
         const steadied = state.isSteadied(npc.key);
-        if (support !== undefined) support.on = arm.armed === true && steadied;
+        npc.anim.support.on = arm.armed === true && steadied;
         if (steadied && arm.armed === true && w.e.isPsiRaised(npc.key)) {
           w.e.setPsi(false, npc.key); // the left hand leaves their temple for the gun
           w.hud?.update();

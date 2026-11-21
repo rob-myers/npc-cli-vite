@@ -461,7 +461,7 @@ export class NpcAnimation {
 
   /** Hit whilst collapsed: a stood pain clip would stand them, so they stay down, jolted. Killed, they stop there */
   hitDown(impact?: HitImpact) {
-    if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
+    takeClutch(this.clutch, this, impact);
     if (impact?.outcome !== "kill") return;
     this.dead = true;
     this.holdStill();
@@ -778,7 +778,7 @@ export class NpcAnimation {
     if (key !== null) {
       this.dead = kill;
       this.rise = null; // e.g. killed again as they get up
-      if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
+      takeClutch(this.clutch, this, impact);
       if (dieClips.has(key)) startFall(this, turn, slide);
     } else if (dead || this.eyes.look === "scared" || this.fall != null) {
       this.dead = false;
@@ -1193,9 +1193,9 @@ export class NpcAnimation {
         if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
       this.turn.written = false;
     }
-    this.putBackArm("left", this.support); // undefined on an instance from before hmr
+    this.putBackArm("left", this.support);
     this.putBackArm(this.clutch?.side ?? "left", this.clutch);
-    if (this.overBody !== undefined) undoOverBody(this.overBody); // undefined from before hmr
+    undoOverBody(this.overBody);
     this.tickLieLook(delta);
     this.tickUpper(delta);
     this.tickHead(delta);
@@ -1303,7 +1303,6 @@ export class NpcAnimation {
   /** After the right arm aims: the left hand reaches the phaser's `supportConfig.grip`, by `support.weight` */
   tickSupport(delta: number) {
     const s = this.support;
-    if (s === undefined) return; // from before hmr
     const on = s.on === true && this.posture !== "lie";
     s.weight = THREE.MathUtils.clamp(s.weight + (on ? delta : -delta) / supportConfig.secs, 0, 1);
     if (s.weight === 0) return;
@@ -1423,7 +1422,7 @@ export class NpcAnimation {
     if (hurt === null || onceClips.has(hurt.key) === false) return;
     const { duration } = this.npc.clips[hurt.key];
     if (this.dead === true && hurt.secs >= duration) return; // held on its last frame
-    hurt.secs += delta * (hurt.rate ?? 1); // undefined from before hmr
+    hurt.secs += delta * (hurt.rate ?? 1);
     if (hurt.secs < duration) return;
     if (hurt.next === null) return this.dead === true ? this.holdStill() : this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
@@ -1455,7 +1454,7 @@ export class NpcAnimation {
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
   tickTurn(delta: number) {
     const { turn } = this;
-    if (this.posture !== "sit" && turn.head !== true) turn.target = turn.want = 0; // undefined from before hmr
+    if (this.posture !== "sit" && turn.head === false) turn.target = turn.want = 0;
     this.tickTurnAim(delta);
     /** How far an arm aims them: the torso then turns with the gun, not with their look */
     const aiming = this.posture === "sit" && this.upper.aim !== null ? this.upper.eased : 0;
@@ -1533,7 +1532,7 @@ export class NpcAnimation {
     /** Lain, their look turns the head whilst no arm aims it */
     const look = r.aim === null && this.lieLook.weight > 0 ? this.lieLook : null;
     const turned = this.headTurn.w !== 1; // still easing back from a look
-    const headAt = this.headAt ?? null; // undefined on an instance from before hmr
+    const { headAt } = this;
     if (entry === null || (l.key === null && r.key === null && look === null && headAt === null && turned === false))
       return;
     const { bone, base, written } = entry;

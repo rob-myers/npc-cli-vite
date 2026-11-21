@@ -392,7 +392,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         return arm?.key === "psi" && arm.target === 1;
       },
       makeWayFor(npc) {
-        for (const { npc: other, to } of npc.anim.inTheWay?.() ?? []) // undefined from before hmr
+        for (const { npc: other, to } of npc.anim.inTheWay())
           void state.move({ npcKey: other.key, to, fast: true, near: true }).catch(() => {}); // else they stay put
       },
       async move(opts) {

@@ -43,7 +43,7 @@ export function removeCorpseCollider(anim: NpcAnimation) {
  */
 export function tickOverBody(o: OverBody, anim: NpcAnimation, delta: number) {
   const on = o.on.size > 0 && anim.dead !== true && anim.posture === "stand";
-  if (on === false && (o.rise ?? 0) === 0) return; // undefined from before hmr
+  if (on === false && o.rise === 0) return;
   const { group } = anim.npc;
   if (group === null || findBones(o, anim, group) === false) return;
   group.updateWorldMatrix(true, true);
@@ -51,7 +51,7 @@ export function tickOverBody(o: OverBody, anim: NpcAnimation, delta: number) {
   const step = delta * corpseConfig.speed;
   const goal =
     anim.hurry === true && anim.moving === true ? Math.max(lifts[0], lifts[1]) : Math.min(lifts[0], lifts[1]);
-  const rise = (o.rise = THREE.MathUtils.clamp(goal, (o.rise ?? 0) - step, (o.rise ?? 0) + step));
+  const rise = (o.rise = THREE.MathUtils.clamp(goal, o.rise - step, o.rise + step));
   if (rise === 0 && lifts[0] === 0 && lifts[1] === 0) return;
   if (rise > 0 && o.root !== null) {
     const { bone, base, wrote } = o.root;
@@ -78,7 +78,7 @@ export function undoOverBody(o: OverBody) {
 
 /** Finds their legs, soles and root once per group, and measures a thigh. `false` if any is missing */
 function findBones(o: OverBody, anim: NpcAnimation, group: THREE.Object3D) {
-  if (o.of === group && o.soles !== undefined) return o.thigh > 0; // undefined from before hmr
+  if (o.of === group) return o.thigh > 0;
   Object.assign(o, { of: group, thigh: 0, legs: [], soles: [], root: null });
   for (const side of ["left", "right"])
     for (const [part, turn] of legTurns) {
@@ -111,14 +111,14 @@ function footLift(o: OverBody, anim: NpcAnimation, foot: THREE.Object3D, i: numb
   for (const key of o.on) {
     const other = anim.w.npc.npc[key]?.anim;
     const body = other?.fall?.body;
-    if (other === undefined || body?.hull === undefined) continue; // undefined from before hmr
+    if (other === undefined || body == null) continue;
     const up = upRamp(body.hull, toBody(p.x - body.x, p.z - body.z, body.ry, tmpPoint));
     if (up > 0) under = other;
     most = Math.max(most, up * (body.top + corpseConfig.clear) - p.y);
   }
   const planted = under !== null && p.y < plantedBelow;
-  if (under !== null && planted && o.planted?.[i] !== true) jolt(under, p, anim.npc.key);
-  (o.planted ??= [false, false])[i] = planted; // undefined from before hmr
+  if (under !== null && planted && o.planted[i] === false) jolt(under, p, anim.npc.key);
+  o.planted[i] = planted;
   return most;
 }
 

@@ -89,7 +89,7 @@ export default function PhysicsWorker() {
           case "world-setup-response": {
             state.physicsRebuilds++;
             if (w.decor?.ready === true) w.decor.syncStaticColliders(); // a fresh world has only runtime ones
-            w.npc?.syncCorpseColliders?.(); // undefined from before hmr
+            w.npc?.syncCorpseColliders();
             break;
           }
           default:

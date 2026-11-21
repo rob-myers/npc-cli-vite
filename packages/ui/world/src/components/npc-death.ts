@@ -82,7 +82,7 @@ export function startFall(anim: NpcAnimation, turn: number, slide: null | Geom.V
 export function tickFall(anim: NpcAnimation) {
   const f = anim.fall;
   const { hurt, npc } = anim;
-  if (f == null || hurt === null || dieClips.has(hurt.key) === false) return; // undefined from before hmr
+  if (f == null || hurt === null || dieClips.has(hurt.key) === false) return;
   const root = f.hips.parent;
   if (root?.parent == null) return;
   if (root.position.equals(f.wrote)) return; // held at its end, the mixer leaves the root where this put it
@@ -94,7 +94,7 @@ export function tickFall(anim: NpcAnimation) {
   }
   const u = Math.min(1, hurt.secs / (npc.clips[hurt.key].duration * deathConfig.fitBy));
   const slide = u * u * (3 - 2 * u);
-  npc.rotation.y = f.ry + slide * (f.turn ?? 0); // undefined from before hmr
+  npc.rotation.y = f.ry + slide * f.turn;
   const [x, z] = [f.start.x + travel.x + slide * f.shift.x, f.start.y + travel.y + slide * f.shift.y];
   f.wrote.copy(carry(anim, root, root.parent, travel, x, z));
 }
