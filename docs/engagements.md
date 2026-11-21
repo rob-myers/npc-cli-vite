@@ -27,6 +27,9 @@ A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), a
 (`strike`), a frame or two later (`fadeSecs / lockRate`). It emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
 Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one. jsh `sounds` plays both: see `docs/audio.md`.
 
+No shot locks on until the phaser is raised: `wieldBeam` sets `beam.next` only then, as it shows the beam. The lock is
+far quicker than the arm, so else a shot from a lowered phaser would land unseen.
+
 | outcome | the beam | effect |
 | --- | --- | --- |
 | `hit` | lands on the part | see [What a hit does](#what-a-hit-does): they recover after |

@@ -785,7 +785,8 @@ export default function Phasers() {
         }
         beam.shown.target = locking && avoid === false && raised ? 1 : 0;
         if (armed === false) beam.shown.presence = beam.locked.presence = 0;
-        if (avoid === false) beam.next = locking ? arm.target : null;
+        // no shot until raised: else it lands unseen, the lock being quicker than the arm
+        if (avoid === false) beam.next = locking && raised ? arm.target : null;
 
         // a shot is short: then they let go of whom they were on, still drawn. One at no one gives up as soon, unfired
         if ((target === undefined || beam.locked.presence === 0) && free === null) arm.firedSecs = null;
