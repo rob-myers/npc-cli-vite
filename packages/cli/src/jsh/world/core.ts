@@ -1164,6 +1164,7 @@ export function play({ api, w }: JshCli.RunArg) {
  * pose rob look:npc-0
  * pose rob
  * pose npc-{0..10} as:breathe
+ * pose $( w n | keys | split ) as:breathe
  * ```
  */
 export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args)) {

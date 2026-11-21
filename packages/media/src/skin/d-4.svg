@@ -1,9 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<filter id="spot-light-filter-1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<radialGradient id="face-shade" cx="0.5" cy="0.55" r="0.6">
+<stop offset="0.3" style="stop-color: #f4dccb;"/>
+<stop offset="1" style="stop-color: #6e4c3a;"/>
+</radialGradient>
+<linearGradient id="fringe-shadow" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.75;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<linearGradient id="chin-shadow" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.5;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<clipPath id="suit-pale"><path d="M16 64h16v4h-16zM80 64h64v4h-64zM176 64h16v4h-16zM16 68h16v4h-16zM80 68h64v4h-64zM176 68h16v4h-16zM16 72h16v4h-16zM80 72h12v4h-12zM100 72h44v4h-44zM176 72h16v4h-16zM16 76h16v4h-16zM80 76h12v4h-12zM100 76h44v4h-44zM176 76h16v4h-16zM0 80h92v4h-92zM100 80h124v4h-124zM0 84h92v4h-92zM100 84h124v4h-124zM0 88h224v4h-224zM0 92h224v4h-224zM0 96h224v4h-224zM0 100h224v4h-224zM28 104h24v4h-24zM64 104h96v4h-96zM64 108h96v4h-96zM64 112h96v4h-96zM64 116h96v4h-96zM64 120h96v4h-96zM252 120h4v4h-4zM64 124h96v4h-96zM248 124h4v4h-4zM16 144h48v4h-48zM24 148h32v4h-32zM0 156h24v4h-24zM56 156h8v4h-8zM88 156h16v4h-16zM0 160h24v4h-24zM56 160h8v4h-8zM92 160h8v4h-8zM160 160h20v4h-20zM160 164h20v4h-20zM0 168h24v4h-24zM56 168h8v4h-8zM0 172h24v4h-24zM56 172h8v4h-8zM88 180h16v4h-16zM92 184h8v4h-8zM64 188h16v4h-16zM112 188h16v4h-16zM80 192h16v4h-16zM144 192h16v4h-16zM80 196h16v4h-16zM144 196h16v4h-16zM80 200h16v4h-16zM144 200h16v4h-16zM80 204h16v4h-16zM144 204h16v4h-16zM0 208h32v4h-32zM48 208h144v4h-144zM0 212h24v4h-24zM56 212h136v4h-136zM64 216h128v4h-128zM24 220h32v4h-32zM64 220h128v4h-128zM24 224h32v4h-32zM64 224h128v4h-128zM224 224h28v4h-28zM64 228h128v4h-128zM224 228h28v4h-28zM24 232h32v4h-32zM64 232h20v4h-20zM124 232h4v4h-4zM24 236h32v4h-32z"/></clipPath>
+<filter id="blotches" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="noise"/>
+<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.12  7 0 0 0 -3" result="blots"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="1" seed="4" result="fine"/>
+<feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0.9 -0.35" result="grain"/>
+<feMerge><feMergeNode in="blots"/><feMergeNode in="grain"/></feMerge>
+</filter>
+<filter id="punch" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+<feComponentTransfer>
+<feFuncR type="linear" slope="1.5" intercept="-0.25"/>
+<feFuncG type="linear" slope="1.5" intercept="-0.25"/>
+<feFuncB type="linear" slope="1.5" intercept="-0.25"/>
+</feComponentTransfer>
+<feColorMatrix type="saturate" values="1.4"/>
+</filter>
+<filter id="worn" x="-20%" y="-50%" width="140%" height="200%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feGaussianBlur in="d" stdDeviation="0.45"/>
+</filter>
+<linearGradient id="back-hair" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #7d6759;"/>
+<stop offset="1" style="stop-color: #5a473b;"/>
+</linearGradient>
+<filter id="tuft-shadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="1.4"/></filter>
+</defs>
 <g style="pointer-events: none;">
 <title>meta prefix=d</title>
-<image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAA/FBMVEUAAABaMTEAAAD/AAD///9yXlIAAAAMDA4NDQ0WFRkkJCQmIiYvLC83NDg5ODY5ODc5OTY5OTc8PD08PTw8PT09PD09PTw9PT1APkFZTUVhVEtuW09yX1JzX1J6ZViCbF6DbV6Hu6KMc2WOq4+We2yc172hhHSminempJmrWxizlYC4Yhq5zrq9bi3AfnnEaBzEaRzEhjXFaBzFaRzFaR3MbR3O1NXP1NTP1NXP1dTP1dXQbhvQbxvRbhrRbhvRbxrRbxvR0dHUfjXVfjTVfjXVfzXVv7nZy8jboDnfWL3k4N/k4d7k4d/l4d/y2cb449r459v89fD/xLX////m+vF2AAAABnRSTlMAH3BwcPu2iJ1sAAADuklEQVRYw9WWa1vTMBTHq6hsg1lvo5SkWREHjuIFy7x0Lk6YXCsl8/t/F89Jmqzt2l3Y4wv/jDTpk/PrObmdWH9SEUI8j0jJp35vaRGi/osyAI+12yxFlAAIZZbFKKkGwIe9if00gEzKUoDnMZBheFMhVMkAIAKMwSOJEMk9ACaEcfJeJGOyPEAP4jhpNO4F0NPYwBAaJQBCS+YAxzU//8XnZOAzAL0mCHlgEQ+cJ5n58wgE4hHzXls9pm98aljqPRa1OSIMu4ARe73v42KSTUbke3haXttjNSi8RMqDalu22zX5Pv0+pb61f0B9Sk0QNfmUACHAwHWFcF0wFIJlANBJCCEBB4cWArApTQGBYTBYguLOdXcQsOO6dwIWJLqInjE9bK4LxWH6zM8CDtbxrese7Y3He0eue3ucG8TcVijbDGbaxjj/4+lpNB1NkddbUBdUr9fXsf4TBHYw54Rwzvvwz/HdE9Cgzy9EgrX5AKkBWgNDA/hwcYAQ6MGA/8h6ANXlAH0VwWwPugWl3kuAHAgzHhKmOvGrKwPoSWnzXo+EIa7zOIaCqjplUHAl1W2QAVxKpYTe5aUEMBoEhCkAowz2QB7AZwDACJZtwHkAy1bWEeBTzod9AxjOBJxQ2Z/mASOld1KjTscAlGcaAHbKKAWcGMDp6GwEv2lAU0kBoAKAMFCAIMx48MJBtWzbfmrbzm4GsL3dbG43N6SgQsOP0oN+IYT4Gv7iOFLqVAPIJzSCWHoAOJnMgqP03Lbh15oOIQU0m+QDGPXkuNDsOoii+Pomvo6ib9FX8GDXADaVFAAqIY4BhV3AaRCehGFPrcSe8wq+v+XgCMAYaMCjNauutC4FFfx2oJZnIP1IJZSSc9CF0IC1h8YThFir6D8HBBmtiEibtOIEXlCY9+LYMknF8mf1Vtt50lJ5UJ0H2tqfhSgHwC638gB5GkzMRrODQFvqWwsBVO7Qre/DKkCl1Ik0aaUhpJQFACXSlwi60CxU+7XKuqYYC519vcvsgdx5kF3OSy1tNM4mW2xjHVNpyPvnQhSS6nIAvipg+A89yG5kfHbLlKbmYTYr5wGTlr4n5O4NXKsEUJTO0rmsPZwL0AYVAK4Ig/sAVDrXMjlx9GsEv+oQtMsp4Exan55lAIXzQRukgKZRF5LhM9tpqdy8lbkXlJ0KCNBpXqd9eR2I49+xVKczdxaKALwPPG05L5UTCwOMNqLP0Zco/X58s7sgYNNow5b3AQdccLZaTglAnwPFc0G38T6QCH07mAb8BbCGbKykpEJRAAAAAElFTkSuQmCC" width="256" height="256" style="image-rendering: pixelated;">
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated; filter: url(&quot;#punch&quot;);">
 <title>d-4--01e468ce1edd3688</title>
 </image>
+</g>
+<rect width="256" height="256" style="pointer-events: none; fill: #808080; mix-blend-mode: saturation; clip-path: url(&quot;#suit-pale&quot;);">
+<title>grey suit</title>
+</rect>
+<rect width="256" height="256" style="pointer-events: none; fill: #707070; mix-blend-mode: multiply; clip-path: url(&quot;#suit-pale&quot;);">
+<title>darker suit</title>
+</rect>
+<g style="pointer-events: none; opacity: 0.6; clip-path: url(&quot;#suit-pale&quot;);">
+<title>blotches</title>
+<rect width="256" height="256" style="filter: url(&quot;#blotches&quot;);"/>
+</g>
+<g style="pointer-events: none; fill: #e6e1d6; font-family: 'Arial Black', Impact, sans-serif; font-weight: 900; text-anchor: middle;">
+<title>inmate marks</title>
+<rect x="98" y="93" width="12" height="7" style="fill-opacity: 0.9;">
+<title>chest patch</title>
+</rect>
+<text x="104" y="98.6" style="fill: #141414; font-size: 4.4px; filter: url(&quot;#worn&quot;); opacity: 0.7;">D-31</text>
+<text x="144" y="106" style="font-size: 20px; fill-opacity: 0.85;">D<title>back letter</title></text>
+<text x="144" y="118" style="font-size: 7px; fill-opacity: 0.85; filter: url(&quot;#worn&quot;); opacity: 0.7;">3108<title>back number</title></text>
+</g>
+<g style="pointer-events: none;">
+<title>head</title>
+<rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+<title>top</title>
+</rect>
+<rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: #000000; stroke-opacity: 0.25; stroke-width: 4px;">
+<title>bottom-neck</title>
+</rect>
+<rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.1; mix-blend-mode: hard-light; fill: #777777;" y="32">
+<title>front</title>
+</rect>
+<rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+<title>back</title>
+</rect>
+<rect x="64" width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32">
+<title>left</title>
+</rect>
+<rect width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<title>right</title>
+</rect>
+</g>
+<g style="pointer-events: none;">
+<title>face shadows</title>
+<rect x="32" y="32" width="32" height="32" style="fill: url(&quot;#face-shade&quot;); mix-blend-mode: multiply;">
+<title>sides</title>
+</rect>
+<rect x="32" y="40" width="32" height="7" style="fill: url(&quot;#fringe-shadow&quot;);">
+<title>under fringe</title>
+</rect>
+<rect x="32" y="59" width="32" height="5" style="fill: url(&quot;#chin-shadow&quot;);">
+<title>chin</title>
+</rect>
+</g>
+<g style="pointer-events: none;" transform="translate(-128 0)">
+<title>under tufts</title>
+<g style="fill: #24180f; opacity: 0.5; filter: url(&quot;#tuft-shadow&quot;);">
+<title>shadows</title>
+<g transform="translate(0 2.5)">
+<path d="M160 0H192V7Q191 11 189 15Q187 11 185 9Q183 13 181 17Q179 12 177 9Q175 12 173 14Q171 10 170 8Q168 12 166 16Q164 11 163 8Q161 10 160 12Z"/>
+<path d="M224 32H256V41Q255 46 253 50Q251.5 45 250 41Q248.5 48 246 54Q244 47 242 42Q240 45 238 48Q236.5 44 235 41Q233.5 47 231 52Q229.5 45 228 40Q226.5 43 225 46Q224.5 43 224 40Z"/>
+<path d="M128 32H138Q137.5 36 136 40Q134.5 37.5 133 36Q132 40 130 44Q129 41 128 38Z"/>
+<path d="M224 32H214Q214.5 36 216 40Q217.5 37.5 219 36Q220 40 222 44Q223 41 224 38Z"/>
+</g>
+</g>
+<path d="M164 8Q165 16 167 24M170 6Q170.5 14 171 20M176 8Q177 17 178 26M182 9Q181 18 180 25M188 8Q189 15 189 22M228 38Q229 50 230 62M232 44Q232 54 233 63M238 42Q238.5 52 238 61M242 40Q243 51 242.5 62M246 48Q247 56 246 63M250 38Q251 49 250 60M253 44Q253.5 53 253 62M131 38Q131 48 132 60M136 36Q136.5 46 137 57M221 38Q221 48 220 60M216 36Q215.5 46 215 57" style="fill: none; stroke: #3e3028; stroke-width: 0.9px; stroke-linecap: round; stroke-opacity: 0.75;">
+<title>strands</title>
+</path>
+<path d="M173 10Q173.5 15 174 20M185 10Q185.5 15 185 19M235 44Q235.5 50 235 56M244 50Q244.5 55 244 60M134 44Q134 49 134.5 53M218 44Q218 49 217.5 53" style="fill: none; stroke: #a08876; stroke-width: 0.7px; stroke-linecap: round; stroke-opacity: 0.6;">
+<title>highlights</title>
+</path>
+</g>
+<g style="pointer-events: none; filter: url(&quot;#punch&quot;);">
+<title>back hair</title>
+<path d="M160 0H192V7Q191 11 189 15Q187 11 185 9Q183 13 181 17Q179 12 177 9Q175 12 173 14Q171 10 170 8Q168 12 166 16Q164 11 163 8Q161 10 160 12Z" style="fill: url(&quot;#back-hair&quot;);">
+<title>crown, over the top</title>
+</path>
+<path d="M224 32H256V41Q255 46 253 50Q251.5 45 250 41Q248.5 48 246 54Q244 47 242 42Q240 45 238 48Q236.5 44 235 41Q233.5 47 231 52Q229.5 45 228 40Q226.5 43 225 46Q224.5 43 224 40Z" style="fill: url(&quot;#back-hair&quot;);">
+<title>back clumps</title>
+</path>
+<path d="M128 32H138Q137.5 36 136 40Q134.5 37.5 133 36Q132 40 130 44Q129 41 128 38Z" style="fill: url(&quot;#back-hair&quot;);">
+<title>right side, rear</title>
+</path>
+<path d="M224 32H214Q214.5 36 216 40Q217.5 37.5 219 36Q220 40 222 44Q223 41 224 38Z" style="fill: url(&quot;#back-hair&quot;);">
+<title>left side, rear</title>
+</path>
+<path d="M164 2Q164.5 6 166 12M170 1Q170 5 170.5 7M176 1Q176.5 6 177.5 13M182 1Q182 7 181 14M188 2Q188.5 7 189 12M228 34Q228 38 228.5 41M232 34Q231.5 44 231 50M241 34Q241.5 39 242 44M246 34Q246.5 45 246 52M253 34Q253 42 253 48M131 34Q130.5 38 130.5 42M221 34Q221.5 38 221.5 42" style="fill: none; stroke: #45362c; stroke-width: 0.9px; stroke-linecap: round;">
+<title>strands</title>
+</path>
+<path d="M167 2Q167 5 167.5 8M179 2Q179.5 5 179.5 9M235 34Q235 37 235.5 40M249 34Q249 38 249.5 42" style="fill: none; stroke: #9c8472; stroke-width: 0.7px; stroke-linecap: round; stroke-opacity: 0.8;">
+<title>highlights</title>
+</path>
 </g>
 </svg>

@@ -53,13 +53,18 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 - Cloudflare refuses curl there, so read them in a browser, e.g. Claude in Chrome. Fetch tags a few seconds apart, else 403.
 - The texture itself downloads plainly: `https://s.namemc.com/i/{id}.png`.
 - Show candidates front and back on a contact sheet, numbered, to choose from.
-- A slim skin is transparent at texel (54, 25). A legacy skin is 64×32: make it 64×64 in the png itself, its left limbs the right ones flopped face by face.
+- A slim skin leaves columns 54–55 of the right arm and 46–47 of the left empty, so it is transparent at texel (54, 25).
+  - Some fill them with junk instead, e.g. d-4's magenta and mint. So look at each arm too.
+  - A slim skin taken as classic shows its arms a column off, the junk down their backs.
+- A legacy skin is 64×32: make it 64×64 in the png itself, its left limbs the right ones flopped face by face.
 - A starter svg is the meta group and its image alone, widened if slim.
 
 ### The png
 
 - A 64px Minecraft skin with CLASSIC arms, 4px wide. The model has no slim (3px) arms. A slim skin's arms
   must be widened in its svg's embedded image, repeating each 3px face's middle column.
+- No base face may have a transparent texel. The material discards it, leaving a hole, e.g. half an unwidened slim arm.
+  Check the embedded image, or that the svg paints over the gap, as postdoc-0's does.
 - Named `{key}--{namemcUid}.png`, with TWO hyphens. One hyphen and `rebuildSkinManifest` skips it with a warning.
 - The key's prefix is its family: `spawn x as:mtf` takes the first skin whose key begins `mtf`.
 
@@ -78,7 +83,9 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   material discards alpha under 0.9. So clear stray overlay pixels, and draw nothing part-transparent there.
 - The torso is three cuboids, chest, stomach and hips. Each one's top samples the body top, and each one's bottom
   the body bottom. A crouch bares them, so fill the body top and bottom.
-- The feet sample texels (3–4, 2–4), in the head layer's unused corner.
+- The head layer's unused corner, texels (0–8, 0–4), is sampled twice. The feet take (1–7, 0–4), and the torso overlay's tops and bottoms take all of it.
+  - So anything opaque there shows at the seams between chest, stomach and hips, e.g. white lines (`d-4`).
+  - Keep it transparent, as d-0's is. Then no feet are drawn.
 - The rest of the template's unused corners are never drawn.
 
 ### Where each face is
@@ -115,6 +122,11 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - Widening slim arms, clear each arm's 16px square first. Else the old layout's overlay texels show through the new one's gaps.
 - A screen for a face (`robot-2`, `robot-4`) is drawn near-black, its eyes in a bright core over a blurred glow. A dark grey screen reads faded in the World.
 - Fine detail on a face, e.g. glasses (`medic-1`), goes on the head overlay as opaque strokes, its pixel original cleared. The eye slices never touch the overlay.
+- Long hair below the head does not work, on the base or the overlay. Remove it from the body, each texel taking the nearest suit colour on its face (`d-4`).
+- A D-class skin has a big D on its back, over a number made unreadable by `#worn`, and a chest patch with its own worn tag. Copy d-0's `inmate marks` group, changing the numbers.
+- A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
+  - A pale download reads faded beside d-0 and d-1. Raise its contrast and saturation by a filter on its `<image>` (`#punch`), and darken its suit's multiply, e.g. `#707070` (`d-4`).
+- A face is shaded as d-0's is, over its own features: darker toward its sides, under the fringe and at the chin. A pale face takes d-0's front spotlight faintly, else it is blown out (`d-4`).
 - Medic-0's head shading reads well on most skins: a hard-light spotlight over the face and top of the head,
   and the sides and back a little darker.
 
