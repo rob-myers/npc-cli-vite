@@ -190,6 +190,8 @@ A banner at the top of the page says "mcp testing" from Claude's first call in a
   `vite-plugin-dev-mcp` passes that to the page as the HMR event `dev-mcp:turn-end`.
 - A `PreCompact` hook posts to `/api/dev-mcp/compact` alike, and the banner says "mcp compacting" until
   Claude's next call or the turn's end.
+- Claude can write the user a line under it, e.g. what a demo shows now: `__devMcp.getState().say(text)` from a
+  `query` with `world: ""` (`null` clears it). It lasts until replaced or the turn ends.
 
 ### The user's own input
 

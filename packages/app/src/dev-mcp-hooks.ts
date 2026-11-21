@@ -13,6 +13,14 @@ const devMcp = createStore<DevMcpState>()((_set, get) => ({
   logs: {},
   nextSeq: 1,
 
+  say(text) {
+    if (getBanner() === null) setBanner(mcpBusyText);
+    const el = document.getElementById(bannerId)?.querySelector<HTMLElement>("[data-say]");
+    if (el === undefined || el === null) return;
+    el.textContent = text ?? "";
+    el.classList.toggle("hidden", !text);
+  },
+
   async ensureTty(key) {
     if (useSession.getState().session[key] === undefined) {
       const ui = Object.values(uiStore.getState().byId).find(
@@ -126,6 +134,11 @@ function getBanner(): null | HTMLElement {
 /** Shows the banner saying `text`, else fades it out on `null`. Found by id, so an hmr keeps it */
 function setBanner(text: null | string) {
   let el = document.getElementById(bannerId);
+  // made before it had a message line: made afresh
+  if (el !== null && text !== null && el.querySelector("[data-title]") === null) {
+    el.remove();
+    el = null;
+  }
   if (text === null) {
     if (el === null) return;
     el.dataset.leaving = "true";
@@ -137,7 +150,7 @@ function setBanner(text: null | string) {
     el = document.createElement("div");
     el.id = bannerId;
     el.className = bannerClass;
-    el.innerHTML = `<div class="${spinnerClass}"></div><span class="min-w-0 truncate"></span>`;
+    el.innerHTML = `<div class="${spinnerClass}"></div><div class="flex min-w-0 flex-col items-center gap-1"><span data-title class="min-w-0 truncate"></span><span data-say class="${sayClass} hidden"></span></div>`;
     el.style.opacity = "0";
     document.body.append(el);
     placeBanner();
@@ -147,7 +160,7 @@ function setBanner(text: null | string) {
     delete el.dataset.leaving;
     el.style.opacity = "1";
   }
-  (el.lastElementChild as HTMLElement).textContent = text;
+  (el.querySelector("[data-title]") as HTMLElement).textContent = text;
 }
 
 /** Centres the banner in the visual viewport, so a pinch zoom, the keyboard or a notch never hides it */
@@ -311,6 +324,9 @@ const bannerFadeMs = 200;
 const bannerClass =
   "fixed -translate-x-1/2 z-9999 pointer-events-none select-none flex items-center gap-4 px-6 py-2.5 rounded border border-yellow-200/30 bg-black/75 font-mono text-sm uppercase tracking-[0.25em] sm:tracking-[0.4em] whitespace-nowrap text-yellow-200/80 transition-opacity duration-200";
 const spinnerClass = "size-4 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin";
+/** Claude's message under it, e.g. what a demo shows now: see `say` */
+const sayClass =
+  "max-w-md whitespace-normal text-center text-xs normal-case leading-snug tracking-normal text-yellow-100/90";
 
 (window as unknown as { __devMcp: typeof devMcp }).__devMcp = devMcp;
 
@@ -340,6 +356,8 @@ type R3fLike = {
 type Ndc = { x: number; y: number; z: number };
 
 export type DevMcpState = {
+  /** Writes `text` under "mcp testing", e.g. what a demo shows now, until the turn ends. `null` clears it */
+  say(text: null | string): void;
   /** Per tty, what was written to it, oldest first */
   logs: Record<string, DevMcpEntry[]>;
   nextSeq: number;

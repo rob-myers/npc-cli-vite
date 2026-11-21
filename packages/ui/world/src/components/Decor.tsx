@@ -167,10 +167,13 @@ export default function Decor() {
 
             // Decor quads MUST have a respective decor image providing original
             // dimensions via decor manifest.json original{Width,Height} in sgu.
-            let entry = w.sheets.decor[def.img];
+            // an attachment drawn on it, e.g. `phaser-shotgun`, where the sheet has one
+            const variant = `${def.img}-${def.meta?.attachment}`;
+            const img = typeof def.meta?.attachment === "string" && variant in w.sheets.decor ? variant : def.img;
+            let entry = w.sheets.decor[img];
             if (!entry) {
               // throw Error(`decor.img not in w.sheets.decor: "${def.img}"`);
-              warn(`def.img "${def.img}" not in w.sheets.decor: using ${decorKeyFallback}`);
+              warn(`def.img "${img}" not in w.sheets.decor: using ${decorKeyFallback}`);
               entry = w.sheets.decor[decorKeyFallback];
             }
 
@@ -196,7 +199,7 @@ export default function Decor() {
               meta: Object.assign(meta, {
                 quad: true,
                 color: def.color,
-                img: def.img,
+                img,
                 y: def.y3d,
               }),
               bounds: poly.rect.precision(2),

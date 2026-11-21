@@ -416,6 +416,7 @@ export default function Phasers() {
         else state.looks.set(npcKey, { ...state.looks.get(npcKey), ...look });
         const arm = state.arms.get(npcKey);
         if (arm !== undefined) arm.cast = null; // recast, e.g. for a shotgun's spread
+        w.hud?.update(); // its icon shows the attachment
         w.r3f?.invalidate();
       },
       syncTheme() {

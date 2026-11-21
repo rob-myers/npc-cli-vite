@@ -19,7 +19,7 @@ import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
 import { beamStyles, defaultLook, gunAttachments, type PhaserLook } from "../service/phaser-look";
 import { getWorldStore, type HudLayout } from "../service/storage";
-import { phaserIconBeam, phaserIconFaces } from "./phaser-icon.gen";
+import { phaserIcons } from "./phaser-icon.gen";
 import { WorldContext } from "./world-context";
 
 /**
@@ -579,7 +579,12 @@ export default function WorldHud() {
                     : undefined,
                 },
                 <>
-                  <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
+                  <PhaserIcon
+                    armed={armed}
+                    locked={w.phasers?.isLocked(playerKey) === true}
+                    dead={dead}
+                    attachment={hasPhaser ? (w.phasers?.lookOf(playerKey).attachment ?? null) : null}
+                  />
                   {column === false && forceShot}
                 </>,
               )}
@@ -1061,17 +1066,22 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" 
   );
 });
 
-/** The gun `Phasers` draws, its boxes turned a little towards us (`gen-phaser-icon`), and whilst `locked` its beam */
+/** The gun `Phasers` draws with its attachment, its boxes turned a little towards us (`gen-phaser-icon`), and whilst `locked` its beam */
 const PhaserIcon = memo(function PhaserIcon({
   armed,
   locked,
   dead,
+  attachment,
 }: {
   armed: boolean;
   locked: boolean;
   dead: boolean;
+  attachment: null | keyof typeof phaserIcons;
 }) {
-  const { from, to } = phaserIconBeam;
+  const {
+    faces,
+    beam: { from, to },
+  } = phaserIcons[attachment ?? "none"];
   const beam = `M${from.x} ${from.y} ${to.x} ${to.y}`;
   return (
     <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
@@ -1094,9 +1104,19 @@ const PhaserIcon = memo(function PhaserIcon({
           />
         </mask>
       </defs>
-      <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
-        {phaserIconFaces.map((face) => (
-          <path key={face.d} d={face.d} fill={armed ? face.armed : dead ? face.dead : face.off} />
+      <g strokeLinecap="round">
+        {faces.map((face) => (
+          <g key={face.d}>
+            {/* one fill, else its own put away, drawn and deactivated */}
+            <path d={face.d} fill={"fill" in face ? face.fill : armed ? face.armed : dead ? face.dead : face.off} />
+            {/* an attachment's edges black, so it stands out */}
+            <path
+              d={face.edges}
+              fill="none"
+              stroke={"attached" in face ? "#0b0d10" : "#2b3038"}
+              strokeWidth={"attached" in face ? 0.9 : 0.5}
+            />
+          </g>
         ))}
       </g>
       {armed === true && <circle cx={from.x - 2} cy={from.y - 1} r="8" fill="url(#hud-phaser-glow)" />}

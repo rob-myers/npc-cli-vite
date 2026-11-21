@@ -140,7 +140,7 @@ const teslaForks = { reach: [0.8, 0.65], spread: 0.08, maxSpread: 0.4, width: 0.
 /** Caliber's rays: metres from the axis, and how thick. Shotgun's: radians off the way, by bearing, and how thick */
 export const attachmentBeams = {
   caliber: { radius: 0.025, width: 0.7 },
-  shotgun: { angles: [-0.14, -0.07, 0, 0.07, 0.14], width: 0.6 },
+  shotgun: { angles: [-0.07, -0.035, 0, 0.035, 0.07], width: 0.6 },
 } as const;
 
 const triangle = [Math.PI / 2, (7 * Math.PI) / 6, (11 * Math.PI) / 6];
