@@ -807,9 +807,14 @@ export default function NPCs() {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
       if (staleClips.length === 0 || npc.group === null) continue; // unmounted: the mount shows it
+      const posed = staleClips.find((clip) => clip.name === npc.anim.pose);
+      const { time = 0, paused = false, timeScale = 1 } = (posed && npc.anim.mixer.existingAction(posed)) ?? {};
       npc.anim.mixer.stopAllAction();
       for (const oldClip of staleClips) npc.anim.mixer.uncacheClip(oldClip);
       npc.anim.setPose(npc.anim.pose, { fade: 0, force: true });
+      // where it was, e.g. a corpse held at the end of their fall, rather than played again
+      const action = npc.anim.mixer.existingAction(clips[npc.anim.pose]);
+      if (action !== null) Object.assign(action, { time, paused, timeScale });
       // at once: stopping left the bind pose, and no tick comes whilst paused
       npc.anim.mixer.update(0);
       npc.anim.tickUpper(0);
