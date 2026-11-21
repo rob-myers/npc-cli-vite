@@ -104,11 +104,14 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | `charged` | the charge reaching full | a snap of current |
 | `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`) |
 | `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
-| `hit` | `npc-shot` hit, and `phaser-struck` | a recorded electric hum (`shock`, one): a shot striking anyone, or a wall |
-| `armour` | `npc-shot` armour | a recorded plate pitched down, over a padded thud and a low knock |
-| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then `hit` as it strikes beyond |
+| `hit` | `npc-shot` hit, down or kill | a recorded electric hum (`shock`, one): a shot striking someone |
+| `armour` | `npc-shot` armour | a recorded plate pitched down, the charge soaked up (`absorb`), sparks off it, and a low knock |
+| `struck` | `phaser-struck` | the charge soaked up alone (`absorb`): a shot striking a wall, door, obstacle or decor |
+| `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then the charge soaked up beyond, as `struck` |
 
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
+- `absorb` is a shot's charge soaked up: its `shock` cut short, and a sawtooth sinking under it. Armour's lasts
+  `absorbSecs`, a wall's or door's longer, `struckSecs`.
 - A held voice's key goes in `holdKeys` and its builder in `holds`: it returns `set` and `stop`.
 
 ## Door sounds

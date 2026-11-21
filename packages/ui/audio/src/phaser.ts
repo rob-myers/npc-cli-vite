@@ -1,5 +1,5 @@
 import { filter, gain, getPinkNoise, osc, panner } from "./nodes";
-import type { HeldVoice, SfxBuilder } from "./sfx";
+import type { HeldVoice, SfxBuilder, SfxContext } from "./sfx";
 import { crackle, envelope, layer, noise, sfxLevel, sweep } from "./synth";
 
 /** A phaser's sounds, from raising it to where its shot ends — see `docs/audio.md` */
@@ -69,16 +69,21 @@ export const phaserSfx = {
   hit({ ctx, at, pitch, sample }, out) {
     layer(ctx, sample("shock"), at, out, 0.8, pitch);
   },
-  /** Struck plate, recorded and pitched down, over a padded thud and a low knock */
-  armour({ ctx, at, pitch, sample }, out) {
-    layer(ctx, sample("armour"), at, out, 0.8, 0.85 * pitch);
-    layer(ctx, sample("thud"), at, out, 0.6, 0.9 * pitch);
-    noise(ctx, at, 0.06, out, 0.35, "lowpass", 900);
+  /** Struck plate, the shot's charge humming into it as it's soaked up, sparks, and a low knock */
+  armour(c, out) {
+    const { ctx, at, pitch, sample } = c;
+    layer(ctx, sample("armour"), at, out, 0.85, 0.85 * pitch);
+    absorb(c, out);
+    crackle(ctx, at + 0.01, 0.25, out, 10, 0.25);
     const knock = osc(ctx, "sine", 110);
     sweep(knock.frequency, 110 * pitch, 60 * pitch, at, 0.1);
     knock.connect(envelope(ctx, at, 0.002, 0.14, 0.5)).connect(out);
     knock.start(at);
     knock.stop(at + 0.25);
+  },
+  /** A shot striking a wall, or anything but someone: its charge soaked up, without the armour's plate or sparks */
+  struck(c, out) {
+    absorb(c, out, struckSecs);
   },
   /** Static as it passes through them, recorded, then the shot striking the wall beyond */
   ghost(c, out) {
@@ -86,7 +91,7 @@ export const phaserSfx = {
     layer(ctx, sample("static"), at, out, 0.7, pitch);
     const beyond = gain(ctx, 0.7);
     beyond.connect(out);
-    phaserSfx.hit({ ...c, at: at + ghostBeyondSecs }, beyond);
+    absorb({ ...c, at: at + ghostBeyondSecs }, beyond, struckSecs); // as `struck`
   },
 } satisfies Record<string, SfxBuilder>;
 
@@ -150,3 +155,22 @@ const zapSecs = [0.7, 1.2];
 /** A zap's low shelf, lifting its body, and its high shelf, easing its fizz, as `[Hz, dB]` */
 const zapBody = [250, 6];
 const zapSoft = [6000, -3];
+
+/** A shot's charge humming into what it struck as it's soaked up: its recorded shock cut short, and a buzz sinking */
+function absorb({ ctx, at, pitch, sample }: SfxContext, out: AudioNode, secs = absorbSecs) {
+  const hum = envelope(ctx, at, 0.005, secs, 1); // the recording is long: only its start is heard
+  hum.connect(out);
+  layer(ctx, sample("shock"), at, hum, 0.2, 0.6 * pitch);
+  const buzz = osc(ctx, "sawtooth", 120 * pitch);
+  sweep(buzz.frequency, 120 * pitch, 70 * pitch, at, secs);
+  buzz
+    .connect(filter(ctx, "lowpass", 1200))
+    .connect(gain(ctx, 0.08))
+    .connect(hum);
+  buzz.start(at);
+  buzz.stop(at + secs + 0.1);
+}
+
+/** Seconds a shot's charge hums into what it struck for, sinking as it is soaked up: armour, else a wall or door */
+const absorbSecs = 0.2;
+const struckSecs = 0.45;
