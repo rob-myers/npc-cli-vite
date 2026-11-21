@@ -229,13 +229,13 @@ does one with a laser.
 
 ## Beam looks
 
-A phaser's look is its beam's style and colour, its attachment and its bounces (`PhaserLook`, `service/phaser-look.ts`).
+A phaser's look is its beam's style and colour, and its attachment (`PhaserLook`, `service/phaser-look.ts`).
 
-- It comes from its item's meta, saved with the map: `beam`, `beam-color`, `attachment`, `bounces`. A bad value is ignored.
+- It comes from its item's meta, saved with the map: `beam`, `beam-color`, `attachment`. A bad value is ignored.
 - jsh `phaser` overrides it until the page reloads (`w.phasers.setLook`, `lookOf`):
-  - `phaser rob beam:lightning color:#4cf`, `phaser rob attachment:shotgun bounces:2`
+  - `phaser rob beam:lightning color:#4cf`, `phaser rob attachment:shotgun`
   - `attachment:none` takes the attachment off, and `--reset-look` drops the override.
-- With the bar's phaser debug shown, the phaser slot's right-click menu does the same for the player: each of beam, color, attachment and bounces cycles on a press, the menu kept open (`lookMenu` in `WorldHud`).
+- With the bar's phaser debug shown, the phaser slot's right-click menu does the same for the player: each of beam, color and attachment cycles on a press, the menu kept open (`lookMenu` in `WorldHud`).
   - Given only these, it prints the look.
 - Each gun and each beam segment carries its own colour (`gunTint`, `beamColor`). Over a pale deck it is drawn as its hue, fully saturated at `phaserLook.paleLightness` (`beamRgb`).
 - A beam is drawn as one or more segments (`beamSegments`), an instance of the beam mesh apiece. Each carries its style, a seed, the charge it was fired with, and whether its end's ball is lit (`beamLook`).
@@ -255,7 +255,8 @@ A phaser's look is its beam's style and colour, its attachment and its bounces (
 - The gun is built from every box's faces (`gunFaces`, `gunGeometry`), the unfitted attachments and what an attachment covers (`under`) collapsing to nothing. Each face is edged along its own edges, not its triangles' (`gunBary`).
 - The hud's phaser icon shows the attachment fitted, 1.3 times its size (`phaserIcons`, by `gen-phaser-icon` from the same faces). A cylinder's sides are edged only on its silhouette.
 - A phaser lying about shows its item meta's attachment: `Decor` draws `phaser-{attachment}` (`media/src/decor/phaser-*.svg`) where the decor sheet has it. Re-run `gen-decor-sheets` after editing them.
-- Bounces are kept but not yet drawn.
+- A shot at no one stopped by a reflecting shield (`meta.reflect`) bounces off it once (`bounce`, `castLegs`). It casts on from just off the shield, drawn as a segment after the ray it left (`beamSegments`' legs). The first npc it meets takes the shot's hit, unless another ray already did, with a ring there (`strikeLeg`). It may meet its shooter.
+  - A shotgun's rays each stop at a shield too, and off a reflecting one each bounces alike (`castSpread`, `arm.spreadLegs`). One hit a shot still: its own line's, else the nearest a side ray meets, else a bounce's (`spreadOn`). A caliber's rays bounce with the shot's own line, keeping their offsets.
 
 ## Impacts
 

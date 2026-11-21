@@ -14,13 +14,11 @@ export type PhaserLook = {
   /** Any css colour three reads, e.g. `#4cf` or `orange` */
   color: string;
   attachment: null | GunAttachment;
-  /** How many times a shot at no one reflects off a wall */
-  bounces: number;
 };
 
-export const defaultLook: PhaserLook = { style: "plain", color: phaserLook.color, attachment: null, bounces: 0 };
+export const defaultLook: PhaserLook = { style: "plain", color: phaserLook.color, attachment: null };
 
-/** Writes into `out` the look from item meta (`beam`, `beam-color`, `attachment`, `bounces`) and an override. A bad meta value is ignored */
+/** Writes into `out` the look from item meta (`beam`, `beam-color`, `attachment`) and an override. A bad meta value is ignored */
 export function resolveLook(meta: undefined | Meta, override: undefined | Partial<PhaserLook>, out: PhaserLook) {
   out.style = override?.style ?? (beamStyles.includes(meta?.beam) ? meta?.beam : defaultLook.style);
   out.color = override?.color ?? (isColor(meta?.["beam-color"]) ? meta?.["beam-color"] : defaultLook.color);
@@ -30,7 +28,6 @@ export function resolveLook(meta: undefined | Meta, override: undefined | Partia
       : gunAttachments.includes(meta?.attachment)
         ? meta?.attachment
         : defaultLook.attachment;
-  out.bounces = override?.bounces ?? (isBounces(meta?.bounces) ? meta?.bounces : defaultLook.bounces);
   return out;
 }
 
@@ -41,7 +38,6 @@ export function checkLook(look: Partial<PhaserLook>) {
   if (look.color !== undefined && !isColor(look.color)) throw Error("color: expected e.g. #4cf or orange");
   if (look.attachment !== undefined && look.attachment !== null && !gunAttachments.includes(look.attachment))
     throw Error(`attachment: expected one of ${gunAttachments.join(", ")}`);
-  if (look.bounces !== undefined && !isBounces(look.bounces)) throw Error("bounces: expected 0 to 4");
 }
 
 /** The colour a beam is drawn in: over a pale deck its hue, fully saturated at `paleLightness` */
@@ -72,11 +68,31 @@ export function beamSegments(
   from: THREE.Vector3,
   end: THREE.Vector3,
   spread: null | readonly number[],
+  ownLeg?: null | THREE.Vector3,
+  rayLegs?: null | readonly (null | { end: THREE.Vector3 })[],
 ): readonly BeamSegment[] {
+  let k = rays(look, from, end, spread);
+  // then each ray's bounce from where it ended: its own, else the shot's own line's
+  for (let i = 0; i < rayCount(look.attachment) && k < segments.length; i++) {
+    const ray = segments[i];
+    const own = look.attachment === "shotgun" ? attachmentBeams.shotgun.angles[i] === 0 : true;
+    const leg = rayLegs?.[i]?.end ?? (own ? ownLeg : null);
+    if (leg == null) continue;
+    // a caliber's rays keep their offsets from the shot's own line
+    const off = look.attachment === "caliber" ? tmpOff.subVectors(ray.to, end) : tmpOff.set(0, 0, 0);
+    set(segments[k++], ray.to, tmpEnd.set(leg.x + off.x, ray.to.y, leg.z + off.z), true, ray.width);
+  }
+  out.length = k;
+  for (let i = 0; i < k; i++) out[i] = segments[i];
+  return out;
+}
+
+/** Writes its rays into `segments`, giving how many */
+function rays(look: PhaserLook, from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly number[]) {
   set(segments[0], from, end, true, 1);
   if (look.attachment === "caliber") return caliber(from, end, spread);
   if (look.attachment === "shotgun") return shotgun(from, end, spread);
-  if (look.style !== "tesla") return single;
+  if (look.style !== "tesla") return 1;
   // forks arc from the muzzle to either side, short of the end
   const { reach, spread: aside, maxSpread, width } = teslaForks;
   const dx = end.x - from.x;
@@ -89,7 +105,7 @@ export function beamSegments(
     to.x += (-dz / flat) * side;
     to.z += (dx / flat) * side;
   }
-  return three;
+  return 3;
 }
 
 /** Parallel rays about the axis, a triangle across it, each to the end, else as far as `reach` on the ground */
@@ -102,7 +118,7 @@ function caliber(from: THREE.Vector3, end: THREE.Vector3, reach: null | readonly
     const along = Math.min(length, (reach?.[i] ?? Number.POSITIVE_INFINITY) * slope);
     set(segments[i], origin, tmpEnd.copy(dir).multiplyScalar(along).add(origin), true, attachmentBeams.caliber.width);
   }
-  return three;
+  return 3;
 }
 
 /** How many rays an attachment fires */
@@ -157,7 +173,7 @@ function shotgun(from: THREE.Vector3, end: THREE.Vector3, spread: null | readonl
     tmpEnd.copy(way).applyAxisAngle(up, angle).multiplyScalar(reach).add(from);
     set(segments[i], from, tmpEnd, true, angle === 0 ? 1 : width);
   }
-  return five;
+  return angles.length;
 }
 
 function set(seg: BeamSegment, from: THREE.Vector3, to: THREE.Vector3, ball: boolean, width: number) {
@@ -179,22 +195,17 @@ export const attachmentBeams = {
 
 const triangle = [Math.PI / 2, (7 * Math.PI) / 6, (11 * Math.PI) / 6];
 const up = new THREE.Vector3(0, 1, 0);
-const [tmpWay, tmpSide, tmpOver, tmpEnd] = Array.from({ length: 4 }, () => new THREE.Vector3());
+const [tmpWay, tmpSide, tmpOver, tmpEnd, tmpOff] = Array.from({ length: 5 }, () => new THREE.Vector3());
 
-const segments: BeamSegment[] = Array.from({ length: 5 }, () => ({
+/** Its rays, at most 5, and a bounce apiece */
+const segments: BeamSegment[] = Array.from({ length: 10 }, () => ({
   from: new THREE.Vector3(),
   to: new THREE.Vector3(),
   ball: true,
   width: 1,
 }));
-const single = segments.slice(0, 1);
-const three = segments.slice(0, 3);
-const five = segments.slice(0, 5);
+const out: BeamSegment[] = [];
 
 function isColor(color: unknown): color is string {
   return typeof color === "string" && (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color) || color in THREE.Color.NAMES);
-}
-
-function isBounces(n: unknown): n is number {
-  return Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 4;
 }

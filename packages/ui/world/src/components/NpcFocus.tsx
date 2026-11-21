@@ -451,6 +451,8 @@ export type PhaserEntry = {
     rooms: Geomorph.GmRoomKey[];
     roomIds: Geomorph.GmRoomId[];
     secs: number;
+    /** The reflecting shield it ends on, to bounce off */
+    reflect: null | { a: Geom.VectJson; b: Geom.VectJson };
   };
   ending: boolean;
   /** The aim its last cast was along: `null` to cast again */

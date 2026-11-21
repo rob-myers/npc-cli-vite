@@ -20,6 +20,7 @@ import {
   isFreeShot,
   type NpcTarget,
   nearestMeet,
+  nearestOnRay,
   partOnRay,
   raysMeet,
   type StruckKind,
@@ -172,9 +173,50 @@ export default function Phasers() {
         shot.casting = false;
         if (arm.target !== shot) return; // fired again, or let go of
         if (end === null) return void (arm.target = null); // e.g. its muzzle off the map
-        Object.assign(shot, { at: end.at, dist: end.dist, what: end.what, decorKey: end.decorKey });
+        Object.assign(shot, {
+          at: end.at,
+          dist: end.dist,
+          what: end.what,
+          decorKey: end.decorKey,
+          reflect: end.reflect,
+        });
+        void state.bounce(npc, arm, shot);
         w.r3f?.invalidate();
       },
+      async bounce(npc, arm, shot) {
+        const face = shot.reflect;
+        if (face == null || shot.at === null) return;
+        const at = shot.at;
+        const from = tipOf(npc, arm, tmpTip) ?? npc.position;
+        const way = { x: at.x - from.x, y: at.z - from.z };
+        const [leg] = await state.castLegs(npc, [{ at: { x: at.x, y: at.z }, way, face }], at.y);
+        if (leg == null || (arm.target !== shot && arm.struck !== shot)) return; // fired again, or let go of
+        // whoever it meets first, its shooter too
+        shot.legHit = legMeets([npc, ...w.npc.near.inReach(npc.key)], leg, at.y);
+        shot.legs = [shot.legHit?.at ?? leg.end];
+        if (arm.struck === shot) state.strikeLeg(npc, shot); // struck already
+        w.r3f?.invalidate();
+      },
+      async castLegs(npc, starts, y) {
+        const run = phaserConfig.alongMax;
+        const segs = starts.map((start) => {
+          if (start === null) return null;
+          const way = reflect(start.way, start.face);
+          // from just off the shield, so it leaves it
+          const src = { x: start.at.x + way.x * 0.02, y: start.at.y + way.y * 0.02 };
+          return { src, way, dst: { x: src.x + way.x * run, y: src.y + way.y * run } };
+        });
+        if (segs.every((seg) => seg === null)) return segs.map(() => null);
+        const casts = await w.e
+          .raycasts(segs, { offMap: true, key: `${npc.key}/bounce` })
+          .catch(() => segs.map(() => null));
+        return segs.map((seg, i) => {
+          if (seg === null) return null;
+          const hit = casts[i]?.hit ?? seg.dst;
+          return { src: seg.src, way: seg.way, end: new THREE.Vector3(hit.x, y, hit.y) };
+        });
+      },
+
       async endsAlong(npcKeys) {
         const run = phaserConfig.alongMax;
         const aims = npcKeys.map((npcKey) => (w.n?.[npcKey] === undefined ? null : state.aimOf(npcKey)));
@@ -217,7 +259,9 @@ export default function Phasers() {
             at.copy(stopped);
             [what, decorKey] = ["shield", null];
           }
-          return { at, what, decorKey, dist: Math.hypot(at.x - from.x, at.z - from.y), rooms: result.rooms };
+          const shield = stopped === null ? null : (w.shields.stoppedBy ?? null);
+          const reflect = shield?.reflect === true ? { a: shield.a, b: shield.b } : null;
+          return { at, what, decorKey, dist: Math.hypot(at.x - from.x, at.z - from.y), rooms: result.rooms, reflect };
         };
         return results.map((result, i) => {
           const aim = aims[i];
@@ -287,7 +331,7 @@ export default function Phasers() {
         if (state.isArmed(npcKey) === false) state.arm(npcKey);
         const arm = state.arms.get(npcKey);
         if (arm?.armed !== true) return false;
-        arm.target = {
+        const shot: FreeShot = {
           npcKey: null,
           part: null,
           at: end?.at.clone() ?? null,
@@ -295,7 +339,11 @@ export default function Phasers() {
           what: end?.what ?? null,
           decorKey: end?.decorKey ?? null,
           casting: false,
+          reflect: end?.reflect ?? null,
         };
+        arm.target = shot;
+        const npc = w.n[npcKey];
+        if (end !== undefined && npc !== undefined) void state.bounce(npc, arm, shot);
         arm.hitAt = null;
         state.takeCharge(arm);
         state.sync();
@@ -467,7 +515,8 @@ export default function Phasers() {
           state.wield(npc, arm, delta);
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
-          if (beam.locked.presence === 0) arm.struck = arm.hitAt = arm.shot = arm.spreadHit = null; // no object made, most ticks
+          // no object made, most ticks
+          if (beam.locked.presence === 0) arm.struck = arm.hitAt = arm.shot = arm.spreadHit = arm.spreadLegsHit = null;
           if (beam.to !== null && beam.to.npcKey !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) {
             state.shoot(npc, arm, beam.to);
           }
@@ -560,7 +609,9 @@ export default function Phasers() {
           const from =
             look.attachment === null ? tip : hand.localToWorld(tmpMuzzle.fromArray(muzzleOf(look.attachment)));
           const fired = arm.fireCharge ?? 0; // undefined from before hmr
-          for (const seg of beamSegments(look, from, end, arm.spreadHit ?? arm.spread ?? null)) {
+          const rayLegs = look.attachment === "shotgun" ? (arm.spreadLegsHit ?? arm.spreadLegs ?? null) : null;
+          const legs = beamSegments(look, from, end, arm.spreadHit ?? arm.spread ?? null, free?.legs?.[0], rayLegs);
+          for (const seg of legs) {
             if (drawn === room) break;
             const k = j + drawn;
             put(beams.srcData, k, seg.from.x, seg.from.y, seg.from.z, shown);
@@ -617,8 +668,9 @@ export default function Phasers() {
             arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at); // fades where it ended
             const tip = tipOf(npc, arm, tmpTip);
             state.impact(npc, at, tip ?? npc.position, null);
-            // its own line met no one: an attachment's other rays may
-            if (tip !== null) state.spreadOn(npc, arm, tip, at, null, w.debug?.forceShot ?? "hit");
+            // its own line met no one: an attachment's other rays may, else what it reflects on to
+            to.taken = tip !== null && state.spreadOn(npc, arm, tip, at, null, w.debug?.forceShot ?? "hit");
+            state.strikeLeg(npc, to);
           }
           arm.target = arm.firedSecs = null;
           return void w.hud?.update();
@@ -656,31 +708,58 @@ export default function Phasers() {
         arm.target = arm.firedSecs = null;
         w.hud?.update();
       },
+      strikeLeg(npc, shot) {
+        const [leg] = shot.legs ?? [];
+        if (leg === undefined || shot.at === null) return;
+        const hit = shot.taken === true ? null : (shot.legHit ?? null); // one hit a shot
+        const outcome = w.debug?.forceShot ?? "hit";
+        if (hit !== null) {
+          if (outcome === "ghost") w.npcGhost?.struck(hit.on);
+          state.land(npc, hit.on, hit.part, outcome, leg, shot.at);
+          if (outcome === "armour") w.npcArmour?.flash(hit.on, hit.part, leg, shot.at);
+        }
+        if (hit === null || outcome !== "ghost") state.impact(npc, leg, shot.at, hit?.on ?? null);
+      },
+
       spreadOn(npc, arm, tip, end, struck, outcome) {
         const attachment = arm.look?.attachment ?? null;
-        if (attachment !== "shotgun" && attachment !== "caliber") return;
-        // a shotgun's rays go to their own walls. A caliber's share the shot's, a little past to meet whom it struck
+        if (attachment !== "shotgun" && attachment !== "caliber") return false;
+        // a shotgun's rays go to their own walls or shields. A caliber's share the shot's, a little past to meet whom it struck
         const shot = Math.hypot(end.x - tip.x, end.z - tip.z) + 0.05;
         const wall = (i: number) => (attachment === "shotgun" ? (arm.spread?.[i] ?? Number.POSITIVE_INFINITY) : shot);
         const others = w.npc.near.inReach(npc.key).filter((o) => o.key !== npc.key);
-        const met = raysMeet(attachment, tip, end, others, hitBones, wall);
-        // one hit a shot: its own line's, else the nearest another ray meets. Whoever else is met is landed on
-        const hit = struck === null ? nearestMeet(met) : null;
+        const met = raysMeet(attachment, tip, end, others, hitBones, wall).map((m) => m && { ...m, from: tip });
+        // a ray meeting no one bounces on off a reflecting shield: whom its leg meets
+        const legs = attachment === "shotgun" ? (arm.spreadLegs ?? []) : [];
+        const all = [npc, ...others]; // a bounce may meet its shooter too
+        const legMet = legs.map((leg, i) => {
+          if (leg === null || met[i] !== null) return null;
+          const m = legMeets(all, leg, tip.y);
+          return m && { ...m, from: new THREE.Vector3(leg.src.x, tip.y, leg.src.y) };
+        });
+        // one hit a shot: its own line's, else the nearest another ray meets, else a bounce. Whoever else is met is landed on
+        const hit = struck === null ? (nearestMeet(met) ?? nearestMeet(legMet)) : null;
         const ghost = outcome === "ghost";
-        for (const m of met) {
+        for (const m of [...met, ...legMet]) {
           if (m === null) continue;
           if (m === hit) {
             if (ghost) w.npcGhost?.struck(m.on);
-            state.land(npc, m.on, m.part, outcome, m.at, tip);
+            state.land(npc, m.on, m.part, outcome, m.at, m.from);
           }
           if (ghost) continue; // it passes through
-          state.impact(npc, m.at, tip, m.on);
-          if (outcome === "armour") w.npcArmour?.flash(m.on, m.part, m.at, tip);
+          state.impact(npc, m.at, m.from, m.on);
+          if (outcome === "armour") w.npcArmour?.flash(m.on, m.part, m.at, m.from);
         }
         arm.spreadHit = met.map((m, i) =>
           m === null || ghost ? (attachment === "shotgun" ? wall(i) : Number.POSITIVE_INFINITY) : m.dist,
         );
+        // a bounce drawn only after a ray met no one, ending on whom it meets
+        arm.spreadLegsHit = legs.map((leg, i) =>
+          leg === null || (met[i] !== null && !ghost) ? null : { end: ghost ? leg.end : (legMet[i]?.at ?? leg.end) },
+        );
+        return hit !== null;
       },
+
       impact(npc, at, from, on) {
         const arm = state.arms.get(npc.key);
         const rgb = beamRgb(arm?.look?.color ?? defaultLook.color, state.pale);
@@ -1110,16 +1189,32 @@ export default function Phasers() {
       },
       async castSpread(npc, from, bearing) {
         const run = phaserConfig.alongMax;
-        const segs = attachmentBeams.shotgun.angles.map((angle) => ({
-          src: from,
-          dst: { x: from.x - Math.sin(bearing + angle) * run, y: from.y - Math.cos(bearing + angle) * run },
-        }));
+        const { angles } = attachmentBeams.shotgun;
+        const y = state.aimOf(npc.key)?.y ?? phaserConfig.castY;
+        const freqs = w.shields?.phaserOf(npc.key)?.meta?.freqs;
+        const ways = angles.map((angle) => ({ x: -Math.sin(bearing + angle), y: -Math.cos(bearing + angle) }));
+        const segs = ways.map((way) => ({ src: from, dst: { x: from.x + way.x * run, y: from.y + way.y * run } }));
         const results = await w.e.raycasts(segs, { offMap: true, key: `${npc.key}/spread` }).catch(() => []);
-        return segs.map((_, i) => {
-          const hit = results[i]?.hit;
-          return hit == null ? Infinity : Math.hypot(hit.x - from.x, hit.y - from.y);
+        // each to its wall, else a shield first
+        const ends = segs.map(({ dst }, i) => {
+          const hit = results[i]?.hit ?? dst;
+          const start = tmpBody.set(from.x, y, from.y);
+          const stopped = w.shields?.stop(results[i]?.shields ?? [], start, start, tmpFree.set(hit.x, y, hit.y), freqs);
+          const face = stopped == null ? null : w.shields.stoppedBy;
+          return {
+            at: stopped == null ? hit : { x: stopped.x, y: stopped.z },
+            face: face?.reflect === true ? face : null,
+          };
         });
+        // off a reflecting one each bar its middle bounces on: the shot's own line's is its own (`bounce`)
+        const legs = await state.castLegs(
+          npc,
+          ends.map(({ at, face }, i) => (face === null || angles[i] === 0 ? null : { at, way: ways[i], face })),
+          y,
+        );
+        return { dists: ends.map(({ at }) => Math.hypot(at.x - from.x, at.y - from.y)), legs };
       },
+
       recast(npc, arm, target, secs) {
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         if (isCastCurrent(arm, npc, target) === true) return; // nothing has changed: neither they, their target, nor a door
@@ -1159,7 +1254,12 @@ export default function Phasers() {
                 ),
           arm.look?.attachment === "shotgun" ? state.castSpread(npc, from, ry) : null,
         ] as const)
-          .then(([reach, sight, spread]) => arm.cast === cast && Object.assign(arm, { reach, sight, spread })) // else respawned since
+          // else respawned since
+          .then(
+            ([reach, sight, spread]) =>
+              arm.cast === cast &&
+              Object.assign(arm, { reach, sight, spread: spread?.dists ?? null, spreadLegs: spread?.legs ?? null }),
+          )
           .finally(() => {
             arm.casting = false;
             w.r3f?.invalidate();
@@ -1208,10 +1308,14 @@ export default function Phasers() {
 }
 
 export type State = PhaserUniforms & {
+  /** A shot at no one stopped by a reflecting shield bounces off it once: its `legs`, by a raycast, and whom it meets there */
+  bounce(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
+  /** A struck shot's bounce lands: on whom it met, unless another ray took its hit, a ring there */
+  strikeLeg(npc: Npc, shot: FreeShot): void;
   /**
    * An attachment's rays from `tip` along the shot's way to `end`, bar its own line: each ends on the nearest npc it meets, a
    * ring there, glancing off armour. With `struck` `null` the shot met no one, and the nearest they meet takes its hit.
-   * Sets `arm.spreadHit`
+   * Sets `arm.spreadHit`. True if a ray took the hit
    */
   spreadOn(
     npc: Npc,
@@ -1220,9 +1324,18 @@ export type State = PhaserUniforms & {
     end: THREE.Vector3,
     struck: null | Npc,
     outcome: JshCli.ShotOutcome,
-  ): void;
-  /** How far a shotgun's rays go from `from` along `bearing`, on the ground, as `attachmentBeams.shotgun.angles` */
-  castSpread(npc: Npc, from: Geom.VectJson, bearing: number): Promise<number[]>;
+  ): boolean;
+  /**
+   * How far a shotgun's rays go from `from` along `bearing`, on the ground, as `attachmentBeams.shotgun.angles`: to a wall,
+   * else a shield. Off a reflecting one each bar the middle bounces on: its leg
+   */
+  castSpread(npc: Npc, from: Geom.VectJson, bearing: number): Promise<{ dists: number[]; legs: (null | Leg)[] }>;
+  /** Each start's bounce off its shield, `y` metres up, cast as one: `null` for none */
+  castLegs(
+    npc: Npc,
+    starts: (null | { at: Geom.VectJson; way: Geom.VectJson; face: { a: Geom.VectJson; b: Geom.VectJson } })[],
+    y: number,
+  ): Promise<(null | Leg)[]>;
   /** One instance per gun shown */
   gun: GunResources;
   /** One instance per beam segment shown */
@@ -1386,12 +1499,23 @@ export type State = PhaserUniforms & {
 export type Tilt = -1 | 0 | 1;
 
 /** Where a shot at no one would end, and the rooms its cast passed through */
+/** A bounce: from just off its shield along `way`, on the ground, to `end` */
+type Leg = { src: Geom.VectJson; way: Geom.VectJson; end: THREE.Vector3 };
+
+/** Whom of `npcs` a bounce `y` metres up meets first, else `null` */
+function legMeets(npcs: Npc[], leg: Leg, y: number) {
+  const ray = tmpShotRay.set(tmpLegFrom.set(leg.src.x, y, leg.src.y), tmpShotDir.set(leg.way.x, 0, leg.way.y));
+  return nearestOnRay(npcs, ray, hitBones, Math.hypot(leg.end.x - leg.src.x, leg.end.z - leg.src.y));
+}
+
 type AlongEnd = {
   at: THREE.Vector3;
   what: StruckKind;
   decorKey: null | string;
   dist: number;
   rooms: Geomorph.GmRoomKey[];
+  /** The reflecting shield it ended on, to bounce off */
+  reflect: null | { a: Geom.VectJson; b: Geom.VectJson };
 };
 
 /** Where a shot landed, as an impact draws it */
@@ -1461,6 +1585,10 @@ type ArmEntry = {
   spread?: null | number[];
   /** As `spread`, per ray, once struck: a ray meeting someone ends on them. See `spreadOn` */
   spreadHit?: null | number[];
+  /** A shotgun's: per ray, its bounce off a reflecting shield, as of its last cast. See `castSpread` */
+  spreadLegs?: null | (null | Leg)[];
+  /** As `spreadLegs`, once struck: drawn only after a ray met no one, ending on whom it meets */
+  spreadLegsHit?: null | (null | { end: THREE.Vector3 })[];
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** World seconds a one-off shot is lowered by at the latest, whilst there is one */
@@ -1848,6 +1976,8 @@ const phaserConfig = {
   fireSecs: 1.5,
   /** Metres a shot at no one reaches at most: a geomorph's width (1200 sgu) */
   alongMax: 30,
+  /** Metres up a shotgun's rays are cast at, wanting an aim */
+  castY: 1,
   /** Seconds a one-off shot may take before it is lowered regardless, e.g. never in sight */
   onceSecs: 4,
   /** Radians about the right forearm between an arm at rest and the pose's — see `onTick` */
@@ -1960,6 +2090,16 @@ function upload({ mesh, attrs }: { mesh: THREE.Mesh; attrs: THREE.InstancedBuffe
   }
 }
 
+/** `way` on the ground reflected off the segment `a` to `b`, unit */
+function reflect(way: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geom.VectJson }) {
+  const len = Math.hypot(way.x, way.y) || 1;
+  const [dx, dy] = [way.x / len, way.y / len];
+  const side = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const [nx, ny] = [-(b.y - a.y) / side, (b.x - a.x) / side];
+  const dot = dx * nx + dy * ny;
+  return { x: dx - 2 * dot * nx, y: dy - 2 * dot * ny };
+}
+
 /** Writes instance `i`'s four floats, with no array made for them */
 function put(data: Float32Array, i: number, a: number, b: number, c: number, d: number) {
   const at = i * 4;
@@ -1991,4 +2131,5 @@ const tmpLockAt = { x: 0, y: 0 };
 const tmpHeld = new THREE.Vector3();
 const tmpShotRay = new THREE.Ray();
 const tmpShotDir = new THREE.Vector3();
+const tmpLegFrom = new THREE.Vector3();
 const tmpAimRay = new THREE.Ray();

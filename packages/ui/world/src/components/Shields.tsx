@@ -197,6 +197,7 @@ export default function Shields() {
             front: { x: -dir.y, y: dir.x },
             length,
             on: state.overrides.get(d.key)?.on ?? d.meta.shield !== "off",
+            reflect: d.meta.reflect === true,
             freq: d.meta.freq === null ? null : Number(d.meta.freq) || shieldConfig.freq,
             hit: before.get(d.key)?.hit ?? { along: 0, up: 0, shown: 0, wanted: 0, struck: 0 },
             frame: d.meta.frame === false ? 0 : typeof d.meta.frame === "number" ? d.meta.frame : 1,
@@ -323,6 +324,8 @@ type Seg = {
   length: number;
   /** Off, it does nothing */
   on: boolean;
+  /** A shot at no one stopped by it reflects off it — see `Phasers.bounce` */
+  reflect: boolean;
   /** A phaser tuned to this is let through — `null` lets none through, and kills none */
   freq: null | number;
   /** Where a beam meets it, in metres from `a` and up, and how far that shows — `wanted` by the beams, this tick */

@@ -122,7 +122,6 @@ export default function WorldHud() {
             keep: true,
             run: () => set({ attachment: cycle(debugAttachments, look.attachment) }),
           },
-          { label: `bounces: ${look.bounces}`, keep: true, run: () => set({ bounces: (look.bounces + 1) % 5 }) },
           { label: "reset look", keep: true, run: () => set(null) },
         ];
       },

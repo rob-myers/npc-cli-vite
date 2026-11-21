@@ -26,6 +26,12 @@ export type FreeShot = {
   /** What it struck, if decor */
   decorKey: null | string;
   casting: boolean;
+  /** The reflecting shield it ended on, to bounce off */
+  reflect?: null | { a: Geom.VectJson; b: Geom.VectJson };
+  /** Where it bounced on to, and whom it met there: they take its hit, unless another ray did (`taken`) */
+  legs?: null | THREE.Vector3[];
+  legHit?: null | RayMeet;
+  taken?: boolean;
 };
 
 /** What a shot at no one ended on. `nothing` is `alongMax` metres out */
@@ -213,17 +219,21 @@ export function raysMeet(
   const way = tmpWay.subVectors(end, tip).normalize();
   return Array.from({ length: rayCount(attachment) }, (_, i) => {
     const { origin, dir, middle } = attachmentRay(attachment, i, tip, way, tmpRayOf);
-    if (middle === true) return null;
-    tmpMeetRay.set(origin, dir);
-    let best: null | RayMeet = null;
-    for (const on of npcs) {
-      const hit = partOnRay(on, tmpMeetRay, bones);
-      const dist = hit === null ? Number.POSITIVE_INFINITY : Math.hypot(hit.point.x - origin.x, hit.point.z - origin.z);
-      if (hit !== null && dist < reach(i) && dist < (best?.dist ?? Number.POSITIVE_INFINITY))
-        best = { on, part: hit.part, at: hit.point.clone(), dist }; // shared, so copied
-    }
-    return best;
+    return middle === true ? null : nearestOnRay(npcs, tmpMeetRay.set(origin, dir), bones, reach(i));
   });
+}
+
+/** The nearest of `npcs` whose part on `bones` `ray` meets within `reach` metres on the ground, else `null` */
+export function nearestOnRay(npcs: Npc[], ray: THREE.Ray, bones: Iterable<string>, reach: number) {
+  let best: null | RayMeet = null;
+  for (const on of npcs) {
+    const hit = partOnRay(on, ray, bones);
+    if (hit === null) continue;
+    const dist = Math.hypot(hit.point.x - ray.origin.x, hit.point.z - ray.origin.z);
+    if (dist < reach && dist < (best?.dist ?? Number.POSITIVE_INFINITY))
+      best = { on, part: hit.part, at: hit.point.clone(), dist }; // shared, so copied
+  }
+  return best;
 }
 
 /** The nearest of what rays met, else `null` */

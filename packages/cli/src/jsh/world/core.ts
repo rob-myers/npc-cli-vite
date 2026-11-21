@@ -1042,7 +1042,7 @@ export async function* pick(ct: JshCli.RunArg) {
  * phaser rob grant:"1 2 3"
  * phaser npc:rob revoke:"[1, 2]"
  * phaser rob beam:lightning color:#4cf
- * phaser rob attachment:shotgun bounces:2
+ * phaser rob attachment:shotgun
  * phaser rob attachment:none
  * phaser rob --reset-look
  * ```
@@ -1078,7 +1078,6 @@ export async function phaser(
     ...(opts.beam !== undefined && { style: opts.beam }),
     ...(opts.color !== undefined && { color: String(opts.color) }),
     ...(opts.attachment !== undefined && { attachment: opts.attachment === "none" ? null : opts.attachment }),
-    ...(opts.bounces !== undefined && { bounces: Number(opts.bounces) }),
   } as Parameters<typeof w.phasers.setLook>[1];
   if (Object.keys(look ?? {}).length > 0) w.phasers.setLook(key, look);
   const acts = [opts.shoot, opts.at, opts.tilt, opts.grant, opts.revoke].some((x) => x !== undefined);
@@ -1163,7 +1162,6 @@ type PhaserOpts = {
   beam?: string;
   color?: string;
   attachment?: string;
-  bounces?: number | string;
   resetLook?: boolean;
 };
 

@@ -26,6 +26,7 @@ pick 1 | decor type:rect w:3 h:0.15 meta:'{ shield: true, freq: null }'
 - `decor` leaves a shield's `meta.shown` false unless told otherwise: the panel is what is seen.
 - In a symbol it is a `decor rect shield` node, with `freq=2` in its name for a frequency. A rect or
   circle node needs no image to be decor. NOT yet tried in a real symbol.
+- `meta.reflect`: a shot at no one it stops bounces off it, and may hit whom it meets (`docs/engagements.md`, `bounce`).
 - A rect under `shieldConfig.minSize` (1m) on either side is ignored, with a console warning. The
   depth is what lowers a raised phaser before its muzzle is through. A shield of no frequency is
   exempt, and may be a thin strip.
