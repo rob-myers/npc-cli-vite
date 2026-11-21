@@ -15,7 +15,7 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig`, `hitFlinchConfig`, `clutchConfig` |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `deathConfig`, `corpseConfig`, `ghostConfig`, `armourConfig`, `flinchConfig`, `hitFlinchConfig`, `clutchConfig` |
 
 ## How a shot ends
 
@@ -151,36 +151,36 @@ A hit reacts to its point and its way (`w.npc.hit`'s `impact`, from `strike`).
 
 A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 
-- Stood, they fall dead the way the shot pushes, held on its last frame (`hitConfig.die`, by the shot's way in their own
+- Stood, they fall dead the way the shot pushes, held on its last frame (`deathConfig.die`, by the shot's way in their own
   frame): shot from in front, `die_back` onto their back, arms a little out, the head about 1m behind where they stood;
   else `die_forward`, reaching to catch themselves, onto their front, the head about 1m ahead.
 - Each death plays mirrored half the time (`mirroredClips`, made at load: see Mirrored clips in `docs/blockbench.md`), at a
-  random rate within `hitConfig.dieRate`. The hurt clock runs at that rate too, so the fall's turn and hold keep pace.
+  random rate within `deathConfig.dieRate`. The hurt clock runs at that rate too, so the fall's turn and hold keep pace.
 - Falling, they leave the crowd (`startFall`: their agent goes, their physics body stays). Each tick the npc moves as far
   as the clip has carried their hips, and their root goes back as far (`tickFall`), so their shadow and corpse are where
   their body is. Released, they are placed back on the navmesh with an agent.
-- They need `hitConfig.lieWidth` either side. A wall or obstacle nearer slides them that far off it as they fall
+- They need `deathConfig.lieWidth` either side. A wall or obstacle nearer slides them that far off it as they fall
   (`roomToLie`, by `npc.roomAhead`, measured whilst they still have an agent).
-- Sat, lain or already collapsed, their pose freezes (`hitConfig.dead`, paused at `deadSecs`).
+- Sat, lain or already collapsed, their pose freezes (`deathConfig.dead`, paused at `deadSecs`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
 - `npc-hurt` carries `dead`. `npc.kill()` kills them at once, as a chest shot from in front would (`w.e.takeHit`).
   An npc's menu (`PickMenu`) has a **dead** toggle: on, it kills them, off, it revives them.
 - **Getting up.** `npc.revive()`, or `pose npc-0 as:breathe`, is `setHurt(null)`. Fallen, they get up first, by
-  `hitConfig.getUp` of the clip they fell by, e.g. `get_up_back` (`startRise`). Its first frame is the death's last.
+  `deathConfig.getUp` of the clip they fell by, e.g. `get_up_back` (`startRise`). Its first frame is the death's last.
   - Their root is held back as it lay (`rise.offset`), and the npc follows their hips as a fall does, the root going
     back by as much (`tickRise`). So their body never jumps, and their label and shadow stay over it. Their label
     rises over the whole clip.
   - Stood, the hold goes and the npc moves by what is left (`finishRise`), then they are back in the crowd, in their
     idle. The get-up's last frame is `breathe`'s first, so it hands on with no fade.
   - `get_up_back` sits up, then rolls forward into a squat. `get_up_forward` pushes up onto hands and knees, then
-    kneels up over one foot. A fall with no get-up in `hitConfig.getUp` is let go at once.
+    kneels up over one foot. A fall with no get-up in `deathConfig.getUp` is let go at once.
 - A new mesh, e.g. the glTF refetched, moves a corpse's fall onto its hips (`rebindFall`), else it would jump.
 - **Saved.** The dead are saved with their map's npcs: `dead` is the clip they lie in, and `at` where their body lies
   (`persistNpcs`). Restored, they lie there again, held at its end, out of the crowd, their sensor back (`restoreDead`).
 - Their label and bubble sit as a lain npc's, eased down as they fall (`labelYShiftForClip`).
 - A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
-  - Clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).
+  - Clear floor for `deathConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).
   - No one in their room in that strip, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
     `bodyCrosses`). That is narrower than `lieWidth`, so bodies may overlap a little.
   - The shot's way is tried first, turned to fall along the shot (`alongShot`) and then by each of `fitTurns`, then the
@@ -202,7 +202,7 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 
 ### Walking over a corpse
 
-Others step over a fallen corpse, or onto it (`npc-over-body.ts`, `hitConfig.overBody`).
+Others step over a fallen corpse, or onto it (`npc-over-body.ts`, `corpseConfig`).
 
 - **Its body.** Once its die clip is held, a corpse keeps where it lies (`fall.body`).
   - Its footprint is a convex hull of its parts' boxes, head to shins, arms included.

@@ -460,6 +460,12 @@ export const hitConfig = {
   } as Partial<Record<ClipKey, ClipKey>>,
   /** Put down stood, a torso hit sinks them where they stand into `collapsed` */
   sink: "collapse" as ClipKey,
+  /** Seconds a hurt clip fades in over, so its first jolt reads */
+  fadeInSecs: 0.08,
+};
+
+/** Killed: how they fall, fit and lie, and get up again — see `w.e.takeHit` */
+export const deathConfig = {
   /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
   die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
   /** Revived, they get up by these, by the clip they fell by: one with none is let go at once */
@@ -487,20 +493,19 @@ export const hitConfig = {
   fellHipsY: 0.25,
   /** Metres a stood npc killed with no room to fall may stagger, nearer first, to fall where there is */
   staggerBy: [0.5, 1],
-  /** Seconds a hurt clip fades in over, so its first jolt reads */
-  fadeInSecs: 0.08,
   /** Killed sat or lain, the pain clip goes on to this, held still at `deadSecs` into it. Stood, they `die` */
   dead: { sit: "sit_pacified", lie: "lie_pacified" } as Partial<Record<string, ClipKey>>,
   deadSecs: 0,
-  /** Over a corpse, a sole clears their body by `clear`. Its sensor is `margin` wider */
-  overBody: {
-    clear: 0.03,
-    margin: 0.3,
-    /** Metres in from their body's edge its height ramps up over */
-    ramp: 0.04,
-    /** Metres a second their hips rise or drop, as they step on or off */
-    speed: 2,
-  },
+};
+
+/** Over a corpse, a sole clears their body by `clear`. Its sensor is `margin` wider */
+export const corpseConfig = {
+  clear: 0.03,
+  margin: 0.3,
+  /** Metres in from their body's edge its height ramps up over */
+  ramp: 0.04,
+  /** Metres a second their hips rise or drop, as they step on or off */
+  speed: 2,
 };
 
 /** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */

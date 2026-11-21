@@ -151,7 +151,7 @@ On the `world` bus (`body.ts`), from samples other sounds use too.
 
 | key | when | sound |
 | --- | --- | --- |
-| `fall` | `npc-fell`: falling dead, their hips near the floor (`hitConfig.fellHipsY`, in `tickFall`) | their body slapping the deck (`book`, low), its plating under them (`armour`, lower), then their limbs: one of four ways it lands (`falls`). Then their head's knock, an arm flopping down, and half the time their gear's click, each a little early or late |
+| `fall` | `npc-fell`: falling dead, their hips near the floor (`deathConfig.fellHipsY`, in `tickFall`) | their body slapping the deck (`book`, low), its plating under them (`armour`, lower), then their limbs: one of four ways it lands (`falls`). Then their head's knock, an arm flopping down, and half the time their gear's click, each a little early or late |
 | `tread` | `corpse-stepped`: a foot planted on a corpse (`npc-over-body`'s jolt) | a muffled thud, softer, and a rustle |
 
 One killed with walls all round collapses where they stand, with no fall, so no `fall` is heard.

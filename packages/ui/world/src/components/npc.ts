@@ -512,7 +512,7 @@ export class Npc {
     return this.w.e.takeHit(this.key, "chest", { at, from, outcome: "kill" });
   }
 
-  /** Back to life: fallen, they get up first (`hitConfig.getUp`), else they are let go at once */
+  /** Back to life: fallen, they get up first (`deathConfig.getUp`), else they are let go at once */
   revive() {
     this.anim.setHurt(null);
   }

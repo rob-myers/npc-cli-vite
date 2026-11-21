@@ -1,5 +1,5 @@
 import * as THREE from "three/webgpu";
-import { hitConfig, stepFlinchConfig } from "../const.npc";
+import { corpseConfig, stepFlinchConfig } from "../const.npc";
 import { bodyPart } from "../service/phaser-beam";
 import { corpseColliderKey } from "../service/physics-bijection";
 import type { NpcAnimation } from "./npc-animation";
@@ -63,7 +63,7 @@ export function postCorpseCollider(w: NpcAnimation["w"], npcKey: string, { x, z,
     { x: Math.cos(ry), y: -Math.sin(ry) },
     { x: -Math.sin(ry), y: -Math.cos(ry) },
   ];
-  const rect = new THREE.Box2().setFromPoints(hull).expandByScalar(hitConfig.overBody.margin);
+  const rect = new THREE.Box2().setFromPoints(hull).expandByScalar(corpseConfig.margin);
   // a rect runs `width` along its angle from its corner, and `height` at right angles: here `side` and back
   w.physics.worker.postMessage({
     type: "add-physics-colliders",
@@ -131,7 +131,7 @@ export function tickOverBody(o: OverBody, anim: NpcAnimation, delta: number) {
   if (group === null || findBones(o, anim, group) === false) return;
   group.updateWorldMatrix(true, true);
   const lifts = on ? [o.legs[2].bone, o.legs[5].bone].map((foot, i) => footLift(o, anim, foot, i)) : [0, 0];
-  const step = delta * hitConfig.overBody.speed;
+  const step = delta * corpseConfig.speed;
   const goal =
     anim.hurry === true && anim.moving === true ? Math.max(lifts[0], lifts[1]) : Math.min(lifts[0], lifts[1]);
   const rise = (o.rise = THREE.MathUtils.clamp(goal, (o.rise ?? 0) - step, (o.rise ?? 0) + step));
@@ -197,7 +197,7 @@ function footLift(o: OverBody, anim: NpcAnimation, foot: THREE.Object3D, i: numb
     if (other === undefined || body?.hull === undefined) continue; // undefined from before hmr
     const up = upRamp(body.hull, toBody(p.x - body.x, p.z - body.z, body.ry, tmpPoint));
     if (up > 0) under = other;
-    most = Math.max(most, up * (body.top + hitConfig.overBody.clear) - p.y);
+    most = Math.max(most, up * (body.top + corpseConfig.clear) - p.y);
   }
   const planted = under !== null && p.y < plantedBelow;
   if (under !== null && planted && o.planted?.[i] !== true) jolt(under, p, anim.npc.key);
@@ -226,7 +226,7 @@ function upRamp(hull: THREE.Vector2[], at: THREE.Vector2) {
     // anticlockwise, so its inside is on each edge's left
     depth = Math.min(depth, (ex * (at.y - a.y) - ey * (at.x - a.x)) / Math.hypot(ex, ey));
   }
-  const u = THREE.MathUtils.clamp(depth / hitConfig.overBody.ramp, 0, 1);
+  const u = THREE.MathUtils.clamp(depth / corpseConfig.ramp, 0, 1);
   return u * u * (3 - 2 * u);
 }
 

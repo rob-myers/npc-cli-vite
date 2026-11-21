@@ -8,6 +8,7 @@ import { type EyeFrame, type EyesKey, eyeFrames, npcDims } from "../const.both";
 import {
   agentConfig,
   breathConfig,
+  deathConfig,
   defaultBreathTune,
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
@@ -173,7 +174,7 @@ export class NpcAnimation {
     key: AnimationClipKey;
     secs: number;
     next: null | AnimationClipKey;
-    /** How fast its clip plays, e.g. a death's — see `hitConfig.dieRate` */
+    /** How fast its clip plays, e.g. a death's — see `deathConfig.dieRate` */
     rate?: number;
   };
   /** Killed: held still once their pain clip ends, until released — see `holdStill` */
@@ -446,7 +447,7 @@ export class NpcAnimation {
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false;
     const sink = outcome === "down" && posture === "stand" && region === "torso" && held === false;
     if (outcome === "kill" && posture === "stand")
-      return hitConfig.die[pushedBack(dir, this.npc.rotation.y) ? "back" : "forward"];
+      return deathConfig.die[pushedBack(dir, this.npc.rotation.y) ? "back" : "forward"];
     return sink ? hitConfig.sink : hitConfig.clips[posture][region];
   }
 
@@ -464,7 +465,7 @@ export class NpcAnimation {
     const clip = this.npc.clips[this.restKey];
     const action = this.mixer.existingAction(clip);
     if (action !== null) {
-      action.time = onceClips.has(this.restKey) ? clip.duration : hitConfig.deadSecs;
+      action.time = onceClips.has(this.restKey) ? clip.duration : deathConfig.deadSecs;
       action.paused = true; // `setPose` resets it, so the next pose plays
     }
     if (this.breath.on === true) this.setBreathing(false);
@@ -666,12 +667,12 @@ export class NpcAnimation {
     fore.written.copy(fore.bone.quaternion.multiplyQuaternions(tmpSwingTo, tmpTwistFrom));
   }
 
-  /** Falling dead, they need `hitConfig.lieWidth` either side: a wall nearer has their agent pinned away from it */
+  /** Falling dead, they need `deathConfig.lieWidth` either side: a wall nearer has their agent pinned away from it */
   roomToLie(ry: number): THREE.Vector2 {
     const { npc } = this;
     const { nodeRef } = npc;
     if (nodeRef === null) return new THREE.Vector2();
-    const half = hitConfig.lieWidth;
+    const half = deathConfig.lieWidth;
     const side = { x: Math.cos(ry), y: -Math.sin(ry) };
     const roomOn = (sign: number) => {
       const way = { x: sign * side.x, y: sign * side.y };
@@ -704,7 +705,7 @@ export class NpcAnimation {
   fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number, null | Geom.VectJson] {
     const { point, nodeRef } = this.npc;
     /** The shot's way, turned at random, mostly a little: so the dead do not lie aligned */
-    const off = dir?.clone().applyAxisAngle(upAxis, hitConfig.fallJitter * THREE.MathUtils.randFloatSpread(2) ** 3);
+    const off = dir?.clone().applyAxisAngle(upAxis, deathConfig.fallJitter * THREE.MathUtils.randFloatSpread(2) ** 3);
     const clear = this.fitFall(key, off);
     if (clear !== null) return [...clear, null];
     const spot = this.staggerSpot(key, off);
@@ -724,13 +725,13 @@ export class NpcAnimation {
     nodeRef = this.npc.nodeRef,
     others: Others = "all",
   ) {
-    const side: FallSide = key === hitConfig.die.back ? "back" : "forward";
+    const side: FallSide = key === deathConfig.die.back ? "back" : "forward";
     for (const way of side === "back" ? fallSides : [...fallSides].reverse()) {
       /** The shot's way is turned to fall along the shot: the other way keeps their facing */
       const along = way === side && dir !== undefined ? alongShot(way, dir, this.npc.rotation.y) : 0;
-      for (const turn of hitConfig.fitTurns)
+      for (const turn of deathConfig.fitTurns)
         if (this.fallFits(way, along + turn, at, nodeRef, others))
-          return [hitConfig.die[way], along + turn] as [AnimationClipKey, number];
+          return [deathConfig.die[way], along + turn] as [AnimationClipKey, number];
     }
     return null;
   }
@@ -741,9 +742,9 @@ export class NpcAnimation {
     if (nodeRef === null) return true;
     const ry = npc.rotation.y + turn;
     const way = fallWay(side, ry);
-    const length = hitConfig.lieLength[side];
+    const length = deathConfig.lieLength[side];
     if (npc.roomAhead(at, nodeRef, length, way, way, npc.openDoorsFilter).room < length) return false;
-    return others === "none" || this.stripClear(at, way, length, hitConfig.othersWidth, others === "all");
+    return others === "none" || this.stripClear(at, way, length, deathConfig.othersWidth, others === "all");
   }
 
   /** Whether no corpse in their room, nor anyone if `living`, is in the strip `length` along `way` from `at`, `half` either side */
@@ -768,11 +769,11 @@ export class NpcAnimation {
     if (clip === null || dieClips.has(clip) === false || nodeRef === null || this.fitFall(clip, dir) !== null)
       return null;
     const toward = dir === undefined ? 0 : Math.atan2(dir.z, dir.x);
-    for (const by of hitConfig.staggerBy)
+    for (const by of deathConfig.staggerBy)
       for (const k of [0, 1, -1]) {
         const way = { x: Math.cos(toward + (k * Math.PI) / 4), y: Math.sin(toward + (k * Math.PI) / 4) };
         if (npc.roomAhead(npc.point, nodeRef, by, way, way, npc.openDoorsFilter).room < by) continue;
-        if (this.stripClear(npc.point, way, by, hitConfig.lieWidth / 2) === false) continue; // never through anyone
+        if (this.stripClear(npc.point, way, by, deathConfig.lieWidth / 2) === false) continue; // never through anyone
         const at = { x: npc.point.x + by * way.x, y: npc.point.y + by * way.y };
         const near = this.w.npc.getClosestPoly(at, 0.1);
         const fit = near.success === true ? this.fitFall(clip, dir, at, near.nodeRef) : null;
@@ -791,9 +792,9 @@ export class NpcAnimation {
     const side = sideOf(hurt.key);
     const way = fallWay(side, f.ry + f.turn);
     const at = { x: f.start.x + f.shift.x, y: f.start.y + f.shift.y };
-    const length = hitConfig.lieLength[side];
+    const length = deathConfig.lieLength[side];
     /** Their middle stands this far off the fall's line, so the body passes beside them */
-    const clear = hitConfig.lieWidth + npcDims.agentRadius;
+    const clear = deathConfig.lieWidth + npcDims.agentRadius;
     return this.w.npc.near.inReach(this.npc.key, 0).flatMap((other) => {
       if (other.anim.dead === true || other.anim.fall != null) return [];
       const [dx, dz] = [other.position.x - at.x, other.position.z - at.y];
@@ -835,12 +836,12 @@ export class NpcAnimation {
   }
 
   /**
-   * Revived from a fall, they get up by its `hitConfig.getUp` clip, their root held back as it lay.
+   * Revived from a fall, they get up by its `deathConfig.getUp` clip, their root held back as it lay.
    * `false` if their fall has none, so they are let go at once
    */
   startRise() {
     const { fall: f, hurt } = this;
-    const key = hurt === null ? undefined : hitConfig.getUp[hurt.key];
+    const key = hurt === null ? undefined : deathConfig.getUp[hurt.key];
     const root = f?.hips.parent;
     if (f == null || hurt === null || key === undefined || root == null) return false;
     const clip = this.npc.clips[hurt.key];
@@ -928,11 +929,11 @@ export class NpcAnimation {
     if (root.position.equals(f.wrote)) return; // held at its end, the mixer leaves the root where this put it
     const travel = this.hipsOffset(f.hips, tmpFallTravel).sub(f.from);
     // their hips, as `hipsOffset` left them
-    if (f.landed !== true && tmpFallAt.y - npc.position.y < hitConfig.fellHipsY) {
+    if (f.landed !== true && tmpFallAt.y - npc.position.y < deathConfig.fellHipsY) {
       f.landed = true;
       this.w.events.next({ key: "npc-fell", npcKey: npc.key });
     }
-    const u = Math.min(1, hurt.secs / (this.npc.clips[hurt.key].duration * hitConfig.fitBy));
+    const u = Math.min(1, hurt.secs / (this.npc.clips[hurt.key].duration * deathConfig.fitBy));
     const slide = u * u * (3 - 2 * u);
     npc.rotation.y = f.ry + slide * (f.turn ?? 0); // undefined from before hmr
     const [x, z] = [f.start.x + travel.x + slide * f.shift.x, f.start.y + travel.y + slide * f.shift.y];
@@ -1018,11 +1019,11 @@ export class NpcAnimation {
     const down = impact === undefined || impact.outcome === "down";
     /** What follows the clip: killed, the dead pose. One pacified stays so, whatever else hits them */
     const next = kill
-      ? (hitConfig.dead[postureOf(keyOf(this.idleClip))] ?? null)
+      ? (deathConfig.dead[postureOf(keyOf(this.idleClip))] ?? null)
       : key !== null && down && pacified === false
         ? (hitConfig.next[key] ?? held)
         : held;
-    const rate = key !== null && dieClips.has(key) ? THREE.MathUtils.randFloat(...hitConfig.dieRate) : 1;
+    const rate = key !== null && dieClips.has(key) ? THREE.MathUtils.randFloat(...deathConfig.dieRate) : 1;
     this.hurt = key === null ? null : { key, secs: 0, next, rate };
     if (key !== null) {
       this.dead = kill;
@@ -1931,10 +1932,10 @@ const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((
 const mirrorOf = new Map(Object.entries(mirroredClips).map(([to, from]) => [from, to as AnimationClipKey]));
 
 /** Clips they fall dead by, and their mirrors, which a death plays either at random */
-const dieClips = new Set(Object.values(hitConfig.die).flatMap((key) => [key, mirrorOf.get(key) ?? key]));
+const dieClips = new Set(Object.values(deathConfig.die).flatMap((key) => [key, mirrorOf.get(key) ?? key]));
 
 /** Clips they get up by, revived */
-const riseClips = new Set(Object.values(hitConfig.getUp).flatMap((key) => key ?? []));
+const riseClips = new Set(Object.values(deathConfig.getUp).flatMap((key) => key ?? []));
 
 /** Hit clips played once, then left */
 const onceClips = new Set<AnimationClipKey>([
@@ -1952,7 +1953,7 @@ const fallSides: FallSide[] = ["back", "forward"];
 
 /** Which way a die clip falls, mirrored or not */
 function sideOf(key: AnimationClipKey): FallSide {
-  return key === hitConfig.die.back || key === mirrorOf.get(hitConfig.die.back) ? "back" : "forward";
+  return key === deathConfig.die.back || key === mirrorOf.get(deathConfig.die.back) ? "back" : "forward";
 }
 
 /** The floor's way one facing `ry` falls to `side`. Their ahead is (-sin, -cos) */
