@@ -18,11 +18,11 @@ export const bodySfx = {
   },
   /** A foot coming down on a corpse: the body giving under it, their clothes, and its weight muffled */
   tread({ ctx, at, pitch, sample }, out) {
-    noise(ctx, at, 0.14, out, 0.18, "lowpass", 320 * pitch, 0.02);
-    layer(ctx, sample("cloth"), at, out, 0.28, 0.9 * pitch);
+    noise(ctx, at, 0.14, out, 0.12, "lowpass", 320 * pitch, 0.02);
+    layer(ctx, sample("cloth"), at, out, 0.18, 0.9 * pitch);
     const muffled = filter(ctx, "lowpass", 450);
     muffled.connect(out);
-    layer(ctx, sample("thud"), at, muffled, 0.1, 0.6 * pitch);
+    layer(ctx, sample("thud"), at, muffled, 0.07, 0.6 * pitch);
   },
 } satisfies Record<string, SfxBuilder>;
 
