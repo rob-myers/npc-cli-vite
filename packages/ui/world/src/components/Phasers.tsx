@@ -8,6 +8,7 @@ import { wallHeight } from "../const.env";
 import { hitConfig, lieAim, upperFadeSecs } from "../const.npc";
 import { aimToRay, alongAim } from "../service/aim-target";
 import { eased } from "../service/fade";
+import { createPhaserUniforms, type PhaserUniforms, phaserLook } from "../service/phaser.shader";
 import {
   advanceBeam,
   type Beam,
@@ -22,15 +23,15 @@ import {
   type StruckKind,
   targetPoint,
 } from "../service/phaser-beam";
+import { type BeamResources, beamNodes, createBeamResources, MAX_BEAM_SEGMENTS } from "../service/phaser-beam.shader";
 import { gunMuzzle } from "../service/phaser-gun";
 import {
-  createPhaserResources,
+  createGunResources,
+  type GunResources,
+  gunNodes,
+  gunShaderConfig,
   MAX_PHASERS,
-  type PhaserResources,
-  phaserNodes,
-  phaserParts,
-  shaderConfig,
-} from "../service/phaser-shader";
+} from "../service/phaser-gun.shader";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { UpperAim } from "./npc-animation";
@@ -47,7 +48,9 @@ export default function Phasers() {
 
   const state = useStateRef(
     (): State => ({
-      ...createPhaserResources(),
+      ...createPhaserUniforms(),
+      gun: createGunResources(),
+      beams: createBeamResources(),
       arms: new Map(),
       tickedSecs: w.gameTime.now(),
 
@@ -385,16 +388,16 @@ export default function Phasers() {
         const theme = w.getTheme();
         // light cannot be added to a pale deck, so there the beam is laid over it, in a deeper ink
         const pale = theme.floor.deck === "light";
-        state.color.value.set(shaderConfig.color);
+        state.color.value.set(phaserLook.color);
         if (pale) {
           const { h } = state.color.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
-          state.color.value.setHSL(h, 1, shaderConfig.paleLightness, THREE.SRGBColorSpace);
+          state.color.value.setHSL(h, 1, phaserLook.paleLightness, THREE.SRGBColorSpace);
         }
-        state.gunColor.value.set(pale ? shaderConfig.paleGunColor : shaderConfig.gunColor);
+        state.gun.gunColor.value.set(pale ? gunShaderConfig.paleGunColor : gunShaderConfig.gunColor);
         state.gain.value = pale ? 1 : theme.npcs.fxStrength;
-        state.faint.value = pale ? shaderConfig.paleFaint : shaderConfig.faint;
+        state.faint.value = pale ? phaserLook.paleFaint : phaserLook.faint;
         const blending = pale ? THREE.NormalBlending : THREE.AdditiveBlending;
-        for (const mat of state.mats.slice(1)) {
+        for (const mat of state.beams.mats) {
           if (mat.blending === blending) continue;
           mat.blending = blending;
           mat.needsUpdate = true;
@@ -421,7 +424,7 @@ export default function Phasers() {
         state.tickedSecs = now;
         state.phase.value = now;
 
-        let count = 0;
+        let [guns, beams] = [0, 0];
         for (const [srcKey, arm] of state.arms) {
           const npc = w.n[srcKey];
           if (npc === undefined) {
@@ -446,20 +449,23 @@ export default function Phasers() {
             state.arms.delete(srcKey); // no longer held, its pose, stance and aim already let go of
             continue;
           }
-          if (hidden || count === MAX_PHASERS) continue;
+          if (hidden || guns === MAX_PHASERS) continue;
           const dst = beam.to === null || beam.to.npcKey === null ? undefined : w.n[beam.to.npcKey];
           // out of sight at both ends nothing of it is drawn, so nothing is worked out: `wield` above still ran
           if (unseen(w, npc) && (dst === undefined || unseen(w, dst))) continue;
 
-          if (state.draw(npc, arm, dst, count) === true) count++;
+          // a beam only whilst shown: its end is still worked out, as `beamEnd` glides it
+          const beamAt = beam.shown.presence > 0 && beams < MAX_BEAM_SEGMENTS ? beams : -1;
+          if (state.draw(npc, arm, dst, guns, beamAt) === true) {
+            guns++;
+            if (beamAt !== -1) beams++;
+          }
         }
 
-        state.mesh.visible = count > 0; // else no draw call
-        if (count === 0) return; // nor any upload
-        state.mesh.geometry.instanceCount = count;
-        for (const attr of state.attrs) attr.needsUpdate = true;
+        upload(state.gun, guns);
+        upload(state.beams, beams);
       },
-      draw(npc, arm, dst, i) {
+      draw(npc, arm, dst, i, j) {
         const hand = handOf(npc, arm);
         if (hand === null) return false;
         const { beam } = arm;
@@ -498,10 +504,14 @@ export default function Phasers() {
         const locked = eased(beam.locked.presence);
         // struck where the beam IS, not where it is headed: it glides there
         if ((stopped !== null && stop === stopped) || free?.what === "shield") w.shields.strike(end, shown * locked);
-        const { roomSlot, npcLit } = dst ?? npc;
-        put(state.srcData, i, tip.x, tip.y, tip.z, shown);
-        put(state.dstData, i, end.x, end.y, end.z, locked);
-        put(state.roomData, i, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
+        if (j !== -1) {
+          const { roomSlot, npcLit } = dst ?? npc;
+          const { beams } = state;
+          put(beams.srcData, j, tip.x, tip.y, tip.z, shown);
+          put(beams.dstData, j, end.x, end.y, end.z, locked);
+          put(beams.roomData, j, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
+          beams.firedData[j] = arm.fireCharge ?? 0; // undefined from before hmr
+        }
 
         hand.matrixWorld.decompose(tmpAt, tmpQuat, tmpScale);
         const roll = gunRoll(npc, hand);
@@ -521,12 +531,14 @@ export default function Phasers() {
           const r = glow * shakeRad * Math.sin(1.53 * t + 3);
           tmpQuat.multiply(tmpShake.set(Math.sin(r / 2), 0, 0, Math.cos(r / 2)));
         }
-        state.chargeData[2 * i] = glow;
-        state.chargeData[2 * i + 1] = arm.fireCharge ?? 0; // undefined from before hmr
+        const { gun } = state;
+        gun.chargeData[i] = glow;
+        gun.roomData[2 * i] = npc.roomSlot.value;
+        gun.roomData[2 * i + 1] = npc.npcLit.value;
         const sign = (item?.dead?.length ?? 0) > 0 ? -1 : 1; // negative: dead, see `gunNodes`
-        put(state.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
+        put(gun.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
         const flip = arm.armed === tmpQuat.w > 0 ? 1 : -1; // so `w > 0` says armed, see `gunNodes`
-        put(state.quatData, i, tmpQuat.x * flip, tmpQuat.y * flip, tmpQuat.z * flip, tmpQuat.w * flip);
+        put(gun.quatData, i, tmpQuat.x * flip, tmpQuat.y * flip, tmpQuat.z * flip, tmpQuat.w * flip);
         return true;
       },
       strike(npc, arm) {
@@ -1018,17 +1030,7 @@ export default function Phasers() {
     }),
     // the attributes wrap the data
     {
-      reset: {
-        mesh: true,
-        mats: true,
-        attrs: true,
-        srcData: true,
-        dstData: true,
-        roomData: true,
-        gunData: true,
-        quatData: true,
-        chargeData: true,
-      },
+      reset: { gun: true, beams: true },
     },
   );
 
@@ -1052,16 +1054,24 @@ export default function Phasers() {
   }, []);
 
   useEffect(() => {
-    phaserParts.forEach((part, i) => {
-      Object.assign(state.mats[i], phaserNodes(state, w.view, part), { needsUpdate: true });
-    });
+    Object.assign(state.gun.mat, gunNodes(state.gun, state, w.view), { needsUpdate: true });
+    state.beams.mats.forEach((mat, i) => Object.assign(mat, beamNodes(state, w.view, i === 1), { needsUpdate: true }));
     state.onTick(); // a fresh geometry has no instances yet
   }, [w.view.fadeRoomsFx.uid]);
 
-  return <primitive object={state.mesh} />;
+  return (
+    <group>
+      <primitive object={state.gun.mesh} />
+      <primitive object={state.beams.mesh} />
+    </group>
+  );
 }
 
-export type State = PhaserResources & {
+export type State = PhaserUniforms & {
+  /** One instance per gun shown */
+  gun: GunResources;
+  /** One instance per beam segment shown */
+  beams: BeamResources;
   /** By npcKey: whoever is armed, or whose gun or beam still fades */
   arms: Map<string, ArmEntry>;
   tickedSecs: number;
@@ -1102,8 +1112,8 @@ export type State = PhaserResources & {
   endsAlong(npcKeys: string[]): Promise<(null | AlongEnd)[]>;
   /** Their pose, stance and aim are let go of, and the gun and beam fade */
   disarm(...npcKeys: string[]): void;
-  /** Writes their gun and beam as instance `i`, the beam to `dst` if any — `false` with no forearm to hold it */
-  draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number): boolean;
+  /** Writes their gun as instance `i`, and unless `j` is `-1` their beam, to `dst` if any, as instance `j` — `false` with no forearm to hold it */
+  draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number, j: number): boolean;
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
   /** Fires at no one, along their aim, raising it if need be: `false` if it cannot be raised. `end`: already found */
@@ -1730,6 +1740,18 @@ function gunRoll(npc: Npc, hand: THREE.Object3D) {
   if (upper.key === phaserConfig.avoid) return (1 - eased(upper.blend)) * restRoll;
   const twist = 2 * Math.atan2(hand.quaternion.y, hand.quaternion.w);
   return THREE.MathUtils.clamp(restRoll - Math.abs(deltaAngle(0, twist)), 0, restRoll);
+}
+
+/** Shows the first `count` instances, uploading only those. With none, there is no draw call */
+function upload({ mesh, attrs }: { mesh: THREE.Mesh; attrs: THREE.InstancedBufferAttribute[] }, count: number) {
+  mesh.visible = count > 0;
+  if (count === 0) return;
+  (mesh.geometry as THREE.InstancedBufferGeometry).instanceCount = count;
+  for (const attr of attrs) {
+    attr.clearUpdateRanges();
+    attr.addUpdateRange(0, count * attr.itemSize);
+    attr.needsUpdate = true;
+  }
 }
 
 /** Writes instance `i`'s four floats, with no array made for them */

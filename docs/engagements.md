@@ -8,7 +8,9 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
 | `ui/world/src/service/phaser-gun.ts` | the gun's boxes, and its muzzle. After an edit, run `gen-phaser-icon` for the hud's icon, and redraw `media/src/decor/phaser.svg` to match |
-| `ui/world/src/service/phaser-shader.ts` | the gun, beam and ball |
+| `ui/world/src/service/phaser-gun.shader.ts` | the gun, one instance per gun shown |
+| `ui/world/src/service/phaser-beam.shader.ts` | the beam and its ball, one instance per beam segment shown |
+| `ui/world/src/service/phaser.shader.ts` | what the gun and beam share: the beam's colour, `seenBy` |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
 | `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`, `hitDown`). The dead are in `docs/deaths.md` |
 | `ui/world/src/components/npc-flinch.ts` | a jolt from a shot, and a hit's held lean (`flinch`, `tickFlinch`) |

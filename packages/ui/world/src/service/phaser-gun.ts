@@ -1,6 +1,6 @@
 /**
  * The phaser's boxes in the right forearm's frame: `+x` up whilst aiming, `-y` out of the muzzle, the fist ending at `y` `-0.37`.
- * Model units. Drawn by `phaser-shader.ts`, projected into the hud's icon by `gen-phaser-icon`
+ * Model units. Drawn by `phaser-gun.shader.ts`, projected into the hud's icon by `gen-phaser-icon`
  */
 export const gunBoxes: GunBox[] = [
   { name: "grip", min: [-0.085, -0.335, -0.03], max: [0.07, -0.255, 0.03], kind: "body", tone: 0.8 },
