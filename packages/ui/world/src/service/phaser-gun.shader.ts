@@ -21,7 +21,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { type PhaserUniforms, type PhaserView, seenBy } from "./phaser.shader";
-import { gunBoxes, gunKindIndex, gunStripY } from "./phaser-gun";
+import { attachmentBoxes, type GunBox, gunAttachments, gunBoxes, gunKindIndex, gunStripY } from "./phaser-gun";
 
 export const MAX_PHASERS = 128;
 
@@ -32,33 +32,29 @@ export function createGunResources() {
   /** The right forearm's origin, and its world scale by the gun's eased presence — then its world quaternion */
   const gunData = new Float32Array(MAX_PHASERS * 4);
   const quatData = new Float32Array(MAX_PHASERS * 4);
-  /** Its npc's room slot, and whether they are lit */
-  const roomData = new Float32Array(MAX_PHASERS * 2);
+  /** Its npc's room slot, whether they are lit, and its attachment's index from `1`, else `0` */
+  const roomData = new Float32Array(MAX_PHASERS * 3);
   /** Its beam's colour, then its glow as it charges or cools */
   const tintData = new Float32Array(MAX_PHASERS * 4);
   const attrs = [gunData, quatData, roomData, tintData].map((data) =>
     new THREE.InstancedBufferAttribute(data, data.length / MAX_PHASERS).setUsage(THREE.DynamicDrawUsage),
   );
 
-  /** Each vertex's box: its kind as `gunKindIndex`, and its tone */
-  const boxed = (geo: THREE.BufferGeometry, kind: number, tone: number) => {
+  /** Each vertex's box: its kind as `gunKindIndex`, its tone, and its attachment's index from `1`, else `0` */
+  const boxed = ({ min, max, kind, tone }: GunBox, attachment: number) => {
+    const geo = new THREE.BoxGeometry(max[0] - min[0], max[1] - min[1], max[2] - min[2]).translate(
+      (min[0] + max[0]) / 2,
+      (min[1] + max[1]) / 2,
+      (min[2] + max[2]) / 2,
+    );
     const count = geo.getAttribute("position").count;
-    const data = new Float32Array(2 * count).map((_, i) => (i % 2 === 0 ? kind : tone));
-    return geo.setAttribute("phaserBox", new THREE.BufferAttribute(data, 2));
+    const data = new Float32Array(3 * count).map((_, i) => [gunKindIndex[kind], tone, attachment][i % 3]);
+    return geo.setAttribute("phaserBox", new THREE.BufferAttribute(data, 3));
   };
-  const base = mergeGeometries(
-    gunBoxes.map(({ min, max, kind, tone }) =>
-      boxed(
-        new THREE.BoxGeometry(max[0] - min[0], max[1] - min[1], max[2] - min[2]).translate(
-          (min[0] + max[0]) / 2,
-          (min[1] + max[1]) / 2,
-          (min[2] + max[2]) / 2,
-        ),
-        gunKindIndex[kind],
-        tone,
-      ),
-    ),
-  );
+  const base = mergeGeometries([
+    ...gunBoxes.map((box) => boxed(box, 0)),
+    ...gunAttachments.flatMap((key, i) => attachmentBoxes[key].map((box) => boxed(box, i + 1))),
+  ]);
 
   const geo = new THREE.InstancedBufferGeometry();
   for (const key of ["position", "normal", "uv", "phaserBox"]) geo.setAttribute(key, base.getAttribute(key));
@@ -96,12 +92,14 @@ export function gunNodes({ gunColor, slotColor, deadColor }: GunResources, { gai
     const inner = cross(quat.xyz, v).add(v.mul(quat.w)) as THREE.Node<"vec3">;
     return v.add(cross(quat.xyz, inner).mul(2)) as THREE.Node<"vec3">;
   };
-  const p = gun.xyz.add(turned(positionLocal.mul(gun.w.abs()) as THREE.Node<"vec3">));
+  const rooms = attribute<"vec3">("gunRooms", "vec3");
+  const box = attribute<"vec3">("phaserBox", "vec3");
+  /** `0` for another attachment's box, collapsed to nothing */
+  const fitted = box.z.equal(0).or(box.z.equal(rooms.z)).select(1, 0);
+  const p = gun.xyz.add(turned(positionLocal.mul(gun.w.abs()).mul(fitted) as THREE.Node<"vec3">));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
-  const rooms = attribute<"vec2">("gunRooms", "vec2");
   const vSeen = varying(seenBy(view)(rooms.x, rooms.y), "vGunSeen");
-  const box = attribute<"vec2">("phaserBox", "vec2");
   const glow = box.x.equal(gunKindIndex.emitter).select(1, 0) as THREE.Node<"float">;
   const vGlow = varying<"float">(glow, "vGunGlow");
   const vStrip = varying<"float">(box.x.equal(gunKindIndex.strip).select(1, 0) as THREE.Node<"float">, "vGunStrip");

@@ -24,7 +24,7 @@ import {
   targetPoint,
 } from "../service/phaser-beam";
 import { type BeamResources, beamNodes, createBeamResources, MAX_BEAM_SEGMENTS } from "../service/phaser-beam.shader";
-import { gunMuzzle } from "../service/phaser-gun";
+import { gunAttachments, gunMuzzle, muzzleOf } from "../service/phaser-gun";
 import {
   createGunResources,
   type GunResources,
@@ -41,6 +41,7 @@ import {
   MAX_IMPACTS,
 } from "../service/phaser-impact.shader";
 import {
+  attachmentBeams,
   beamRgb,
   beamSegments,
   beamStyles,
@@ -410,9 +411,11 @@ export default function Phasers() {
         return resolveLook(w.shields?.phaserOf(npcKey)?.meta, state.looks.get(npcKey), { ...defaultLook });
       },
       setLook(npcKey, look) {
-        if (look === null) return void state.looks.delete(npcKey);
-        checkLook(look);
-        state.looks.set(npcKey, { ...state.looks.get(npcKey), ...look });
+        if (look !== null) checkLook(look);
+        if (look === null) state.looks.delete(npcKey);
+        else state.looks.set(npcKey, { ...state.looks.get(npcKey), ...look });
+        const arm = state.arms.get(npcKey);
+        if (arm !== undefined) arm.cast = null; // recast, e.g. for a shotgun's spread
         w.r3f?.invalidate();
       },
       syncTheme() {
@@ -547,9 +550,14 @@ export default function Phasers() {
         if (room > 0) {
           const { roomSlot, npcLit } = dst ?? npc;
           const { beams } = state;
-          const style = beamStyles.indexOf(look.style);
+          // a rotator fires bolts, unless given another style
+          const style = beamStyles.indexOf(
+            look.attachment === "rotator" && look.style === "plain" ? "bolts" : look.style,
+          );
+          const from =
+            look.attachment === null ? tip : hand.localToWorld(tmpMuzzle.fromArray(muzzleOf(look.attachment)));
           const fired = arm.fireCharge ?? 0; // undefined from before hmr
-          for (const seg of beamSegments(look, tip, end)) {
+          for (const seg of beamSegments(look, from, end, arm.spread ?? null)) {
             if (drawn === room) break;
             const k = j + drawn;
             put(beams.srcData, k, seg.from.x, seg.from.y, seg.from.z, shown);
@@ -581,8 +589,9 @@ export default function Phasers() {
         }
         const { gun } = state;
         put(gun.tintData, i, rgb.r, rgb.g, rgb.b, glow);
-        gun.roomData[2 * i] = npc.roomSlot.value;
-        gun.roomData[2 * i + 1] = npc.npcLit.value;
+        gun.roomData[3 * i] = npc.roomSlot.value;
+        gun.roomData[3 * i + 1] = npc.npcLit.value;
+        gun.roomData[3 * i + 2] = look.attachment === null ? 0 : gunAttachments.indexOf(look.attachment) + 1;
         const sign = (item?.dead?.length ?? 0) > 0 ? -1 : 1; // negative: dead, see `gunNodes`
         put(gun.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
         const flip = arm.armed === tmpQuat.w > 0 ? 1 : -1; // so `w > 0` says armed, see `gunNodes`
@@ -1067,6 +1076,18 @@ export default function Phasers() {
           arm.ownIdle = stance;
         }
       },
+      async castSpread(npc, from, bearing) {
+        const run = phaserConfig.alongMax;
+        const segs = attachmentBeams.shotgun.angles.map((angle) => ({
+          src: from,
+          dst: { x: from.x - Math.sin(bearing + angle) * run, y: from.y - Math.cos(bearing + angle) * run },
+        }));
+        const results = await w.e.raycasts(segs, { offMap: true, key: `${npc.key}/spread` }).catch(() => []);
+        return segs.map((_, i) => {
+          const hit = results[i]?.hit;
+          return hit == null ? Infinity : Math.hypot(hit.x - from.x, hit.y - from.y);
+        });
+      },
       recast(npc, arm, target, secs) {
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         if (isCastCurrent(arm, npc, target) === true) return; // nothing has changed: neither they, their target, nor a door
@@ -1104,8 +1125,9 @@ export default function Phasers() {
                   }),
                   (): ArmSight => ({ across: [], from, inSight: false, shields: [] }),
                 ),
+          arm.look?.attachment === "shotgun" ? state.castSpread(npc, from, ry) : null,
         ] as const)
-          .then(([reach, sight]) => arm.cast === cast && Object.assign(arm, { reach, sight })) // else respawned since
+          .then(([reach, sight, spread]) => arm.cast === cast && Object.assign(arm, { reach, sight, spread })) // else respawned since
           .finally(() => {
             arm.casting = false;
             w.r3f?.invalidate();
@@ -1154,6 +1176,8 @@ export default function Phasers() {
 }
 
 export type State = PhaserUniforms & {
+  /** How far a shotgun's rays go from `from` along `bearing`, on the ground, as `attachmentBeams.shotgun.angles` */
+  castSpread(npc: Npc, from: Geom.VectJson, bearing: number): Promise<number[]>;
   /** One instance per gun shown */
   gun: GunResources;
   /** One instance per beam segment shown */
@@ -1388,6 +1412,8 @@ type ArmEntry = {
   key: string;
   /** Their phaser's look, rewritten each tick by `draw` */
   look: PhaserLook;
+  /** A shotgun's: metres on the ground each ray goes before it stops, as `attachmentBeams.shotgun.angles`. See `recast` */
+  spread?: null | number[];
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** World seconds a one-off shot is lowered by at the latest, whilst there is one */
@@ -1897,6 +1923,7 @@ function put(data: Float32Array, i: number, a: number, b: number, c: number, d: 
 }
 const muzzle = new THREE.Vector3(...phaserConfig.beamFrom);
 const tmpTip = new THREE.Vector3();
+const tmpMuzzle = new THREE.Vector3();
 const tmpPart = new THREE.Vector3();
 const tmpBody = new THREE.Vector3();
 const tmpAlong = new THREE.Vector3();

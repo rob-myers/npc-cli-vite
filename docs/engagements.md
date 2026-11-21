@@ -246,7 +246,12 @@ A phaser's look is its beam's style and colour, its attachment and its bounces (
   - `tesla`: lightning with two thinner forks arcing from the muzzle to either side (`teslaForks`).
   - `static`: straight, its width and brightness flickering along it.
   - `bolts`: dashes racing to the target, for the rotator.
-- Attachments and bounces are kept but not yet drawn.
+- Attachments are drawn on the gun (`attachmentBoxes`, `phaser-gun.ts`), each a few boxes past its tip. The gun geometry holds them all, and those not fitted collapse to nothing (`phaserBox.z` against `gunRooms.z`). The beam leaves the fitted one's emitter (`muzzleOf`).
+  - `caliber`: a wider emitter, firing 3 parallel rays in a triangle about the axis.
+  - `shotgun`: a flared muzzle, firing 5 rays fanned out. The middle one is the shot. The others go on past whom it meets, each to its own wall (`castSpread`, in `recast`, `arm.spread`), or the floor if pitched down.
+  - `rotator`: a ring of three short barrels, firing `bolts` unless given another style.
+  - A shot still hits once, along the middle ray. Changing a look recasts.
+- Bounces are kept but not yet drawn.
 
 ## Impacts
 

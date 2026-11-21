@@ -15,6 +15,32 @@ export const gunBoxes: GunBox[] = [
   { name: "tip", min: [0.095, -0.565, -0.0225], max: [0.145, -0.53, 0.0225], kind: "emitter", tone: 1 },
 ];
 
+/** What may be fitted to the end of the gun, in the shader's order from `1` (`phaserBox.z`) */
+export const gunAttachments = ["caliber", "shotgun", "rotator"] as const;
+export type GunAttachment = (typeof gunAttachments)[number];
+
+/** Each attachment's boxes, past the tip as `gunBoxes`: its emitter is where its beam leaves */
+export const attachmentBoxes: Record<GunAttachment, GunBox[]> = {
+  /** A wider, deeper emitter, for parallel rays */
+  caliber: [
+    { name: "sleeve", min: [0.075, -0.6, -0.05], max: [0.165, -0.53, 0.05], kind: "body", tone: 0.7 },
+    { name: "tip", min: [0.085, -0.615, -0.04], max: [0.155, -0.6, 0.04], kind: "emitter", tone: 1 },
+  ],
+  /** A muzzle flaring out, for rays spreading */
+  shotgun: [
+    { name: "neck", min: [0.09, -0.59, -0.03], max: [0.15, -0.565, 0.03], kind: "body", tone: 0.8 },
+    { name: "flare", min: [0.07, -0.62, -0.05], max: [0.17, -0.59, 0.05], kind: "body", tone: 0.65 },
+    { name: "tip", min: [0.08, -0.627, -0.04], max: [0.16, -0.62, 0.04], kind: "emitter", tone: 1 },
+  ],
+  /** A ring holding three short barrels, for rapid bolts */
+  rotator: [
+    { name: "ring", min: [0.075, -0.6, -0.045], max: [0.165, -0.565, 0.045], kind: "body", tone: 0.6 },
+    { name: "tip", min: [0.135, -0.64, -0.01], max: [0.155, -0.6, 0.01], kind: "emitter", tone: 1 },
+    { name: "tip", min: [0.09, -0.64, 0.015], max: [0.11, -0.6, 0.035], kind: "emitter", tone: 1 },
+    { name: "tip", min: [0.09, -0.64, -0.035], max: [0.11, -0.6, -0.015], kind: "emitter", tone: 1 },
+  ],
+};
+
 export type GunBox = {
   name: string;
   min: [number, number, number];
@@ -33,6 +59,18 @@ const strip = gunBoxes.find((box) => box.kind === "strip") as GunBox;
 
 /** Where the beam leaves: the middle of the emitter's front face */
 export const gunMuzzle: [number, number, number] = [(tip.min[0] + tip.max[0]) / 2, tip.min[1], 0];
+
+/** Where the beam leaves an attachment: the middle of its emitters' front, else the gun's own muzzle */
+export const muzzleOf = (attachment: null | GunAttachment) =>
+  attachment === null ? gunMuzzle : attachmentMuzzles[attachment];
+
+const attachmentMuzzles = Object.fromEntries(
+  gunAttachments.map((key) => {
+    const tips = attachmentBoxes[key].filter((box) => box.kind === "emitter");
+    const x = tips.reduce((sum, box) => sum + (box.min[0] + box.max[0]) / 2, 0) / tips.length;
+    return [key, [x, Math.min(...tips.map((box) => box.min[1])), 0]];
+  }),
+) as Record<GunAttachment, [number, number, number]>;
 
 /** The strip's `y` from its back to its front, which a charge fills along */
 export const gunStripY = [strip.max[1], strip.min[1]] as const;
