@@ -40,6 +40,15 @@ import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import { newClutch, takeClutch, tickClutch } from "./npc-clutch";
 import { type Flinch, flinch, tickFlinch, undoFlinch } from "./npc-flinch";
+import {
+  addCorpseCollider,
+  bodyCrosses,
+  type CorpseBody,
+  newOverBody,
+  removeCorpseCollider,
+  tickOverBody,
+  undoOverBody,
+} from "./npc-over-body";
 import { letGo, newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
@@ -166,6 +175,8 @@ export class NpcAnimation {
   };
   /** Killed: held still once their pain clip ends, until released — see `holdStill` */
   dead = false;
+  /** Killed with no room to fall, they stagger to where there is first — see `staggerSpot` */
+  staggering = false;
   /** Falling dead: where they stood, their hips' offset then, and the slide off a near wall — see `tickFall` */
   fall = null as null | {
     start: THREE.Vector2;
@@ -177,9 +188,13 @@ export class NpcAnimation {
     turn: number;
     /** What `tickFall` last wrote to their root */
     wrote: THREE.Vector3;
+    /** Lying still, where their body lies, for others to step over — see `npc-over-body` */
+    body?: null | CorpseBody;
   };
   /** Whilst hurt, a hand on their wound — see `npc-clutch` */
   clutch = newClutch();
+  /** Over a corpse, their feet lift — see `npc-over-body` */
+  overBody = newOverBody();
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
   /** Whilst they speak: seconds left, seconds in, how far the head's motion is eased in, and whether `talk_left` is ours */
@@ -441,6 +456,7 @@ export class NpcAnimation {
     }
     if (this.breath.on === true) this.setBreathing(false);
     this.setEyes("shut");
+    if (this.fall != null && this.fall.body == null) this.fall.body = addCorpseCollider(this);
   }
 
   /**
@@ -654,12 +670,13 @@ export class NpcAnimation {
   }
 
   /** Falling dead, they leave the crowd: the clip carries them, and the npc goes with their hips — see `tickFall` */
-  startFall(turn: number) {
+  startFall(turn: number, slide: null | Geom.VectJson = null) {
     const { npc } = this;
     const hips = npc.group?.getObjectByName("hips");
     if (hips === undefined) return;
     const ry = npc.rotation.y;
     const shift = this.roomToLie(ry + turn); // whilst their agent still gives their poly
+    if (slide !== null) shift.add(slide);
     Object.assign(this.face, { rate: 0, turn: null, aim: null }); // they turn by `turn` alone
     this.w.npc.removeAgents([npc], { keepPhysics: true });
     const start = new THREE.Vector2(npc.position.x, npc.position.z);
@@ -668,35 +685,79 @@ export class NpcAnimation {
   }
 
   /**
-   * A fall dead that fits, as its clip and the turn it takes: the shot's way first, turned less before more,
-   * then the other way. If none fits, they crumple where they stand
+   * A fall dead that fits, as its clip, the turn it takes, and how far it slides to a stagger spot, if it must.
+   * Else one clear of walls alone, onto whoever is there. Only walls all round have them collapse where they stand
    */
-  fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number] {
+  fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number, null | Geom.VectJson] {
+    const { point, nodeRef } = this.npc;
+    const clear = this.fitFall(key, dir);
+    if (clear !== null) return [...clear, null];
+    const spot = this.staggerSpot(key, dir);
+    if (spot !== null) return [...spot.fit, { x: spot.at.x - point.x, y: spot.at.y - point.y }];
+    const walls = this.fitFall(key, dir, point, nodeRef, false);
+    return walls !== null ? [...walls, null] : [hitConfig.sink, 0, null];
+  }
+
+  /**
+   * A fall dead from `at` on `nodeRef` that fits, as its clip and the turn it takes, else `null`.
+   * The shot's way is tried first, turned less before more, then the other way. Without `others`, walls alone count
+   */
+  fitFall(key: AnimationClipKey, dir?: THREE.Vector3, at = this.npc.point, nodeRef = this.npc.nodeRef, others = true) {
     const side: FallSide = key === hitConfig.die.back ? "back" : "forward";
     for (const way of side === "back" ? fallSides : [...fallSides].reverse()) {
       /** The shot's way is turned to fall along the shot: the other way keeps their facing */
       const along = way === side && dir !== undefined ? alongShot(way, dir, this.npc.rotation.y) : 0;
       for (const turn of hitConfig.fitTurns)
-        if (this.fallFits(way, along + turn)) return [hitConfig.die[way], along + turn];
+        if (this.fallFits(way, along + turn, at, nodeRef, others))
+          return [hitConfig.die[way], along + turn] as [AnimationClipKey, number];
     }
-    return [hitConfig.crumple[side], 0];
+    return null;
   }
 
-  /** Whether falling to `side`, turned `turn`, has clear floor for their length, with no one on it */
-  fallFits(side: FallSide, turn: number) {
+  /** Whether falling from `at` to `side`, turned `turn`, has clear floor for their length. With `others`, no one nor any corpse on it */
+  fallFits(side: FallSide, turn: number, at = this.npc.point, nodeRef = this.npc.nodeRef, others = true) {
     const { npc } = this;
-    const { nodeRef } = npc;
     if (nodeRef === null) return true;
     const ry = npc.rotation.y + turn;
     const sign = side === "back" ? -1 : 1; // ahead is (-sin, -cos)
     const way = { x: -sign * Math.sin(ry), y: -sign * Math.cos(ry) };
     const length = hitConfig.lieLength[side];
-    if (npc.roomAhead(npc.point, nodeRef, length, way, way, npc.openDoorsFilter).room < length) return false;
-    return this.w.npc.near.inReach(npc.key, 0).every((other) => {
-      const [dx, dz] = [other.position.x - npc.position.x, other.position.z - npc.position.z];
+    if (npc.roomAhead(at, nodeRef, length, way, way, npc.openDoorsFilter).room < length) return false;
+    return others === false || this.stripClear(at, way, length, hitConfig.othersWidth);
+  }
+
+  /** Whether no one in their room, nor any corpse, is in the strip `length` along `way` from `at`, `half` either side */
+  stripClear(at: Geom.VectJson, way: Geom.VectJson, length: number, half: number) {
+    return this.w.npc.near.inReach(this.npc.key, 0).every((other) => {
+      const body = other.anim.fall?.body;
+      if (body != null) return bodyCrosses(body, at, way, length, half) === false;
+      const [dx, dz] = [other.position.x - at.x, other.position.z - at.y];
       const along = dx * way.x + dz * way.y;
-      return along < 0 || along > length || Math.abs(dx * way.y - dz * way.x) > hitConfig.lieWidth;
+      return along < 0 || along > length || Math.abs(dx * way.y - dz * way.x) > half;
     });
+  }
+
+  /**
+   * Where they stagger to, killed by `clip` with no room to fall here: within `staggerBy` along the shot, give or take 45°,
+   * with no one in the way. Also the fall there. `null` if they may fall here, or nowhere there will do
+   */
+  staggerSpot(clip: null | AnimationClipKey, dir?: THREE.Vector3) {
+    const { npc } = this;
+    const { nodeRef } = npc;
+    if (clip === null || dieClips.has(clip) === false || nodeRef === null || this.fitFall(clip, dir) !== null)
+      return null;
+    const toward = dir === undefined ? 0 : Math.atan2(dir.z, dir.x);
+    for (const by of hitConfig.staggerBy)
+      for (const k of [0, 1, -1]) {
+        const way = { x: Math.cos(toward + (k * Math.PI) / 4), y: Math.sin(toward + (k * Math.PI) / 4) };
+        if (npc.roomAhead(npc.point, nodeRef, by, way, way, npc.openDoorsFilter).room < by) continue;
+        if (this.stripClear(npc.point, way, by, hitConfig.lieWidth / 2) === false) continue; // never through anyone
+        const at = { x: npc.point.x + by * way.x, y: npc.point.y + by * way.y };
+        const near = this.w.npc.getClosestPoly(at, 0.1);
+        const fit = near.success === true ? this.fitFall(clip, dir, at, near.nodeRef) : null;
+        if (fit !== null) return { at, fit };
+      }
+    return null;
   }
 
   /** Their hips across the floor from where the npc stands */
@@ -718,7 +779,7 @@ export class NpcAnimation {
     if (root?.parent == null) return;
     if (root.position.equals(f.wrote)) return; // held at its end, the mixer leaves the root where this put it
     const travel = this.hipsOffset(f.hips, tmpFallTravel).sub(f.from);
-    const u = Math.min(1, hurt.secs / this.npc.clips[hurt.key].duration);
+    const u = Math.min(1, hurt.secs / (this.npc.clips[hurt.key].duration * hitConfig.fitBy));
     const slide = u * u * (3 - 2 * u);
     npc.rotation.y = f.ry + slide * (f.turn ?? 0); // undefined from before hmr
     const [x, z] = [npc.position.x, npc.position.z];
@@ -792,8 +853,8 @@ export class NpcAnimation {
     if (key !== null && dead) return; // a corpse only jolts
     const kill = impact?.outcome === "kill";
     /** Radians they turn as they fall dead, to fit — see `fitDeath` */
-    let turn = 0;
-    if (key !== null && dieClips.has(key)) [key, turn] = this.fitDeath(key, impact?.dir);
+    let [turn, slide] = [0, null as null | Geom.VectJson];
+    if (key !== null && dieClips.has(key)) [key, turn, slide] = this.fitDeath(key, impact?.dir);
     /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
@@ -812,11 +873,12 @@ export class NpcAnimation {
     if (key !== null) {
       this.dead = kill;
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
-      if (dieClips.has(key)) this.startFall(turn);
+      if (dieClips.has(key)) this.startFall(turn, slide);
     } else if (dead || this.eyes.look === "scared") {
       this.dead = false;
       this.setEyes("open");
       if (this.fall != null) {
+        removeCorpseCollider(this);
         this.fall = null;
         // back in the crowd, on the nearest poly: none near, they stay where they lie
         const near = this.w.npc.getClosestPoly(this.npc.position, 0.5);
@@ -1216,6 +1278,7 @@ export class NpcAnimation {
     }
     this.putBackArm("left", this.support); // undefined on an instance from before hmr
     this.putBackArm(this.clutch?.side ?? "left", this.clutch);
+    if (this.overBody !== undefined) undoOverBody(this.overBody); // undefined from before hmr
     this.tickLieLook(delta);
     this.tickUpper(delta);
     this.tickHead(delta);
@@ -1229,6 +1292,7 @@ export class NpcAnimation {
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
+    if (this.overBody !== undefined) tickOverBody(this.overBody, this, delta);
     tickFlinch(this, delta); // over what every other wrote
     // last, so the hand meets the wound where the flinch and stance leave it
     if (this.clutch !== undefined) tickClutch(this.clutch, this, delta);
@@ -1460,10 +1524,11 @@ export class NpcAnimation {
     if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
   }
 
-  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom`. Never the player */
+  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom`. Never the player or the dead */
   tickRoomLit(delta: number) {
     const { roomLit, roomSlot } = this.npc;
-    const goal = roomSlot.value === this.w.npc.playerRoom && this.w.player?.is(this.npc.key) !== true ? 1 : 0;
+    const lit = this.dead !== true && this.w.player?.is(this.npc.key) !== true;
+    const goal = lit && roomSlot.value === this.w.npc.playerRoom ? 1 : 0;
     if (roomLit === undefined || roomLit.value === goal) return; // undefined on an npc from before hmr
     const step = (goal === 1 ? delta : -delta) / npcMaterialConfig.sameRoomSecs;
     roomLit.value = THREE.MathUtils.clamp(roomLit.value + step, 0, 1);
@@ -1698,7 +1763,7 @@ const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((
 
 /** Hit clips played once, then left */
 /** Clips they fall dead by */
-const dieClips = new Set<AnimationClipKey>([...Object.values(hitConfig.die), ...Object.values(hitConfig.crumple)]);
+const dieClips = new Set<AnimationClipKey>(Object.values(hitConfig.die));
 
 const onceClips = new Set<AnimationClipKey>([
   ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),

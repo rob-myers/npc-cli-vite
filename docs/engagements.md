@@ -163,14 +163,43 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
 - `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now.
-- A fall must fit (`fitDeath`, `fallFits`): clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a
-  wall), with no
-  one in their room standing in that strip (`w.npc.near.inReach`). The shot's way is tried first, turned to fall along the shot
-  (`alongShot`, up to 90°) and then by each of `fitTurns`, then the other way at their own facing. A corpse's physics body
-  goes where it lies, so a doorway it lies in is not clear and its door stays open. The turn eases in over the fall (`tickFall`).
-- If none fits, they crumple where they stand, the shot's way (`hitConfig.crumple`): shot from in front, `die_crumple_back`
-  sits them down hard and onto their back, knees up and fallen aside; else `die_crumple_forward` takes them onto their
-  knees, then folded forwards. Both twist, arms on the floor, about 1.1m across.
+- A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
+  - Clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).
+  - No one in their room in that strip, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
+    `bodyCrosses`). That is narrower than `lieWidth`, so bodies may overlap a little.
+  - The shot's way is tried first, turned to fall along the shot (`alongShot`) and then by each of `fitTurns`, then the
+    other way at their own facing.
+  - The turn and any slide are done by `fitBy` of the clip (`tickFall`), before their body reaches out into a wall.
+  - A corpse's physics body goes where it lies, so a doorway it lies in is not clear and its door stays open.
+- **Staggering.** If none fits, stood, they look for a spot that does along the shot, give or take 45°, within
+  `staggerBy` (`staggerSpot`), with no one on the way there.
+  - Behind them, they walk back to it, then fall (`w.e.takeHit`, which the phaser calls). Further hits are ignored
+    meanwhile (`anim.staggering`), and a move that stops them short has them fall where they are.
+  - Ahead of them, the fall slides them there instead, hidden by `die_forward`'s stumble (`startFall`'s `slide`).
+- If no spot will do, they fall clear of walls alone, onto whoever is there. Only with walls all round do they collapse
+  where they stand (`hitConfig.sink`), held on its last frame. They then have no corpse body to step over.
+
+### Walking over a corpse
+
+Others step over a fallen corpse, or onto it (`npc-over-body.ts`, `hitConfig.overBody`).
+
+- **Its body.** Once its die clip is held, a corpse keeps where it lies (`fall.body`).
+  - Its footprint is a convex hull of its parts' boxes, head to shins, arms included.
+  - Its height `top` is its torso's, since the big head would have them stand high on it.
+  - Its height ramps up over `ramp` from the hull's edge.
+- **Its sensor.** A rect round the hull, `margin` wider, is posted to the physics worker as `corpse-{npcKey}`
+  (`postCorpseCollider`).
+  - Its `enter-collider` and `exit-collider` carry `meta.corpse`, and fill a walker's `overBody.on`.
+  - It goes when they are revived or removed (`removeCorpseCollider`). That fires no exits, so whoever was on it is
+    let off directly.
+  - A physics rebuild loses it, so `w.npc.syncCorpseColliders` posts each again.
+- **Feet.** Whilst `on` holds a corpse, each foot lifts so the middle of its sole clears the body under it by `clear`
+  (`footLift`).
+  - The knee bends to lift it: the thigh forward, the shin back twice as far, the foot level again. Their hips stay.
+  - With both feet on it, their root rises towards the lower foot's lift, at `speed` either way. So they stand on it.
+  - It runs after the stance, before the flinch, writing over what the pose left and putting it back next tick.
+- **A jolt.** A foot planted on a body, as its pose has it, after not, jolts the corpse by its nearest part
+  (`flinch` with `stepFlinchConfig`, pushed down).
 
 ## Targeting
 

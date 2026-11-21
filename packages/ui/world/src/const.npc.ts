@@ -198,8 +198,6 @@ export const fromAnimationClipKey = {
   crouch_strafe_right: true,
   crouch_walk: true,
   die_back: true,
-  die_crumple_back: true,
-  die_crumple_forward: true,
   die_forward: true,
   drop: true,
   drop_left: true,
@@ -345,6 +343,9 @@ export const flinchConfig: FlinchTune = { rad: 0.3, peakSecs: 0.06, secs: 0.45, 
 /** A hit jolts them twice as hard, peaking later. Whilst hurt they stay turned `hold` of the way. An arm turns `arms` as far */
 export const hitFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.6, peakSecs: 0.1, hold: 0.3, arms: 0.4 };
 
+/** A foot landing on a corpse jolts it a little */
+export const stepFlinchConfig: FlinchTune = { ...flinchConfig, rad: 0.12, peakSecs: 0.05, secs: 0.3 };
+
 export type FlinchTune = {
   rad: number;
   peakSecs: number;
@@ -439,19 +440,32 @@ export const hitConfig = {
   sink: "collapse" as ClipKey,
   /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
   die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
-  /** With no room to fall, they crumple where they stand, the same way: down onto their back, else folded forwards */
-  crumple: { back: "die_crumple_back", forward: "die_crumple_forward" } satisfies Record<string, ClipKey>,
   /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
   lieWidth: 0.45,
+  /** Metres either side a fall keeps clear of others and corpses: less than `lieWidth`, so bodies may overlap a little */
+  othersWidth: 0.25,
   /** Metres of clear floor a fall dead needs along its way: behind them falling back, ahead falling forward */
   lieLength: { back: 1.25, forward: 1.8 },
   /** Radians a fall dead may turn to fit, tried in this order, before falling the other way */
-  fitTurns: [0, 0.5, -0.5, 1, -1],
+  fitTurns: [0, 0.5, -0.5, 1, -1, 1.5, -1.5],
+  /** Of a fall's clip, how far in its turn and slide are done: before their body reaches out, e.g. into a wall */
+  fitBy: 0.4,
+  /** Metres a stood npc killed with no room to fall may stagger, nearer first, to fall where there is */
+  staggerBy: [0.5, 1],
   /** Seconds a hurt clip fades in over, so its first jolt reads */
   fadeInSecs: 0.08,
   /** Killed sat or lain, the pain clip goes on to this, held still at `deadSecs` into it. Stood, they `die` */
   dead: { sit: "sit_pacified", lie: "lie_pacified" } as Partial<Record<string, ClipKey>>,
   deadSecs: 0,
+  /** Over a corpse, a sole clears their body by `clear`. Its sensor is `margin` wider */
+  overBody: {
+    clear: 0.03,
+    margin: 0.3,
+    /** Metres in from their body's edge its height ramps up over */
+    ramp: 0.04,
+    /** Metres a second their hips rise or drop, as they step on or off */
+    speed: 2,
+  },
 };
 
 /** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
@@ -510,8 +524,6 @@ export const fadeSecs: Record<
   crouch_strafe_right: {},
   crouch_walk: {},
   die_back: {},
-  die_crumple_back: {},
-  die_crumple_forward: {},
   die_forward: {},
   drop: {},
   drop_left: {},

@@ -350,8 +350,9 @@ export default function WorldHud() {
       )}
       onClick={(e) => {
         e.stopPropagation();
-        const at = shotCycle.indexOf(w.debug.forceShot);
-        w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+        const forceShot = shotCycle[(shotCycle.indexOf(w.debug.forceShot) + 1) % shotCycle.length];
+        w.debug.set({ forceShot });
+        store.patch({ forceShot });
         state.update();
         w.view.focus();
       }}

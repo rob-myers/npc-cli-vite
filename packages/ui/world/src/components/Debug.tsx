@@ -62,7 +62,7 @@ export function Debug() {
       contextMenu: getWorldStore(w.key).read().contextMenu,
       hudDebugShown: getWorldStore(w.key).read().hudDebugShown,
       hudLayout: getWorldStore(w.key).read().hudLayout,
-      forceShot: "hit",
+      forceShot: getWorldStore(w.key).read().forceShot ?? "hit",
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],

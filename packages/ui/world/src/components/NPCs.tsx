@@ -54,6 +54,7 @@ import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
 import { emptyAnimationClip, type HitOutcome, NpcAnimation } from "./npc-animation";
+import { postCorpseCollider, removeCorpseCollider } from "./npc-over-body";
 import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
 
@@ -482,6 +483,7 @@ export default function NPCs() {
 
         if (keepPhysics === true) return;
 
+        for (const npc of npcs) removeCorpseCollider(npc.anim);
         // physics worker will fire exit colliders
         w.physics.worker.postMessage({
           type: "remove-physics-bodies",
@@ -663,6 +665,12 @@ export default function NPCs() {
       setBrightness(next) {
         state.dimNode.value = next;
         w.r3f?.invalidate(); // a uniform write draws nothing by itself, the frameloop being on demand
+      },
+      syncCorpseColliders() {
+        for (const npc of Object.values(state.npc)) {
+          const body = npc.anim.fall?.body;
+          if (body != null) postCorpseCollider(w, npc.key, body);
+        }
       },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
@@ -890,6 +898,8 @@ export type State = {
   setAmbient(next: number, sameRoom: number): void;
   /** Sets `dimNode`'s value — called by `WorldMenu`'s slider, never `.value` directly */
   setBrightness(next: number): void;
+  /** Puts back corpses' sensors, e.g. once the physics world is rebuilt */
+  syncCorpseColliders(): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
   /** Their material and uniforms — see `service/npc-material` */

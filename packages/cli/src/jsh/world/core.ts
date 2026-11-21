@@ -1650,6 +1650,7 @@ export async function spawn(
     npc: "npcKey",
     to: "at",
     skin: "as",
+    towards: "facing",
     "--facing": "facing",
     "--towards": "facing",
   }),

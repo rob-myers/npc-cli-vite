@@ -69,6 +69,8 @@ export type WorldSettings = {
   hudDebugShown: string[];
   /** The player's bar along the bottom, or a column on the World's left or right — see `Debug`'s `hudLayout` */
   hudLayout: HudLayout;
+  /** How every phaser shot at someone ends, from the hud's debug badge — see `Debug`'s `forceShot` */
+  forceShot: JshCli.ShotOutcome;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
   timeScale: number;
   /** Whether the menu shows its time scale slider, else only its number */
@@ -124,6 +126,7 @@ const defaultWorldSettings: WorldSettings = {
   statsShown: import.meta.env.DEV,
   hudDebugShown: [],
   hudLayout: isTouchDevice() ? "right" : "bar",
+  forceShot: "hit",
   timeScale: 1,
   timeSliderOpen: false,
   warningsOpen: false,

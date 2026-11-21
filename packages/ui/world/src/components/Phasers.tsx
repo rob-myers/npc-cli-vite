@@ -577,12 +577,13 @@ export default function Phasers() {
       },
       land(npc, dst, part, outcome, at, from) {
         const hits = outcome === "hit" || outcome === "down" || outcome === "kill";
-        if (hits) w.npc.hit(dst.key, part, { at, from, outcome });
+        if (hits) void w.e.takeHit(dst.key, part, { at, from, outcome });
         w.events.next({ key: "npc-shot", by: npc.key, npcKey: dst.key, part, outcome });
         if (hits === false && npc.key === w.player.key) w.hud?.say(outcome);
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
-        if (hits && dst.anim.hurt !== null && theirs !== undefined && lower(theirs))
+        const down = dst.anim.hurt !== null || dst.anim.staggering === true;
+        if (hits && down && theirs !== undefined && lower(theirs))
           w.events.next({ key: "phasers", armed: false, npcKeys: [dst.key] });
       },
       meetPart(npc, arm, dst, to) {
