@@ -22,6 +22,7 @@ import {
   type StruckKind,
   targetPoint,
 } from "../service/phaser-beam";
+import { gunMuzzle } from "../service/phaser-gun";
 import {
   createPhaserResources,
   MAX_PHASERS,
@@ -1606,7 +1607,7 @@ const phaserConfig = {
   /** Metres ahead one sat or lain points with nobody to aim at */
   aimAhead: 5,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
-  beamFrom: [0.12, -0.54, 0] as [number, number, number],
+  beamFrom: gunMuzzle,
   /** How far down the forearm the hand holds it, which it fades into and out of — model units */
   grip: 0.29,
   fadeSecs: 0.3,

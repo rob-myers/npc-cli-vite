@@ -18,6 +18,7 @@ import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionVa
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
 import { getWorldStore, type HudLayout } from "../service/storage";
+import { phaserIconBeam, phaserIconFaces } from "./phaser-icon.gen";
 import { WorldContext } from "./world-context";
 
 /**
@@ -1031,10 +1032,7 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" 
   );
 });
 
-/**
- * The gun `Phasers` draws, its boxes turned a little towards us — and whilst `locked`, its beam.
- * Generated: `shaderConfig.gunBoxes` projected at azimuth -38°, elevation 28°
- */
+/** The gun `Phasers` draws, its boxes turned a little towards us (`gen-phaser-icon`), and whilst `locked` its beam */
 const PhaserIcon = memo(function PhaserIcon({
   armed,
   locked,
@@ -1044,6 +1042,8 @@ const PhaserIcon = memo(function PhaserIcon({
   locked: boolean;
   dead: boolean;
 }) {
+  const { from, to } = phaserIconBeam;
+  const beam = `M${from.x} ${from.y} ${to.x} ${to.y}`;
   return (
     <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
@@ -1051,66 +1051,37 @@ const PhaserIcon = memo(function PhaserIcon({
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
           <stop offset="1" stopColor="#ff8a5c" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="hud-phaser-beam" gradientUnits="userSpaceOnUse" x1="44.4" y1="32.5" x2="56" y2="36.7">
+        <linearGradient id="hud-phaser-beam" gradientUnits="userSpaceOnUse" x1={from.x} y1={from.y} x2={to.x} y2={to.y}>
           <stop offset="0" stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
         <mask id="hud-phaser-fade">
-          <rect x="40" y="26" width="20" height="16" fill="url(#hud-phaser-beam)" />
+          <rect
+            x={from.x - 4}
+            y={from.y - 6}
+            width={to.x - from.x + 6}
+            height={to.y - from.y + 12}
+            fill="url(#hud-phaser-beam)"
+          />
         </mask>
       </defs>
-      {/* the gun centred, whatever it is doing */}
-      <g transform="translate(8)">
-        <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
-          {phaserFaces.map(([face, d]) => (
-            // holstered, its emitter is as dull as the rest
-            <path key={d} d={d} fill={phaserFill[armed ? face : dead ? phaserDead[face] : phaserOff[face]]} />
-          ))}
-        </g>
-        {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
-        {/* its beam fades in, and out towards the edge rather than ending in a dot */}
-        <g
-          mask="url(#hud-phaser-fade)"
-          className={cn("transition-opacity duration-300", locked ? "opacity-100" : "opacity-0")}
-        >
-          <path d="M44.4 32.5 56 36.7" stroke="#ff8a5c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
-          <path d="M44.4 32.5 56 36.7" stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
-        </g>
+      <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
+        {phaserIconFaces.map((face) => (
+          <path key={face.d} d={face.d} fill={armed ? face.armed : dead ? face.dead : face.off} />
+        ))}
+      </g>
+      {armed === true && <circle cx={from.x - 2} cy={from.y - 1} r="8" fill="url(#hud-phaser-glow)" />}
+      {/* its beam fades in, and out towards the edge rather than ending in a dot */}
+      <g
+        mask="url(#hud-phaser-fade)"
+        className={cn("transition-opacity duration-300", locked ? "opacity-100" : "opacity-0")}
+      >
+        <path d={beam} stroke="#ff8a5c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
+        <path d={beam} stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
       </g>
     </svg>
   );
 });
-
-/** Lit from above, as the gun is: its top, the side towards us, the end it fires from */
-const phaserFill = {
-  top: "#8f98a5",
-  side: "#6c7582",
-  end: "#505863",
-  glowTop: "#ffa784",
-  glowSide: "#ff8a5c",
-  glowEnd: "#d9744d",
-  deadTop: "#6ea4ee",
-  deadSide: "#3d7fd9",
-  deadEnd: "#2f63ab",
-};
-
-/** Each face as it is with the gun put away */
-const phaserOff = { top: "top", side: "side", end: "end", glowTop: "top", glowSide: "side", glowEnd: "end" } as const;
-
-// biome-ignore format: a row
-const phaserDead = { top: "top", side: "side", end: "end", glowTop: "deadTop", glowSide: "deadSide", glowEnd: "deadEnd" } as const;
-
-const phaserFaces: [keyof typeof phaserOff, string][] = [
-  ["top", "M14.5 24.0 23.5 27.3 18.2 30.4 9.2 27.2Z"],
-  ["side", "M9.2 49.8 18.2 53.1 18.2 30.4 9.2 27.2Z"],
-  ["end", "M23.5 49.9 18.2 53.1 18.2 30.4 23.5 27.3Z"],
-  ["top", "M12.0 10.9 41.2 21.6 34.2 25.8 5.0 15.1Z"],
-  ["side", "M5.0 27.7 34.2 38.4 34.2 25.8 5.0 15.1Z"],
-  ["end", "M41.2 34.2 34.2 38.4 34.2 25.8 41.2 21.6Z"],
-  ["glowTop", "M39.9 24.9 46.6 27.4 42.2 30.0 35.5 27.6Z"],
-  ["glowSide", "M35.5 35.1 42.2 37.6 42.2 30.0 35.5 27.6Z"],
-  ["glowEnd", "M46.6 34.9 42.2 37.6 42.2 30.0 46.6 27.4Z"],
-];
 
 /**
  * A brain seen from its left: a see-through solid, its neurons `firing` whilst psi is on.

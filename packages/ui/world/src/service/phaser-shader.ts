@@ -22,6 +22,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { FadeRooms } from "./fade-rooms";
+import { gunBoxes, gunKindIndex, gunStripY } from "./phaser-gun";
 
 export const MAX_PHASERS = 128;
 
@@ -32,7 +33,7 @@ export type PhaserPart = (typeof phaserParts)[number];
 export type PhaserResources = ReturnType<typeof createPhaserResources>;
 
 export function createPhaserResources() {
-  const { sides, segments, gunBoxes } = shaderConfig;
+  const { sides, segments } = shaderConfig;
   // the muzzle and eased shown, the end and eased locked
   const srcData = new Float32Array(MAX_PHASERS * 4);
   const dstData = new Float32Array(MAX_PHASERS * 4);
@@ -47,31 +48,32 @@ export function createPhaserResources() {
     new THREE.InstancedBufferAttribute(data, data === chargeData ? 2 : 4).setUsage(THREE.DynamicDrawUsage),
   );
 
-  /** `glow` marks the gun's emitter, lit whilst armed */
-  const glowing = (geo: THREE.BufferGeometry, glow: number) =>
-    geo.setAttribute(
-      "phaserGlow",
-      new THREE.BufferAttribute(new Float32Array(geo.getAttribute("position").count).fill(glow), 1),
-    );
+  /** Each vertex's box: its kind as `gunKindIndex`, and its tone */
+  const boxed = (geo: THREE.BufferGeometry, kind: number, tone: number) => {
+    const count = geo.getAttribute("position").count;
+    const data = new Float32Array(2 * count).map((_, i) => (i % 2 === 0 ? kind : tone));
+    return geo.setAttribute("phaserBox", new THREE.BufferAttribute(data, 2));
+  };
   const gun = mergeGeometries(
-    gunBoxes.map(([min, max], i) =>
-      glowing(
+    gunBoxes.map(({ min, max, kind, tone }) =>
+      boxed(
         new THREE.BoxGeometry(max[0] - min[0], max[1] - min[1], max[2] - min[2]).translate(
           (min[0] + max[0]) / 2,
           (min[1] + max[1]) / 2,
           (min[2] + max[2]) / 2,
         ),
-        i === gunBoxes.length - 1 ? 1 : 0,
+        gunKindIndex[kind],
+        tone,
       ),
     ),
   );
   /** Unit ring about `y`, open-ended: `y + 0.5` is how far along the beam */
-  const beam = glowing(new THREE.CylinderGeometry(1, 1, 1, sides, segments, true), 0);
-  const ball = glowing(new THREE.SphereGeometry(1, sides * 2, sides), 0);
+  const beam = boxed(new THREE.CylinderGeometry(1, 1, 1, sides, segments, true), 0, 1);
+  const ball = boxed(new THREE.SphereGeometry(1, sides * 2, sides), 0, 1);
   const base = mergeGeometries([gun, beam, ball], true); // a group apiece, as `phaserParts`
 
   const geo = new THREE.InstancedBufferGeometry();
-  for (const key of ["position", "normal", "uv", "phaserGlow"]) geo.setAttribute(key, base.getAttribute(key));
+  for (const key of ["position", "normal", "uv", "phaserBox"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
   for (const { start, count, materialIndex } of base.groups) geo.addGroup(start, count, materialIndex);
   ["phaserSrc", "phaserDst", "phaserRooms", "phaserGun", "phaserQuat", "phaserCharge"].forEach((key, i) =>
@@ -105,6 +107,7 @@ export function createPhaserResources() {
     phase: uniform(0),
     color: uniform(new THREE.Color(shaderConfig.color)),
     gunColor: uniform(new THREE.Color(shaderConfig.gunColor)),
+    slotColor: uniform(new THREE.Color(shaderConfig.slotColor)),
     deadColor: uniform(new THREE.Color(shaderConfig.deadColor)),
     /** From `theme.npcs.fxStrength` */
     gain: uniform(1),
@@ -121,7 +124,8 @@ type PhaserView = {
 };
 
 export function phaserNodes(resources: PhaserResources, view: PhaserView, part: PhaserPart) {
-  return part === "gun" ? gunNodes(resources, view) : beamNodes(resources, view, part === "ball");
+  if (part === "gun") return gunNodes(resources, view);
+  return beamNodes(resources, view, part === "ball");
 }
 
 const seenBy =
@@ -130,8 +134,8 @@ const seenBy =
     fadeRoomsFx.getVisiblity(slot).max(lit.mul(litNpcsEnabled));
 
 /** The gun, held along the forearm */
-function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: PhaserView) {
-  const { edgePx, edgeDarken, chargeBody, chargeEmitter } = shaderConfig;
+function gunNodes({ color, gunColor, slotColor, deadColor, gain }: PhaserResources, view: PhaserView) {
+  const { edgePx, edgeDarken, chargeBody, chargeEmitter, stripArmed, stripFull } = shaderConfig;
   const gun = attribute<"vec4">("phaserGun", "vec4");
   const quat = attribute<"vec4">("phaserQuat", "vec4");
   /** `v` turned by the forearm's quaternion */
@@ -144,8 +148,17 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
 
   const rooms = attribute<"vec4">("phaserRooms", "vec4");
   const vSeen = varying(seenBy(view)(rooms.x, rooms.z), "vGunSeen");
-  const glow = attribute<"float">("phaserGlow", "float");
-  const vGlow = varying<"float">(glow as THREE.Node<"float">, "vGunGlow");
+  const box = attribute<"vec2">("phaserBox", "vec2");
+  const glow = box.x.equal(gunKindIndex.emitter).select(1, 0) as THREE.Node<"float">;
+  const vGlow = varying<"float">(glow, "vGunGlow");
+  const vStrip = varying<"float">(box.x.equal(gunKindIndex.strip).select(1, 0) as THREE.Node<"float">, "vGunStrip");
+  const vTone = varying<"float">(box.y, "vGunTone");
+  /** How far along the strip from its back, which a charge fills to */
+  const vStripT = varying<"float">(
+    positionLocal.y.sub(gunStripY[0]).div(gunStripY[1] - gunStripY[0]) as THREE.Node<"float">,
+    "vGunStripT",
+  );
+  const charge = attribute<"vec2">("phaserCharge", "vec2").x;
   /** Armed, its quaternion's `w` is positive: `q` and `-q` turn alike */
   const vArmed = varying<"float">(quat.w.greaterThan(0).select(1, 0) as THREE.Node<"float">, "vGunArmed");
   /** A dead one's scale is negative */
@@ -153,9 +166,10 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
   /** Lit from above, so its faces tell apart */
   const lit = turned(normalLocal as THREE.Node<"vec3">).dot(normalize(vec3(0.3, 1, 0.2)));
   const vShade = varying(lit.mul(0.3).add(0.7), "vGunShade");
+  const vCharge = varying<"float">(charge, "vGunCharge");
   /** How much of the beam's colour it gains as it charges: its emitter most. Per vertex, as each box is one or other */
   const vCharged = varying<"float">(
-    attribute<"vec2">("phaserCharge", "vec2").x.mul(mix(float(chargeBody), float(chargeEmitter), glow)),
+    charge.mul(mix(float(chargeBody), float(chargeEmitter), glow)).mul(vStrip.oneMinus()),
     "vGunCharged",
   );
   const colorNode = Fn(() => {
@@ -167,7 +181,12 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
     const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
     const beamColor = color.mul(gain.min(1));
     const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), beamColor, vArmed);
-    const body = mix(gunColor.mul(vShade), emitter, vGlow).add(beamColor.mul(vCharged));
+    /** Dark, faintly lit whilst armed, and filled from the back by the charge */
+    const slot = mix(slotColor, beamColor, vArmed.mul(vDead.oneMinus()).mul(stripArmed)).mul(vShade);
+    const filled = smoothstep(vStripT.sub(0.04), vStripT, vCharge);
+    const strip = mix(slot, beamColor.mul(stripFull), filled);
+    const shell = mix(gunColor.mul(vShade).mul(vTone), emitter, vGlow);
+    const body = mix(shell, strip, vStrip).add(beamColor.mul(vCharged));
     // opaque, so it fades to black as the body does
     return vec4(body.mul(edge.mul(edgeDarken).oneMinus()).mul(a), 1);
   })();
@@ -226,29 +245,15 @@ function beamNodes({ phase, color, gain, faint }: PhaserResources, view: PhaserV
 }
 
 export const shaderConfig = {
-  /**
-   * The gun's boxes `[min, max]` in the right forearm's frame, whose fist ends at `y` `-0.37`: the last glows.
-   * Model units
-   */
-  gunBoxes: [
-    [
-      [-0.1, -0.33, -0.03],
-      [0.08, -0.25, 0.03],
-    ],
-    [
-      [0.07, -0.48, -0.04],
-      [0.17, -0.22, 0.04],
-    ],
-    [
-      [0.09, -0.54, -0.025],
-      [0.15, -0.48, 0.025],
-    ],
-  ] as [number[], number[]][],
   /** Pale against a dark deck, and dark against a pale one */
   /** Pixels of darker line along each of the gun's edges, and how far it darkens */
   edgePx: 1,
   edgeDarken: 0.6,
   gunColor: "#5f6875",
+  /** The strip along its side: dark, `stripArmed` of the beam's colour whilst armed, `stripFull` times it where charged */
+  slotColor: "#2e353f",
+  stripArmed: 0.45,
+  stripFull: 1.3,
   /** Its emitter, deactivated */
   deadColor: "#3d7fd9",
   paleGunColor: "#7d8591",
