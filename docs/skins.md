@@ -122,6 +122,17 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - Widening slim arms, clear each arm's 16px square first. Else the old layout's overlay texels show through the new one's gaps.
 - A screen for a face (`robot-2`, `robot-4`) is drawn near-black, its eyes in a bright core over a blurred glow. A dark grey screen reads faded in the World.
 - Fine detail on a face, e.g. glasses (`medic-1`), goes on the head overlay as opaque strokes, its pixel original cleared. The eye slices never touch the overlay.
+- Hair at the back of the head is drawn on the head overlay as tufts, never as one even plane, which reads as a raised panel (`d-4`).
+  - The back takes pointed clumps of differing lengths, hanging from its top edge with gaps between. A crown covers the rear of the top face, its tips pointing forward. Each side takes a short clump at its rear.
+  - The top face's upper edge meets the back. The right side's rear is its left edge, and the left side's is its right edge.
+  - The base hair under them takes each tuft's blurred shadow just past its tips, and strand lines carrying on from the tufts'.
+  - Drawn over a filtered image, they take the same filter (`#punch`), else their browns do not match.
+- Messy hair mixes the two layers (`d-2`).
+  - The overlay takes short curved tufts of random size and mixed tones, each clipped to its face. On top they lie away from the crown, and elsewhere they hang down.
+  - The base hair takes streaks along the same flow, clipped to its hair texels, and the tufts' blurred shadows.
+  - A seeded random keeps it the same each time it is generated.
+- Eyes are never too light, and brows never bold black. Mute an eye's white, darken its pupil, and draw the brows in a dark hair colour (`d-2`).
+- Accessories and loose strands on the head overlay, e.g. clips, a knot, stray tufts, read as noise at this size. Remove them.
 - Long hair below the head does not work, on the base or the overlay. Remove it from the body, each texel taking the nearest suit colour on its face (`d-4`).
 - A D-class skin has a big D on its back, over a number made unreadable by `#worn`, and a chest patch with its own worn tag. Copy d-0's `inmate marks` group, changing the numbers.
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
