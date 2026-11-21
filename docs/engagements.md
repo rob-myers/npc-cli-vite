@@ -8,14 +8,14 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
-| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`, `hitDown`), the dead (`holdStill`) |
+| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`, `hitDown`). The dead are in `docs/deaths.md` |
 | `ui/world/src/components/npc-flinch.ts` | a jolt from a shot, and a hit's held lean (`flinch`, `tickFlinch`) |
 | `ui/world/src/components/npc-clutch.ts` | a hand on the wound (`takeClutch`, `tickClutch`) |
 | `ui/world/src/components/NpcGhost.tsx` | ghost: a dot screen, `w.npcGhost` |
 | `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `deathConfig`, `corpseConfig`, `ghostConfig`, `armourConfig`, `flinchConfig`, `hitFlinchConfig`, `clutchConfig` |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig`, `hitFlinchConfig`, `clutchConfig` |
 
 ## How a shot ends
 
@@ -29,7 +29,7 @@ Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one
 | `down` | lands on the part | a hit that puts them down, collapsed or pacified |
 | `ghost` | passes through them, once they are a dot screen | see [Ghost](#ghost) |
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
-| `kill` | lands on the part | a hit that leaves them dead: see [Kill](#kill) |
+| `kill` | lands on the part | a hit that leaves them dead: see `docs/deaths.md` |
 
 - **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
 - **The badge** shows on the phaser slot whilst **phaser** is ticked under **debug** in the World menu's **hud** select
@@ -149,79 +149,8 @@ A hit reacts to its point and its way (`w.npc.hit`'s `impact`, from `strike`).
 
 ### Kill
 
-A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
-
-- Stood, they fall dead the way the shot pushes, held on its last frame (`deathConfig.die`, by the shot's way in their own
-  frame): shot from in front, `die_back` onto their back, arms a little out, the head about 1m behind where they stood;
-  else `die_forward`, reaching to catch themselves, onto their front, the head about 1m ahead.
-- Each death plays mirrored half the time (`mirroredClips`, made at load: see Mirrored clips in `docs/blockbench.md`), at a
-  random rate within `deathConfig.dieRate`. The hurt clock runs at that rate too, so the fall's turn and hold keep pace.
-- Falling, they leave the crowd (`startFall`: their agent goes, their physics body stays). Each tick the npc moves as far
-  as the clip has carried their hips, and their root goes back as far (`tickFall`), so their shadow and corpse are where
-  their body is. Released, they are placed back on the navmesh with an agent.
-- They need `deathConfig.lieWidth` either side. A wall or obstacle nearer slides them that far off it as they fall
-  (`roomToLie`, by `npc.roomAhead`, measured whilst they still have an agent).
-- Sat, lain or already collapsed, their pose freezes (`deathConfig.dead`, paused at `deadSecs`).
-- Eyes shut, no breath, no hand on the wound, no lean.
-- A shove does not move them, nor a drag. A shot only jolts them.
-- `npc-hurt` carries `dead`. `npc.kill()` kills them at once, as a chest shot from in front would (`w.e.takeHit`).
-  An npc's menu (`PickMenu`) has a **dead** toggle: on, it kills them, off, it revives them.
-- **Getting up.** `npc.revive()`, or `pose npc-0 as:breathe`, is `setHurt(null)`. Fallen, they get up first, by
-  `deathConfig.getUp` of the clip they fell by, e.g. `get_up_back` (`startRise`). Its first frame is the death's last.
-  - Their root is held back as it lay (`rise.offset`), and the npc follows their hips as a fall does, the root going
-    back by as much (`tickRise`). So their body never jumps, and their label and shadow stay over it. Their label
-    rises over the whole clip.
-  - Stood, the hold goes and the npc moves by what is left (`finishRise`), then they are back in the crowd, in their
-    idle. The get-up's last frame is `breathe`'s first, so it hands on with no fade.
-  - `get_up_back` sits up, then rolls forward into a squat. `get_up_forward` pushes up onto hands and knees, then
-    kneels up over one foot. A fall with no get-up in `deathConfig.getUp` is let go at once.
-- A new mesh, e.g. the glTF refetched, moves a corpse's fall onto its hips (`rebindFall`), else it would jump.
-- **Saved.** The dead are saved with their map's npcs: `dead` is the clip they lie in, and `at` where their body lies
-  (`persistNpcs`). Restored, they lie there again, held at its end, out of the crowd, their sensor back (`restoreDead`).
-- Their label and bubble sit as a lain npc's, eased down as they fall (`labelYShiftForClip`).
-- A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
-  - Clear floor for `deathConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).
-  - No one in their room in that strip, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
-    `bodyCrosses`). That is narrower than `lieWidth`, so bodies may overlap a little.
-  - The shot's way is tried first, turned to fall along the shot (`alongShot`) and then by each of `fitTurns`, then the
-    other way at their own facing. The shot's line is first turned up to `fallJitter` at random, mostly a little (cubed),
-    so the dead do not lie aligned.
-  - The turn and any slide are done by `fitBy` of the clip (`tickFall`), before their body reaches out into a wall.
-  - A corpse's physics body goes where it lies, so a doorway it lies in is not clear and its door stays open.
-- **Staggering.** If none fits, stood, they look for a spot that does along the shot, give or take 45°, within
-  `staggerBy` (`staggerSpot`), with no one on the way there.
-  - Behind them, they walk back to it, then fall (`w.e.takeHit`, which the phaser calls). Further hits are ignored
-    meanwhile (`anim.staggering`), and a move that stops them short has them fall where they are.
-  - Ahead of them, the fall slides them there instead, hidden by `die_forward`'s stumble (`startFall`'s `slide`).
-- If no spot will do, they fall clear of corpses alone, over the living, who make way (`fitFall`'s `others`). Else clear
-  of walls alone, onto whoever is there. Only with walls all round do they collapse where they stand (`hitConfig.sink`),
-  held on its last frame. They then have no corpse body to step over.
-- **Making way.** Whoever living stands where a body will lie steps out of its strip, quickly, to the nearer side
-  (`anim.inTheWay`, `w.e.makeWayFor`), far enough that it passes beside them, the player too.
-  One who cannot move, e.g. hard pinned or hurt, stays put.
-
-### Walking over a corpse
-
-Others step over a fallen corpse, or onto it (`npc-over-body.ts`, `corpseConfig`).
-
-- **Its body.** Once its die clip is held, a corpse keeps where it lies (`fall.body`).
-  - Its footprint is a convex hull of its parts' boxes, head to shins, arms included.
-  - Its height `top` is its torso's, since the big head would have them stand high on it.
-  - Its height ramps up over `ramp` from the hull's edge.
-- **Its sensor.** A rect round the hull, `margin` wider, is posted to the physics worker as `corpse-{npcKey}`
-  (`postCorpseCollider`).
-  - Its `enter-collider` and `exit-collider` carry `meta.corpse`, and fill a walker's `overBody.on`.
-  - It goes when they are revived or removed (`removeCorpseCollider`). That fires no exits, so whoever was on it is
-    let off directly.
-  - A physics rebuild loses it, so `w.npc.syncCorpseColliders` posts each again.
-- **Feet.** Whilst `on` holds a corpse, each foot lifts so the middle of its sole clears the body under it by `clear`
-  (`footLift`).
-  - The knee bends to lift it: the thigh forward, the shin back twice as far, the foot level again. Their hips stay.
-  - With both feet on it, their root rises towards the lower foot's lift, at `speed` either way. So they stand on it.
-    Running, one foot at most is down, so it rises towards the higher instead, and they rise over it.
-  - It runs after the stance, before the flinch, writing over what the pose left and putting it back next tick.
-- **A jolt.** A foot planted on a body, as its pose has it, after not, jolts the corpse by its nearest part
-  (`flinch` with `stepFlinchConfig`, pushed down).
+A `kill` leaves them dead. Stood, they fall the way the shot pushes, where a body fits, and others may walk over the
+corpse. See `docs/deaths.md`.
 
 ## Targeting
 

@@ -8,7 +8,7 @@ import { flinch } from "./npc-flinch";
 
 /**
  * Over a corpse, each foot lifts whilst over their body, whilst `on` holds its npcKey.
- * See "Walking over a corpse" in `docs/engagements.md`.
+ * See "Walking over a corpse" in `docs/deaths.md`.
  */
 export const newOverBody = () => ({
   on: new Set<string>(),
