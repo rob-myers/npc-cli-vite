@@ -821,7 +821,10 @@ export default function NPCs() {
       npc.anim.tickUpper(0);
     }
 
+    // an added skin shifts the indices, so each npc keeps theirs by key
+    const skinKeys = Object.values(state.npc).map((npc) => [npc, state.getSkinKeyBySkinIndex(npc.skinIndex)] as const);
     state.skin = { entries: Object.values(w.sheets.skin), manifest: queryData.skinManifest };
+    for (const [npc, skinKey] of skinKeys) if (skinKey !== null) npc.setSkin(skinKey);
     w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
 

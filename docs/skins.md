@@ -42,7 +42,19 @@ A DEV World redraws the sheets (the `["skins-and-gltf"]` query) on:
 
 Only a browser renders the svgs faithfully: skia-canvas and resvg did not.
 
+An npc holds its skin as an index into the sheet's entries. A new skin shifts the indices, so the World
+remaps each npc by key when the skins change (`NPCs.tsx`).
+
 ## Making a skin
+
+### Finding one
+
+- Candidates come from namemc.com's tag pages, e.g. `/minecraft-skins/tag/robot`. Each `a[href^="/skin/"]` is a skin id.
+- Cloudflare refuses curl there, so read them in a browser, e.g. Claude in Chrome. Fetch tags a few seconds apart, else 403.
+- The texture itself downloads plainly: `https://s.namemc.com/i/{id}.png`.
+- Show candidates front and back on a contact sheet, numbered, to choose from.
+- A slim skin is transparent at texel (54, 25). A legacy skin is 64×32: make it 64×64 in the png itself, its left limbs the right ones flopped face by face.
+- A starter svg is the meta group and its image alone, widened if slim.
 
 ### The png
 
@@ -99,6 +111,10 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   how a pixel visor becomes goggles, or a pixel helmet a smooth one.
 - To change pixels themselves, e.g. recolour a suit, remove a stray braid or fill a transparent face, change
   the embedded image rather than painting over it.
+- To clear texels with ImageMagick, copy a transparent patch over them: `( -size WxH xc:none ) -geometry +X+Y -compose Copy -composite`. `-region … -alpha transparent` leaves them.
+- Widening slim arms, clear each arm's 16px square first. Else the old layout's overlay texels show through the new one's gaps.
+- A screen for a face (`robot-2`, `robot-4`) is drawn near-black, its eyes in a bright core over a blurred glow. A dark grey screen reads faded in the World.
+- Fine detail on a face, e.g. glasses (`medic-1`), goes on the head overlay as opaque strokes, its pixel original cleared. The eye slices never touch the overlay.
 - Medic-0's head shading reads well on most skins: a hard-light spotlight over the face and top of the head,
   and the sides and back a little darker.
 
@@ -106,6 +122,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 
 - The dev server rebuilds `manifest.json` on any skin png or svg change. A DEV World redraws the sheets.
 - Spawn the skin next to the player, in `sight`, to see it lit as it will be.
+- jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `as:mtf` keeps one family, `r:2.5` widens it.
 - Load a DEV World before committing, so `sheet/skin.N.png` and `sheet/skin-slices.N.png` are current.
 - The dev server saves a sheet only when what it is drawn from changes: its layout, its skins' sources and meta, or the drawing code (`skin-sheet-hash.ts`). The hash is kept in the png. So another browser's rendering never rewrites it.
 - It saves only from this machine, over http. A self-signed https page (`USE_HTTPS`) may draw them wrongly when certificate invalid.

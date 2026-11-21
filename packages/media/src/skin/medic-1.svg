@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<g style="pointer-events: none;">
+<title>meta prefix=medic</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>medic-1--677d5973bd6d1678</title>
+</image>
+</g>
+<g style="pointer-events: none;">
+<title>glasses</title>
+<rect x="160.9" y="44.6" width="13.2" height="9.4" rx="2.6" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>right lens</title>
+</rect>
+<rect x="177.9" y="44.6" width="13.2" height="9.4" rx="2.6" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>left lens</title>
+</rect>
+<path d="M174 47.4Q176 45.6 178 47.4" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>bridge</title>
+</path>
+<path d="M160 46.2H138" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>right arm</title>
+</path>
+<path d="M192 46.2H214" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>left arm</title>
+</path>
+<circle cx="157.6" cy="46.2" r="1" style="fill: #b8a070;"/>
+<circle cx="194.4" cy="46.2" r="1" style="fill: #b8a070;"/>
+</g>
+</svg>

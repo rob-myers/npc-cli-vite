@@ -680,7 +680,7 @@ export class Npc {
 
   setSkin(skinKey?: string) {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
-    console.warn(`${this.key}: skin "${skinKey}" not found`);
+    if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
   }
 

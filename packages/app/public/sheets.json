@@ -710,10 +710,82 @@
       "originalWidth": 64,
       "originalHeight": 64
     },
+    "d-2": {
+      "key": "d-2",
+      "filename": "d-2--7c1b9cf9056113c0.png",
+      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "d-3": {
+      "key": "d-3",
+      "filename": "d-3--b14deaed093be445.png",
+      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "d-4": {
+      "key": "d-4",
+      "filename": "d-4--01e468ce1edd3688.png",
+      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "d-5": {
+      "key": "d-5",
+      "filename": "d-5--1938c8e17e34ebdc.png",
+      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
     "medic-0": {
       "key": "medic-0",
       "filename": "medic-0--3573d1c9cad6c8fc.png",
-      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "medic-1": {
+      "key": "medic-1",
+      "filename": "medic-1--677d5973bd6d1678.png",
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "medic-2": {
+      "key": "medic-2",
+      "filename": "medic-2--88ecd22f251083c2.png",
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "medic-3": {
+      "key": "medic-3",
+      "filename": "medic-3--9cfe7da634bcee98.png",
+      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "medic-4": {
+      "key": "medic-4",
+      "filename": "medic-4--377631a97d922e6a.png",
+      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "medic-5": {
+      "key": "medic-5",
+      "filename": "medic-5--212b959e126fa575.png",
+      "rect": {"x": 776, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -721,7 +793,7 @@
     "mtf-0": {
       "key": "mtf-0",
       "filename": "mtf-0--543f56fb2b80fc9a.png",
-      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 2, "y": 776, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -729,7 +801,7 @@
     "mtf-1": {
       "key": "mtf-1",
       "filename": "mtf-1--e4d405deeb9ce415.png",
-      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 776, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -737,7 +809,7 @@
     "mtf-2": {
       "key": "mtf-2",
       "filename": "mtf-2--c447b8bcb6c785c0.png",
-      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 776, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -745,7 +817,23 @@
     "postdoc-0": {
       "key": "postdoc-0",
       "filename": "postdoc-0--8c524ef1dc111a13.png",
-      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 776, "y": 776, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "postdoc-1": {
+      "key": "postdoc-1",
+      "filename": "postdoc-1--da2e61ba815d2854.png",
+      "rect": {"x": 1034, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "postdoc-2": {
+      "key": "postdoc-2",
+      "filename": "postdoc-2--86403319024aa40f.png",
+      "rect": {"x": 1034, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -753,7 +841,23 @@
     "ra-0": {
       "key": "ra-0",
       "filename": "ra-0--23aa3d70ee53af87.png",
-      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 1034, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "ra-1": {
+      "key": "ra-1",
+      "filename": "ra-1--2e367f0724df8057.png",
+      "rect": {"x": 1034, "y": 776, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "ra-2": {
+      "key": "ra-2",
+      "filename": "ra-2--a8d658133fdbfe9e.png",
+      "rect": {"x": 2, "y": 1034, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -761,14 +865,46 @@
     "robot-0": {
       "key": "robot-0",
       "filename": "robot-0--e91cc700154075b2.png",
-      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "robot-1": {
+      "key": "robot-1",
+      "filename": "robot-1--a3b7b376df1e7ac5.png",
+      "rect": {"x": 518, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "robot-2": {
+      "key": "robot-2",
+      "filename": "robot-2--29eccb4e7d6df073.png",
+      "rect": {"x": 776, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "robot-3": {
+      "key": "robot-3",
+      "filename": "robot-3--5cb2fcd064096582.png",
+      "rect": {"x": 1034, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "robot-4": {
+      "key": "robot-4",
+      "filename": "robot-4--cf9e073bbee7247c.png",
+      "rect": {"x": 1292, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 776, "height": 776}],
-  "maxSkinSheetDim": {"width": 776, "height": 776},
+  "skinSheetDims": [{"width": 1550, "height": 1292}],
+  "maxSkinSheetDim": {"width": 1550, "height": 1292},
   "skinSlices": {
     "d-0": {
       "key": "d-0",
@@ -780,42 +916,127 @@
       "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     },
+    "d-2": {
+      "key": "d-2",
+      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "d-3": {
+      "key": "d-3",
+      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "d-4": {
+      "key": "d-4",
+      "rect": {"x": 262, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "d-5": {
+      "key": "d-5",
+      "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
     "medic-0": {
       "key": "medic-0",
-      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-1": {
+      "key": "medic-1",
+      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-2": {
+      "key": "medic-2",
+      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-3": {
+      "key": "medic-3",
+      "rect": {"x": 392, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-4": {
+      "key": "medic-4",
+      "rect": {"x": 392, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-5": {
+      "key": "medic-5",
+      "rect": {"x": 392, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-0": {
       "key": "mtf-0",
-      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-1": {
       "key": "mtf-1",
-      "rect": {"x": 262, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-2": {
       "key": "mtf-2",
-      "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "postdoc-0": {
       "key": "postdoc-0",
-      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 392, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "postdoc-1": {
+      "key": "postdoc-1",
+      "rect": {"x": 522, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "postdoc-2": {
+      "key": "postdoc-2",
+      "rect": {"x": 522, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "ra-0": {
       "key": "ra-0",
-      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "ra-1": {
+      "key": "ra-1",
+      "rect": {"x": 522, "y": 392, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "ra-2": {
+      "key": "ra-2",
+      "rect": {"x": 2, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-0": {
       "key": "robot-0",
-      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 522, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "robot-1": {
+      "key": "robot-1",
+      "rect": {"x": 262, "y": 522, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "robot-2": {
+      "key": "robot-2",
+      "rect": {"x": 392, "y": 522, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "robot-3": {
+      "key": "robot-3",
+      "rect": {"x": 522, "y": 522, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "robot-4": {
+      "key": "robot-4",
+      "rect": {"x": 652, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     }
   },
-  "skinSlicesSheetDims": [{"width": 392, "height": 392}],
+  "skinSlicesSheetDims": [{"width": 782, "height": 652}],
   "hash": {}
 }
