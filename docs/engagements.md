@@ -262,6 +262,13 @@ Where a shot lands, a ring widens and fades in its beam's colour, a flash at its
 The debug **overlay** select's **rays** draws each raycast for 2 game seconds (`w.e.showRays`, `raysDebug` in `use-world-events.ts`).
 
 - A ray runs from its start, through a disc at each door, window, obstacle or decor edge it crossed, to where it stopped. It is red if a wall stopped it, orange a door, green nothing.
-- Its dash says how a keyed cast was answered from the cache: solid fresh, dashed corridor, dotted prefix.
+- A reused cast is dotted (see Rapid fire below).
 - Each caller passes a `key` (e.g. `rob/sight`, `rob/reach0`, `along`), and its rays replace its last. A cast asks the worker for `debug` (`JshCli.RaycastDebug`) only whilst it is on.
 - jsh `rays band rob count:3 width:0.3` or `rays fan rob count:5 spread:20` casts from their aim, else their facing, drawn even with the overlay off.
+
+### Rapid fire
+
+A cast's cost is its round trip to the nav worker, not its walk of the grid. So rapid fire reuses on main.
+
+- `w.e.raycast(src, dst, { key, reuse: true })` returns `key`'s last result while the ray is within 1cm at both ends and 0.1 game seconds old (`raysReuse`), with no round trip.
+- jsh `rays burst rob n:20 every:0.05` fires a burst and prints how many casts were reused.

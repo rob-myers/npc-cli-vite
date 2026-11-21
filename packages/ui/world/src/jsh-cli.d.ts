@@ -376,8 +376,6 @@ declare namespace JshCli {
   type RaycastDebug = {
     /** Metres along it to each door, window, obstacle or decor edge it crossed before it stopped */
     crossings: number[];
-    /** How a keyed cast was answered from the last: `null` uncached */
-    cache: null | "prefix" | "corridor" | "fresh";
   };
 
   type NpcLabelStyle = {

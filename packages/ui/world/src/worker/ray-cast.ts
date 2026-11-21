@@ -182,7 +182,7 @@ function raycast({ src, dst, grKey, debug }: WW.GetRaycasts["casts"][number]): J
     shields: shieldsPassed(src, dst, stop),
     obstacles: obstacles.sort((a, b) => a.dist - b.dist),
     decor: decor.sort((a, b) => a.dist - b.dist),
-    ...(crossings !== null && { debug: { crossings, cache: null } }),
+    ...(crossings !== null && { debug: { crossings } }),
   };
 }
 
