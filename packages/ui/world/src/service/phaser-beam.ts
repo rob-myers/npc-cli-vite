@@ -1,6 +1,8 @@
 import * as THREE from "three/webgpu";
 import type { Npc } from "../components/npc";
 import { eased, type Fade, stepFade } from "./fade";
+import type { GunAttachment } from "./phaser-gun";
+import { attachmentRay, rayCount } from "./phaser-look";
 
 /** Whom a weapon locks on to, or where a shot at no one ends */
 export type BeamTarget = NpcTarget | FreeShot;
@@ -192,6 +194,45 @@ const tmpGlide = new THREE.Vector3();
 
 /** Where a ray meets a part: reused by each call, so copy what is kept */
 export type PartHit = { part: string; local: THREE.Vector3; point: THREE.Vector3; dist: number };
+
+/** Whom an attachment's ray meets, where, and metres on the ground from its start */
+export type RayMeet = { on: Npc; part: string; at: THREE.Vector3; dist: number };
+
+/**
+ * Per ray of `attachment` from `tip` towards `end`, bar the shot's own line, the nearest of `npcs` it meets on `bones`
+ * within `reach(i)` metres on the ground: `null` where none
+ */
+export function raysMeet(
+  attachment: GunAttachment,
+  tip: THREE.Vector3,
+  end: THREE.Vector3,
+  npcs: Npc[],
+  bones: Iterable<string>,
+  reach: (i: number) => number,
+): (null | RayMeet)[] {
+  const way = tmpWay.subVectors(end, tip).normalize();
+  return Array.from({ length: rayCount(attachment) }, (_, i) => {
+    const { origin, dir, middle } = attachmentRay(attachment, i, tip, way, tmpRayOf);
+    if (middle === true) return null;
+    tmpMeetRay.set(origin, dir);
+    let best: null | RayMeet = null;
+    for (const on of npcs) {
+      const hit = partOnRay(on, tmpMeetRay, bones);
+      const dist = hit === null ? Number.POSITIVE_INFINITY : Math.hypot(hit.point.x - origin.x, hit.point.z - origin.z);
+      if (hit !== null && dist < reach(i) && dist < (best?.dist ?? Number.POSITIVE_INFINITY))
+        best = { on, part: hit.part, at: hit.point.clone(), dist }; // shared, so copied
+    }
+    return best;
+  });
+}
+
+/** The nearest of what rays met, else `null` */
+export const nearestMeet = (met: (null | RayMeet)[]) =>
+  met.reduce<null | RayMeet>((a, b) => (b !== null && (a === null || b.dist < a.dist) ? b : a), null);
+
+const tmpWay = new THREE.Vector3();
+const tmpRayOf = { origin: new THREE.Vector3(), dir: new THREE.Vector3() };
+const tmpMeetRay = new THREE.Ray();
 
 /**
  * The nearest of `bones` on `npc` whose part `ray` meets, by the box round what its bone moves most: its name, where

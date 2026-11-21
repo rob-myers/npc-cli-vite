@@ -33,10 +33,10 @@ export default function NpcArmour() {
           const speed = THREE.MathUtils.lerp(sparks.speed[0], sparks.speed[1], Math.random());
           streaks.push({ dir, speed, look: [sparks.length, sparks.width, sparks.life, 0] });
         }
-        // one burst per npc: struck again, it starts over
-        const again = state.bursts.findIndex((b) => b.npc === npc);
-        if (again !== -1) state.bursts.splice(again, 1);
-        state.bursts.push({ npc, at: at.clone(), streaks, startSecs: w.gameTime.now() });
+        // one burst per npc per moment: struck again later, it starts over. A shotgun's rays land together
+        const now = w.gameTime.now();
+        state.bursts = state.bursts.filter((b) => b.npc !== npc || b.startSecs === now);
+        state.bursts.push({ npc, at: at.clone(), streaks, startSecs: now });
         flinch(npc.anim, part, at, d);
         state.write();
         state.onTick(); // shown at once, even paused

@@ -74,7 +74,7 @@ export function beamSegments(
   spread: null | readonly number[],
 ): readonly BeamSegment[] {
   set(segments[0], from, end, true, 1);
-  if (look.attachment === "caliber") return caliber(from, end);
+  if (look.attachment === "caliber") return caliber(from, end, spread);
   if (look.attachment === "shotgun") return shotgun(from, end, spread);
   if (look.style !== "tesla") return single;
   // forks arc from the muzzle to either side, short of the end
@@ -92,21 +92,55 @@ export function beamSegments(
   return three;
 }
 
-/** Parallel rays about the axis, a triangle across it */
-function caliber(from: THREE.Vector3, end: THREE.Vector3) {
-  const { radius, width } = attachmentBeams.caliber;
+/** Parallel rays about the axis, a triangle across it, each to the end, else as far as `reach` on the ground */
+function caliber(from: THREE.Vector3, end: THREE.Vector3, reach: null | readonly number[]) {
+  const length = from.distanceTo(end);
+  const slope = length / (Math.hypot(end.x - from.x, end.z - from.z) || 1);
   const way = tmpWay.subVectors(end, from).normalize();
-  const side = tmpSide.crossVectors(way, up).normalize();
-  const over = tmpOver.crossVectors(side, way);
-  for (const [i, angle] of triangle.entries()) {
-    tmpOff
-      .copy(side)
-      .multiplyScalar(radius * Math.cos(angle))
-      .addScaledVector(over, radius * Math.sin(angle));
-    set(segments[i], tmpFrom.addVectors(from, tmpOff), tmpEnd.addVectors(end, tmpOff), true, width);
+  for (let i = 0; i < 3; i++) {
+    const { origin, dir } = attachmentRay("caliber", i, from, way, tmpRay);
+    const along = Math.min(length, (reach?.[i] ?? Number.POSITIVE_INFINITY) * slope);
+    set(segments[i], origin, tmpEnd.copy(dir).multiplyScalar(along).add(origin), true, attachmentBeams.caliber.width);
   }
   return three;
 }
+
+/** How many rays an attachment fires */
+export const rayCount = (attachment: null | GunAttachment) =>
+  attachment === "caliber" ? 3 : attachment === "shotgun" ? attachmentBeams.shotgun.angles.length : 1;
+
+/**
+ * An attachment's `i`th ray from `from` along the shot's `way`, written to `out`: a shotgun's fanned by bearing, a
+ * caliber's offset across it. `middle`: it is the shot's own line
+ */
+export function attachmentRay(
+  attachment: GunAttachment,
+  i: number,
+  from: THREE.Vector3,
+  way: THREE.Vector3,
+  out: { origin: THREE.Vector3; dir: THREE.Vector3; middle?: boolean },
+) {
+  if (attachment === "shotgun") {
+    const angle = attachmentBeams.shotgun.angles[i];
+    out.origin.copy(from);
+    out.dir.copy(way).applyAxisAngle(up, angle);
+    out.middle = angle === 0;
+    return out;
+  }
+  const { radius } = attachmentBeams.caliber;
+  const side = tmpSide.crossVectors(way, up).normalize();
+  const over = tmpOver.crossVectors(side, way);
+  const angle = attachment === "caliber" ? triangle[i] : 0;
+  out.origin
+    .copy(from)
+    .addScaledVector(side, radius * Math.cos(angle))
+    .addScaledVector(over, radius * Math.sin(angle));
+  out.dir.copy(way);
+  out.middle = attachment !== "caliber";
+  return out;
+}
+
+const tmpRay = { origin: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 /** Rays fanned about the beam's way: the middle one to the end, the others to their own walls (`spread`) */
 function shotgun(from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly number[]) {
@@ -145,7 +179,7 @@ export const attachmentBeams = {
 
 const triangle = [Math.PI / 2, (7 * Math.PI) / 6, (11 * Math.PI) / 6];
 const up = new THREE.Vector3(0, 1, 0);
-const [tmpWay, tmpSide, tmpOver, tmpOff, tmpFrom, tmpEnd] = Array.from({ length: 6 }, () => new THREE.Vector3());
+const [tmpWay, tmpSide, tmpOver, tmpEnd] = Array.from({ length: 4 }, () => new THREE.Vector3());
 
 const segments: BeamSegment[] = Array.from({ length: 5 }, () => ({
   from: new THREE.Vector3(),

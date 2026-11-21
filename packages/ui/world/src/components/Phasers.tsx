@@ -19,7 +19,9 @@ import {
   type FreeShot,
   isFreeShot,
   type NpcTarget,
+  nearestMeet,
   partOnRay,
+  raysMeet,
   type StruckKind,
   targetPoint,
 } from "../service/phaser-beam";
@@ -465,7 +467,7 @@ export default function Phasers() {
           state.wield(npc, arm, delta);
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
-          if (beam.locked.presence === 0) arm.struck = arm.hitAt = arm.shot = null; // no object made, most ticks
+          if (beam.locked.presence === 0) arm.struck = arm.hitAt = arm.shot = arm.spreadHit = null; // no object made, most ticks
           if (beam.to !== null && beam.to.npcKey !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) {
             state.shoot(npc, arm, beam.to);
           }
@@ -558,7 +560,7 @@ export default function Phasers() {
           const from =
             look.attachment === null ? tip : hand.localToWorld(tmpMuzzle.fromArray(muzzleOf(look.attachment)));
           const fired = arm.fireCharge ?? 0; // undefined from before hmr
-          for (const seg of beamSegments(look, from, end, arm.spread ?? null)) {
+          for (const seg of beamSegments(look, from, end, arm.spreadHit ?? arm.spread ?? null)) {
             if (drawn === room) break;
             const k = j + drawn;
             put(beams.srcData, k, seg.from.x, seg.from.y, seg.from.z, shown);
@@ -613,7 +615,10 @@ export default function Phasers() {
               decorKey: to.decorKey ?? null,
             });
             arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at); // fades where it ended
-            state.impact(npc, at, tipOf(npc, arm, tmpTip) ?? npc.position, null);
+            const tip = tipOf(npc, arm, tmpTip);
+            state.impact(npc, at, tip ?? npc.position, null);
+            // its own line met no one: an attachment's other rays may
+            if (tip !== null) state.spreadOn(npc, arm, tip, at, null, w.debug?.forceShot ?? "hit");
           }
           arm.target = arm.firedSecs = null;
           return void w.hud?.update();
@@ -642,6 +647,7 @@ export default function Phasers() {
         };
         // one passing them, unless a ghost, has no outcome
         if (outcome === "ghost" || end === part) landOn(dst, to, outcome, part);
+        if (outcome !== "ghost" && end === part && tip !== null) state.spreadOn(npc, arm, tip, part, dst, outcome);
         // on through whoever it meets beyond, to the one it lands on
         for (const next of shot?.beyond ?? []) {
           const on = w.n[next.npcKey];
@@ -649,6 +655,31 @@ export default function Phasers() {
         }
         arm.target = arm.firedSecs = null;
         w.hud?.update();
+      },
+      spreadOn(npc, arm, tip, end, struck, outcome) {
+        const attachment = arm.look?.attachment ?? null;
+        if (attachment !== "shotgun" && attachment !== "caliber") return;
+        // a shotgun's rays go to their own walls. A caliber's share the shot's, a little past to meet whom it struck
+        const shot = Math.hypot(end.x - tip.x, end.z - tip.z) + 0.05;
+        const wall = (i: number) => (attachment === "shotgun" ? (arm.spread?.[i] ?? Number.POSITIVE_INFINITY) : shot);
+        const others = w.npc.near.inReach(npc.key).filter((o) => o.key !== npc.key);
+        const met = raysMeet(attachment, tip, end, others, hitBones, wall);
+        // one hit a shot: its own line's, else the nearest another ray meets. Whoever else is met is landed on
+        const hit = struck === null ? nearestMeet(met) : null;
+        const ghost = outcome === "ghost";
+        for (const m of met) {
+          if (m === null) continue;
+          if (m === hit) {
+            if (ghost) w.npcGhost?.struck(m.on);
+            state.land(npc, m.on, m.part, outcome, m.at, tip);
+          }
+          if (ghost) continue; // it passes through
+          state.impact(npc, m.at, tip, m.on);
+          if (outcome === "armour") w.npcArmour?.flash(m.on, m.part, m.at, tip);
+        }
+        arm.spreadHit = met.map((m, i) =>
+          m === null || ghost ? (attachment === "shotgun" ? wall(i) : Number.POSITIVE_INFINITY) : m.dist,
+        );
       },
       impact(npc, at, from, on) {
         const arm = state.arms.get(npc.key);
@@ -1177,6 +1208,19 @@ export default function Phasers() {
 }
 
 export type State = PhaserUniforms & {
+  /**
+   * An attachment's rays from `tip` along the shot's way to `end`, bar its own line: each ends on the nearest npc it meets, a
+   * ring there, glancing off armour. With `struck` `null` the shot met no one, and the nearest they meet takes its hit.
+   * Sets `arm.spreadHit`
+   */
+  spreadOn(
+    npc: Npc,
+    arm: ArmEntry,
+    tip: THREE.Vector3,
+    end: THREE.Vector3,
+    struck: null | Npc,
+    outcome: JshCli.ShotOutcome,
+  ): void;
   /** How far a shotgun's rays go from `from` along `bearing`, on the ground, as `attachmentBeams.shotgun.angles` */
   castSpread(npc: Npc, from: Geom.VectJson, bearing: number): Promise<number[]>;
   /** One instance per gun shown */
@@ -1415,6 +1459,8 @@ type ArmEntry = {
   look: PhaserLook;
   /** A shotgun's: metres on the ground each ray goes before it stops, as `attachmentBeams.shotgun.angles`. See `recast` */
   spread?: null | number[];
+  /** As `spread`, per ray, once struck: a ray meeting someone ends on them. See `spreadOn` */
+  spreadHit?: null | number[];
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** World seconds a one-off shot is lowered by at the latest, whilst there is one */

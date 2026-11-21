@@ -248,9 +248,10 @@ A phaser's look is its beam's style and colour, its attachment and its bounces (
   - `bolts`: dashes racing to the target, for the rotator.
 - Attachments are white shapes with black edges, sleeved over the barrel (`attachmentBoxes`, `phaser-gun.ts`). A box may be `round`: a prism of `sides` sides, or a cylinder (`smooth`). Its emitters are holes: dark discs proud of its front, glowing whilst armed. The beam leaves their middle (`muzzleOf`).
   - `caliber`: a box with a hole, firing 3 parallel rays in a triangle about the axis.
-  - `shotgun`: a wide cylinder with a wide hole, firing 5 rays fanned out 4° apart. The middle one is the shot. The others go on past whom it meets, each to its own wall (`castSpread`, in `recast`, `arm.spread`), or the floor if pitched down.
+  - `shotgun`: a wide cylinder with a wide hole, firing 5 rays fanned out 4° apart. The middle one is the shot. The others go on, each to its own wall (`castSpread`, in `recast`, `arm.spread`), or the floor if pitched down. 
   - `rotator`: a triangular prism, its end larger, with three holes, firing `bolts` unless given another style. Held, its fire repeats every `rapidFireSecs` (0.15 game seconds), uncharged (`startAutofire`, `use-world-player.ts`).
-  - A shot still hits once, along the middle ray. Changing a look recasts.
+  - A shot still hits once. Its own line's hit, else the nearest npc another ray meets takes it, with the shot's outcome. The red dot stays on its own line. Any ray meeting someone ends on them, its own ring there, glancing off armour too (`spreadOn`, `attachmentRay`, `arm.spreadHit`). A caliber's rays end with the shot. Armour keeps every burst of one moment (`NpcArmour.flash`).
+  - Changing a look recasts.
 - The gun is built from every box's faces (`gunFaces`, `gunGeometry`), the unfitted attachments and what an attachment covers (`under`) collapsing to nothing. Each face is edged along its own edges, not its triangles' (`gunBary`).
 - The hud's phaser icon shows the attachment fitted, 1.3 times its size (`phaserIcons`, by `gen-phaser-icon` from the same faces). A cylinder's sides are edged only on its silhouette.
 - A phaser lying about shows its item meta's attachment: `Decor` draws `phaser-{attachment}` (`media/src/decor/phaser-*.svg`) where the decor sheet has it. Re-run `gen-decor-sheets` after editing them.
