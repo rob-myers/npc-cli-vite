@@ -2,7 +2,7 @@ import * as THREE from "three/webgpu";
 import { phaserLook } from "./phaser.shader";
 
 /** The beam's styles, in the shader's order (`beamLook.x`) */
-export const beamStyles = ["plain"] as const;
+export const beamStyles = ["plain", "lightning", "tesla", "static", "bolts"] as const;
 export type BeamStyle = (typeof beamStyles)[number];
 
 /** What may be fitted to the end of the gun */
@@ -60,19 +60,41 @@ export function beamRgb(color: string, pale: boolean) {
 /** By colour: its rgb over a dark deck, then a pale one */
 const rgbs = new Map<string, [THREE.Color, THREE.Color]>();
 
-/** One straight piece of a beam, drawn as an instance. `ball`: its end is lit */
-export type BeamSegment = { from: THREE.Vector3; to: THREE.Vector3; ball: boolean };
+/** One straight piece of a beam, drawn as an instance. `ball`: its end is lit. `width` scales its width */
+export type BeamSegment = { from: THREE.Vector3; to: THREE.Vector3; ball: boolean; width: number };
 
 /** The segments of a beam from `tip` to `end` as `look` has it. Reused: read them before the next call */
-export function beamSegments(_look: PhaserLook, tip: THREE.Vector3, end: THREE.Vector3): readonly BeamSegment[] {
-  const [seg] = segments;
-  seg.from.copy(tip);
-  seg.to.copy(end);
-  seg.ball = true;
+export function beamSegments(look: PhaserLook, tip: THREE.Vector3, end: THREE.Vector3): readonly BeamSegment[] {
+  segments[0].from.copy(tip);
+  segments[0].to.copy(end);
+  if (look.style !== "tesla") return single;
+  // forks arc from the muzzle to either side, short of the end
+  const { reach, spread, maxSpread } = teslaForks;
+  const dx = end.x - tip.x;
+  const dz = end.z - tip.z;
+  const flat = Math.hypot(dx, dz) || 1;
+  const off = Math.min(spread * tip.distanceTo(end), maxSpread);
+  for (let i = 1; i < segments.length; i++) {
+    const { from, to } = segments[i];
+    const side = i === 1 ? off : -off;
+    from.copy(tip);
+    to.lerpVectors(tip, end, reach[i - 1]);
+    to.x += (-dz / flat) * side;
+    to.z += (dx / flat) * side;
+  }
   return segments;
 }
 
-const segments: BeamSegment[] = [{ from: new THREE.Vector3(), to: new THREE.Vector3(), ball: true }];
+/** Tesla's two forks: how far along the beam each reaches, how far aside per metre of it, and how thick */
+const teslaForks = { reach: [0.8, 0.65], spread: 0.08, maxSpread: 0.4, width: 0.6 };
+
+const segments: BeamSegment[] = [0, 1, 2].map((i) => ({
+  from: new THREE.Vector3(),
+  to: new THREE.Vector3(),
+  ball: i === 0,
+  width: i === 0 ? 1 : teslaForks.width,
+}));
+const single = segments.slice(0, 1);
 
 function isColor(color: unknown): color is string {
   return typeof color === "string" && (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color) || color in THREE.Color.NAMES);

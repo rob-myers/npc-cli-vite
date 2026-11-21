@@ -17,6 +17,7 @@ import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
+import { beamStyles, defaultLook, gunAttachments, type PhaserLook } from "../service/phaser-look";
 import { getWorldStore, type HudLayout } from "../service/storage";
 import { phaserIconBeam, phaserIconFaces } from "./phaser-icon.gen";
 import { WorldContext } from "./world-context";
@@ -103,6 +104,27 @@ export default function WorldHud() {
         const saved = store.read();
         if (state.isColumn()) return saved.hudColumnY ?? defaultColumnY;
         return Math.max(state.getDragBounds().top, saved.hudY ?? 0);
+      },
+      lookMenu() {
+        const { key } = w.player;
+        const look = w.phasers?.lookOf(key);
+        if (look === undefined) return [];
+        const set = (partial: null | Partial<PhaserLook>) => {
+          w.phasers.setLook(key, partial);
+          state.update();
+        };
+        const attachment = look.attachment ?? "none";
+        return [
+          { label: `beam: ${look.style}`, keep: true, run: () => set({ style: cycle(beamStyles, look.style) }) },
+          { label: `color: ${look.color}`, keep: true, run: () => set({ color: cycle(debugColors, look.color) }) },
+          {
+            label: `attachment: ${attachment}`,
+            keep: true,
+            run: () => set({ attachment: cycle(debugAttachments, look.attachment) }),
+          },
+          { label: `bounces: ${look.bounces}`, keep: true, run: () => set({ bounces: (look.bounces + 1) % 5 }) },
+          { label: "reset look", keep: true, run: () => set(null) },
+        ];
       },
       isColumn() {
         return state.getLayout() !== "bar";
@@ -548,8 +570,13 @@ export default function WorldHud() {
                   active: armed,
                   plain: true,
                   drop: hasPhaser ? "phaser" : undefined,
-                  // dropped without drawing it first
-                  menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
+                  // dropped without drawing it first, and with the phaser debug its look
+                  menu: hasPhaser
+                    ? [
+                        { label: "drop", run: () => state.drop("phaser") },
+                        ...(w.debug?.hudDebugShown.includes("phaser") === true ? state.lookMenu() : []),
+                      ]
+                    : undefined,
                 },
                 <>
                   <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
@@ -622,9 +649,11 @@ export default function WorldHud() {
               className="z-50"
             >
               <Menu.Popup className="pointer-events-auto max-h-48 select-none overflow-y-auto rounded-md border border-neutral-700 bg-neutral-800/90 py-1 text-xs shadow-lg">
-                {menus[state.menu?.index ?? -1]?.map(({ label, run }) => (
+                {menus[state.menu?.index ?? -1]?.map(({ label, run, keep }, i) => (
                   <Menu.Item
-                    key={label}
+                    // by place: a debug item's label changes as it is pressed
+                    key={i}
+                    closeOnClick={keep !== true}
                     className={cn(
                       "cursor-pointer px-3 py-1 text-neutral-300 hover:bg-neutral-700",
                       big && "py-2 text-sm",
@@ -1222,7 +1251,16 @@ const lookingAtFadeMs = 400;
 /** How long a brief hud-toast shows */
 const noticeMs = 1500;
 
-type SlotMenuItem = { label: string; run(): void };
+/** `keep`: the menu stays open once it is pressed */
+type SlotMenuItem = { label: string; run(): void; keep?: boolean };
+
+/** The next of `list` after `value`, else its first */
+function cycle<T>(list: readonly T[], value: T): T {
+  return list[(list.indexOf(value) + 1) % list.length];
+}
+
+const debugColors = [defaultLook.color, "#4cf", "lime", "magenta", "gold", "white"];
+const debugAttachments = [null, ...gunAttachments];
 
 /** A hud-toast kept over the bar, its `end` the "x", greyed without one */
 type Kept = { label: string; title: string; end?: () => void };
@@ -1267,6 +1305,8 @@ export type State = {
   getSavedY(): number;
   /** Whether it is a column on either side */
   isColumn(): boolean;
+  /** Debug: the player's phaser look, each field cycled by a press, overriding its item's meta */
+  lookMenu(): SlotMenuItem[];
   /** In the left column, moves it or the menu's out of `moved`'s way */
   makeWay(moved: "hud" | "menu"): void;
   persistY(): void;

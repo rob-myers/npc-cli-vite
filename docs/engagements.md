@@ -232,9 +232,17 @@ A phaser's look is its beam's style and colour, its attachment and its bounces (
 
 - It comes from its item's meta, saved with the map: `beam`, `beam-color`, `attachment`, `bounces`. A bad value is ignored.
 - jsh `phaser` overrides it until the page reloads (`w.phasers.setLook`, `lookOf`):
-  - `phaser rob beam:plain color:#4cf`, `phaser rob attachment:shotgun bounces:2`
+  - `phaser rob beam:lightning color:#4cf`, `phaser rob attachment:shotgun bounces:2`
   - `attachment:none` takes the attachment off, and `--reset-look` drops the override.
+- With the bar's phaser debug shown, the phaser slot's right-click menu does the same for the player: each of beam, color, attachment and bounces cycles on a press, the menu kept open (`lookMenu` in `WorldHud`).
   - Given only these, it prints the look.
 - Each gun and each beam segment carries its own colour (`gunTint`, `beamColor`). Over a pale deck it is drawn as its hue, fully saturated at `phaserLook.paleLightness` (`beamRgb`).
 - A beam is drawn as one or more segments (`beamSegments`), an instance of the beam mesh apiece. Each carries its style, a seed, the charge it was fired with, and whether its end's ball is lit (`beamLook`).
-- So far there is one style, `plain`. Attachments and bounces are kept but not yet drawn.
+- A segment is a ribbon facing the camera: a solid core with a halo to its edges, its core at least `minCorePx` across (`beamShaderConfig`).
+- Styles (`beamStyles`, `beamLook.x`):
+  - `plain`: bands drifting towards the target, solid near it.
+  - `lightning`: jagged, pinned at both ends, redrawn `jagHz` times a game second.
+  - `tesla`: lightning with two thinner forks arcing from the muzzle to either side (`teslaForks`).
+  - `static`: straight, its width and brightness flickering along it.
+  - `bolts`: dashes racing to the target, for the rotator.
+- Attachments and bounces are kept but not yet drawn.

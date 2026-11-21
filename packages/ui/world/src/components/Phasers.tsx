@@ -536,8 +536,9 @@ export default function Phasers() {
             put(beams.srcData, k, seg.from.x, seg.from.y, seg.from.z, shown);
             put(beams.dstData, k, seg.to.x, seg.to.y, seg.to.z, locked);
             put(beams.roomData, k, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
-            put(beams.lookData, k, style, drawn++, fired, seg.ball ? 1 : 0);
-            put(beams.colorData, k, rgb.r, rgb.g, rgb.b, 1);
+            // seeded per gun, so no two phasers' lightning matches
+            put(beams.lookData, k, style, 8 * i + drawn++, fired, seg.ball ? 1 : 0);
+            put(beams.colorData, k, rgb.r, rgb.g, rgb.b, seg.width);
           }
         }
 

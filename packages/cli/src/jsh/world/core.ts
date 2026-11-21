@@ -1041,7 +1041,7 @@ export async function* pick(ct: JshCli.RunArg) {
  * phaser rob --laser
  * phaser rob grant:"1 2 3"
  * phaser npc:rob revoke:"[1, 2]"
- * phaser rob beam:plain color:#4cf
+ * phaser rob beam:lightning color:#4cf
  * phaser rob attachment:shotgun bounces:2
  * phaser rob attachment:none
  * phaser rob --reset-look
