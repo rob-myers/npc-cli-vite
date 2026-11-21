@@ -208,6 +208,8 @@ export type PersistedNpc = {
   lit?: boolean;
   /** The doors of this map they hold keys to */
   access?: string[];
+  /** Set whilst they were dead: the clip they lie in, e.g. `die_back`, and `at` is where their body lies */
+  dead?: string;
 };
 
 /** How the camera frames the floor: its vertical fov, and the metres of floor seen at each zoom stop */

@@ -1105,6 +1105,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
               lit: npc.lit === true ? true : undefined,
               access: state.getHeldDoors(npc.key),
+              dead: npc.anim.dead === true ? npc.anim.hurt?.key : undefined,
             })),
           },
         });
@@ -1421,7 +1422,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access, dead } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -1435,6 +1436,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            // lying where they fell, as they were left
+            if (dead !== undefined && dead in w.npc.clips) spawned?.anim.restoreDead(dead as AnimationClipKey);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable

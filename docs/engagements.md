@@ -176,6 +176,8 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
   - `get_up_back` sits up, then rolls forward into a squat. `get_up_forward` pushes up onto hands and knees, then
     kneels up over one foot. A fall with no get-up in `hitConfig.getUp` is let go at once.
 - A new mesh, e.g. the glTF refetched, moves a corpse's fall onto its hips (`rebindFall`), else it would jump.
+- **Saved.** The dead are saved with their map's npcs: `dead` is the clip they lie in, and `at` where their body lies
+  (`persistNpcs`). Restored, they lie there again, held at its end, out of the crowd, their sensor back (`restoreDead`).
 - Their label and bubble sit as a lain npc's, eased down as they fall (`labelYShiftForClip`).
 - A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
   - Clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).

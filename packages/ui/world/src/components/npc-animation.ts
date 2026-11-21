@@ -806,6 +806,35 @@ export class NpcAnimation {
   }
 
   /**
+   * Dead as restored, e.g. from a save: held at the end of `clip`. A fall lies over where the npc stands,
+   * out of the crowd, its corpse's sensor put back
+   */
+  restoreDead(clip: AnimationClipKey) {
+    const { npc } = this;
+    const { duration } = npc.clips[clip];
+    this.dead = true;
+    this.hurt = { key: clip, secs: duration, next: null };
+    this.setPose(clip, { force: true, fade: 0 });
+    const hips = npc.group?.getObjectByName("hips");
+    const action = this.mixer.existingAction(npc.clips[clip]);
+    if (dieClips.has(clip) && hips !== undefined && action !== null) {
+      this.w.npc.removeAgents([npc], { keepPhysics: true });
+      action.time = 0;
+      this.mixer.update(0);
+      const from = this.hipsOffset(hips, new THREE.Vector2());
+      action.time = duration;
+      this.mixer.update(0);
+      const travel = this.hipsOffset(hips, new THREE.Vector2()).sub(from);
+      const start = new THREE.Vector2(npc.position.x - travel.x, npc.position.z - travel.y);
+      const [shift, wrote] = [new THREE.Vector2(), new THREE.Vector3(Number.NaN)];
+      this.fall = { start, from, shift, hips, ry: npc.rotation.y, turn: 0, wrote, landed: true };
+      this.tickFall();
+    }
+    this.holdStill();
+    this.w.r3f?.invalidate();
+  }
+
+  /**
    * Revived from a fall, they get up by its `hitConfig.getUp` clip, their root held back as it lay.
    * `false` if their fall has none, so they are let go at once
    */
