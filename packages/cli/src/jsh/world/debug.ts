@@ -77,6 +77,39 @@ export async function debug_corners(
 }
 
 /**
+ * Spawn an npc per skin in a circle about an npc, facing them, each named after its skin sans hyphens.
+ * `as` keeps those whose key begins with it. Yields any skin that found no place.
+ * ```sh
+ * debug_skins rob
+ * debug_skins npc:rob r:2 as:mtf
+ * ```
+ */
+export async function* debug_skins(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey?: string; r?: number; as?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const { x: cx, z: cz } = w.npc.get(opts.npcKey).position;
+  const r = opts.r ?? 1.6;
+  const keys = w.npc.skin.entries.map((e) => e.key).filter((key) => key.startsWith(opts.as ?? ""));
+
+  for (const [i, as] of keys.entries()) {
+    const angle = (2 * Math.PI * i) / keys.length;
+    let placed = false;
+    // off the navmesh, try nearer, then further
+    for (const dist of [r, 0.75 * r, 0.5 * r, 1.25 * r]) {
+      const at = { x: cx + dist * Math.cos(angle), y: 0, z: cz + dist * Math.sin(angle) };
+      placed = await w.npc.spawn({ npcKey: as.replaceAll("-", ""), at, as, facing: { x: cx, y: 0, z: cz } }).then(
+        () => true,
+        () => false,
+      );
+      if (placed) break;
+    }
+    if (!placed) yield `${as}: not placable`;
+  }
+}
+
+/**
  * A line per crowd tick of an npc's agent, until killed — terse, for a thin tty:
  * `tick avo|sep f{fold} g{gap} t{target}/{least} c{x},{z}[*new] {corner dist}/{nearest} dv{deg}@{speed} v{deg}@{speed} m{max}`
  * ```sh

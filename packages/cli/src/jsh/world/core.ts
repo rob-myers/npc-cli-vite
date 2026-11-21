@@ -1457,7 +1457,7 @@ export function ring(
  * are disjoint, as are the literals "npcs" and "decor".
  *
  * ```sh
- * # remove all npcs
+ * # remove all npcs but the player
  * remove npcs
  * # remove all runtime decor
  * remove decor
@@ -1476,7 +1476,7 @@ export async function remove(
 ) {
   if (args.length === 1) {
     if (args[0] === "npcs") {
-      return w.e.removeNpcs(...Object.keys(w.n));
+      return w.e.removeNpcs(...Object.keys(w.n).filter((key) => key !== w.player.key));
     } else if (args[0] === "decor") {
       return w.decor.remove(...Object.keys(w.decor.runtime.byKey));
     } else if (typeof opts.npcKey === "string") {
