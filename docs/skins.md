@@ -148,9 +148,11 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - A suit drawn on the body overlay too would hide them. Move them onto it, `translate(0 64)` (`d-5`).
 - A blend layer paints a transparent texel in its own colour. So a clip, e.g. `suit-pale`, must cover only opaque texels: recompute it after any change to the image.
 - A download may hide a watermark in its unused corners (`d-3`). Clear them, above all the base head's (0–8, 0–4).
+- Small details drawn in texels read as low res, e.g. a stethoscope, a red cross, lapels, buttons or a speckled shirt (`medic-1`, `medic-2`, `medic-4`). Take them out of the embedded image, filling with the cloth beside them, and redraw them in the svg: smooth tones under the form shading, crisp shapes over it.
 - Tattoos drawn in texels read as blotches. Take them out of the embedded image and redraw them as ink: strokes joining neighbouring tattoo texels within a face, dots for lone ones, clipped to the faces (`d-5`).
   - No stroke crosses an elbow or knee, at half a limb's height (texel row 26 for the right arm, 58 for the left). The halves are separate cuboids, so ink across the bend breaks as it bends.
 - Light cloth, e.g. a white coat or pale scrubs, takes form shading only, never a noise texture (`medic-{1..5}`). Each face, base and overlay, takes a gradient darker toward its bottom, its sides, back and underside darker than its front. A multiply group draws it, clipped to the cloth texels (opaque, light, not skin-toned).
+  - A texture, if wanted, goes over the form shading, faint: fold creases and a fine weave, each a filtered rect clipped to the cloth, at a quarter to a third opacity (`medic-3`).
   - Put `mix-blend-mode` on the clipped group itself. A clip isolates the group, so children blending inside it see an empty backdrop, and paint grey.
 - Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form. Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
