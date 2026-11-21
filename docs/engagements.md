@@ -178,8 +178,12 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
   - Behind them, they walk back to it, then fall (`w.e.takeHit`, which the phaser calls). Further hits are ignored
     meanwhile (`anim.staggering`), and a move that stops them short has them fall where they are.
   - Ahead of them, the fall slides them there instead, hidden by `die_forward`'s stumble (`startFall`'s `slide`).
-- If no spot will do, they fall clear of walls alone, onto whoever is there. Only with walls all round do they collapse
-  where they stand (`hitConfig.sink`), held on its last frame. They then have no corpse body to step over.
+- If no spot will do, they fall clear of corpses alone, over the living, who make way (`fitFall`'s `others`). Else clear
+  of walls alone, onto whoever is there. Only with walls all round do they collapse where they stand (`hitConfig.sink`),
+  held on its last frame. They then have no corpse body to step over.
+- **Making way.** Whoever living stands where a body will lie steps out of its strip, quickly, to the nearer side
+  (`anim.inTheWay`, `w.e.makeWayFor`), far enough that it passes beside them. Never the player, whose moves are their own.
+  One who cannot move, e.g. hard pinned or hurt, stays put.
 
 ### Walking over a corpse
 

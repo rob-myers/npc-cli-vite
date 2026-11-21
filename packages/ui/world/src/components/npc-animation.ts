@@ -4,7 +4,7 @@ import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
-import { type EyeFrame, type EyesKey, eyeFrames } from "../const.both";
+import { type EyeFrame, type EyesKey, eyeFrames, npcDims } from "../const.both";
 import {
   agentConfig,
   breathConfig,
@@ -689,7 +689,7 @@ export class NpcAnimation {
 
   /**
    * A fall dead that fits, as its clip, the turn it takes, and how far it slides to a stagger spot, if it must.
-   * Else one clear of walls alone, onto whoever is there. Only walls all round have them collapse where they stand
+   * Else one over the living alone, who make way. Else one onto whoever is there. Walls all round have them collapse
    */
   fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number, null | Geom.VectJson] {
     const { point, nodeRef } = this.npc;
@@ -697,15 +697,21 @@ export class NpcAnimation {
     if (clear !== null) return [...clear, null];
     const spot = this.staggerSpot(key, dir);
     if (spot !== null) return [...spot.fit, { x: spot.at.x - point.x, y: spot.at.y - point.y }];
-    const walls = this.fitFall(key, dir, point, nodeRef, false);
-    return walls !== null ? [...walls, null] : [hitConfig.sink, 0, null];
+    const last = this.fitFall(key, dir, point, nodeRef, "dead") ?? this.fitFall(key, dir, point, nodeRef, "none");
+    return last !== null ? [...last, null] : [hitConfig.sink, 0, null];
   }
 
   /**
    * A fall dead from `at` on `nodeRef` that fits, as its clip and the turn it takes, else `null`.
-   * The shot's way is tried first, turned less before more, then the other way. Without `others`, walls alone count
+   * The shot's way is tried first, turned less before more, then the other way. `others` says who must be clear of it
    */
-  fitFall(key: AnimationClipKey, dir?: THREE.Vector3, at = this.npc.point, nodeRef = this.npc.nodeRef, others = true) {
+  fitFall(
+    key: AnimationClipKey,
+    dir?: THREE.Vector3,
+    at = this.npc.point,
+    nodeRef = this.npc.nodeRef,
+    others: Others = "all",
+  ) {
     const side: FallSide = key === hitConfig.die.back ? "back" : "forward";
     for (const way of side === "back" ? fallSides : [...fallSides].reverse()) {
       /** The shot's way is turned to fall along the shot: the other way keeps their facing */
@@ -717,23 +723,23 @@ export class NpcAnimation {
     return null;
   }
 
-  /** Whether falling from `at` to `side`, turned `turn`, has clear floor for their length. With `others`, no one nor any corpse on it */
-  fallFits(side: FallSide, turn: number, at = this.npc.point, nodeRef = this.npc.nodeRef, others = true) {
+  /** Whether falling from `at` to `side`, turned `turn`, has clear floor for their length, and none of `others` on it */
+  fallFits(side: FallSide, turn: number, at = this.npc.point, nodeRef = this.npc.nodeRef, others: Others = "all") {
     const { npc } = this;
     if (nodeRef === null) return true;
     const ry = npc.rotation.y + turn;
-    const sign = side === "back" ? -1 : 1; // ahead is (-sin, -cos)
-    const way = { x: -sign * Math.sin(ry), y: -sign * Math.cos(ry) };
+    const way = fallWay(side, ry);
     const length = hitConfig.lieLength[side];
     if (npc.roomAhead(at, nodeRef, length, way, way, npc.openDoorsFilter).room < length) return false;
-    return others === false || this.stripClear(at, way, length, hitConfig.othersWidth);
+    return others === "none" || this.stripClear(at, way, length, hitConfig.othersWidth, others === "all");
   }
 
-  /** Whether no one in their room, nor any corpse, is in the strip `length` along `way` from `at`, `half` either side */
-  stripClear(at: Geom.VectJson, way: Geom.VectJson, length: number, half: number) {
+  /** Whether no corpse in their room, nor anyone if `living`, is in the strip `length` along `way` from `at`, `half` either side */
+  stripClear(at: Geom.VectJson, way: Geom.VectJson, length: number, half: number, living = true) {
     return this.w.npc.near.inReach(this.npc.key, 0).every((other) => {
       const body = other.anim.fall?.body;
       if (body != null) return bodyCrosses(body, at, way, length, half) === false;
+      if (living === false) return true;
       const [dx, dz] = [other.position.x - at.x, other.position.z - at.y];
       const along = dx * way.x + dz * way.y;
       return along < 0 || along > length || Math.abs(dx * way.y - dz * way.x) > half;
@@ -761,6 +767,30 @@ export class NpcAnimation {
         if (fit !== null) return { at, fit };
       }
     return null;
+  }
+
+  /**
+   * The living where their fall lies, each with where they step aside to: out of its strip, to the nearer side.
+   * Never the player — see `w.e.takeHit`
+   */
+  inTheWay(): { npc: Npc; to: Geom.VectJson }[] {
+    const { fall: f, hurt } = this;
+    if (f == null || hurt === null) return [];
+    const side = sideOf(hurt.key);
+    const way = fallWay(side, f.ry + f.turn);
+    const at = { x: f.start.x + f.shift.x, y: f.start.y + f.shift.y };
+    const length = hitConfig.lieLength[side];
+    /** Their middle stands this far off the fall's line, so the body passes beside them */
+    const clear = hitConfig.lieWidth + npcDims.agentRadius;
+    return this.w.npc.near.inReach(this.npc.key, 0).flatMap((other) => {
+      if (other.anim.dead === true || other.anim.fall != null || this.w.player?.is(other.key) === true) return [];
+      const [dx, dz] = [other.position.x - at.x, other.position.z - at.y];
+      const along = dx * way.x + dz * way.y;
+      const across = dx * way.y - dz * way.x;
+      if (along < -npcDims.agentRadius || along > length || Math.abs(across) >= clear) return [];
+      const by = (Math.sign(across) || 1) * clear;
+      return [{ npc: other, to: { x: at.x + along * way.x + by * way.y, y: at.y + along * way.y - by * way.x } }];
+    });
   }
 
   /** Their hips across the floor from where the npc stands */
@@ -1784,7 +1814,20 @@ const onceClips = new Set<AnimationClipKey>([
 
 /** The ways one may fall dead */
 type FallSide = "back" | "forward";
+/** Who a fall dead must keep clear of: everyone, corpses alone (the living make way), or no one but walls */
+type Others = "all" | "dead" | "none";
 const fallSides: FallSide[] = ["back", "forward"];
+
+/** Which way a die clip falls, mirrored or not */
+function sideOf(key: AnimationClipKey): FallSide {
+  return key === hitConfig.die.back || key === mirrorOf.get(hitConfig.die.back) ? "back" : "forward";
+}
+
+/** The floor's way one facing `ry` falls to `side`. Their ahead is (-sin, -cos) */
+function fallWay(side: FallSide, ry: number) {
+  const sign = side === "back" ? -1 : 1;
+  return { x: -sign * Math.sin(ry), y: -sign * Math.cos(ry) };
+}
 
 const tmpFallAt = new THREE.Vector3();
 const tmpFallFrom = new THREE.Vector3();

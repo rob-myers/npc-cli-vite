@@ -391,6 +391,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const arm = w.n?.[npcKey]?.anim.upperLeft;
         return arm?.key === "psi" && arm.target === 1;
       },
+      makeWayFor(npc) {
+        for (const { npc: other, to } of npc.anim.inTheWay?.() ?? []) // undefined from before hmr
+          void state.move({ npcKey: other.key, to, fast: true, near: true }).catch(() => {}); // else they stay put
+      },
       async move(opts) {
         const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
@@ -1714,13 +1718,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const ry = npc.rotation.y;
         /** Ahead of them, the fall slides them there instead, hidden by its stumble — see `anim.fitDeath` */
         const behind = to !== undefined && (to.x - from.x) * -Math.sin(ry) + (to.y - from.z) * -Math.cos(ry) < 0;
-        if (to === undefined || behind === false || impact === undefined) return w.npc.hit(npcKey, part, impact);
-        npc.anim.staggering = true;
-        await state.move({ npcKey, to, backwards: true }).catch(() => {}); // stopped short, they fall where they are
-        npc.anim.staggering = false;
-        if (w.n[npcKey] !== npc) return; // removed meanwhile
-        const moved = npc.position.clone().sub(from);
-        w.npc.hit(npcKey, part, { ...impact, at: impact.at.clone().add(moved), from: impact.from.clone().add(moved) });
+        let hit = impact;
+        if (to !== undefined && behind && impact !== undefined) {
+          npc.anim.staggering = true;
+          await state.move({ npcKey, to, backwards: true }).catch(() => {}); // stopped short, they fall where they are
+          npc.anim.staggering = false;
+          if (w.n[npcKey] !== npc) return; // removed meanwhile
+          const moved = npc.position.clone().sub(from);
+          hit = { ...impact, at: impact.at.clone().add(moved), from: impact.from.clone().add(moved) };
+        }
+        w.npc.hit(npcKey, part, hit);
+        state.makeWayFor(npc);
       },
       takeItem(npcKey, decorKey) {
         const def = w.decor.runtime.defByKey[decorKey];
@@ -2122,6 +2130,8 @@ export type State = {
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
+  /** Whoever living is where `npc` falls dead steps aside, the player excepted — see `anim.inTheWay` */
+  makeWayFor(npc: Npc): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
   /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`. One with no wall between first */
   besideDoable(
