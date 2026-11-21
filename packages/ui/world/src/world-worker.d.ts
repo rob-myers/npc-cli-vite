@@ -55,6 +55,8 @@ declare namespace WW {
         dst: Geom.VectJson;
         /** The room `src` is in */
         grKey: Geomorph.GmRoomKey;
+        /** Answer with `debug` too, for the rays overlay */
+        debug?: boolean;
       }
     | {
         /** Answered by a `NavWorkerReply` whose `output` has a `JshCli.RaycastResult` per cast, `null` where it failed */

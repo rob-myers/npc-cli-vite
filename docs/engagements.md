@@ -256,3 +256,12 @@ Where a shot lands, a ring widens and fades in its beam's colour, a flash at its
 - A ring lies across the shot's way, turned mostly to the camera (`faceCamera`), so it is never seen edge on. One on someone is larger, and a charge widens it.
 - `w.phasers.landed` holds them by game time, pruned in `onTick` and sent only as one lands or fades (`writeImpacts`). They age on game time, so a pause holds them.
 - Each takes the room slot of whom it landed on, else the shooter's, and fades with it.
+
+## Rays debug
+
+The debug **overlay** select's **rays** draws each raycast for 2 game seconds (`w.e.showRays`, `raysDebug` in `use-world-events.ts`).
+
+- A ray runs from its start, through a disc at each door, window, obstacle or decor edge it crossed, to where it stopped. It is red if a wall stopped it, orange a door, green nothing.
+- Its dash says how a keyed cast was answered from the cache: solid fresh, dashed corridor, dotted prefix.
+- Each caller passes a `key` (e.g. `rob/sight`, `rob/reach0`, `along`), and its rays replace its last. A cast asks the worker for `debug` (`JshCli.RaycastDebug`) only whilst it is on.
+- jsh `rays band rob count:3 width:0.3` or `rays fan rob count:5 spread:20` casts from their aim, else their facing, drawn even with the overlay off.

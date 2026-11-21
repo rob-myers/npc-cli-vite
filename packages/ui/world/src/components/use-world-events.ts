@@ -23,6 +23,7 @@ import { helper } from "../service/helper";
 import { probeWebRtcWhenIdle } from "../service/net-signaling";
 import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
+import type { Polyline } from "./Debug";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -46,6 +47,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       litRooms: new Map(),
       movesBegun: new WeakMap(),
       timers: new Set(),
+      shownRays: new Map(),
+      pendingRays: new Map(),
       npcToAccess: {},
       npcToDoors: {},
       pendingUnreachable: {},
@@ -172,6 +175,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      clearRays(key) {
+        const keys = key === undefined ? [...state.shownRays.keys()] : [key];
+        const removed: [string, null][] = [];
+        for (const k of keys) {
+          const shown = state.shownRays.get(k);
+          if (shown === undefined) continue;
+          shown.cancel();
+          for (let i = 0; i < shown.count; i++) removed.push([`rays/${k}/${i}`, null]);
+          state.shownRays.delete(k);
+        }
+        state.queueRays(removed);
       },
       closestExitFrom(grKey, npc, near) {
         const room = w.gmRoomGraph.getNode(grKey);
@@ -1143,7 +1158,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           ? meta.gdKey
           : null;
       },
-      async raycast(origSrc, origDst, { offMap = false } = {}) {
+      queueRays(entries) {
+        if (entries.length === 0) return;
+        const first = state.pendingRays.size === 0;
+        for (const [key, polyline] of entries) state.pendingRays.set(key, polyline);
+        if (first === false) return;
+        // the casts landing together are drawn as one
+        queueMicrotask(() => {
+          w.debug?.setPolylines(state.pendingRays);
+          state.pendingRays.clear();
+          w.r3f?.invalidate();
+        });
+      },
+      async raycast(origSrc, origDst, { offMap = false, key = "ray", y } = {}) {
         const src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
 
@@ -1156,24 +1183,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
 
-        const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
+        const debug = w.debug?.raysShown === true;
+        const msg: WW.GetRaycast = {
+          type: "get-raycast",
+          uid: shortUuid.generate(),
+          src,
+          dst,
+          grKey: srcGrId.grKey,
+          ...(debug && { debug }),
+        };
         const signal = new AbortController().signal;
-        return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+        const result = (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+        if (debug) state.showRays(key, [{ src, dst, result, y }]);
+        return result;
       },
-      async raycasts(segs, { offMap = false } = {}) {
+      async raycasts(segs, { offMap = false, key = "rays" } = {}) {
+        const debug = w.debug?.raysShown === true;
         const casts: WW.GetRaycasts["casts"] = [];
         /** Each seg's index in `casts`: `-1` if not sent */
         const sent = segs.map((seg) => {
           const grKey = seg === null ? undefined : w.findRoomContaining(seg.src, true)?.grKey;
           if (seg === null || grKey === undefined) return -1;
           if (offMap === false && w.findRoomContaining(seg.dst, true) === null) return -1;
-          return casts.push({ src: seg.src, dst: seg.dst, grKey }) - 1;
+          return casts.push({ src: seg.src, dst: seg.dst, grKey, ...(debug && { debug }) }) - 1;
         });
         if (casts.length === 0 || w.navWorker.workers === null) return segs.map(() => null);
         const msg: WW.GetRaycasts = { type: "get-raycasts", uid: shortUuid.generate(), casts };
         const signal = new AbortController().signal;
         const output = (await w.navWorker.request(msg, signal, "fast")) as (null | JshCli.RaycastResult)[];
-        return sent.map((i) => (i === -1 ? null : output[i]));
+        const results = sent.map((i) => (i === -1 ? null : output[i]));
+        if (debug)
+          state.showRays(
+            key,
+            segs.map((seg, i) => seg && { ...seg, result: results[i] }),
+          );
+        return results;
       },
       async reachFor(npc, clip, at, act, side) {
         // turned to it, unless it is at their own feet
@@ -1574,6 +1618,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         );
 
         w.events.next({ key: "spawned-many", npcKeys });
+      },
+      showRays(key, rays) {
+        const prev = state.shownRays.get(key);
+        prev?.cancel();
+        const entries: [string, null | Polyline][] = rays.map((ray, i) => [
+          `rays/${key}/${i}`,
+          ray && rayPolyline(ray),
+        ]);
+        for (let i = rays.length; i < (prev?.count ?? 0); i++) entries.push([`rays/${key}/${i}`, null]);
+        const cancel = state.after(raysDebug.secs, () => state.clearRays(key));
+        state.shownRays.set(key, { count: rays.length, cancel });
+        state.queueRays(entries);
       },
       standUpStrandedDoers() {
         // navmesh and decor rebuild on separate queries, so whichever lands last does this
@@ -2057,6 +2113,10 @@ export type State = {
   movesBegun: WeakMap<Npc, number>;
   /** Game-time timers, run after each npc tick — see `after` */
   timers: Set<{ at: number; fn: () => void }>;
+  /** By key, how many rays the rays overlay draws, and how to cancel their clearing — see `showRays` */
+  shownRays: Map<string, { count: number; cancel: () => void }>;
+  /** The rays overlay's polylines to set or remove, as one redraw — see `queueRays` */
+  pendingRays: Map<string, null | Polyline>;
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
@@ -2070,6 +2130,8 @@ export type State = {
   setRoomLit(input: Geomorph.GmRoomKey | Geomorph.GmRoomId, next?: boolean): void;
   /** Puts out every room lit by hand, leaving what the player can see and the lit npcs */
   clearHandLitRooms(): void;
+  /** Stops drawing `key`'s rays, else every key's — see `showRays` */
+  clearRays(key?: string): void;
   dispatchToKeyedListeners(e: JshCli.Event): void;
   /** Lights `npc` or puts them out. Toggles when `next` is omitted */
   setNpcLit(npc: Npc, next?: boolean): void;
@@ -2232,6 +2294,8 @@ export type State = {
    */
   reseatAllNpcs(): void;
   /** Stands up anyone whose doable decor an edit removed, onto the nearest navmesh */
+  /** The rays overlay: draws `key`'s casts in place of its last, for `raysDebug.secs` of game time */
+  showRays(key: string, rays: (null | ShownRay)[]): void;
   standUpStrandedDoers(): void;
   /** Respawn the player, or drop anyone else, when an edit leaves them nowhere to stand */
   strandNpc(npc: Npc): void;
@@ -2260,15 +2324,17 @@ export type State = {
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
   /** `offMap`: `dst` may lie off the map, which the hull's walls close: else it must be in a room or doorway */
+  /** Sets or removes the rays overlay's polylines on the next microtask, as one redraw */
+  queueRays(entries: [string, null | Polyline][]): void;
   raycast(
     src: MaybeMeta<JshCli.PointAnyFormat>,
     dst: MaybeMeta<JshCli.PointAnyFormat>,
-    opts?: { offMap?: boolean },
+    opts?: RaycastOpts & { y?: number },
   ): Promise<JshCli.RaycastResult>;
   /** Several `raycast`s as one worker request: `null` for each that cannot be cast */
   raycasts(
-    segs: (null | { src: Geom.VectJson; dst: Geom.VectJson })[],
-    opts?: { offMap?: boolean },
+    segs: (null | { src: Geom.VectJson; dst: Geom.VectJson; y?: number })[],
+    opts?: RaycastOpts,
   ): Promise<(null | JshCli.RaycastResult)[]>;
   removeNpcs(...npcKeys: string[]): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
@@ -2362,4 +2428,41 @@ function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State[
   const dist = Math.hypot(dx, dz);
   const ahead = -dx * Math.sin(npc.rotation.y) - dz * Math.cos(npc.rotation.y);
   return dist < config.dist.backStep && ahead < dist * Math.cos(config.angle.backStep);
+}
+
+/** `offMap`: `dst` may lie off the map. `key`: the rays overlay draws each key's last casts, in place of its earlier */
+type RaycastOpts = { offMap?: boolean; key?: string };
+
+/** A cast the rays overlay draws, `y` metres up */
+type ShownRay = { src: Geom.VectJson; dst: Geom.VectJson; result: null | JshCli.RaycastResult; y?: number };
+
+/** The rays overlay: how long each shows, its default height, and its look as `sees --debug`'s */
+const raysDebug = {
+  secs: 2,
+  y: 1.1,
+  style: { width: 0.008, opacity: 0.6, discRadius: 0.03 },
+  /** By what stopped it */
+  color: { wall: "#e04040", door: "#f0a030", none: "#40d080", failed: "#808080" },
+  /** Metres of dash by how a keyed cast was answered: a fresh walk is solid */
+  dash: { fresh: 0, corridor: 0.06, prefix: 0.02 },
+} as const;
+
+/** A ray from its start, through each crossing, to where it stopped: coloured by what stopped it, dashed by its cache */
+function rayPolyline({ src, dst, result, y = raysDebug.y }: ShownRay): Polyline {
+  const { color, dash, style } = raysDebug;
+  const len = Math.hypot(dst.x - src.x, dst.y - src.y) || 1;
+  const along = (m: number): [number, number, number] => [
+    src.x + ((dst.x - src.x) * m) / len,
+    src.y + ((dst.y - src.y) * m) / len,
+    y,
+  ];
+  const end = result?.hit ?? dst;
+  const points: [number, number, number][] = [
+    [src.x, src.y, y],
+    ...(result?.debug?.crossings ?? []).map(along),
+    [end.x, end.y, y],
+  ];
+  const stoppedBy =
+    result === null ? "failed" : result.hit === null ? "none" : result.hitDoor !== null ? "door" : "wall";
+  return { ...style, points, color: color[stoppedBy], dash: dash[result?.debug?.cache ?? "fresh"] };
 }

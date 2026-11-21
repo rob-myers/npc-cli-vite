@@ -177,10 +177,10 @@ export default function Phasers() {
         const aims = npcKeys.map((npcKey) => (w.n?.[npcKey] === undefined ? null : state.aimOf(npcKey)));
         const segs = aims.map((aim) => {
           if (aim === null) return null;
-          const { from, bearing } = aim;
-          return { src: from, dst: { x: from.x - Math.sin(bearing) * run, y: from.y - Math.cos(bearing) * run } };
+          const { from, bearing, y } = aim;
+          return { src: from, dst: { x: from.x - Math.sin(bearing) * run, y: from.y - Math.cos(bearing) * run }, y };
         });
-        const results = await w.e.raycasts(segs, { offMap: true }).catch(() => segs.map(() => null));
+        const results = await w.e.raycasts(segs, { offMap: true, key: "along" }).catch(() => segs.map(() => null));
         /** Where a shot at no one along `aim` stops, given its cast */
         const endOf = (npcKey: string, aim: import("../service/aim-target").Aim, result: JshCli.RaycastResult) => {
           const { from, y, pitch } = aim;
@@ -1081,8 +1081,8 @@ export default function Phasers() {
         let from = muzzleAt(npc, arm);
         // off the map throws: read as blocked
         const arms = Promise.all(
-          armEnds(npc, arm).map((end) =>
-            w.e.raycast(npc.point, end).then(
+          armEnds(npc, arm).map((end, i) =>
+            w.e.raycast(npc.point, end, { key: `${npc.key}/reach${i}` }).then(
               ({ hit, obstacles }) => ({ hit: hit !== null, obstacles }),
               () => ({ hit: true, obstacles: [] }),
             ),
@@ -1093,8 +1093,8 @@ export default function Phasers() {
           target === undefined
             ? { ...arm.sight, inSight: false } // kept: a beam let go of still fades against them
             : w.e
-                .raycast(from, targetPoint(target, arm.target, tmpPart))
-                .catch(() => w.e.raycast((from = npc.point), target.point)) // its muzzle beyond a wall
+                .raycast(from, targetPoint(target, arm.target, tmpPart), { key: `${npc.key}/sight` })
+                .catch(() => w.e.raycast((from = npc.point), target.point, { key: `${npc.key}/sight` })) // its muzzle beyond a wall
                 .then(
                   ({ hit, obstacles, shields }): ArmSight => ({
                     across: obstacles,
@@ -1483,7 +1483,7 @@ function shotPast(arm: ArmEntry, from: THREE.Vector3, out: THREE.Vector3) {
 /** Where a ray from `from` along `dir` meets a wall, within `passMax` metres. `null` where it cannot be cast */
 function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.VectJson) {
   const to = { x: from.x + dir.x * phaserConfig.passMax, y: from.y + dir.y * phaserConfig.passMax };
-  return w.e.raycast(from, to, { offMap: true }).then(
+  return w.e.raycast(from, to, { offMap: true, key: "beyond" }).then(
     (result) => result.hit ?? to,
     () => null,
   );

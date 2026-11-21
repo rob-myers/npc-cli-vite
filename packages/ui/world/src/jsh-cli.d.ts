@@ -369,6 +369,15 @@ declare namespace JshCli {
     rooms: Geomorph.GmRoomKey[];
     /** Metres from its start to where a hull window first lets it out of the ship, which stops it not */
     out: null | number;
+    /** Asked for by the rays overlay */
+    debug?: RaycastDebug;
+  };
+
+  type RaycastDebug = {
+    /** Metres along it to each door, window, obstacle or decor edge it crossed before it stopped */
+    crossings: number[];
+    /** How a keyed cast was answered from the last: `null` uncached */
+    cache: null | "prefix" | "corridor" | "fresh";
   };
 
   type NpcLabelStyle = {
