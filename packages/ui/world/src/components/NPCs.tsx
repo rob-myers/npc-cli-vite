@@ -46,6 +46,7 @@ import {
   mergeWithGroupAttr,
 } from "../service/geometry";
 import { helper } from "../service/helper";
+import { npcHot, swapNpcClasses } from "../service/npc-hot";
 import { createNpcMaterial, type NpcMaterial } from "../service/npc-material";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
@@ -55,7 +56,7 @@ import { getWorldStore } from "../service/storage";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
-import { emptyAnimationClip, type HitOutcome, NpcAnimation } from "./npc-animation";
+import { emptyAnimationClip, type HitOutcome } from "./npc-animation";
 import { postCorpseCollider, removeCorpseCollider } from "./npc-over-body";
 import useNearbyNpcs from "./use-nearby-npcs";
 import { WorldContext } from "./world-context";
@@ -186,22 +187,13 @@ export default function NPCs() {
 
         /**
          * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
-         * - we update the prototypes
+         * - we update the prototypes and add fields (`swapNpcClasses`)
          * - we update the materials
          * - we update epochMs
          * - BUT currently don't support add/remove/change other properties
          */
+        swapNpcClasses(Object.values(state.npc));
         for (const npc of Object.values(state.npc)) {
-          Object.setPrototypeOf(npc, Npc.prototype);
-          Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
-          // fields added since, and to its plain objects e.g. `upper` — else they read `undefined`
-          for (const [key, value] of Object.entries(new NpcAnimation(npc))) {
-            const had = (npc.anim as unknown as Record<string, unknown>)[key];
-            if (had === undefined) Object.assign(npc.anim, { [key]: value });
-            else if (value?.constructor === Object && had?.constructor === Object)
-              Object.assign(npc.anim, { [key]: { ...value, ...had } });
-          }
-
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
 
@@ -828,6 +820,7 @@ export default function NPCs() {
   }, [queryData]);
 
   w.r3fStore = useReactThreeFiberStore();
+  if (import.meta.env.DEV) npcHot.npcs = () => Object.values(state.npc); // for a hot update React misses
 
   useEffect(
     () => void (import.meta.env.DEV && state.devHotReload()),

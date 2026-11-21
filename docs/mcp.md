@@ -247,30 +247,18 @@ view). So check with `query` what is actually stale before reaching for a reload
 |---|---|---|
 | `current.gltf`, e.g. exported from Blockbench | Yes: the dev server rewrites `current.glb`, then sends `currentGltfChanged`, which refetches `skins-and-gltf` | If not, e.g. the Vite client lost its connection, refetch: `window.__devMcp.getState().refetch(["skins-and-gltf"])` from a `query` |
 | A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
-| `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
+| `const.npc`, `npc-animation.ts` or `npc.ts`, as the npcs' code reads them | Yes: `npc-hot` swaps the npcs onto the new classes (see below) | Nothing |
 | `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |
 | Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => document.getElementById("dev-mcp-banner")?.remove()` hides the banner. Ask the user to reload |
 
 Touching a file does not help: Vite sends no update for a file whose content is unchanged. So touching
 `NPCs.tsx` does not bump its query key.
 
-### Npcs on a stale `const.npc`
+### Npcs and their classes
 
-`NPCs.tsx`'s `devHotReload` is meant to cover this. On a hot update it swaps each npc and its `anim` onto the
-`Npc` and `NpcAnimation` it imports, and fills in new fields. But on 2026-10-16 `npc-animation.ts` never
-re-ran after `const.npc` changed. So that import was still the old class, and `hitConfig` stayed old even
-after `NPCs.tsx` hot-updated.
-
-Swap them onto a freshly imported class, which reads the latest `const.npc`. Their state is kept:
-
-```js
-async w => {
-  const m = await import(`/@fs/<repo>/packages/ui/world/src/components/npc-animation.ts?t=${Date.now()}`);
-  for (const n of Object.values(w.n)) Object.setPrototypeOf(n.anim, m.NpcAnimation.prototype);
-}
-```
-
-Npcs spawned afterwards still get the class `NPCs.tsx` holds, so a reload is the full fix.
+`service/npc-hot.ts` accepts Vite's hot updates of `npc.ts` and `npc-animation.ts` itself, and swaps every npc
+onto the new class (`swapNpcClasses`). React alone may miss one, e.g. the second of two saves a second apart,
+which never re-renders `NPCs`. `NPCs`' `devHotReload` does the same swap when it runs, then the materials.
 
 ### A black World after editing `service/player-frontier.ts`
 
