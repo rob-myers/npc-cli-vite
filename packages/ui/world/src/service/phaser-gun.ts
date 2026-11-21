@@ -71,7 +71,7 @@ export const attachmentHoles = gunAttachments.map((key, i) => ({
   })),
 }));
 
-/** A round hole in a front face at `y`: a thin disc just in front of it, at `x`, `z` */
+/** A round hole in a front face at `y`, at `x`, `z`: a texture on the gun (`attachmentHoles`), a disc in the icon */
 function hole(name: string, x: number, z: number, r: number, y: number): GunBox {
   return {
     name,

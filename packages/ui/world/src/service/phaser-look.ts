@@ -2,11 +2,9 @@ import * as THREE from "three/webgpu";
 import { phaserLook } from "./phaser.shader";
 import { type GunAttachment, gunAttachments } from "./phaser-gun";
 
-export { type GunAttachment, gunAttachments };
-
 /** The beam's styles, in the shader's order (`beamLook.x`) */
 export const beamStyles = ["plain", "lightning", "tesla", "static", "bolts"] as const;
-export type BeamStyle = (typeof beamStyles)[number];
+type BeamStyle = (typeof beamStyles)[number];
 
 /** How a phaser's beam looks: its item's meta, overridden by jsh `phaser` */
 export type PhaserLook = {
@@ -60,7 +58,8 @@ export type BeamSegment = { from: THREE.Vector3; to: THREE.Vector3; ball: boolea
 
 /**
  * The segments of a beam from `from` to `end` as `look` has it: an attachment's pattern, else tesla's forks, else one.
- * `spread`: metres on the ground a shotgun's rays go before they stop, as `attachmentBeams.shotgun.angles`.
+ * `spread`: per ray of a shotgun or caliber, metres on the ground it goes before it stops.
+ * `ownLeg`: where the shot's own line bounced on to. `rayLegs`: per ray, its own bounce, else `ownLeg` for its own line.
  * Reused: read them before the next call
  */
 export function beamSegments(

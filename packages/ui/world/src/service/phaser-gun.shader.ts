@@ -281,12 +281,12 @@ export function gunNodes(
 export const gunShaderConfig = {
   /** Pixels of darker line along each of the gun's edges, and how far it darkens */
   edgePx: 1,
+  edgeDarken: 0.6,
   /** An attachment's body, white, and its edges instead: pixels of line, and their colour. Its holes put away */
   attachColor: "#e4e7eb",
   attachEdgePx: 1.5,
-  holeColor: "#16191d",
   attachEdgeColor: "#0b0d10",
-  edgeDarken: 0.6,
+  holeColor: "#16191d",
   gunColor: "#5f6875",
   paleGunColor: "#7d8591",
   /** The strip along its side: dark, `stripArmed` of the beam's colour whilst armed, `stripFull` times it where charged */

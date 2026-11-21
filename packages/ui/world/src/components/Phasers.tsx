@@ -110,13 +110,7 @@ export default function Phasers() {
         const aim = state.aimOf(npcKey);
         return aim === null ? null : aimToRay(aim, out);
       },
-      aimOff(npcKey, at) {
-        const arm = state.arms.get(npcKey);
-        const npc = w.n?.[npcKey];
-        if (arm?.armed !== true || arm.armAim?.at !== arm.armAt || npc === undefined) return null;
-        const pointed = npc.anim.bearingOf({ x: arm.armAt.x, y: arm.armAt.z });
-        return Math.abs(deltaAngle(pointed, npc.anim.bearingOf(at)));
-      },
+
       arm(npcKey, opts = {}) {
         if (w.npc.npcToDoable[npcKey] != null && w.n?.[npcKey]?.anim.posture === "stand") return; // sat or lain alone
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
@@ -193,7 +187,7 @@ export default function Phasers() {
         if (leg == null || (arm.target !== shot && arm.struck !== shot)) return; // fired again, or let go of
         // whoever it meets first, its shooter too
         shot.legHit = legMeets([npc, ...w.npc.near.inReach(npc.key)], leg, at.y);
-        shot.legs = [shot.legHit?.at ?? leg.end];
+        shot.leg = shot.legHit?.at ?? leg.end;
         if (arm.struck === shot) state.strikeLeg(npc, shot); // struck already
         w.r3f?.invalidate();
       },
@@ -379,10 +373,7 @@ export default function Phasers() {
       holds(npcKey) {
         return w.e.hasItem(npcKey, "phaser") === true && w.npc.npcToDoable[npcKey] == null;
       },
-      isAimed(npcKey) {
-        const arm = state.arms.get(npcKey);
-        return arm?.armed === true && arm.gliding === false && w.n?.[npcKey]?.anim.isRolling() === false;
-      },
+
       isArmed(npcKey) {
         return state.arms.get(npcKey)?.armed === true;
       },
@@ -405,15 +396,7 @@ export default function Phasers() {
         const cool = state.arms.get(npcKey)?.cool;
         return cool != null && w.gameTime.now() - cool.since < phaserConfig.coolSecs;
       },
-      isClear(npcKey) {
-        const arm = state.arms.get(npcKey);
-        const npc = w.n?.[npcKey];
-        if (arm === undefined || npc === undefined || arm.casting === true) return false;
-        const target = arm.target === null || arm.target.npcKey === null ? undefined : w.n[arm.target.npcKey];
-        // a hit found by the last cast draws it in only at the next tick
-        if (isCastCurrent(arm, npc, target) === false || arm.armHit === true) return false;
-        return state.isRaised(npcKey) === true && state.isDrawnIn(npcKey) === false;
-      },
+
       isDrawnIn(npcKey) {
         const arm = state.arms.get(npcKey);
         return arm?.armed === true && arm.holdUntil > w.gameTime.now();
@@ -610,7 +593,7 @@ export default function Phasers() {
             look.attachment === null ? tip : hand.localToWorld(tmpMuzzle.fromArray(muzzleOf(look.attachment)));
           const fired = arm.fireCharge ?? 0; // undefined from before hmr
           const rayLegs = look.attachment === "shotgun" ? (arm.spreadLegsHit ?? arm.spreadLegs ?? null) : null;
-          const legs = beamSegments(look, from, end, arm.spreadHit ?? arm.spread ?? null, free?.legs?.[0], rayLegs);
+          const legs = beamSegments(look, from, end, arm.spreadHit ?? arm.spread ?? null, free?.leg, rayLegs);
           for (const seg of legs) {
             if (drawn === room) break;
             const k = j + drawn;
@@ -618,7 +601,7 @@ export default function Phasers() {
             put(beams.dstData, k, seg.to.x, seg.to.y, seg.to.z, locked);
             put(beams.roomData, k, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
             // seeded per gun, so no two phasers' lightning matches
-            put(beams.lookData, k, style, 8 * i + drawn++, fired, seg.ball ? 1 : 0);
+            put(beams.lookData, k, style, 16 * i + drawn++, fired, seg.ball ? 1 : 0);
             put(beams.colorData, k, rgb.r, rgb.g, rgb.b, seg.width);
           }
         }
@@ -709,8 +692,8 @@ export default function Phasers() {
         w.hud?.update();
       },
       strikeLeg(npc, shot) {
-        const [leg] = shot.legs ?? [];
-        if (leg === undefined || shot.at === null) return;
+        const { leg } = shot;
+        if (leg == null || shot.at === null) return;
         const hit = shot.taken === true ? null : (shot.legHit ?? null); // one hit a shot
         const outcome = w.debug?.forceShot ?? "hit";
         if (hit !== null) {
@@ -782,7 +765,7 @@ export default function Phasers() {
         state.landed.forEach(({ at, way, size, rgb, secs, room, lit }, i) => {
           put(impacts.atData, i, at.x, at.y, at.z, secs);
           put(impacts.dirData, i, way.x, way.y, way.z, size);
-          put(impacts.lookData, i, rgb[0], rgb[1], rgb[2], 0);
+          impacts.lookData.set(rgb, 3 * i);
           impacts.roomData[2 * i] = room;
           impacts.roomData[2 * i + 1] = lit;
         });
@@ -1308,7 +1291,7 @@ export default function Phasers() {
 }
 
 export type State = PhaserUniforms & {
-  /** A shot at no one stopped by a reflecting shield bounces off it once: its `legs`, by a raycast, and whom it meets there */
+  /** A shot at no one stopped by a reflecting shield bounces off it once: its `leg`, by a raycast, and whom it meets there */
   bounce(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
   /** A struck shot's bounce lands: on whom it met, unless another ray took its hit, a ring there */
   strikeLeg(npc: Npc, shot: FreeShot): void;
@@ -1356,8 +1339,6 @@ export type State = PhaserUniforms & {
   pale: boolean;
   tickedSecs: number;
 
-  /** Radians their arm points off `at`, sat or lain — `null` unless it aims by `armAt` */
-  aimOff(npcKey: string, at: Geom.VectJson): null | number;
   /** Their aim whilst armed: from the muzzle at full aim, on the ground, and its bearing. See `service/aim-target` */
   aimOf(npcKey: string): null | import("../service/aim-target").Aim;
   /** Aims them at `at`'s part, facing and pitched there, until aimed. `held`: until they tilt or lower. `null` lets go */
@@ -1385,7 +1366,7 @@ export type State = PhaserUniforms & {
   charge(npcKey: string): boolean;
   /** Their charge so far, `0` to `1` over `chargeSecs` */
   chargeOf(npcKey: string): number;
-  /** Where a shot at no one ends: one cast along their aim, level at the gun's height. Npcs are not looked for */
+  /** Where a shot at no one ends: one cast along their aim, pitched as it is. Npcs are not looked for */
   castAlong(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
   /** Where a shot at no one along each one's aim would end now, and the rooms it passes through, in one worker request */
   /** `null` where it cannot be cast */
@@ -1410,8 +1391,6 @@ export type State = PhaserUniforms & {
   hold(npcKey: string): void;
   /** Carries one and stands, so has it in hand — raised or not */
   holds(npcKey: string): boolean;
-  /** Armed, the arm done easing onto where it points, and not rolling over in bed */
-  isAimed(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
   isCharging(npcKey: string): boolean;
   /** Raised and aimed in earnest (Space held): the left hand steadies it, the view extends to the dot, and a click fires */
@@ -1420,8 +1399,6 @@ export type State = PhaserUniforms & {
   steady(npcKey: string, on: boolean): void;
   /** Draining after a cancelled charge: none charges until it ends */
   isCooling(npcKey: string): boolean;
-  /** Raised, and nothing in its way as they stand now: not drawn in, nor about to be */
-  isClear(npcKey: string): boolean;
   /** Armed, and drawn in: `phaser_aim_avoid`, or lain, stowed */
   isDrawnIn(npcKey: string): boolean;
   /** Armed, and the arm all the way up */
@@ -1498,7 +1475,6 @@ export type State = PhaserUniforms & {
 /** A phaser's detent: down, level or up */
 export type Tilt = -1 | 0 | 1;
 
-/** Where a shot at no one would end, and the rooms its cast passed through */
 /** A bounce: from just off its shield along `way`, on the ground, to `end` */
 type Leg = { src: Geom.VectJson; way: Geom.VectJson; end: THREE.Vector3 };
 
@@ -1508,6 +1484,7 @@ function legMeets(npcs: Npc[], leg: Leg, y: number) {
   return nearestOnRay(npcs, ray, hitBones, Math.hypot(leg.end.x - leg.src.x, leg.end.z - leg.src.y));
 }
 
+/** Where a shot at no one would end, and the rooms its cast passed through */
 type AlongEnd = {
   at: THREE.Vector3;
   what: StruckKind;
@@ -1902,7 +1879,6 @@ function heldPoint(w: import("./World").State, arm: ArmEntry) {
   return bodyPartPoint(npc, arm.aimAt.part, tmpHeld);
 }
 
-/** The part locked on to, on the ground: their middle for none */
 /** Whether their muzzle's line passes within `lockRad` of where it locks on: always, on no one */
 function onLine(npc: Npc, arm: ArmEntry, target: undefined | Npc) {
   if (target === undefined) return true; // a shot at no one is cast along their aim
@@ -1917,6 +1893,7 @@ function onLine(npc: Npc, arm: ArmEntry, target: undefined | Npc) {
   return Math.abs(off) < phaserConfig.lockRad;
 }
 
+/** The part locked on to, on the ground: their middle for none */
 function lockPoint(target: Npc, arm: ArmEntry) {
   const { x, z } = targetPoint(target, arm.target, tmpLock);
   return Object.assign(tmpLockAt, { x, y: z });
@@ -1957,7 +1934,7 @@ const phaserConfig = {
   stowBlend: 0.25,
   /** Seconds the arm takes to swing most of the way onto a new point, sat or lain — see `glideArmAt` */
   armGlideSecs: 0.15,
-  /** Radians off where it is headed the arm counts as aimed, though it eases on — see `isAimed` */
+  /** Radians off where it is headed the arm counts as aimed, though it eases on — see `glideArmAt` */
   armAimedRad: Math.PI / 60,
   /** Radians a detent tilts it, and seconds it eases there over */
   tiltRad: (8 * Math.PI) / 180,
@@ -1980,7 +1957,7 @@ const phaserConfig = {
   castY: 1,
   /** Seconds a one-off shot may take before it is lowered regardless, e.g. never in sight */
   onceSecs: 4,
-  /** Radians about the right forearm between an arm at rest and the pose's — see `onTick` */
+  /** Radians about the right forearm between an arm at rest and the pose's — see `gunRoll` */
   restRoll: Math.PI / 2,
   /** Seconds they stay drawn in at least — longer whilst something stays in reach */
   holdSecs: 0.5,
@@ -2004,8 +1981,6 @@ const phaserConfig = {
   recastTurned: 0.05,
   /** Game seconds to a full charge, and to drain one cancelled */
   chargeSecs: 1.2,
-  /** Game seconds charging before the left hand comes to steady it */
-  supportAfterSecs: 0.3,
   coolSecs: 1,
   /** Charged full, the gun shakes this many metres and radians, this many times a second: draining, it sputters */
   shakeM: 0.0025,

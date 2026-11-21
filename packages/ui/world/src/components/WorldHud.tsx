@@ -17,7 +17,8 @@ import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
-import { beamStyles, defaultLook, gunAttachments, type PhaserLook } from "../service/phaser-look";
+import { gunAttachments } from "../service/phaser-gun";
+import { beamStyles, defaultLook, type PhaserLook } from "../service/phaser-look";
 import { getWorldStore, type HudLayout } from "../service/storage";
 import { phaserIcons } from "./phaser-icon.gen";
 import { WorldContext } from "./world-context";
@@ -372,7 +373,7 @@ export default function WorldHud() {
       )}
       onClick={(e) => {
         e.stopPropagation();
-        const forceShot = shotCycle[(shotCycle.indexOf(w.debug.forceShot) + 1) % shotCycle.length];
+        const forceShot = cycle(shotCycle, w.debug.forceShot);
         w.debug.set({ forceShot });
         store.patch({ forceShot });
         state.update();
@@ -1284,7 +1285,7 @@ const debugAttachments = [null, ...gunAttachments];
 /** A hud-toast kept over the bar, its `end` the "x", greyed without one */
 type Kept = { label: string; title: string; end?: () => void };
 
-/** What the debug badge cycles through: `null` leaves it to jsh */
+/** How every shot ends, cycled by the phaser's debug badge */
 const shotCycle: JshCli.ShotOutcome[] = ["hit", "down", "ghost", "armour", "kill"];
 /** A debug badge on the bar: the shot's, or a mounted item's error */
 const debugBadgeClass = tw(

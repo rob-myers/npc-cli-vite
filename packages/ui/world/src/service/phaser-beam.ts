@@ -29,7 +29,7 @@ export type FreeShot = {
   /** The reflecting shield it ended on, to bounce off */
   reflect?: null | { a: Geom.VectJson; b: Geom.VectJson };
   /** Where it bounced on to, and whom it met there: they take its hit, unless another ray did (`taken`) */
-  legs?: null | THREE.Vector3[];
+  leg?: null | THREE.Vector3;
   legHit?: null | RayMeet;
   taken?: boolean;
 };

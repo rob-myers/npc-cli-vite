@@ -365,7 +365,7 @@ declare namespace JshCli {
     obstacles: (WW.RaycastObstacle & { gmId: number })[];
     /** The decor it passed that stops a shot, nearest first, which stops no ray: as `obstacles` */
     decor: { decorKey: string; top: number; bottom: number; dist: number; leave: number }[];
-    /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
+    /** The rooms it passes through, in order: its first, then each beyond a door or window */
     rooms: Geomorph.GmRoomKey[];
     /** Metres from its start to where a hull window first lets it out of the ship, which stops it not */
     out: null | number;

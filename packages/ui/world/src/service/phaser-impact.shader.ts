@@ -30,8 +30,8 @@ export function createImpactResources() {
   const atData = new Float32Array(MAX_IMPACTS * 4);
   /** The shot's way there, unit, and its size */
   const dirData = new Float32Array(MAX_IMPACTS * 4);
-  /** Its colour, and its kind */
-  const lookData = new Float32Array(MAX_IMPACTS * 4);
+  /** Its colour */
+  const lookData = new Float32Array(MAX_IMPACTS * 3);
   /** Its room slot, and whether it is lit */
   const roomData = new Float32Array(MAX_IMPACTS * 2);
   const attrs = [atData, dirData, lookData, roomData].map((data) =>
@@ -69,7 +69,7 @@ export function impactNodes({ phase, gain }: PhaserUniforms, view: PhaserView) {
   const cfg = impactShaderConfig;
   const at = attribute<"vec4">("impactAt", "vec4");
   const dir = attribute<"vec4">("impactDir", "vec4");
-  const look = attribute<"vec4">("impactLook", "vec4");
+  const look = attribute<"vec3">("impactLook", "vec3");
   const rooms = attribute<"vec2">("impactRooms", "vec2");
   /** `0` as it lands, `1` as it is gone: `phase` is game seconds */
   const age = phase.sub(at.w).div(cfg.secs).clamp(0, 1);
