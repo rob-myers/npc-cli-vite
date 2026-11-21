@@ -188,6 +188,16 @@ declare namespace JshCli {
         outcome: ShotOutcome;
       } & Shot)
     | {
+        /** Falling dead, their body hit the floor — see `tickFall` */
+        key: "npc-fell";
+        npcKey: string;
+      }
+    | {
+        /** A foot of theirs came down on a corpse — see `npc-over-body` */
+        key: "corpse-stepped";
+        npcKey: string;
+      }
+    | {
         /** Their hurt clip changed, e.g. a pain clip went on to `collapsed`: `null` is released */
         key: "npc-hurt";
         npcKey: string;

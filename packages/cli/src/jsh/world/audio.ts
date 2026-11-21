@@ -452,6 +452,12 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       playAtDoor(w, "denied", e.gdKey);
       break;
     }
+    case "npc-fell":
+      heard(e.npcKey) && playAt(w, "fall", e.npcKey);
+      break;
+    case "corpse-stepped":
+      heard(e.npcKey) && playAt(w, "tread", e.npcKey);
+      break;
   }
 }
 

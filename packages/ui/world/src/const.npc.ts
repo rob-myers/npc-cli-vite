@@ -470,6 +470,8 @@ export const hitConfig = {
   fallJitter: 0.3,
   /** Of a fall's clip, how far in its turn and slide are done: before their body reaches out, e.g. into a wall */
   fitBy: 0.4,
+  /** Metres their hips are off the floor as a fall dead lands, when `npc-fell` is emitted, e.g. for its thud */
+  fellHipsY: 0.25,
   /** Metres a stood npc killed with no room to fall may stagger, nearer first, to fall where there is */
   staggerBy: [0.5, 1],
   /** Seconds a hurt clip fades in over, so its first jolt reads */

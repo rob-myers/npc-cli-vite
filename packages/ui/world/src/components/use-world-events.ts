@@ -1026,6 +1026,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "item-handled":
           case "npc-toggled":
           case "npc-posed":
+          case "corpse-stepped":
+          case "npc-fell":
           case "npc-hit":
           case "npc-hurt":
           case "npc-shot":

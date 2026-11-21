@@ -191,6 +191,8 @@ export class NpcAnimation {
     turn: number;
     /** What `tickFall` last wrote to their root */
     wrote: THREE.Vector3;
+    /** Whether their body has hit the floor, and `npc-fell` been emitted */
+    landed?: boolean;
     /** Lying still, where their body lies, for others to step over — see `npc-over-body` */
     body?: null | CorpseBody;
   };
@@ -814,6 +816,11 @@ export class NpcAnimation {
     if (root?.parent == null) return;
     if (root.position.equals(f.wrote)) return; // held at its end, the mixer leaves the root where this put it
     const travel = this.hipsOffset(f.hips, tmpFallTravel).sub(f.from);
+    // their hips, as `hipsOffset` left them
+    if (f.landed !== true && tmpFallAt.y - npc.position.y < hitConfig.fellHipsY) {
+      f.landed = true;
+      this.w.events.next({ key: "npc-fell", npcKey: npc.key });
+    }
     const u = Math.min(1, hurt.secs / (this.npc.clips[hurt.key].duration * hitConfig.fitBy));
     const slide = u * u * (3 - 2 * u);
     npc.rotation.y = f.ry + slide * (f.turn ?? 0); // undefined from before hmr

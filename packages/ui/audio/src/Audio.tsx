@@ -747,6 +747,8 @@ const sfxLabels: Record<SfxKey, string> = {
   stand: "stand",
   put: "put",
   take: "take",
+  fall: "fall",
+  tread: "tread",
 };
 /** The phaser's sounds, on the fx strip */
 const fxKeys = sfxKeys.filter((key) => sfxBus(key) === "fx");

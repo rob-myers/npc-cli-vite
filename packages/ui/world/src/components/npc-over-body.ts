@@ -200,13 +200,13 @@ function footLift(o: OverBody, anim: NpcAnimation, foot: THREE.Object3D, i: numb
     most = Math.max(most, up * (body.top + hitConfig.overBody.clear) - p.y);
   }
   const planted = under !== null && p.y < plantedBelow;
-  if (under !== null && planted && o.planted?.[i] !== true) jolt(under, p);
+  if (under !== null && planted && o.planted?.[i] !== true) jolt(under, p, anim.npc.key);
   (o.planted ??= [false, false])[i] = planted; // undefined from before hmr
   return most;
 }
 
-/** A foot landing `at` on a corpse jolts it, by the part nearest */
-function jolt(corpse: NpcAnimation, at: THREE.Vector3) {
+/** A foot of `by`'s landing `at` on a corpse jolts it, by the part nearest, and is heard (`corpse-stepped`) */
+function jolt(corpse: NpcAnimation, at: THREE.Vector3, by: string) {
   let [part, nearest] = [null as null | string, Infinity];
   for (const name of corpseParts) {
     const bone = corpse.npc.group?.getObjectByName(name);
@@ -214,6 +214,7 @@ function jolt(corpse: NpcAnimation, at: THREE.Vector3) {
     if (d < nearest) [part, nearest] = [name, d];
   }
   flinch(corpse, part, at, down, stepFlinchConfig);
+  corpse.w.events.next({ key: "corpse-stepped", npcKey: by });
 }
 
 /** How far up a body's ramp `at` is: `0` off it, `1` from `ramp` inside its edge */
