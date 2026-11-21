@@ -168,7 +168,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 ## Spawning, parking and padding
 
-- `state.placeNpcAt(npc, closePolyResult, override?)` places or teleports an npc. Found on the navmesh, they get an agent. Else their agent is removed, as on a seat off the navmesh. `w.npc.spawn` throws `not placable` first for a point off it that is not a doable.
+- `state.placeNpcAt(npc, closePolyResult, override?)` places or teleports an npc. Found on the navmesh, they get an agent. Else their agent is removed, as on a seat off the navmesh. `w.npc.spawn` throws `not placable` first for a point off it that is not a doable, or one whose nearest navmesh point is across a wall, in another room.
 - A seat or bed point with `meta.front-only` (e.g. a sofa's) is taken and left only from in front (`w.e.frontOf`). From behind, they walk round to it, or step off forwards, rather than fade. One doable to another is free.
 - **Getting up** (`w.e.stepOff`, and jsh `act`'s `getUp`) lands beside the doable, in sight of it if possible, else anywhere in their room, else outside its door (`w.e.closestExitFrom`). At a doable on the navmesh they are let go where they stand. In a full room, either way, they fade out of its door.
 - A move onto a doable with nowhere beside it fades on from outside its room's door, not from wherever they are.

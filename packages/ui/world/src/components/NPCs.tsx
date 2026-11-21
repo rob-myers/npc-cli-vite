@@ -618,14 +618,16 @@ export default function NPCs() {
           throw Error("occupied");
         }
 
-        const gmRoomId = // doable meta is gmRoomId
-          doResult.type === "none" ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
-        if (gmRoomId === null) throw Error("must be in some room");
-
         const closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
-        if (closePolyResult?.success === false) {
+        const gmRoomId = closePolyResult ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
+        // off the navmesh, or its nearest point lies across a wall
+        if (
+          closePolyResult &&
+          (!closePolyResult.success || w.findRoomContaining(closePolyResult.position, true)?.grKey !== gmRoomId?.grKey)
+        ) {
           throw Error("not placable");
         }
+        if (gmRoomId === null) throw Error("must be in some room");
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
         const playerExisted = w.player.exists();
