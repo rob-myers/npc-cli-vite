@@ -8,7 +8,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 - `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--23aa3d70ee53af87.png`
 - `{key}.svg` (optional): an overlay drawn over it at 256px, i.e. the detail
-  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. brightness)
+  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlay-backfaces`)
   - a `<g>` titled `ignore` is dropped when rasterised
 
 `manifest.json` there lists them (`byKey`, with `svgPath` and `meta`), rebuilt by `rebuildSkinManifest`.
@@ -74,6 +74,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 - First a top-level `<g>` titled `meta prefix={family}`. In it is the png as an `<image>` 256 square, with
   `image-rendering: pixelated`, its `href` a data URI. Everything after it draws over the skin.
 - A flag in that title becomes `meta`, e.g. `meta prefix=mtf noEyes`.
+  - A bare word is `true`. A value after `=` is parsed as JavaScript, else kept as a string (`tagsToMeta`). So `x=0.5` is a number and `overlay-backfaces=head` the string `head`, but a value naming a global, e.g. `Math`, is that global.
 - Avoid `<use>`. Boxy SVG re-saves each one as a full copy of what it names, the png included.
 - Keep the `<title>`s: they are how a part is found in Boxy.
 
@@ -81,6 +82,8 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 
 - The OVERLAY layers render wherever they are opaque, as a shell a little outside the body. The npc
   material discards alpha under 0.9. So clear stray overlay pixels, and draw nothing part-transparent there.
+- As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlay-backfaces=head` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
+  - Its npc's material is double-sided, and `shownFace` discards every other back face (`setOverlayBackfaces`, `service/npc-material.ts`). Other npcs' stay single-sided.
 - The torso is three cuboids, chest, stomach and hips. Each one's top samples the body top, and each one's bottom
   the body bottom. A crouch bares them, so fill the body top and bottom.
 - The head layer's unused corner, texels (0–8, 0–4), is sampled twice. The feet take (1–7, 0–4), and the torso overlay's tops and bottoms take all of it.
@@ -131,10 +134,23 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - The overlay takes short curved tufts of random size and mixed tones, each clipped to its face. On top they lie away from the crown, and elsewhere they hang down.
   - The base hair takes streaks along the same flow, clipped to its hair texels, and the tufts' blurred shadows.
   - A seeded random keeps it the same each time it is generated.
+- A crew cut is a band of overlay hair round the rim of the head (`d-5`).
+  - On the top face it is a narrow ring hugging the edge, half a texel to a texel wide, with a ragged inner edge. The base hair shows within it. It hangs a short way down the front, with a ragged lower edge.
+  - Down the sides and back it hangs further, spiked, then breaks into flecks growing sparser with depth. That is how overlay hair dissipates, since anything part-transparent is discarded.
+  - A full cap, or one notched along the rim, reads as a box.
+  - Gradients give it form, darker toward the ragged edges. Fine short strokes texture it.
+  - On the base, hair below the cap becomes skin, with stubble fading toward the neck.
 - Eyes are never too light, and brows never bold black. Mute an eye's white, darken its pupil, and draw the brows in a dark hair colour (`d-2`).
 - Accessories and loose strands on the head overlay, e.g. clips, a knot, stray tufts, read as noise at this size. Remove them.
 - Long hair below the head does not work, on the base or the overlay. Remove it from the body, each texel taking the nearest suit colour on its face (`d-4`).
 - A D-class skin has a big D on its back, over a number made unreadable by `#worn`, and a chest patch with its own worn tag. Copy d-0's `inmate marks` group, changing the numbers.
+  - On a white top they are dark, the patch's tag light (`d-3`).
+  - A suit drawn on the body overlay too would hide them. Move them onto it, `translate(0 64)` (`d-5`).
+- A blend layer paints a transparent texel in its own colour. So a clip, e.g. `suit-pale`, must cover only opaque texels: recompute it after any change to the image.
+- A download may hide a watermark in its unused corners (`d-3`). Clear them, above all the base head's (0–8, 0–4).
+- Tattoos drawn in texels read as blotches. Take them out of the embedded image and redraw them as ink: strokes joining neighbouring tattoo texels within a face, dots for lone ones, clipped to the faces (`d-5`).
+  - No stroke crosses an elbow or knee, at half a limb's height (texel row 26 for the right arm, 58 for the left). The halves are separate cuboids, so ink across the bend breaks as it bends.
+- Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form. Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
   - A pale download reads faded beside d-0 and d-1. Raise its contrast and saturation by a filter on its `<image>` (`#punch`), and darken its suit's multiply, e.g. `#707070` (`d-4`).
 - A face is shaded as d-0's is, over its own features: darker toward its sides, under the fringe and at the chin. A pale face takes d-0's front spotlight faintly, else it is blown out (`d-4`).
@@ -144,6 +160,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 ### Checking
 
 - The dev server rebuilds `manifest.json` on any skin png or svg change. A DEV World redraws the sheets.
+- Check an svg written by hand or script with `xmllint --noout`. One that does not parse is not drawn.
 - Spawn the skin next to the player, in `sight`, to see it lit as it will be.
 - jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `as:mtf` keeps one family, `r:2.5` widens it.
 - Load a DEV World before committing, so `sheet/skin.N.png` and `sheet/skin-slices.N.png` are current.

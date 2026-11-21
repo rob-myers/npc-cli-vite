@@ -1,9 +1,222 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<filter id="spot-light-filter-1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<radialGradient id="face-shade" cx="0.5" cy="0.55" r="0.6">
+<stop offset="0.3" style="stop-color: #f4dccb;"/>
+<stop offset="1" style="stop-color: #6e4c3a;"/>
+</radialGradient>
+<linearGradient id="fringe-shadow" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.75;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<linearGradient id="chin-shadow" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.5;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<clipPath id="suit-pale"><path d="M16 64h16v4h-16zM112 64h32v4h-32zM16 68h16v4h-16zM112 68h32v4h-32zM16 72h16v4h-16zM112 72h32v4h-32zM16 76h16v4h-16zM112 76h32v4h-32zM0 80h64v4h-64zM0 84h64v4h-64zM0 88h12v4h-12zM20 88h44v4h-44zM0 92h12v4h-12zM28 92h36v4h-36zM0 96h16v4h-16zM20 96h44v4h-44zM0 100h64v4h-64zM0 104h64v4h-64zM0 108h8v4h-8zM12 108h12v4h-12zM28 108h28v4h-28zM60 108h4v4h-4zM4 112h4v4h-4zM16 112h4v4h-4zM28 112h24v4h-24zM60 112h4v4h-4zM32 116h16v4h-16zM64 116h28v4h-28zM108 116h24v4h-24zM148 116h12v4h-12zM32 120h16v4h-16zM64 120h96v4h-96zM64 124h96v4h-96zM80 192h16v4h-16zM80 196h16v4h-16zM80 200h16v4h-16zM80 204h16v4h-16zM64 208h64v4h-64zM64 212h64v4h-64zM64 216h64v4h-64zM64 220h24v4h-24zM100 220h28v4h-28zM64 224h20v4h-20zM100 224h28v4h-28zM64 228h20v4h-20zM88 228h4v4h-4zM96 228h32v4h-32zM64 232h64v4h-64zM64 236h64v4h-64zM64 240h64v4h-64zM64 244h64v4h-64zM64 248h20v4h-20zM92 248h36v4h-36zM104 252h24v4h-24z"/></clipPath>
+<filter id="blotches" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="noise"/>
+<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.12  7 0 0 0 -3" result="blots"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="1" seed="4" result="fine"/>
+<feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0.9 -0.35" result="grain"/>
+<feMerge><feMergeNode in="blots"/><feMergeNode in="grain"/></feMerge>
+</filter>
+<filter id="worn" x="-20%" y="-50%" width="140%" height="200%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feGaussianBlur in="d" stdDeviation="0.45"/>
+</filter>
+</defs>
 <g style="pointer-events: none;">
 <title>meta prefix=d</title>
-<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
 <title>d-3--b14deaed093be445</title>
 </image>
+</g>
+<rect width="256" height="256" style="pointer-events: none; fill: #808080; mix-blend-mode: saturation; clip-path: url(&quot;#suit-pale&quot;);">
+<title>grey suit</title>
+</rect>
+<rect width="256" height="256" style="pointer-events: none; fill: #8c8c8c; mix-blend-mode: multiply; clip-path: url(&quot;#suit-pale&quot;);">
+<title>darker suit</title>
+</rect>
+<g style="pointer-events: none; opacity: 0.6; clip-path: url(&quot;#suit-pale&quot;);">
+<title>blotches</title>
+<rect width="256" height="256" style="filter: url(&quot;#blotches&quot;);"/>
+</g>
+<g style="pointer-events: none; fill: #2b2b2b; font-family: 'Arial Black', Impact, sans-serif; font-weight: 900; text-anchor: middle;">
+<title>inmate marks</title>
+<rect x="98" y="93" width="12" height="7" style="fill-opacity: 0.9;">
+<title>chest patch</title>
+</rect>
+<text x="104" y="98.6" style="fill: #e6e1d6; font-size: 4.4px; filter: url(&quot;#worn&quot;); opacity: 0.7;">D-58</text>
+<text x="144" y="106" style="font-size: 20px; fill-opacity: 0.85;">D<title>back letter</title></text>
+<text x="144" y="118" style="font-size: 7px; fill-opacity: 0.85; filter: url(&quot;#worn&quot;); opacity: 0.7;">5813<title>back number</title></text>
+</g>
+<g style="pointer-events: none;">
+<title>suit</title>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>body</title>
+<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="113" y="65" width="30" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="65" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="81" y="81" width="30" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="113" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="129" y="81" width="30" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>right-arm</title>
+<rect x="177" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="193" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="161" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="177" y="81" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="193" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+<title>left</title>
+</rect>
+<rect x="209" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>left-arm</title>
+<rect x="145" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="161" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="129" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+<title>right</title>
+</rect>
+<rect x="145" y="209" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="161" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="177" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>right-leg</title>
+<rect x="17" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="33" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="1" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="17" y="81" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="33" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+<title>left</title>
+</rect>
+<rect x="49" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>left-leg</title>
+<rect x="81" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="97" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="65" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+<title>right</title>
+</rect>
+<rect x="81" y="209" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="97" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="113" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+</g>
+<g style="pointer-events: none;">
+<title>head</title>
+<rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+<title>top</title>
+</rect>
+<rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: #000000; stroke-opacity: 0.25; stroke-width: 4px;">
+<title>bottom-neck</title>
+</rect>
+<rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.35; mix-blend-mode: hard-light; fill: #777777;" y="32">
+<title>front</title>
+</rect>
+<rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+<title>back</title>
+</rect>
+<rect x="64" width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32">
+<title>left</title>
+</rect>
+<rect width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<title>right</title>
+</rect>
+</g>
+<g style="pointer-events: none;">
+<title>face shadows</title>
+<rect x="32" y="32" width="32" height="32" style="fill: url(&quot;#face-shade&quot;); mix-blend-mode: multiply;">
+<title>sides</title>
+</rect>
+<rect x="32" y="40" width="32" height="7" style="fill: url(&quot;#fringe-shadow&quot;);">
+<title>under fringe</title>
+</rect>
+<rect x="32" y="59" width="32" height="5" style="fill: url(&quot;#chin-shadow&quot;);">
+<title>chin</title>
+</rect>
 </g>
 </svg>

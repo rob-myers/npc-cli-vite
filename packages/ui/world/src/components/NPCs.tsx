@@ -48,7 +48,7 @@ import {
 } from "../service/geometry";
 import { helper } from "../service/helper";
 import { npcHot, swapNpcClasses } from "../service/npc-hot";
-import { createNpcMaterial, type NpcMaterial } from "../service/npc-material";
+import { createNpcMaterial, type NpcMaterial, setOverlayBackfaces } from "../service/npc-material";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
 import { neverShownSlot } from "../service/room-slots";
@@ -126,7 +126,9 @@ export default function NPCs() {
       },
       createMaterials(pickId, skinIndex) {
         const { ambientNode: ambient, dimNode: dim, sameRoomNode: sameRoom } = state;
-        return createNpcMaterial(w, pickId, skinIndex, { ambient, dim, sameRoom });
+        const mat = createNpcMaterial(w, pickId, skinIndex, { ambient, dim, sameRoom });
+        setOverlayBackfaces(mat, state.getSkinMeta(state.getSkinKeyBySkinIndex(skinIndex) ?? ""));
+        return mat;
       },
       buildNpcMesh() {
         // the clone brings its own skeleton; the label rides in the geometry

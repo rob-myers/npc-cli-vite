@@ -64,7 +64,7 @@
       "key": "d-5",
       "id": "1938c8e17e34ebdc",
       "filename": "d-5--1938c8e17e34ebdc.png",
-      "meta": {"skinKey": "d-5", "prefix": "d"},
+      "meta": {"skinKey": "d-5", "prefix": "d", "overlay-backfaces": "head"},
       "url": "https://namemc.com/skin/1938c8e17e34ebdc",
       "svgPath": "skin/d-5.svg"
     },

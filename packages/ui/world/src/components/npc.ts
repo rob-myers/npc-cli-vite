@@ -28,6 +28,7 @@ import {
   otherNpcLabelColor,
 } from "../const.npc";
 import { helper } from "../service/helper";
+import { setOverlayBackfaces } from "../service/npc-material";
 import { bodyPartPoint } from "../service/phaser-beam";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -85,6 +86,8 @@ export class Npc {
   roomSlot: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
+  /** `1` to show the head overlay's sides from within too */
+  overlayBackfaces: ReturnType<typeof uniform<"float", number>>;
   /** The slice their eyes show — see `NpcAnimation.tickEyes` */
   eyesUniform: THREE.UniformNode<"float", number>;
 
@@ -201,6 +204,7 @@ export class Npc {
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
     this.eyesUniform = init.eyesUniform;
+    this.overlayBackfaces = init.overlayBackfaces;
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
@@ -682,6 +686,7 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
+    setOverlayBackfaces(this, this.w.npc.getSkinMeta(this.w.npc.getSkinKeyBySkinIndex(skinIndex) ?? ""));
   }
 
   /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */
@@ -724,6 +729,7 @@ export type NpcInit = {
   skinnedMesh: THREE.SkinnedMesh;
   skinIndexUniform: THREE.UniformNode<"float", number>;
   eyesUniform: THREE.UniformNode<"float", number>;
+  overlayBackfaces: THREE.UniformNode<"float", number>;
 };
 
 /** Pixels the label's pick box reaches beyond its text */
