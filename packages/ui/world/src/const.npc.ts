@@ -466,6 +466,8 @@ export const hitConfig = {
   lieLength: { back: 1.25, forward: 1.8 },
   /** Radians a fall dead may turn to fit, tried in this order, before falling the other way */
   fitTurns: [0, 0.5, -0.5, 1, -1, 1.5, -1.5],
+  /** Radians a fall dead turns off the shot's line at most, either way, at random but mostly little: so the dead do not lie aligned */
+  fallJitter: 0.3,
   /** Of a fall's clip, how far in its turn and slide are done: before their body reaches out, e.g. into a wall */
   fitBy: 0.4,
   /** Metres a stood npc killed with no room to fall may stagger, nearer first, to fall where there is */

@@ -170,7 +170,8 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
   - No one in their room in that strip, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
     `bodyCrosses`). That is narrower than `lieWidth`, so bodies may overlap a little.
   - The shot's way is tried first, turned to fall along the shot (`alongShot`) and then by each of `fitTurns`, then the
-    other way at their own facing.
+    other way at their own facing. The shot's line is first turned up to `fallJitter` at random, mostly a little (cubed),
+    so the dead do not lie aligned.
   - The turn and any slide are done by `fitBy` of the clip (`tickFall`), before their body reaches out into a wall.
   - A corpse's physics body goes where it lies, so a doorway it lies in is not clear and its door stays open.
 - **Staggering.** If none fits, stood, they look for a spot that does along the shot, give or take 45°, within

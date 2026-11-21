@@ -693,11 +693,13 @@ export class NpcAnimation {
    */
   fitDeath(key: AnimationClipKey, dir?: THREE.Vector3): [AnimationClipKey, number, null | Geom.VectJson] {
     const { point, nodeRef } = this.npc;
-    const clear = this.fitFall(key, dir);
+    /** The shot's way, turned at random, mostly a little: so the dead do not lie aligned */
+    const off = dir?.clone().applyAxisAngle(upAxis, hitConfig.fallJitter * THREE.MathUtils.randFloatSpread(2) ** 3);
+    const clear = this.fitFall(key, off);
     if (clear !== null) return [...clear, null];
-    const spot = this.staggerSpot(key, dir);
+    const spot = this.staggerSpot(key, off);
     if (spot !== null) return [...spot.fit, { x: spot.at.x - point.x, y: spot.at.y - point.y }];
-    const last = this.fitFall(key, dir, point, nodeRef, "dead") ?? this.fitFall(key, dir, point, nodeRef, "none");
+    const last = this.fitFall(key, off, point, nodeRef, "dead") ?? this.fitFall(key, off, point, nodeRef, "none");
     return last !== null ? [...last, null] : [hitConfig.sink, 0, null];
   }
 
@@ -1829,6 +1831,7 @@ function fallWay(side: FallSide, ry: number) {
   return { x: -sign * Math.sin(ry), y: -sign * Math.cos(ry) };
 }
 
+const upAxis = new THREE.Vector3(0, 1, 0);
 const tmpFallAt = new THREE.Vector3();
 const tmpFallFrom = new THREE.Vector3();
 const tmpFallTravel = new THREE.Vector2();
