@@ -197,7 +197,7 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
   of walls alone, onto whoever is there. Only with walls all round do they collapse where they stand (`hitConfig.sink`),
   held on its last frame. They then have no corpse body to step over.
 - **Making way.** Whoever living stands where a body will lie steps out of its strip, quickly, to the nearer side
-  (`anim.inTheWay`, `w.e.makeWayFor`), far enough that it passes beside them. Never the player, whose moves are their own.
+  (`anim.inTheWay`, `w.e.makeWayFor`), far enough that it passes beside them, the player too.
   One who cannot move, e.g. hard pinned or hurt, stays put.
 
 ### Walking over a corpse

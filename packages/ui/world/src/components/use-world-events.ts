@@ -2135,7 +2135,7 @@ export type State = {
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
-  /** Whoever living is where `npc` falls dead steps aside, the player excepted — see `anim.inTheWay` */
+  /** Whoever living is where `npc` falls dead steps aside, the player too — see `anim.inTheWay` */
   makeWayFor(npc: Npc): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
   /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`. One with no wall between first */

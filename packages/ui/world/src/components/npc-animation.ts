@@ -782,8 +782,8 @@ export class NpcAnimation {
   }
 
   /**
-   * The living where their fall lies, each with where they step aside to: out of its strip, to the nearer side.
-   * Never the player — see `w.e.takeHit`
+   * The living where their fall lies, the player among them, each with where they step aside to: out of its strip,
+   * to the nearer side — see `w.e.takeHit`
    */
   inTheWay(): { npc: Npc; to: Geom.VectJson }[] {
     const { fall: f, hurt } = this;
@@ -795,7 +795,7 @@ export class NpcAnimation {
     /** Their middle stands this far off the fall's line, so the body passes beside them */
     const clear = hitConfig.lieWidth + npcDims.agentRadius;
     return this.w.npc.near.inReach(this.npc.key, 0).flatMap((other) => {
-      if (other.anim.dead === true || other.anim.fall != null || this.w.player?.is(other.key) === true) return [];
+      if (other.anim.dead === true || other.anim.fall != null) return [];
       const [dx, dz] = [other.position.x - at.x, other.position.z - at.y];
       const along = dx * way.x + dz * way.y;
       const across = dx * way.y - dz * way.x;
