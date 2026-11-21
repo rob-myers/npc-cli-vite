@@ -121,8 +121,8 @@ export function removeCorpseCollider(anim: NpcAnimation) {
 }
 
 /**
- * Lifts each foot over a body by bending its knee. With both feet on it, their root rises towards the lower,
- * eased both ways, so they stand on it
+ * Lifts each foot over a body by bending its knee. Their root rises towards the lower foot's lift, eased both
+ * ways, so they stand on it. Running, towards the higher, so they rise over it
  */
 export function tickOverBody(o: OverBody, anim: NpcAnimation, delta: number) {
   const on = o.on.size > 0 && anim.dead !== true && anim.posture === "stand";
@@ -132,11 +132,9 @@ export function tickOverBody(o: OverBody, anim: NpcAnimation, delta: number) {
   group.updateWorldMatrix(true, true);
   const lifts = on ? [o.legs[2].bone, o.legs[5].bone].map((foot, i) => footLift(o, anim, foot, i)) : [0, 0];
   const step = delta * hitConfig.overBody.speed;
-  const rise = (o.rise = THREE.MathUtils.clamp(
-    Math.min(lifts[0], lifts[1]),
-    (o.rise ?? 0) - step,
-    (o.rise ?? 0) + step,
-  ));
+  const goal =
+    anim.hurry === true && anim.moving === true ? Math.max(lifts[0], lifts[1]) : Math.min(lifts[0], lifts[1]);
+  const rise = (o.rise = THREE.MathUtils.clamp(goal, (o.rise ?? 0) - step, (o.rise ?? 0) + step));
   if (rise === 0 && lifts[0] === 0 && lifts[1] === 0) return;
   if (rise > 0 && o.root !== null) {
     const { bone, base, wrote } = o.root;

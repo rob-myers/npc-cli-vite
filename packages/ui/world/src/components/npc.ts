@@ -28,6 +28,7 @@ import {
   otherNpcLabelColor,
 } from "../const.npc";
 import { helper } from "../service/helper";
+import { bodyPartPoint } from "../service/phaser-beam";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import type { AnimationClipKey } from "./NPCs";
@@ -501,6 +502,14 @@ export class Npc {
 
   isStrafing() {
     return this.anim.strafe;
+  }
+
+  /** Killed at once, as by a shot in the chest from in front: they fall dead, staggering first if need be */
+  kill() {
+    const at = bodyPartPoint(this, "chest", new THREE.Vector3());
+    const ry = this.rotation.y;
+    const from = at.clone().add(new THREE.Vector3(-Math.sin(ry), 0, -Math.cos(ry))); // their front is -z
+    return this.w.e.takeHit(this.key, "chest", { at, from, outcome: "kill" });
   }
 
   /**

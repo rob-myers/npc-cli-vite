@@ -1039,9 +1039,11 @@ export class NpcAnimation {
     this.posture = postureOf(next);
     // sat or lain they are elsewhere, and a hold easing out would slide them on the seat
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
-    this.headY = this.w.npc.headYByPose[next];
-    this.npc.setBubbleHeight(bubbleHeightForClip(next));
-    this.npc.setLabelYShift(labelYShiftForClip(next), crouchMove);
+    /** The pose they look to be in: a fall dead starts stood, but they end lain */
+    const looks = dieClips.has(next) ? "lie" : next;
+    this.headY = this.w.npc.headYByPose[looks];
+    this.npc.setBubbleHeight(bubbleHeightForClip(looks));
+    this.npc.setLabelYShift(labelYShiftForClip(looks), crouchMove || looks !== next);
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 

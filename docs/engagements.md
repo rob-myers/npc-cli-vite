@@ -164,7 +164,9 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 - Sat, lain or already collapsed, their pose freezes (`hitConfig.dead`, paused at `deadSecs`).
 - Eyes shut, no breath, no hand on the wound, no lean.
 - A shove does not move them, nor a drag. A shot only jolts them.
-- `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now.
+- `npc-hurt` carries `dead`. `pose npc-0 as:breathe` revives them, for now. `npc.kill()` kills them at once, as a
+  chest shot from in front would (`w.e.takeHit`).
+- Their label and bubble sit as a lain npc's, eased down as they fall (`labelYShiftForClip`).
 - A fall must fit (`fitDeath`, `fitFall`, `fallFits`).
   - Clear floor for `hitConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a wall).
   - No one in their room in that strip, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
@@ -204,6 +206,7 @@ Others step over a fallen corpse, or onto it (`npc-over-body.ts`, `hitConfig.ove
   (`footLift`).
   - The knee bends to lift it: the thigh forward, the shin back twice as far, the foot level again. Their hips stay.
   - With both feet on it, their root rises towards the lower foot's lift, at `speed` either way. So they stand on it.
+    Running, one foot at most is down, so it rises towards the higher instead, and they rise over it.
   - It runs after the stance, before the flinch, writing over what the pose left and putting it back next tick.
 - **A jolt.** A foot planted on a body, as its pose has it, after not, jolts the corpse by its nearest part
   (`flinch` with `stepFlinchConfig`, pushed down).
