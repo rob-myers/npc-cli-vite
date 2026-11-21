@@ -10,6 +10,7 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/service/phaser-gun.ts` | the gun's boxes, and its muzzle. After an edit, run `gen-phaser-icon` for the hud's icon, and redraw `media/src/decor/phaser.svg` to match |
 | `ui/world/src/service/phaser-gun.shader.ts` | the gun, one instance per gun shown |
 | `ui/world/src/service/phaser-beam.shader.ts` | the beam and its ball, one instance per beam segment shown |
+| `ui/world/src/service/phaser-impact.shader.ts` | rings where shots land, one instance per impact still fading |
 | `ui/world/src/service/phaser.shader.ts` | what the gun and beam share: the beam's colour, `seenBy` |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
 | `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`, `hitDown`). The dead are in `docs/deaths.md` |
@@ -246,3 +247,12 @@ A phaser's look is its beam's style and colour, its attachment and its bounces (
   - `static`: straight, its width and brightness flickering along it.
   - `bolts`: dashes racing to the target, for the rotator.
 - Attachments and bounces are kept but not yet drawn.
+
+## Impacts
+
+Where a shot lands, a ring widens and fades in its beam's colour, a flash at its centre at first (`impactNodes`, `impactShaderConfig`).
+
+- They land on someone hit (not a ghost), on a wall or door in the way, and at a free shot's end (`phaser-struck`).
+- A ring lies across the shot's way, turned mostly to the camera (`faceCamera`), so it is never seen edge on. One on someone is larger, and a charge widens it.
+- `w.phasers.landed` holds them by game time, pruned in `onTick` and sent only as one lands or fades (`writeImpacts`). They age on game time, so a pause holds them.
+- Each takes the room slot of whom it landed on, else the shooter's, and fades with it.

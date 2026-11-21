@@ -33,6 +33,14 @@ import {
   MAX_PHASERS,
 } from "../service/phaser-gun.shader";
 import {
+  createImpactResources,
+  type ImpactResources,
+  impactNodes,
+  impactShaderConfig,
+  impactSize,
+  MAX_IMPACTS,
+} from "../service/phaser-impact.shader";
+import {
   beamRgb,
   beamSegments,
   beamStyles,
@@ -60,6 +68,8 @@ export default function Phasers() {
       ...createPhaserUniforms(),
       gun: createGunResources(),
       beams: createBeamResources(),
+      impacts: createImpactResources(),
+      landed: [],
       arms: new Map(),
       looks: new Map(),
       pale: false,
@@ -414,7 +424,7 @@ export default function Phasers() {
         state.gain.value = pale ? 1 : theme.npcs.fxStrength;
         state.faint.value = pale ? phaserLook.paleFaint : phaserLook.faint;
         const blending = pale ? THREE.NormalBlending : THREE.AdditiveBlending;
-        for (const mat of state.beams.mats) {
+        for (const mat of [...state.beams.mats, state.impacts.mat]) {
           if (mat.blending === blending) continue;
           mat.blending = blending;
           mat.needsUpdate = true;
@@ -481,6 +491,15 @@ export default function Phasers() {
 
         upload(state.gun, guns);
         upload(state.beams, beams);
+
+        if (state.landed.length > 0) {
+          const kept = state.landed.filter((l) => now - l.secs < impactShaderConfig.secs);
+          if (kept.length < state.landed.length) {
+            state.landed = kept;
+            state.writeImpacts();
+          }
+          w.r3f?.invalidate(); // one more frame once the last is gone
+        }
       },
       draw(npc, arm, dst, i, j, room) {
         const hand = handOf(npc, arm);
@@ -584,6 +603,7 @@ export default function Phasers() {
               decorKey: to.decorKey ?? null,
             });
             arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at); // fades where it ended
+            state.impact(npc, at, tipOf(npc, arm, tmpTip) ?? npc.position, null);
           }
           arm.target = arm.firedSecs = null;
           return void w.hud?.update();
@@ -596,7 +616,9 @@ export default function Phasers() {
         if (w.shields?.stop(arm.sight.shields, from, from, end, w.shields.phaserOf(npc.key)?.meta?.freqs) != null)
           return;
         const tip = tipOf(npc, arm, tmpTip);
-        if (tip !== null && acrossStop(arm, tip, end, tmpAcross) !== null) return; // as drawn
+        // as drawn: it lands on the wall or door in the way
+        const across = tip === null ? null : acrossStop(arm, tip, end, tmpAcross);
+        if (tip !== null && across !== null) return void state.impact(npc, across, tip, null);
         const shot = arm.shot?.to === to ? arm.shot : null;
         const outcome = shot?.outcome ?? "hit";
         /** A ghost passes it on. Anyone else is where the burst ends, rather than following them as they writhe */
@@ -604,6 +626,7 @@ export default function Phasers() {
           if (outcome === "ghost") w.npcGhost?.struck(on);
           state.land(npc, on, target.part, outcome, at, tip ?? from);
           if (outcome === "ghost") return;
+          state.impact(npc, at, tip ?? from, on);
           if (outcome === "armour") w.npcArmour?.flash(on, target.part, at, tip ?? from);
           arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
         };
@@ -616,6 +639,35 @@ export default function Phasers() {
         }
         arm.target = arm.firedSecs = null;
         w.hud?.update();
+      },
+      impact(npc, at, from, on) {
+        const arm = state.arms.get(npc.key);
+        const rgb = beamRgb(arm?.look?.color ?? defaultLook.color, state.pale);
+        const charged = 1 + (arm?.fireCharge ?? 0) * impactSize.chargeWiden;
+        const { roomSlot, npcLit } = on ?? npc;
+        state.landed.push({
+          at: at.clone(),
+          way: new THREE.Vector3().subVectors(at, from).normalize(),
+          size: (on === null ? 1 : impactSize.onNpc) * charged,
+          rgb: [rgb.r, rgb.g, rgb.b],
+          secs: w.gameTime.now(),
+          room: roomSlot.value,
+          lit: npcLit.value,
+        });
+        if (state.landed.length > MAX_IMPACTS) state.landed.shift();
+        state.writeImpacts();
+      },
+      writeImpacts() {
+        const { impacts } = state;
+        state.landed.forEach(({ at, way, size, rgb, secs, room, lit }, i) => {
+          put(impacts.atData, i, at.x, at.y, at.z, secs);
+          put(impacts.dirData, i, way.x, way.y, way.z, size);
+          put(impacts.lookData, i, rgb[0], rgb[1], rgb[2], 0);
+          impacts.roomData[2 * i] = room;
+          impacts.roomData[2 * i + 1] = lit;
+        });
+        upload(impacts, state.landed.length);
+        w.r3f?.invalidate();
       },
       land(npc, dst, part, outcome, at, from) {
         const hits = outcome === "hit" || outcome === "down" || outcome === "kill";
@@ -1062,7 +1114,7 @@ export default function Phasers() {
     }),
     // the attributes wrap the data
     {
-      reset: { gun: true, beams: true },
+      reset: { gun: true, beams: true, impacts: true, landed: true },
     },
   );
 
@@ -1088,6 +1140,7 @@ export default function Phasers() {
   useEffect(() => {
     Object.assign(state.gun.mat, gunNodes(state.gun, state, w.view), { needsUpdate: true });
     state.beams.mats.forEach((mat, i) => Object.assign(mat, beamNodes(state, w.view, i === 1), { needsUpdate: true }));
+    Object.assign(state.impacts.mat, impactNodes(state, w.view), { needsUpdate: true });
     state.onTick(); // a fresh geometry has no instances yet
   }, [w.view.fadeRoomsFx.uid]);
 
@@ -1095,6 +1148,7 @@ export default function Phasers() {
     <group>
       <primitive object={state.gun.mesh} />
       <primitive object={state.beams.mesh} />
+      <primitive object={state.impacts.mesh} />
     </group>
   );
 }
@@ -1104,6 +1158,14 @@ export type State = PhaserUniforms & {
   gun: GunResources;
   /** One instance per beam segment shown */
   beams: BeamResources;
+  /** One instance per impact still fading */
+  impacts: ImpactResources;
+  /** Where shots landed, oldest first, until faded */
+  landed: Landed[];
+  /** A shot of `npc`'s from `from` landed `at`, on `on` or on what stopped it: a ring there */
+  impact(npc: Npc, at: THREE.Vector3, from: THREE.Vector3, on: null | Npc): void;
+  /** Every impact still fading, sending only those, as one lands or fades */
+  writeImpacts(): void;
   /** By npcKey: whoever is armed, or whose gun or beam still fades */
   arms: Map<string, ArmEntry>;
   /** By npcKey: how jsh `phaser` overrides their phaser's look. Not saved */
@@ -1261,6 +1323,19 @@ type AlongEnd = {
   decorKey: null | string;
   dist: number;
   rooms: Geomorph.GmRoomKey[];
+};
+
+/** Where a shot landed, as an impact draws it */
+type Landed = {
+  at: THREE.Vector3;
+  /** The shot's way there, unit */
+  way: THREE.Vector3;
+  size: number;
+  rgb: [number, number, number];
+  /** Game seconds it landed */
+  secs: number;
+  room: number;
+  lit: number;
 };
 
 type ArmEntry = {
