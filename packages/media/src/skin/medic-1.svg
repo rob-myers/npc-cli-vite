@@ -1,10 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<clipPath id="cloth"><path d="M64 120h16v4h-16zM64 124h16v4h-16zM80 120h24v4h-24zM80 124h28v4h-28zM116 120h12v4h-12zM112 124h16v4h-16zM128 120h32v4h-32zM128 124h32v4h-32zM80 128h4v4h-4zM108 128h4v4h-4zM80 132h4v4h-4zM108 132h4v4h-4zM80 136h4v4h-4zM108 136h4v4h-4zM80 140h4v4h-4zM108 140h4v4h-4zM64 144h16v4h-16zM64 148h16v4h-16zM64 152h16v4h-16zM64 156h16v4h-16zM64 160h16v4h-16zM64 164h16v4h-16zM64 168h16v4h-16zM64 172h16v4h-16zM64 176h16v4h-16zM64 180h16v4h-16zM64 184h16v4h-16zM64 188h16v4h-16zM80 144h8v4h-8zM104 144h8v4h-8zM80 148h8v4h-8zM104 148h8v4h-8zM80 152h8v4h-8zM104 152h8v4h-8zM80 156h12v4h-12zM100 156h12v4h-12zM80 160h12v4h-12zM100 160h12v4h-12zM80 164h12v4h-12zM100 164h4v4h-4zM80 168h12v4h-12zM100 168h8v4h-8zM80 172h16v4h-16zM100 172h12v4h-12zM80 176h32v4h-32zM80 180h32v4h-32zM80 184h32v4h-32zM80 188h32v4h-32zM112 144h16v4h-16zM112 148h16v4h-16zM112 152h16v4h-16zM112 156h16v4h-16zM112 160h16v4h-16zM112 164h16v4h-16zM112 168h16v4h-16zM112 172h16v4h-16zM112 176h16v4h-16zM112 180h16v4h-16zM112 184h16v4h-16zM112 188h16v4h-16zM128 144h32v4h-32zM128 148h32v4h-32zM128 152h32v4h-32zM128 156h32v4h-32zM128 160h32v4h-32zM128 164h32v4h-32zM128 168h32v4h-32zM128 172h32v4h-32zM128 176h32v4h-32zM128 180h32v4h-32zM128 184h32v4h-32zM128 188h32v4h-32zM176 128h16v4h-16zM176 132h16v4h-16zM176 136h16v4h-16zM176 140h16v4h-16zM160 144h16v4h-16zM160 148h16v4h-16zM160 152h16v4h-16zM160 156h16v4h-16zM176 144h16v4h-16zM176 148h16v4h-16zM176 152h16v4h-16zM176 156h16v4h-16zM192 144h16v4h-16zM192 148h16v4h-16zM192 152h16v4h-16zM192 156h16v4h-16zM208 144h16v4h-16zM208 148h16v4h-16zM208 152h16v4h-16zM208 156h16v4h-16zM16 64h16v4h-16zM16 68h16v4h-16zM16 72h16v4h-16zM16 76h16v4h-16zM0 80h16v4h-16zM0 84h16v4h-16zM0 88h16v4h-16zM0 92h16v4h-16zM0 96h16v4h-16zM0 100h16v4h-16zM0 104h16v4h-16zM0 108h16v4h-16zM0 112h16v4h-16zM8 116h8v4h-8zM16 80h16v4h-16zM16 84h16v4h-16zM16 88h16v4h-16zM16 92h16v4h-16zM16 96h16v4h-16zM16 100h16v4h-16zM16 104h16v4h-16zM16 108h16v4h-16zM16 112h16v4h-16zM16 116h16v4h-16zM32 80h16v4h-16zM32 84h16v4h-16zM32 88h16v4h-16zM32 92h16v4h-16zM32 96h16v4h-16zM32 100h16v4h-16zM32 104h16v4h-16zM32 108h16v4h-16zM32 112h16v4h-16zM32 116h8v4h-8zM48 80h16v4h-16zM48 84h16v4h-16zM48 88h16v4h-16zM48 92h16v4h-16zM48 96h16v4h-16zM48 100h16v4h-16zM48 104h16v4h-16zM48 108h16v4h-16zM48 112h16v4h-16zM208 192h16v4h-16zM208 196h16v4h-16zM208 200h16v4h-16zM208 204h16v4h-16zM192 208h16v4h-16zM192 212h16v4h-16zM192 216h16v4h-16zM192 220h16v4h-16zM208 208h16v4h-16zM208 212h16v4h-16zM208 216h16v4h-16zM208 220h16v4h-16zM224 208h16v4h-16zM224 212h16v4h-16zM224 216h16v4h-16zM224 220h16v4h-16zM240 208h16v4h-16zM240 212h16v4h-16zM240 216h16v4h-16zM240 220h16v4h-16zM80 192h16v4h-16zM80 196h16v4h-16zM80 200h16v4h-16zM80 204h16v4h-16zM64 208h16v4h-16zM64 212h16v4h-16zM64 216h16v4h-16zM64 220h16v4h-16zM64 224h16v4h-16zM64 228h16v4h-16zM64 232h16v4h-16zM64 236h16v4h-16zM64 240h16v4h-16zM72 244h8v4h-8zM80 208h16v4h-16zM80 212h16v4h-16zM80 216h16v4h-16zM80 220h16v4h-16zM80 224h16v4h-16zM80 228h16v4h-16zM80 232h16v4h-16zM80 236h16v4h-16zM80 240h16v4h-16zM80 244h16v4h-16zM96 208h16v4h-16zM96 212h16v4h-16zM96 216h16v4h-16zM96 220h16v4h-16zM96 224h16v4h-16zM96 228h16v4h-16zM96 232h16v4h-16zM96 236h16v4h-16zM96 240h16v4h-16zM96 244h8v4h-8zM112 208h16v4h-16zM112 212h16v4h-16zM112 216h16v4h-16zM112 220h16v4h-16zM112 224h16v4h-16zM112 228h16v4h-16zM112 232h16v4h-16zM112 236h16v4h-16zM112 240h16v4h-16z"/></clipPath>
+<linearGradient id="cloth-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #c4c4c4;"/></linearGradient>
+<linearGradient id="cloth-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #d8d8d8;"/><stop offset="1" style="stop-color: #a4a4a4;"/></linearGradient>
+<linearGradient id="cloth-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #e2e2e2;"/><stop offset="1" style="stop-color: #b0b0b0;"/></linearGradient>
+</defs>
 <g style="pointer-events: none;">
 <title>meta prefix=medic</title>
 <image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
 <title>medic-1--677d5973bd6d1678</title>
 </image>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth form</title>
+<rect x="80" y="64" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="128" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="128" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="144" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="144" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="208" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="224" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="192" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="224" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="240" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
 </g>
 <g style="pointer-events: none;">
 <title>glasses</title>

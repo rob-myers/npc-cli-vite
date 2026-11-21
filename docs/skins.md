@@ -150,6 +150,8 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - A download may hide a watermark in its unused corners (`d-3`). Clear them, above all the base head's (0–8, 0–4).
 - Tattoos drawn in texels read as blotches. Take them out of the embedded image and redraw them as ink: strokes joining neighbouring tattoo texels within a face, dots for lone ones, clipped to the faces (`d-5`).
   - No stroke crosses an elbow or knee, at half a limb's height (texel row 26 for the right arm, 58 for the left). The halves are separate cuboids, so ink across the bend breaks as it bends.
+- Light cloth, e.g. a white coat or pale scrubs, takes form shading only, never a noise texture (`medic-{1..5}`). Each face, base and overlay, takes a gradient darker toward its bottom, its sides, back and underside darker than its front. A multiply group draws it, clipped to the cloth texels (opaque, light, not skin-toned).
+  - Put `mix-blend-mode` on the clipped group itself. A clip isolates the group, so children blending inside it see an empty backdrop, and paint grey.
 - Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form. Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
   - A pale download reads faded beside d-0 and d-1. Raise its contrast and saturation by a filter on its `<image>` (`#punch`), and darken its suit's multiply, e.g. `#707070` (`d-4`).

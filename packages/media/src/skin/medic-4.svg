@@ -1,9 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<clipPath id="cloth"><path d="M80 64h32v4h-32zM80 68h32v4h-32zM80 72h32v4h-32zM80 76h32v4h-32zM112 64h32v4h-32zM112 68h32v4h-32zM112 72h32v4h-32zM112 76h32v4h-32zM64 80h16v4h-16zM64 84h16v4h-16zM64 88h16v4h-16zM64 92h16v4h-16zM64 96h16v4h-16zM64 100h16v4h-16zM64 104h16v4h-16zM64 108h16v4h-16zM64 112h16v4h-16zM64 116h16v4h-16zM64 120h16v4h-16zM64 124h16v4h-16zM80 80h32v4h-32zM80 84h32v4h-32zM80 88h32v4h-32zM80 92h32v4h-32zM80 96h32v4h-32zM80 100h32v4h-32zM80 104h32v4h-32zM80 108h32v4h-32zM80 112h32v4h-32zM80 116h32v4h-32zM80 120h32v4h-32zM80 124h32v4h-32zM112 80h16v4h-16zM112 84h16v4h-16zM112 88h16v4h-16zM112 92h16v4h-16zM112 96h16v4h-16zM112 100h16v4h-16zM112 104h16v4h-16zM112 108h16v4h-16zM112 112h16v4h-16zM112 116h16v4h-16zM112 120h16v4h-16zM112 124h16v4h-16zM128 80h32v4h-32zM128 84h32v4h-32zM128 88h32v4h-32zM128 92h32v4h-32zM128 96h32v4h-32zM128 100h32v4h-32zM128 104h32v4h-32zM128 108h32v4h-32zM128 112h32v4h-32zM128 116h32v4h-32zM128 120h32v4h-32zM128 124h32v4h-32zM116 140h4v4h-4zM136 140h4v4h-4zM84 144h4v4h-4zM104 144h4v4h-4zM84 148h4v4h-4zM104 148h4v4h-4zM84 152h4v4h-4zM84 180h4v4h-4zM104 180h4v4h-4zM84 184h4v4h-4zM104 184h4v4h-4zM84 188h4v4h-4zM104 188h4v4h-4zM176 64h16v4h-16zM176 68h16v4h-16zM176 72h16v4h-16zM176 76h16v4h-16zM192 64h16v4h-16zM192 68h16v4h-16zM192 72h16v4h-16zM192 76h16v4h-16zM160 80h16v4h-16zM160 84h16v4h-16zM160 88h16v4h-16zM160 92h16v4h-16zM160 96h16v4h-16zM160 100h16v4h-16zM160 104h16v4h-16zM160 108h16v4h-16zM160 112h16v4h-16zM160 116h16v4h-16zM160 120h16v4h-16zM160 124h16v4h-16zM176 80h16v4h-16zM176 84h16v4h-16zM176 88h16v4h-16zM176 92h16v4h-16zM176 96h16v4h-16zM176 100h16v4h-16zM176 104h16v4h-16zM176 108h16v4h-16zM176 112h16v4h-16zM176 116h16v4h-16zM176 120h16v4h-16zM176 124h16v4h-16zM192 80h16v4h-16zM192 84h16v4h-16zM192 88h16v4h-16zM192 92h16v4h-16zM192 96h16v4h-16zM192 100h16v4h-16zM192 104h16v4h-16zM192 108h16v4h-16zM192 112h16v4h-16zM192 116h16v4h-16zM192 120h16v4h-16zM192 124h16v4h-16zM208 80h16v4h-16zM208 84h16v4h-16zM208 88h16v4h-16zM208 92h16v4h-16zM208 96h16v4h-16zM208 100h16v4h-16zM208 104h16v4h-16zM208 108h16v4h-16zM208 112h16v4h-16zM208 116h16v4h-16zM208 120h16v4h-16zM208 124h16v4h-16zM160 152h16v4h-16zM160 156h16v4h-16zM160 160h16v4h-16zM160 176h16v4h-16zM160 180h16v4h-16zM176 152h12v4h-12zM176 156h12v4h-12zM176 160h12v4h-12zM176 176h16v4h-16zM176 180h16v4h-16zM192 176h16v4h-16zM192 180h16v4h-16zM212 152h12v4h-12zM212 156h12v4h-12zM212 160h12v4h-12zM212 168h4v4h-4zM208 176h16v4h-16zM208 180h16v4h-16zM16 64h16v4h-16zM16 68h16v4h-16zM16 72h8v4h-8zM16 76h8v4h-8zM0 80h16v4h-16zM0 84h16v4h-16zM0 88h16v4h-16zM0 92h16v4h-16zM0 96h16v4h-16zM16 80h8v4h-8zM16 84h8v4h-8zM16 88h8v4h-8zM16 92h8v4h-8zM16 96h8v4h-8zM40 80h8v4h-8zM40 84h8v4h-8zM40 88h8v4h-8zM40 92h8v4h-8zM40 96h8v4h-8zM40 100h8v4h-8zM48 80h16v4h-16zM48 84h16v4h-16zM48 88h16v4h-16zM48 92h16v4h-16zM48 96h16v4h-16zM48 100h8v4h-8zM0 160h16v4h-16zM20 156h4v4h-4zM16 160h8v4h-8zM40 160h4v4h-4zM40 164h8v4h-8zM52 160h12v4h-12zM48 164h8v4h-8zM144 192h16v4h-16zM144 196h16v4h-16zM144 200h16v4h-16zM144 204h16v4h-16zM160 192h16v4h-16zM160 196h16v4h-16zM160 200h16v4h-16zM160 204h16v4h-16zM128 208h16v4h-16zM128 212h16v4h-16zM128 216h16v4h-16zM128 220h16v4h-16zM128 224h16v4h-16zM128 228h16v4h-16zM128 232h16v4h-16zM128 236h16v4h-16zM128 240h16v4h-16zM128 244h16v4h-16zM128 248h16v4h-16zM128 252h16v4h-16zM144 208h16v4h-16zM144 212h16v4h-16zM144 216h16v4h-16zM144 220h16v4h-16zM144 224h16v4h-16zM144 228h16v4h-16zM144 232h16v4h-16zM144 236h16v4h-16zM144 240h16v4h-16zM144 244h16v4h-16zM144 248h16v4h-16zM144 252h16v4h-16zM160 208h16v4h-16zM160 212h16v4h-16zM160 216h16v4h-16zM160 220h16v4h-16zM160 224h16v4h-16zM160 228h16v4h-16zM160 232h16v4h-16zM160 236h16v4h-16zM160 240h16v4h-16zM160 244h16v4h-16zM160 248h16v4h-16zM160 252h16v4h-16zM176 208h16v4h-16zM176 212h16v4h-16zM176 216h16v4h-16zM176 220h16v4h-16zM176 224h16v4h-16zM176 228h16v4h-16zM176 232h16v4h-16zM176 236h16v4h-16zM176 240h16v4h-16zM176 244h16v4h-16zM176 248h16v4h-16zM176 252h16v4h-16zM192 240h16v4h-16zM192 244h16v4h-16zM212 216h12v4h-12zM212 220h12v4h-12zM212 224h12v4h-12zM208 240h16v4h-16zM208 244h16v4h-16zM224 216h16v4h-16zM224 220h16v4h-16zM224 224h16v4h-16zM224 240h16v4h-16zM224 244h16v4h-16zM240 216h12v4h-12zM240 220h12v4h-12zM240 224h12v4h-12zM248 232h4v4h-4zM240 240h16v4h-16zM240 244h16v4h-16zM80 192h16v4h-16zM80 196h16v4h-16zM88 200h8v4h-8zM88 204h8v4h-8zM64 208h8v4h-8zM64 212h8v4h-8zM64 216h8v4h-8zM64 220h8v4h-8zM64 224h8v4h-8zM64 228h8v4h-8zM88 208h8v4h-8zM88 212h8v4h-8zM88 216h8v4h-8zM88 220h8v4h-8zM88 224h8v4h-8zM96 208h16v4h-16zM96 212h16v4h-16zM96 216h16v4h-16zM96 220h16v4h-16zM96 224h16v4h-16zM112 208h16v4h-16zM112 212h16v4h-16zM112 216h16v4h-16zM112 220h16v4h-16zM112 224h16v4h-16zM120 228h8v4h-8zM4 224h4v4h-4zM0 228h8v4h-8zM24 220h4v4h-4zM24 224h8v4h-8zM32 224h16v4h-16zM48 224h12v4h-12zM56 228h8v4h-8z"/></clipPath>
+<linearGradient id="cloth-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #c4c4c4;"/></linearGradient>
+<linearGradient id="cloth-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #d8d8d8;"/><stop offset="1" style="stop-color: #a4a4a4;"/></linearGradient>
+<linearGradient id="cloth-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #e2e2e2;"/><stop offset="1" style="stop-color: #b0b0b0;"/></linearGradient>
+</defs>
 <g style="pointer-events: none;">
 <title>meta prefix=medic</title>
 <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAbFBMVEUAAADdwrHl0MPt3tXw3NLjvqzt7e0WNWPcr5kNDQ0rKyseHh4REREEBATVtJ+7yuKetdaTqcl2j7V3dHRkYmIFBQVWW1RFREQsKysgICAWFhYlJSUxMTFAPz/////n5eXU1NTExMS5ubmxr6/BZk08AAAAAXRSTlMAQObYZgAAAxpJREFUeNrllm13oyAQhYPYl5WhTbqbtisWRP//f9y5wGhN4nHTnNP9sDfBBHUeLiMCO1HTmMZy0UW7a0VkWUS6UqzqekDDFtiB0eqJpb7gwGYLXwYYODDNLQ5YdIODhi1YLutJNIbLOsBwMDXN+mM06XMujiL0HwBLBAw+VIZFswDQxb4bMsTxZCEyqFoDyg8GmCmednbH1y8D0CQheWQpARDa4LwAqETaSwBjLLtXSdYiCkZKb3YSuCbitjCIOFShWGRSOkFmG2ABeFK2un94rB7uK6ueyABgGy4AbIiM4Xa1ru8etdZ3XBTxGQICZROgRbVeyhI+fzcixyH2r2/vv6d67FlxHIchxmEY5XwIfVSsLwP8OoBoCVBaq+sAxxXAdhdGFgBHguthhASQFHvEjcH7gD8QTk2AAeoBSNeHfMP++Xk/34wLHuLrSbH3E6CHQktE3nMfs8Jhvz+USkjKPzNgdhAg79qWAXCZW305HF6WDnooCiD2E8Andc4BwKh8AxzMrUnXkFAIyZ0Ares+WF3nkCZqByjnYAHIDgTwyUGJdw5paFuXb4CD+WYEruYgxyMHLLYzQCkHSwerT6GD/dI8x3cRyk9hkURgLnaB23fZv3Mc/7GWA13X/K2rJP4/AzrIoXmHfKzlIAdWio980NUEeGXhPUh6f3vNQchBBsj7oLIygLX7XxTlcK1GOXx7y6Key89fi1NpRuoLNPbhNGBTZSjnynA6H4RiOQR/FrntQBQjuN+j72noPAcrM5JMKGVGynfLYdbqhOI4nOOPSUyY+9j/w5EIq5hcJh77V6xbAP4qANGNgCPd0IU+LfXz45K1QfYHm4AQAJjXhPLrZWXaBHiPATVtFLyAkgTAdXk7xfgnAJZYH7J8AcTMiwXAxHl+iGWkQyEA4Fznpe5lcZH9wZmDGJcjwAfXzSu2AMQBABvCG+UKAYjTHGxODEjhvGtp6eqn0LZApG50IEgX5HUWRzI/oEUJSC06l+rOFQ9lP1Br/nKpToE7mQdkXuADugCBkACqqqskXW0PZ9knyL4hAYouvQ9/ABMCq0Gy2QEBAAAAAElFTkSuQmCC" width="256" height="256" style="image-rendering: pixelated;">
 <title>medic-4--377631a97d922e6a</title>
 </image>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth form</title>
+<rect x="80" y="64" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="128" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="128" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="144" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="144" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="208" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="224" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="192" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="224" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="240" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
 </g>
 </svg>
