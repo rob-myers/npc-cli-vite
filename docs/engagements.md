@@ -27,8 +27,10 @@ A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), a
 (`strike`), a frame or two later (`fadeSecs / lockRate`). It emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
 Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one. jsh `sounds` plays both: see `docs/audio.md`.
 
-No shot locks on until the phaser is raised: `wieldBeam` sets `beam.next` only then, as it shows the beam. The lock is
-far quicker than the arm, so else a shot from a lowered phaser would land unseen.
+No shot locks on until the phaser is raised and on target: `wieldBeam` shows the beam and sets `beam.next` only once the
+muzzle's line passes within `lockRad` of the lock point (`onLine`). The lock is far quicker than the arm, so else a shot
+would land unseen from a lowered phaser, or off the barrel whilst they still turn. The beam waits too, as the arm follows
+it: shown early, it would swing round ahead of their turn.
 
 | outcome | the beam | effect |
 | --- | --- | --- |
@@ -223,3 +225,16 @@ does one with a laser.
   (`w.npcFocus.setLaser`, `lasers`). It is not saved.
 
 **Psi** focuses on someone to act on them: see `docs/psi.md`.
+
+## Beam looks
+
+A phaser's look is its beam's style and colour, its attachment and its bounces (`PhaserLook`, `service/phaser-look.ts`).
+
+- It comes from its item's meta, saved with the map: `beam`, `beam-color`, `attachment`, `bounces`. A bad value is ignored.
+- jsh `phaser` overrides it until the page reloads (`w.phasers.setLook`, `lookOf`):
+  - `phaser rob beam:plain color:#4cf`, `phaser rob attachment:shotgun bounces:2`
+  - `attachment:none` takes the attachment off, and `--reset-look` drops the override.
+  - Given only these, it prints the look.
+- Each gun and each beam segment carries its own colour (`gunTint`, `beamColor`). Over a pale deck it is drawn as its hue, fully saturated at `phaserLook.paleLightness` (`beamRgb`).
+- A beam is drawn as one or more segments (`beamSegments`), an instance of the beam mesh apiece. Each carries its style, a seed, the charge it was fired with, and whether its end's ball is lit (`beamLook`).
+- So far there is one style, `plain`. Attachments and bounces are kept but not yet drawn.

@@ -34,9 +34,9 @@ export function createGunResources() {
   const quatData = new Float32Array(MAX_PHASERS * 4);
   /** Its npc's room slot, and whether they are lit */
   const roomData = new Float32Array(MAX_PHASERS * 2);
-  /** Its glow as it charges or cools */
-  const chargeData = new Float32Array(MAX_PHASERS);
-  const attrs = [gunData, quatData, roomData, chargeData].map((data) =>
+  /** Its beam's colour, then its glow as it charges or cools */
+  const tintData = new Float32Array(MAX_PHASERS * 4);
+  const attrs = [gunData, quatData, roomData, tintData].map((data) =>
     new THREE.InstancedBufferAttribute(data, data.length / MAX_PHASERS).setUsage(THREE.DynamicDrawUsage),
   );
 
@@ -63,7 +63,7 @@ export function createGunResources() {
   const geo = new THREE.InstancedBufferGeometry();
   for (const key of ["position", "normal", "uv", "phaserBox"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
-  ["phaserGun", "phaserQuat", "gunRooms", "gunCharge"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
+  ["phaserGun", "phaserQuat", "gunRooms", "gunTint"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
   geo.instanceCount = 0;
 
   // opaque, else drawn after the walls and over them
@@ -79,7 +79,7 @@ export function createGunResources() {
     gunData,
     quatData,
     roomData,
-    chargeData,
+    tintData,
     gunColor: uniform(new THREE.Color(gunShaderConfig.gunColor)),
     slotColor: uniform(new THREE.Color(gunShaderConfig.slotColor)),
     deadColor: uniform(new THREE.Color(gunShaderConfig.deadColor)),
@@ -87,11 +87,7 @@ export function createGunResources() {
 }
 
 /** The gun, held along the forearm */
-export function gunNodes(
-  { gunColor, slotColor, deadColor }: GunResources,
-  { color, gain }: PhaserUniforms,
-  view: PhaserView,
-) {
+export function gunNodes({ gunColor, slotColor, deadColor }: GunResources, { gain }: PhaserUniforms, view: PhaserView) {
   const { edgePx, edgeDarken, chargeBody, chargeEmitter, stripArmed, stripFull } = gunShaderConfig;
   const gun = attribute<"vec4">("phaserGun", "vec4");
   const quat = attribute<"vec4">("phaserQuat", "vec4");
@@ -115,7 +111,9 @@ export function gunNodes(
     positionLocal.y.sub(gunStripY[0]).div(gunStripY[1] - gunStripY[0]) as THREE.Node<"float">,
     "vGunStripT",
   );
-  const charge = attribute<"float">("gunCharge", "float");
+  const tint = attribute<"vec4">("gunTint", "vec4");
+  const charge = tint.w;
+  const vTint = varying(tint.xyz, "vGunTint");
   /** Armed, its quaternion's `w` is positive: `q` and `-q` turn alike */
   const vArmed = varying<"float">(quat.w.greaterThan(0).select(1, 0) as THREE.Node<"float">, "vGunArmed");
   /** A dead one's scale is negative */
@@ -136,7 +134,7 @@ export function gunNodes(
     const face = uv();
     const fromEdge = face.min(face.oneMinus()).div(fwidth(face).max(1e-6));
     const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
-    const beamColor = color.mul(gain.min(1));
+    const beamColor = vTint.mul(gain.min(1));
     const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), beamColor, vArmed);
     /** Dark, faintly lit whilst armed, and filled from the back by the charge */
     const slot = mix(slotColor, beamColor, vArmed.mul(vDead.oneMinus()).mul(stripArmed)).mul(vShade);

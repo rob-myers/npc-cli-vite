@@ -1,5 +1,5 @@
 import { uniform } from "three/tsl";
-import * as THREE from "three/webgpu";
+import type * as THREE from "three/webgpu";
 import type { FadeRooms } from "./fade-rooms";
 
 /** What the phaser meshes read of the World's view */
@@ -10,11 +10,10 @@ export type PhaserView = {
   litNpcsEnabled: THREE.UniformNode<"float", number>;
 };
 
-/** The uniforms the guns and beams share: the beam's colour shows on the gun too */
+/** The uniforms the guns and beams share */
 export function createPhaserUniforms() {
   return {
     phase: uniform(0),
-    color: uniform(new THREE.Color(phaserLook.color)),
     /** From `theme.npcs.fxStrength` */
     gain: uniform(1),
     /** The beam's alpha on the way: more over a pale deck — see `Phasers.syncTheme` */

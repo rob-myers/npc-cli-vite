@@ -1041,6 +1041,10 @@ export async function* pick(ct: JshCli.RunArg) {
  * phaser rob --laser
  * phaser rob grant:"1 2 3"
  * phaser npc:rob revoke:"[1, 2]"
+ * phaser rob beam:plain color:#4cf
+ * phaser rob attachment:shotgun bounces:2
+ * phaser rob attachment:none
+ * phaser rob --reset-look
  * ```
  */
 export async function phaser(
@@ -1056,10 +1060,11 @@ export async function phaser(
       "--cancel": "cancel",
       "--laser": "laser",
       "--held": "held",
+      "--reset-look": "resetLook",
     },
     { array: { grant: true, revoke: true } },
   ),
-) {
+): Promise<unknown> {
   if (opts.at === undefined) api.setPausable("world", false); // raises whilst paused
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { key } = w.npc.get(opts.npcKey);
@@ -1067,6 +1072,24 @@ export async function phaser(
   if (opts.cancel === true) return void w.npcFocus.cancel(key);
   if (opts.laser !== undefined) return void w.npcFocus.setLaser(key, opts.laser !== false && opts.laser !== "false");
   if (w.e.hasItem(key, "phaser") === false) throw Error(`${key} carries no phaser: give ${key} item:phaser`);
+
+  if (opts.resetLook === true) w.phasers.setLook(key, null);
+  const look = {
+    ...(opts.beam !== undefined && { style: opts.beam }),
+    ...(opts.color !== undefined && { color: String(opts.color) }),
+    ...(opts.attachment !== undefined && { attachment: opts.attachment === "none" ? null : opts.attachment }),
+    ...(opts.bounces !== undefined && { bounces: Number(opts.bounces) }),
+  } as Parameters<typeof w.phasers.setLook>[1];
+  if (Object.keys(look ?? {}).length > 0) w.phasers.setLook(key, look);
+  const acts = [opts.shoot, opts.at, opts.tilt, opts.grant, opts.revoke].some((x) => x !== undefined);
+  if (
+    (opts.resetLook === true || Object.keys(look ?? {}).length > 0) &&
+    !acts &&
+    !opts.raise &&
+    !opts.target &&
+    !opts.fire
+  )
+    return w.phasers.lookOf(key);
 
   if (opts.grant !== undefined || opts.revoke !== undefined) {
     const [grant, revoke] = [opts.grant ?? [], opts.revoke ?? []].map((freqs) => freqs.map(Number));
@@ -1098,7 +1121,7 @@ export async function phaser(
     return void w.phasers.arm(key, { at, part: opts.part ?? "head" });
   }
   const { freqs = [], dead = [] } = w.shields.phaserOf(key)?.meta ?? {};
-  return { freqs, dead };
+  return { freqs, dead, look: w.phasers.lookOf(key) };
 }
 
 /** Aims `npcKey` at a part (`w.phasers.aimAt`) until let go of: once aimed, else by a tilt, a cancel or lowering. A kill lets go */
@@ -1136,6 +1159,12 @@ type PhaserOpts = {
   tilt?: number | string;
   grant?: (number | string)[];
   revoke?: (number | string)[];
+  /** The look: see `w.phasers.setLook` */
+  beam?: string;
+  color?: string;
+  attachment?: string;
+  bounces?: number | string;
+  resetLook?: boolean;
 };
 
 export function play({ api, w }: JshCli.RunArg) {

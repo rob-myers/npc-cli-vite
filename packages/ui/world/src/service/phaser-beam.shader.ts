@@ -31,9 +31,11 @@ export function createBeamResources() {
   const dstData = new Float32Array(MAX_BEAM_SEGMENTS * 4);
   /** Each end's npc's room slot, then whether they are lit — they fade with it as the npcs do */
   const roomData = new Float32Array(MAX_BEAM_SEGMENTS * 4);
-  /** The charge its shot was fired with */
-  const firedData = new Float32Array(MAX_BEAM_SEGMENTS);
-  const attrs = [srcData, dstData, roomData, firedData].map((data) =>
+  /** Its style's index in `beamStyles`, its seed, the charge its shot was fired with, and `1` if its end is lit */
+  const lookData = new Float32Array(MAX_BEAM_SEGMENTS * 4);
+  /** Its colour, and its width's scale */
+  const colorData = new Float32Array(MAX_BEAM_SEGMENTS * 4);
+  const attrs = [srcData, dstData, roomData, lookData, colorData].map((data) =>
     new THREE.InstancedBufferAttribute(data, data.length / MAX_BEAM_SEGMENTS).setUsage(THREE.DynamicDrawUsage),
   );
 
@@ -46,7 +48,7 @@ export function createBeamResources() {
   for (const key of ["position", "normal", "uv"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
   for (const { start, count, materialIndex } of base.groups) geo.addGroup(start, count, materialIndex);
-  ["beamSrc", "beamDst", "beamRooms", "beamFired"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
+  ["beamSrc", "beamDst", "beamRooms", "beamLook", "beamColor"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
   geo.instanceCount = 0;
 
   // additive, glowing over a dark floor — `Phasers.syncTheme` lays them over a pale one instead
@@ -60,17 +62,19 @@ export function createBeamResources() {
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;
 
-  return { mesh, mats, attrs, srcData, dstData, roomData, firedData };
+  return { mesh, mats, attrs, srcData, dstData, roomData, lookData, colorData };
 }
 
 /** The beam's nodes, else with `tip` its end's ball */
-export function beamNodes({ phase, color, gain, faint }: PhaserUniforms, view: PhaserView, tip: boolean) {
+export function beamNodes({ phase, gain, faint }: PhaserUniforms, view: PhaserView, tip: boolean) {
   const { radius, tipRadius, solid, nearMetres, bands, chargeWiden, chargeBright } = beamShaderConfig;
   const src = attribute<"vec4">("beamSrc", "vec4");
   const dst = attribute<"vec4">("beamDst", "vec4");
   const [shown, locked] = [src.w, dst.w];
+  const look = attribute<"vec4">("beamLook", "vec4");
   /** The charge it was fired with */
-  const fired = attribute<"float">("beamFired", "float");
+  const fired = look.z;
+  const tint = attribute<"vec4">("beamColor", "vec4");
   const t = tip ? float(1) : positionLocal.y.add(0.5);
 
   const d = dst.xyz.sub(src.xyz);
@@ -78,7 +82,9 @@ export function beamNodes({ phase, color, gain, faint }: PhaserUniforms, view: P
   const normal = normalize(cross(side, d));
   const across = side.mul(positionLocal.x).add(normal.mul(positionLocal.z));
   const offset = (
-    tip ? across.add(normalize(d).mul(positionLocal.y)).mul(locked.mul(tipRadius)) : across.mul(radius)
+    tip
+      ? across.add(normalize(d).mul(positionLocal.y)).mul(locked.mul(tipRadius).mul(look.w))
+      : across.mul(tint.w.mul(radius))
   ).mul(fired.mul(chargeWiden).add(1));
   const p = mix(src.xyz, dst.xyz, t).add(offset.mul(shown));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
@@ -95,6 +101,7 @@ export function beamNodes({ phase, color, gain, faint }: PhaserUniforms, view: P
   /** Its alpha's gain by the charge it was fired with */
   const vFired = varying(fired.mul(chargeBright).add(1), tip ? "vBallFired" : "vBeamFired");
   const along = varying(t, tip ? "vBallT" : "vBeamT");
+  const vColor = varying(tint.xyz, tip ? "vBallColor" : "vBeamColor");
   /** Metres short of the end, where the beam meets the body part */
   const toEnd = varying(t.oneMinus().mul(d.length()), tip ? "vBallToEnd" : "vBeamToEnd");
   const colorNode = Fn(() => {
@@ -107,7 +114,7 @@ export function beamNodes({ phase, color, gain, faint }: PhaserUniforms, view: P
     const bright = body.mul(gain).mul(vFired).min(1);
     const a = view.objectPick.notEqual(0).select(0, vShown.mul(vSeen).mul(bright).mul(view.foldNode));
     Discard(a.lessThan(1 / 512));
-    return vec4(color, a);
+    return vec4(vColor, a);
   })();
 
   return { vertexNode, colorNode };

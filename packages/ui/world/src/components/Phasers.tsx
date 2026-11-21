@@ -32,6 +32,15 @@ import {
   gunShaderConfig,
   MAX_PHASERS,
 } from "../service/phaser-gun.shader";
+import {
+  beamRgb,
+  beamSegments,
+  beamStyles,
+  checkLook,
+  defaultLook,
+  type PhaserLook,
+  resolveLook,
+} from "../service/phaser-look";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { UpperAim } from "./npc-animation";
@@ -52,6 +61,8 @@ export default function Phasers() {
       gun: createGunResources(),
       beams: createBeamResources(),
       arms: new Map(),
+      looks: new Map(),
+      pale: false,
       tickedSecs: w.gameTime.now(),
 
       aimAt(npcKey, at) {
@@ -235,6 +246,7 @@ export default function Phasers() {
             holdUntil: 0,
             idleBefore: null,
             key: npcKey,
+            look: { ...defaultLook },
             lockAim: { at: 0, rate: 1, untilRest: false },
             lowerAt: null,
             muzzleRight: 0,
@@ -384,15 +396,20 @@ export default function Phasers() {
         arm.toward = null;
         w.r3f?.invalidate();
       },
+      lookOf(npcKey) {
+        return resolveLook(w.shields?.phaserOf(npcKey)?.meta, state.looks.get(npcKey), { ...defaultLook });
+      },
+      setLook(npcKey, look) {
+        if (look === null) return void state.looks.delete(npcKey);
+        checkLook(look);
+        state.looks.set(npcKey, { ...state.looks.get(npcKey), ...look });
+        w.r3f?.invalidate();
+      },
       syncTheme() {
         const theme = w.getTheme();
         // light cannot be added to a pale deck, so there the beam is laid over it, in a deeper ink
         const pale = theme.floor.deck === "light";
-        state.color.value.set(phaserLook.color);
-        if (pale) {
-          const { h } = state.color.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
-          state.color.value.setHSL(h, 1, phaserLook.paleLightness, THREE.SRGBColorSpace);
-        }
+        state.pale = pale; // each beam's colour follows, see `beamRgb`
         state.gun.gunColor.value.set(pale ? gunShaderConfig.paleGunColor : gunShaderConfig.gunColor);
         state.gain.value = pale ? 1 : theme.npcs.fxStrength;
         state.faint.value = pale ? phaserLook.paleFaint : phaserLook.faint;
@@ -454,20 +471,20 @@ export default function Phasers() {
           // out of sight at both ends nothing of it is drawn, so nothing is worked out: `wield` above still ran
           if (unseen(w, npc) && (dst === undefined || unseen(w, dst))) continue;
 
-          // a beam only whilst shown: its end is still worked out, as `beamEnd` glides it
-          const beamAt = beam.shown.presence > 0 && beams < MAX_BEAM_SEGMENTS ? beams : -1;
-          if (state.draw(npc, arm, dst, guns, beamAt) === true) {
-            guns++;
-            if (beamAt !== -1) beams++;
-          }
+          // segments only whilst shown: its end is still worked out, as `beamEnd` glides it
+          const room = beam.shown.presence > 0 ? MAX_BEAM_SEGMENTS - beams : 0;
+          const drawn = state.draw(npc, arm, dst, guns, beams, room);
+          if (drawn === -1) continue;
+          guns++;
+          beams += drawn;
         }
 
         upload(state.gun, guns);
         upload(state.beams, beams);
       },
-      draw(npc, arm, dst, i, j) {
+      draw(npc, arm, dst, i, j, room) {
         const hand = handOf(npc, arm);
-        if (hand === null) return false;
+        if (hand === null) return -1;
         const { beam } = arm;
         hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
         const tip = hand.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
@@ -504,13 +521,24 @@ export default function Phasers() {
         const locked = eased(beam.locked.presence);
         // struck where the beam IS, not where it is headed: it glides there
         if ((stopped !== null && stop === stopped) || free?.what === "shield") w.shields.strike(end, shown * locked);
-        if (j !== -1) {
+        // into theirs, so nothing is made each tick
+        const look = resolveLook(item, state.looks.get(npc.key), (arm.look ??= { ...defaultLook })); // undefined from before hmr
+        const rgb = beamRgb(look.color, state.pale);
+        let drawn = 0;
+        if (room > 0) {
           const { roomSlot, npcLit } = dst ?? npc;
           const { beams } = state;
-          put(beams.srcData, j, tip.x, tip.y, tip.z, shown);
-          put(beams.dstData, j, end.x, end.y, end.z, locked);
-          put(beams.roomData, j, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
-          beams.firedData[j] = arm.fireCharge ?? 0; // undefined from before hmr
+          const style = beamStyles.indexOf(look.style);
+          const fired = arm.fireCharge ?? 0; // undefined from before hmr
+          for (const seg of beamSegments(look, tip, end)) {
+            if (drawn === room) break;
+            const k = j + drawn;
+            put(beams.srcData, k, seg.from.x, seg.from.y, seg.from.z, shown);
+            put(beams.dstData, k, seg.to.x, seg.to.y, seg.to.z, locked);
+            put(beams.roomData, k, npc.roomSlot.value, roomSlot.value, npc.npcLit.value, npcLit.value);
+            put(beams.lookData, k, style, drawn++, fired, seg.ball ? 1 : 0);
+            put(beams.colorData, k, rgb.r, rgb.g, rgb.b, 1);
+          }
         }
 
         hand.matrixWorld.decompose(tmpAt, tmpQuat, tmpScale);
@@ -532,14 +560,14 @@ export default function Phasers() {
           tmpQuat.multiply(tmpShake.set(Math.sin(r / 2), 0, 0, Math.cos(r / 2)));
         }
         const { gun } = state;
-        gun.chargeData[i] = glow;
+        put(gun.tintData, i, rgb.r, rgb.g, rgb.b, glow);
         gun.roomData[2 * i] = npc.roomSlot.value;
         gun.roomData[2 * i + 1] = npc.npcLit.value;
         const sign = (item?.dead?.length ?? 0) > 0 ? -1 : 1; // negative: dead, see `gunNodes`
         put(gun.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
         const flip = arm.armed === tmpQuat.w > 0 ? 1 : -1; // so `w > 0` says armed, see `gunNodes`
         put(gun.quatData, i, tmpQuat.x * flip, tmpQuat.y * flip, tmpQuat.z * flip, tmpQuat.w * flip);
-        return true;
+        return drawn;
       },
       strike(npc, arm) {
         const to = (arm.struck = arm.beam.to);
@@ -783,10 +811,12 @@ export default function Phasers() {
         if (free !== null && free.at === null && free.casting === false && raised === true && avoid === false) {
           void state.castAlong(npc, arm, free);
         }
-        beam.shown.target = locking && avoid === false && raised ? 1 : 0;
+        /** Raised and on target: else a shot lands unseen, or off the barrel, the lock being quicker than the arm */
+        const ready = locking && raised && onLine(npc, arm, target);
+        // the beam waits too, or the arm, which follows it, swings round ahead of their turn
+        beam.shown.target = ready && avoid === false ? 1 : 0;
         if (armed === false) beam.shown.presence = beam.locked.presence = 0;
-        // no shot until raised: else it lands unseen, the lock being quicker than the arm
-        if (avoid === false) beam.next = locking && raised ? arm.target : null;
+        if (avoid === false) beam.next = ready ? arm.target : null;
 
         // a shot is short: then they let go of whom they were on, still drawn. One at no one gives up as soon, unfired
         if ((target === undefined || beam.locked.presence === 0) && free === null) arm.firedSecs = null;
@@ -1075,6 +1105,10 @@ export type State = PhaserUniforms & {
   beams: BeamResources;
   /** By npcKey: whoever is armed, or whose gun or beam still fades */
   arms: Map<string, ArmEntry>;
+  /** By npcKey: how jsh `phaser` overrides their phaser's look. Not saved */
+  looks: Map<string, Partial<PhaserLook>>;
+  /** Over a pale deck, where beams are laid over it rather than added: see `syncTheme` */
+  pale: boolean;
   tickedSecs: number;
 
   /** Radians their arm points off `at`, sat or lain — `null` unless it aims by `armAt` */
@@ -1113,8 +1147,12 @@ export type State = PhaserUniforms & {
   endsAlong(npcKeys: string[]): Promise<(null | AlongEnd)[]>;
   /** Their pose, stance and aim are let go of, and the gun and beam fade */
   disarm(...npcKeys: string[]): void;
-  /** Writes their gun as instance `i`, and unless `j` is `-1` their beam, to `dst` if any, as instance `j` — `false` with no forearm to hold it */
-  draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number, j: number): boolean;
+  /** Writes their gun as instance `i`, and up to `room` of their beam's segments from instance `j`, to `dst` if any. The segments written, else `-1` with no forearm to hold it */
+  draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number, j: number, room: number): number;
+  /** Their phaser's look: its item's meta, overridden by `setLook` */
+  lookOf(npcKey: string): PhaserLook;
+  /** Overrides their phaser's look, field by field, until the page reloads. `null` clears it. Throws on a bad field */
+  setLook(npcKey: string, look: null | Partial<PhaserLook>): void;
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
   /** Fires at no one, along their aim, raising it if need be: `false` if it cannot be raised. `end`: already found */
@@ -1272,6 +1310,8 @@ type ArmEntry = {
   idleBefore: null | AnimationClipKey;
   /** npcKey */
   key: string;
+  /** Their phaser's look, rewritten each tick by `draw` */
+  look: PhaserLook;
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** World seconds a one-off shot is lowered by at the latest, whilst there is one */
@@ -1586,6 +1626,20 @@ function heldPoint(w: import("./World").State, arm: ArmEntry) {
 }
 
 /** The part locked on to, on the ground: their middle for none */
+/** Whether their muzzle's line passes within `lockRad` of where it locks on: always, on no one */
+function onLine(npc: Npc, arm: ArmEntry, target: undefined | Npc) {
+  if (target === undefined) return true; // a shot at no one is cast along their aim
+  const [ax, az, x, z] = gunLine(npc, arm);
+  // sat or lain, along the arm to where it points, as `aimOf`
+  const [tx, tz] = arm.armAim?.at === arm.armAt ? [arm.armAt.x, arm.armAt.z] : [x, z];
+  const at = lockPoint(target, arm);
+  const off = deltaAngle(
+    geomService.getThreeRotationY(tz - az, tx - ax),
+    geomService.getThreeRotationY(at.y - z, at.x - x),
+  );
+  return Math.abs(off) < phaserConfig.lockRad;
+}
+
 function lockPoint(target: Npc, arm: ArmEntry) {
   const { x, z } = targetPoint(target, arm.target, tmpLock);
   return Object.assign(tmpLockAt, { x, y: z });
@@ -1635,6 +1689,8 @@ const phaserConfig = {
   pitchFullRad: 0.02,
   /** Radians off a part an aim at it, not held, is let go of. Or after `aimSecs` */
   aimedRad: 0.005,
+  /** Radians the muzzle's line may pass off whom it locks on to */
+  lockRad: 0.06,
   aimSecs: 1.5,
   /** Metres a miss looks along for a wall, and runs on past them until it finds one */
   passMax: 12,
