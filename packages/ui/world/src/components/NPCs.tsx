@@ -2,7 +2,7 @@ import { url } from "@npc-cli/media";
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
-import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
+import { entries, hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { deltaAngle } from "maath/misc";
@@ -32,11 +32,13 @@ import {
   defaultBreathTune,
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
+  mirroredClips,
   npcConfig,
   npcMaterialConfig,
   npcScale,
   npcSpawnConfig,
 } from "../const.npc";
+import { mirrorClip } from "../service/clips";
 import {
   addBodyPartAttr,
   addEmptyBillboardOffset,
@@ -800,6 +802,7 @@ export default function NPCs() {
     );
     // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
     for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
+    for (const [key, from] of entries(mirroredClips)) if (from !== undefined) clips[key] = mirrorClip(clips[from], key);
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);

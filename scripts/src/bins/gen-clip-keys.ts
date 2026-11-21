@@ -310,21 +310,6 @@ const restAnkles = () => {
   >;
 };
 
-/** `tracks` mirrored as `clip`: left and right bones swapped, rotation `y` and `z` and position `x` negated */
-function mirrored(tracks: Track[], clip: string): Track[] {
-  const swap = (bone: string) =>
-    bone.startsWith("left") ? `right${bone.slice(4)}` : bone.startsWith("right") ? `left${bone.slice(5)}` : bone;
-  return tracks.map((track) => ({
-    ...track,
-    clip,
-    bone: swap(track.bone),
-    at: (t: number) => {
-      const [x, y, z] = track.at(t);
-      return track.channel === "rotation" ? [x, -y, -z] : [-x, y, z];
-    },
-  }));
-}
-
 /** A crouched gait's torso, head and forearms, all still: the torso leant `lean`, the head level */
 function crouchedUpper(clip: string, lean: number, foreX = 40) {
   return [
@@ -494,10 +479,6 @@ const reversedOf = (clip: string, src: Recipe<Record<string, number>>) =>
     tracks: () =>
       src.tracks({ ...src.params }).map((track) => ({ ...track, clip, at: (t: number) => track.at(gaitLength - t) })),
   });
-
-/** `src` mirrored as `clip` */
-const mirroredOf = (clip: string, src: Recipe<Record<string, number>>) =>
-  recipe({ params: {}, tracks: () => mirrored(src.tracks({ ...src.params }), clip) });
 
 /** The full crouch's, and the half crouch's: moving, a sneak. Arms searched: elbows on knees, hands on knees */
 const crouchClips = {
@@ -1091,9 +1072,7 @@ const clips = {
 
   ...crouchClips,
   crouch_backwards: reversedOf("crouch_backwards", crouchClips.crouch_walk),
-  crouch_strafe_left: mirroredOf("crouch_strafe_left", crouchClips.crouch_strafe_right),
   crouch_half_backwards: reversedOf("crouch_half_backwards", crouchClips.crouch_half_walk),
-  crouch_half_strafe_left: mirroredOf("crouch_half_strafe_left", crouchClips.crouch_half_strafe_right),
 
   /**
    * A balanced stance that rocks: as first keyed it stood over its front foot, the other trailing, and

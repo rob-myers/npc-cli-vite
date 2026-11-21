@@ -23,6 +23,7 @@ import {
   lieAim,
   lieHeadMaxRad,
   lieRoll,
+  mirroredClips,
   npcConfig,
   npcMaterialConfig,
   npcScale,
@@ -172,6 +173,8 @@ export class NpcAnimation {
     key: AnimationClipKey;
     secs: number;
     next: null | AnimationClipKey;
+    /** How fast its clip plays, e.g. a death's — see `hitConfig.dieRate` */
+    rate?: number;
   };
   /** Killed: held still once their pain clip ends, until released — see `holdStill` */
   dead = false;
@@ -854,7 +857,10 @@ export class NpcAnimation {
     const kill = impact?.outcome === "kill";
     /** Radians they turn as they fall dead, to fit — see `fitDeath` */
     let [turn, slide] = [0, null as null | Geom.VectJson];
-    if (key !== null && dieClips.has(key)) [key, turn, slide] = this.fitDeath(key, impact?.dir);
+    if (key !== null && dieClips.has(key)) {
+      [key, turn, slide] = this.fitDeath(key, impact?.dir);
+      if (Math.random() < 0.5) key = mirrorOf.get(key) ?? key; // either way round
+    }
     /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
@@ -869,7 +875,8 @@ export class NpcAnimation {
       : key !== null && down && pacified === false
         ? (hitConfig.next[key] ?? held)
         : held;
-    this.hurt = key === null ? null : { key, secs: 0, next };
+    const rate = key !== null && dieClips.has(key) ? THREE.MathUtils.randFloat(...hitConfig.dieRate) : 1;
+    this.hurt = key === null ? null : { key, secs: 0, next, rate };
     if (key !== null) {
       this.dead = kill;
       if (this.clutch !== undefined) takeClutch(this.clutch, this, impact); // undefined from before hmr
@@ -886,6 +893,7 @@ export class NpcAnimation {
       }
     }
     this.setPose(this.restKey, { force: key !== null, fade: key === null ? undefined : hitConfig.fadeInSecs });
+    if (key !== null) this.mixer.existingAction(this.npc.clips[key])?.setEffectiveTimeScale(rate);
     if (key === hitConfig.sink) this.setEyes("scared"); // until released
     this.w.r3f?.invalidate();
     if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key, dead: this.dead });
@@ -1506,7 +1514,7 @@ export class NpcAnimation {
     if (hurt === null || onceClips.has(hurt.key) === false) return;
     const { duration } = this.npc.clips[hurt.key];
     if (this.dead === true && hurt.secs >= duration) return; // held on its last frame
-    hurt.secs += delta;
+    hurt.secs += delta * (hurt.rate ?? 1); // undefined from before hmr
     if (hurt.secs < duration) return;
     if (hurt.next === null) return this.dead === true ? this.holdStill() : this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
@@ -1761,10 +1769,13 @@ const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
 /** A head shot's clips: one on someone already pacified is not felt */
 const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((byRegion) => byRegion.head));
 
-/** Hit clips played once, then left */
-/** Clips they fall dead by */
-const dieClips = new Set<AnimationClipKey>(Object.values(hitConfig.die));
+/** Each clip made by mirroring another, by the clip it mirrors — see `mirroredClips` */
+const mirrorOf = new Map(Object.entries(mirroredClips).map(([to, from]) => [from, to as AnimationClipKey]));
 
+/** Clips they fall dead by, and their mirrors, which a death plays either at random */
+const dieClips = new Set(Object.values(hitConfig.die).flatMap((key) => [key, mirrorOf.get(key) ?? key]));
+
+/** Hit clips played once, then left */
 const onceClips = new Set<AnimationClipKey>([
   ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
   hitConfig.sink,

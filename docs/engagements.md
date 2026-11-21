@@ -154,6 +154,8 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 - Stood, they fall dead the way the shot pushes, held on its last frame (`hitConfig.die`, by the shot's way in their own
   frame): shot from in front, `die_back` onto their back, arms a little out, the head about 1m behind where they stood;
   else `die_forward`, reaching to catch themselves, onto their front, the head about 1m ahead.
+- Each death plays mirrored half the time (`mirroredClips`, made at load: see Mirrored clips in `docs/blockbench.md`), at a
+  random rate within `hitConfig.dieRate`. The hurt clock runs at that rate too, so the fall's turn and hold keep pace.
 - Falling, they leave the crowd (`startFall`: their agent goes, their physics body stays). Each tick the npc moves as far
   as the clip has carried their hips, and their root goes back as far (`tickFall`), so their shadow and corpse are where
   their body is. Released, they are placed back on the navmesh with an agent.

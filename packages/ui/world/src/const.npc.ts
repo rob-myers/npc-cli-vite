@@ -198,7 +198,9 @@ export const fromAnimationClipKey = {
   crouch_strafe_right: true,
   crouch_walk: true,
   die_back: true,
+  die_back_mirror: true,
   die_forward: true,
+  die_forward_mirror: true,
   drop: true,
   drop_left: true,
   idle: true,
@@ -254,6 +256,20 @@ export const fromAnimationClipKey = {
   phaser_aim: true,
   phaser_aim_avoid: true,
   walk: true,
+};
+
+/** Clips made at load by mirroring another (`mirrorClip`), so not in the glTF: each by the clip it mirrors */
+export const mirroredClips: Partial<Record<ClipKey, ClipKey>> = {
+  crouch_half_strafe_left: "crouch_half_strafe_right",
+  crouch_left: "crouch",
+  crouch_strafe_left: "crouch_strafe_right",
+  die_back_mirror: "die_back",
+  die_forward_mirror: "die_forward",
+  drop_left: "drop",
+  lie_right: "lie_left",
+  pain_arm_right: "pain_arm_left",
+  pain_leg_right: "pain_leg_left",
+  pick_up_left: "pick_up",
 };
 
 /** A rest clip with a fidget once a cycle, e.g. `pose rob as:shrug`, within its box: see `gen-clip-keys` */
@@ -440,6 +456,8 @@ export const hitConfig = {
   sink: "collapse" as ClipKey,
   /** Killed stood, they fall dead the way the shot pushes, held on its last frame: shot from the front, `back` */
   die: { back: "die_back", forward: "die_forward" } satisfies Record<string, ClipKey>,
+  /** A death plays at a random rate between these, so no two fall in step */
+  dieRate: [0.85, 1.15] as [number, number],
   /** Metres they lie either side of their middle: a wall nearer pushes them off it as they fall */
   lieWidth: 0.45,
   /** Metres either side a fall keeps clear of others and corpses: less than `lieWidth`, so bodies may overlap a little */
@@ -524,7 +542,9 @@ export const fadeSecs: Record<
   crouch_strafe_right: {},
   crouch_walk: {},
   die_back: {},
+  die_back_mirror: {},
   die_forward: {},
+  die_forward_mirror: {},
   drop: {},
   drop_left: {},
   idle: { shuffle: 0.15, shuffle_step: 0.2 },
