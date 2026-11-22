@@ -31,6 +31,12 @@ export const uiStoreApi = {
       }
     });
   },
+  /** Whether `tabId` is a tab whose Tabs is in a pane on screen, so `focusTab` can show it */
+  canFocusTab(tabId: string) {
+    const { byId, persistedPanes } = uiStore.getState();
+    const parentId = byId[tabId]?.meta.parentId;
+    return parentId !== undefined && isLeafShown(persistedPanes.root, parentId);
+  },
   clearUis(): void {
     uiStore.setState((draft) => {
       draft.byId = {};
@@ -38,9 +44,8 @@ export const uiStoreApi = {
   },
   /** Shows `tabId` in its Tabs and asks it to take focus. `false` if it is gone, or its pane is hidden */
   focusTab(tabId: string) {
-    const { byId, persistedPanes } = uiStore.getState();
-    const parentId = byId[tabId]?.meta.parentId;
-    if (parentId === undefined || isLeafShown(persistedPanes.root, parentId) === false) return false;
+    if (uiStoreApi.canFocusTab(tabId) === false) return false;
+    const parentId = uiStore.getState().byId[tabId].meta.parentId as string;
     uiStore.setState((draft) => {
       (draft.byId[parentId].meta as { currentTabId?: string }).currentTabId = tabId;
       draft.focusRequest = { tabId, ms: Date.now() };
