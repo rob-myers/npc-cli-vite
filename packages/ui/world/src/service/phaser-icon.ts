@@ -1,7 +1,7 @@
 /**
  * The hud's phaser icons, bare and with each attachment, projected from the gun's boxes (`phaser-gun.ts`) as the
- * module loads. Fitted alike, so the gun keeps its size whatever is fitted. jsh-free and three-free, so a script can
- * draw them too (`gen-phaser-icon --png`)
+ * module loads. The bare gun is fitted on its own, so it reads larger. Those with an attachment are fitted alike.
+ * jsh-free and three-free, so a script can draw them too (`gen-phaser-icon --png`)
  */
 import {
   attachmentBoxes,
@@ -93,15 +93,18 @@ const facesByKey = Object.fromEntries(phaserIconKeys.map((key) => [key, facesOf(
   ReturnType<typeof facesOf>
 >;
 
-// fitted to the icon alike, a little left of centre
-const allPoints = Object.values(facesByKey).flatMap((faces) => faces.flatMap((f) => f.points));
-const [minX, maxX] = [Math.min(...allPoints.map((p) => p.x)), Math.max(...allPoints.map((p) => p.x))];
-const [minY, maxY] = [Math.min(...allPoints.map((p) => p.y)), Math.max(...allPoints.map((p) => p.y))];
-const scale = (size - 2 * margin) / Math.max(maxX - minX, maxY - minY);
-const toIcon = ({ x, y }: Pt) => ({
-  x: round((x - (minX + maxX) / 2) * scale + size / 2 + shift),
-  y: round((y - (minY + maxY) / 2) * scale + size / 2),
-});
+/** Projected points to the icon, fitted to `keys` alike, a little left of centre */
+const fitTo = (keys: PhaserIconKey[]) => {
+  const points = keys.flatMap((key) => facesByKey[key].flatMap((f) => f.points));
+  const [minX, maxX] = [Math.min(...points.map((p) => p.x)), Math.max(...points.map((p) => p.x))];
+  const [minY, maxY] = [Math.min(...points.map((p) => p.y)), Math.max(...points.map((p) => p.y))];
+  const scale = (size - 2 * margin) / Math.max(maxX - minX, maxY - minY);
+  return ({ x, y }: Pt) => ({
+    x: round((x - (minX + maxX) / 2) * scale + size / 2 + shift),
+    y: round((y - (minY + maxY) / 2) * scale + size / 2),
+  });
+};
+const [bareFit, attachedFit] = [fitTo(["none"]), fitTo(gunAttachments)];
 
 /** The beam along the barrel to the icon's right edge */
 const beamDir = { x: ca, y: sa * se };
@@ -128,7 +131,7 @@ type Fills = ReturnType<typeof fillsOf>;
 /** One `fill` where put away and drawn alike */
 const fillOf = (fills: Fills): { fill: string } | Fills => (fills.off === fills.armed ? { fill: fills.off } : fills);
 
-const pathOf = (points: Pt[], closed: boolean) =>
+const pathOf = (points: Pt[], closed: boolean, toIcon: (p: Pt) => Pt) =>
   `M${points
     .map((p) => toIcon(p))
     .map(({ x, y }) => `${x} ${y}`)
@@ -140,13 +143,14 @@ const pathOf = (points: Pt[], closed: boolean) =>
  */
 export const phaserIcons = Object.fromEntries(
   phaserIconKeys.map((key) => {
+    const toIcon = key === "none" ? bareFit : attachedFit;
     const from = toIcon(project(key === "none" ? muzzleOf(null) : enlarge(muzzleOf(key))));
     const to = { x: size - 2, y: round(from.y + ((size - 2 - from.x) * beamDir.y) / beamDir.x) };
     const faces = facesByKey[key].map(({ box, normal, points, edges }) => {
       const attached = key !== "none" && enlarged[key].includes(box);
       return {
-        d: pathOf(points, true),
-        edges: edges.map((e) => pathOf(e, false)).join(" "),
+        d: pathOf(points, true, toIcon),
+        edges: edges.map((e) => pathOf(e, false, toIcon)).join(" "),
         ...fillOf(fillsOf(box, normal, attached)),
         ...(attached && { attached: true as const }),
       };
