@@ -460,8 +460,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (fades && npc.agentId === null) {
               return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
             }
-            await state.stepOff(npc, groundPoint);
-            if (state.moveOverridden(npc, moveId)) return;
+            if ((await state.stepOff(npc, groundPoint)) || state.moveOverridden(npc, moveId)) return;
           }
 
           if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
@@ -1682,13 +1681,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // no room on its floor for them: out through a door they may pass, if near it, else they stay put
           const at = state.closestExitFrom(grKey, npc, npc.point);
           if (at === null) throw state.roomFull(npc);
-          // a target just outside, e.g. in its doorway, is faded onto at once rather than walked back to
+          // a target just outside is faded onto at once rather than walked back to
           const ahead = { x: 2 * toward.x - npc.point.x, y: 2 * toward.y - npc.point.y };
           if (
             w.findRoomContaining(toward)?.grKey !== grKey &&
             Math.hypot(toward.x - at.x, toward.y - at.y) < 2 * doorwayOut
-          )
-            return void (await npc.fadeSpawn({ at: toward, facing: ahead }));
+          ) {
+            // one in its doorway, just past it: a door's area is refused to walkers whilst the room is full
+            await npc.fadeSpawn({ at: w.npc.inDoorArea(toward) ? at : toward, facing: ahead });
+            return true;
+          }
           return void (await npc.fadeSpawn({ at, facing: toward }));
         }
         if (npc.agentId !== null) return void w.npc.setNpcDo(npc.key, null); // on the navmesh already: they walk off
@@ -2254,9 +2256,9 @@ export type State = {
   ): Promise<void>;
   /**
    * Takes `npc` off their doable: out of a full room's door, else let go on the navmesh, else faded beside it on the way
-   * to `toward` (in front, if `meta.front-only`)
+   * to `toward` (in front, if `meta.front-only`). True if faded there, or just past its doorway: no walk follows
    */
-  stepOff(npc: Npc, toward: Geom.VectJson): Promise<void>;
+  stepOff(npc: Npc, toward: Geom.VectJson): Promise<void | true>;
   /** Walks them to `groundPoint`, else as near a locked door in the way as they can. Interruptible by the next move */
   walkTo(
     npc: Npc,

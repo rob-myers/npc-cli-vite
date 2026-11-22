@@ -11,6 +11,7 @@ import {
   createFindNearestPolyResult,
   type FindNearestPolyResult,
   findNearestPoly,
+  getNodeByRef,
   type QueryFilter,
 } from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
@@ -54,6 +55,7 @@ import { npcJointToPickGreen } from "../service/pick";
 import { neverShownSlot } from "../service/room-slots";
 import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
+import { isDoorAreaId } from "../worker/nav-util";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
@@ -316,6 +318,10 @@ export default function NPCs() {
       },
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
+      },
+      inDoorArea(point) {
+        const poly = state.getClosestPoly(point, 0.1);
+        return poly.success === true && isDoorAreaId(getNodeByRef(w.nav.navMesh, poly.nodeRef).area);
       },
       nextTick() {
         return new Promise<void>((resolve) => state.tickResolvers.push(resolve));
@@ -979,6 +985,8 @@ export type State = {
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
   hasDoMeta(meta: Meta): boolean;
+  /** Whether `point` is on the navmesh in a door's area, which a locked door or a full room refuses */
+  inDoorArea(point: JshCli.PointAnyFormat): boolean;
   /** Resolves at the end of the next tick, i.e. once the crowd has been updated */
   nextTick(): Promise<void>;
   onTick(delta: number): void;
