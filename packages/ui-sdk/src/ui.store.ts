@@ -36,6 +36,17 @@ export const uiStoreApi = {
       draft.byId = {};
     });
   },
+  /** Shows `tabId` in its Tabs and asks it to take focus. `false` if it is gone, or its pane is hidden */
+  focusTab(tabId: string) {
+    const { byId, persistedPanes } = uiStore.getState();
+    const parentId = byId[tabId]?.meta.parentId;
+    if (parentId === undefined || isLeafShown(persistedPanes.root, parentId) === false) return false;
+    uiStore.setState((draft) => {
+      (draft.byId[parentId].meta as { currentTabId?: string }).currentTabId = tabId;
+      draft.focusRequest = { tabId, ms: Date.now() };
+    });
+    return true;
+  },
   getAllUis() {
     const { byId } = uiStore.getState();
     return Object.values(byId).flatMap((ui) =>
@@ -78,6 +89,14 @@ export const uiStoreApi = {
       if (ui) ui.everSeen = next;
     });
   },
+  /** Puts `tabId` first in `focusedTabIds` */
+  noteFocusedTab(tabId: string) {
+    const ids = uiStore.getState().persistedPanes.focusedTabIds ?? [];
+    if (ids[0] === tabId) return;
+    uiStore.setState((draft) => {
+      draft.persistedPanes.focusedTabIds = [tabId, ...ids.filter((id) => id !== tabId)].slice(0, maxFocusedTabs);
+    });
+  },
   removeItem(itemId: string) {
     const ui = uiStore.getState().byId[itemId];
     if (!ui) return;
@@ -107,6 +126,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
         devtools(
           (_set, _get): UiStoreState => ({
             byId: {},
+            focusRequest: null,
             ready: false,
             persistedPanes: getDefaultPanes(),
           }),
@@ -161,6 +181,8 @@ if (import.meta.hot) {
 
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
+  /** A tab whose Tabs should focus it, e.g. by `focusTab`. `ms` tells one ask from the next */
+  focusRequest: null | { tabId: string; ms: number };
   ready: boolean;
   persistedPanes: PersistedPanesLayout;
 };
@@ -176,6 +198,8 @@ export type PersistedPanesLayout = {
   toUi: { [uiId: string]: UiInstanceMeta };
   /** The Tabs last focused, so a reload can focus it again */
   focusedTabsUiId?: string;
+  /** The tabs last focused, most recent first — see `noteFocusedTab` */
+  focusedTabIds?: string[];
 };
 
 export type PersistedPaneNode =
@@ -197,6 +221,9 @@ export function isUiOnScreen({ byId, persistedPanes }: UiStoreState, uiId: strin
   }
   return isLeafShown(persistedPanes.root, parentId ?? uiId);
 }
+
+/** How many tabs `focusedTabIds` keeps */
+const maxFocusedTabs = 8;
 
 function isLeafShown(node: PersistedPaneNode, uiId: string): boolean {
   if (node.type === "leaf") return node.uiId === uiId;

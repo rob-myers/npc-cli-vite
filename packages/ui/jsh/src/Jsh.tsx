@@ -27,7 +27,7 @@ import { shellFunctionFiles } from "./sources";
 
 /** A tty, and beside it its jobs if shown. Only CSS moves the jobs, so the tty never remounts */
 export default function Jsh({ meta }: { meta: JshUiMeta }) {
-  const { uiStoreApi } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
   const { jobs } = meta;
   const across = acrossOf(jobs.at);
 
@@ -51,6 +51,12 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
         }
         state.drag = null;
         if (state.moving) state.set({ dropAt: null, moving: false });
+      },
+      onEscape() {
+        if (state.drag !== null) return; // ends jobs drag
+        // goto last focused non-tty tab
+        const { byId, persistedPanes } = uiStore.getState();
+        persistedPanes.focusedTabIds?.find((id) => byId[id]?.meta.uiKey !== "Jsh" && uiStoreApi.focusTab(id));
       },
       onGrip(e) {
         state.startDrag({ kind: "move", x: e.clientX, y: e.clientY });
@@ -125,6 +131,7 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           env={meta.env}
           modules={modules} // actual JS
           onBooted={() => uiStoreApi.setUiMeta(meta.id, (draft) => ((draft as JshUiMeta).sessionBootedAt = Date.now()))}
+          onEscape={state.onEscape}
           originalProfileKey={
             typeof meta.env.PROFILE_KEY === "string" ? meta.env.PROFILE_KEY : ("default_profile" satisfies ProfileKey)
           }
@@ -219,6 +226,8 @@ type State = {
   moving: boolean;
   rootEl: null | HTMLDivElement;
   endDrag(): void;
+  /** Focuses the last tab focused that is not a tty */
+  onEscape(): void;
   onGrip(e: React.PointerEvent): void;
   onKeyDown(e: KeyboardEvent): void;
   onPointerMove(e: PointerEvent): void;
