@@ -53,29 +53,31 @@ export function beamRgb(color: string, pale: boolean) {
 /** By colour: its rgb over a dark deck, then a pale one */
 const rgbs = new Map<string, [THREE.Color, THREE.Color]>();
 
+/** One of an attachment's rays: metres on the ground it goes before it stops, and where its bounce ends, if any */
+export type SpreadRay = { dist: number; legEnd: null | THREE.Vector3 };
+
 /** One straight piece of a beam, drawn as an instance. `ball`: its end is lit. `width` scales its width */
 export type BeamSegment = { from: THREE.Vector3; to: THREE.Vector3; ball: boolean; width: number };
 
 /**
  * The segments of a beam from `from` to `end` as `look` has it: an attachment's pattern, else tesla's forks, else one.
- * `spread`: per ray of a shotgun or caliber, metres on the ground it goes before it stops.
- * `ownLeg`: where the shot's own line bounced on to. `rayLegs`: per ray, its own bounce, else `ownLeg` for its own line.
+ * `spread`: per ray of a shotgun or caliber, metres on the ground it goes before it stops, and where its bounce ends.
+ * `ownLeg`: where the shot's own line bounced on to, for the ray that is it.
  * Reused: read them before the next call
  */
 export function beamSegments(
   look: PhaserLook,
   from: THREE.Vector3,
   end: THREE.Vector3,
-  spread: null | readonly number[],
+  spread: null | readonly SpreadRay[],
   ownLeg?: null | THREE.Vector3,
-  rayLegs?: null | readonly (null | { end: THREE.Vector3 })[],
 ): readonly BeamSegment[] {
   let k = rays(look, from, end, spread);
   // then each ray's bounce from where it ended: its own, else the shot's own line's
   for (let i = 0; i < rayCount(look.attachment) && k < segments.length; i++) {
     const ray = segments[i];
     const own = look.attachment === "shotgun" ? attachmentBeams.shotgun.angles[i] === 0 : true;
-    const leg = rayLegs?.[i]?.end ?? (own ? ownLeg : null);
+    const leg = spread?.[i]?.legEnd ?? (own ? ownLeg : null);
     if (leg == null) continue;
     // a caliber's rays keep their offsets from the shot's own line
     const off = look.attachment === "caliber" ? tmpOff.subVectors(ray.to, end) : tmpOff.set(0, 0, 0);
@@ -87,7 +89,7 @@ export function beamSegments(
 }
 
 /** Writes its rays into `segments`, giving how many */
-function rays(look: PhaserLook, from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly number[]) {
+function rays(look: PhaserLook, from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly SpreadRay[]) {
   set(segments[0], from, end, true, 1);
   if (look.attachment === "caliber") return caliber(from, end, spread);
   if (look.attachment === "shotgun") return shotgun(from, end, spread);
@@ -108,13 +110,13 @@ function rays(look: PhaserLook, from: THREE.Vector3, end: THREE.Vector3, spread:
 }
 
 /** Parallel rays about the axis, a triangle across it, each to the end, else as far as `reach` on the ground */
-function caliber(from: THREE.Vector3, end: THREE.Vector3, reach: null | readonly number[]) {
+function caliber(from: THREE.Vector3, end: THREE.Vector3, reach: null | readonly SpreadRay[]) {
   const length = from.distanceTo(end);
   const slope = length / (Math.hypot(end.x - from.x, end.z - from.z) || 1);
   const way = tmpWay.subVectors(end, from).normalize();
   for (let i = 0; i < 3; i++) {
     const { origin, dir } = attachmentRay("caliber", i, from, way, tmpRay);
-    const along = Math.min(length, (reach?.[i] ?? Number.POSITIVE_INFINITY) * slope);
+    const along = Math.min(length, (reach?.[i]?.dist ?? Number.POSITIVE_INFINITY) * slope);
     set(segments[i], origin, tmpEnd.copy(dir).multiplyScalar(along).add(origin), true, attachmentBeams.caliber.width);
   }
   return 3;
@@ -158,7 +160,7 @@ export function attachmentRay(
 const tmpRay = { origin: new THREE.Vector3(), dir: new THREE.Vector3() };
 
 /** Rays fanned about the beam's way: the middle one to the end, the others to their own walls (`spread`) */
-function shotgun(from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly number[]) {
+function shotgun(from: THREE.Vector3, end: THREE.Vector3, spread: null | readonly SpreadRay[]) {
   const { angles, width } = attachmentBeams.shotgun;
   const length = from.distanceTo(end);
   /** Metres along the beam per metre on the ground */
@@ -168,7 +170,7 @@ function shotgun(from: THREE.Vector3, end: THREE.Vector3, spread: null | readonl
   const floor = way.y < 0 ? from.y / -way.y : Infinity;
   for (const [i, angle] of angles.entries()) {
     // only the middle ray is the shot: the others go on to their own walls, else as far as it
-    const reach = angle === 0 ? length : Math.min((spread?.[i] ?? length / slope) * slope, floor);
+    const reach = angle === 0 ? length : Math.min((spread?.[i]?.dist ?? length / slope) * slope, floor);
     tmpEnd.copy(way).applyAxisAngle(up, angle).multiplyScalar(reach).add(from);
     set(segments[i], from, tmpEnd, true, angle === 0 ? 1 : width);
   }

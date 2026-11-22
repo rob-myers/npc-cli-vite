@@ -321,3 +321,25 @@ const beamConfig = {
   /** Metres round an npc's middle their parts may reach, an arm past their body: a ray missing it misses them */
   cullRadius: 0.45,
 } as const;
+
+/** A bounce: from just off its shield along `way`, on the ground, to `end` */
+export type Leg = { src: Geom.VectJson; way: Geom.VectJson; end: THREE.Vector3 };
+
+/** Whom of `npcs` a bounce `y` metres up meets first on `bones`, else `null` */
+export function legMeets(npcs: Npc[], leg: Leg, y: number, bones: Iterable<string>) {
+  const ray = tmpMeetRay.set(tmpLegFrom.set(leg.src.x, y, leg.src.y), tmpLegDir.set(leg.way.x, 0, leg.way.y));
+  return nearestOnRay(npcs, ray, bones, Math.hypot(leg.end.x - leg.src.x, leg.end.z - leg.src.y));
+}
+
+/** `way` on the ground reflected off the segment `a` to `b`, unit */
+export function reflect(way: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geom.VectJson }) {
+  const len = Math.hypot(way.x, way.y) || 1;
+  const [dx, dy] = [way.x / len, way.y / len];
+  const side = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const [nx, ny] = [-(b.y - a.y) / side, (b.x - a.x) / side];
+  const dot = dx * nx + dy * ny;
+  return { x: dx - 2 * dot * nx, y: dy - 2 * dot * ny };
+}
+
+const tmpLegFrom = new THREE.Vector3();
+const tmpLegDir = new THREE.Vector3();

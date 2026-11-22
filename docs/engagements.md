@@ -5,8 +5,10 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 
 | file | what |
 | --- | --- |
-| `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
-| `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
+| `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it. Each ray lands through `landRay`, and stops at a shield through `shieldStop` |
+| `ui/world/src/service/phaser-arm.ts` | the arm's pure geometry: the gun's line and tip, the hold, its reach to walls and obstacles, the bearing and lock point (`ArmEntry`) |
+| `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), where the beam ends, and a bounce (`reflect`, `Leg`, `legMeets`) |
+| `ui/world/src/service/phaser-look.ts` | the look, and the segments drawn from it (`beamSegments`, one `SpreadRay` per attachment ray) |
 | `ui/world/src/service/phaser-gun.ts` | the gun's boxes, its muzzle and colours (`gunColors`). After an edit, redraw `media/src/decor/phaser*.svg` to match |
 | `ui/world/src/service/phaser-icon.ts` | the hud's icons, projected from the gun's boxes as it loads. `gen-phaser-icon --png` draws them to a file |
 | `ui/world/src/service/phaser-gun.shader.ts` | the gun, one instance per gun shown |
@@ -257,7 +259,7 @@ A phaser's look is its beam's style and colour, and its attachment (`PhaserLook`
 - The hud's phaser icon shows the attachment fitted, 1.3 times its size (`phaserIcons`, `service/phaser-icon.ts`, from the same faces). A cylinder's sides are edged only on its silhouette.
 - A phaser lying about shows its item meta's attachment: `Decor` draws `phaser-{attachment}` (`media/src/decor/phaser-*.svg`) where the decor sheet has it. Re-run `gen-decor-sheets` after editing them.
 - A shot at no one stopped by a reflecting shield (`meta.reflect`) bounces off it once (`bounce`, `castLegs`). It casts on from just off the shield, drawn as a segment after the ray it left (`beamSegments`' legs). The first npc it meets takes the shot's hit, unless another ray already did, with a ring there (`strikeLeg`). It may meet its shooter.
-  - A shotgun's rays each stop at a shield too, and off a reflecting one each bounces alike (`castSpread`, `arm.spreadLegs`). One hit a shot still: its own line's, else the nearest a side ray meets, else a bounce's (`spreadOn`). A caliber's rays bounce with the shot's own line, keeping their offsets.
+  - A shotgun's rays each stop at a shield too, and off a reflecting one each bounces alike (`castSpread`, `arm.spread`, a `{ dist, leg }` per ray). One hit a shot still: its own line's, else the nearest a side ray meets, else a bounce's (`spreadOn`). A caliber's rays bounce with the shot's own line, keeping their offsets.
 
 ## Impacts
 
