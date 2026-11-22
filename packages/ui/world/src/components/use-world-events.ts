@@ -431,40 +431,46 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
         const moveId = state.getMoveId(npc);
         npc.rejectAll(new Error("move again"));
-        const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
-        if (state.moveOverridden(npc, moveId)) return;
-
-        // doable overrides navigable
-        if (doResult.type !== "none") {
-          return state.moveOntoDoable(npc, dst, doResult, fades, opts);
-        }
-        if (result.success === false) {
-          throw Error("not navigable");
-        }
-
-        // a room with `maxWalkers` admits them if it has room. Else from outside `walkTo` stops them at its door
-        const into = w.gmRoomGraph.walkerRooms.size === 0 ? undefined : w.findRoomContaining(groundPoint)?.grKey;
-        if (
-          into !== undefined &&
-          state.admitWalker(into, npcKey) === false &&
-          w.npc.npcToRoom.get(npcKey)?.grKey === into
-        ) {
-          throw state.roomFull(npc); // inside it, e.g. getting up
-        }
-
-        /** Off a doable on the navmesh: they turn along their way first, rather than slide round */
-        const turnFirst = npc.agentId !== null && w.npc.npcToDoable[npcKey] != null;
-        if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
-          // fade off the doable: onto the target if near, else beside it, walking on
-          if (fades && npc.agentId === null) {
-            return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
-          }
-          await state.stepOff(npc, groundPoint);
+        try {
+          const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
           if (state.moveOverridden(npc, moveId)) return;
-        }
 
-        if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
-        await state.walkTo(npc, groundPoint, result, { ...opts, turnFirst }, moveId);
+          // doable overrides navigable
+          if (doResult.type !== "none") {
+            return state.moveOntoDoable(npc, dst, doResult, fades, opts);
+          }
+          if (result.success === false) {
+            throw Error("not navigable");
+          }
+
+          // a room with `maxWalkers` admits them if it has room. Else from outside `walkTo` stops them at its door
+          const into = w.gmRoomGraph.walkerRooms.size === 0 ? undefined : w.findRoomContaining(groundPoint)?.grKey;
+          if (
+            into !== undefined &&
+            state.admitWalker(into, npcKey) === false &&
+            w.npc.npcToRoom.get(npcKey)?.grKey === into
+          ) {
+            throw state.roomFull(npc); // inside it, e.g. getting up
+          }
+
+          /** Off a doable on the navmesh: they turn along their way first, rather than slide round */
+          const turnFirst = npc.agentId !== null && w.npc.npcToDoable[npcKey] != null;
+          if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
+            // fade off the doable: onto the target if near, else beside it, walking on
+            if (fades && npc.agentId === null) {
+              return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
+            }
+            await state.stepOff(npc, groundPoint);
+            if (state.moveOverridden(npc, moveId)) return;
+          }
+
+          if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
+          await state.walkTo(npc, groundPoint, result, { ...opts, turnFirst }, moveId);
+        } catch (e) {
+          // failed before its own move began: at rest, else a stale `moving` fails every later move as stuck
+          if (state.moveOverridden(npc, moveId) === false && npc.anim.moving === true) state.moveFailed(npc, e);
+          throw e;
+        }
       },
       moveFailed(npc, e) {
         if (e instanceof Error && e.message === "move again") {
