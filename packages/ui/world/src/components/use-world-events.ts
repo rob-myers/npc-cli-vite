@@ -147,9 +147,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (state.frontAllows(npc, dst, doResult) === false) return false;
         if (far === true) return true;
         if (npc.distanceTo(groundPoint) > w.npc.config.dist.doableLook) return false;
-        // only a fade onto or off a doable heeds walls
+        // only a fade onto or off a doable heeds walls, shut doors and windows
         if (doResult.type === "use-current" || (doResult.type === "none" && npc.agentId !== null)) return true;
-        return state.raycast(npc.point, groundPoint).then(({ hit, hitDoor }) => hit === null && hitDoor === null);
+        return state
+          .raycast(npc.point, groundPoint)
+          .then(({ hit, hitDoor, windows }) => hit === null && hitDoor === null && windows === 0);
       },
       canShuffle(npc, groundPoint, { fast, backwards, shuffle }) {
         const { anim, position } = npc;
