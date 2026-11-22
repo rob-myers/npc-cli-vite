@@ -237,7 +237,7 @@ turn eases too (`headTurn`), so it glides.
 
 ### Drawn in
 
-The arm is drawn in for a wall or closed door within reach, a shield, a target out of sight, or someone in the way.
+The arm is drawn in for a wall or closed door within reach, a shield, a target out of sight, or someone in the way. Not for someone lying down or dead: they are below the arm (`armMeetsNpc`).
 
 - **No shot leaves it** (`isDrawnIn`): `fireAlong`, `arm` at a target and `npcFocus.fire` refuse, so jsh `phaser --fire`
   fails `cannot fire`. Nor does it charge: `charge` refuses, and drawing in calls a charge off into its cooldown. So the

@@ -1,6 +1,8 @@
 import * as THREE from "three/webgpu";
 import type { Npc } from "../components/npc";
 import { eased, type Fade, stepFade } from "./fade";
+import type { GunAttachment } from "./phaser-gun";
+import { attachmentRay, rayCount } from "./phaser-look";
 
 /** Whom a weapon locks on to, or where a shot at no one ends */
 export type BeamTarget = NpcTarget | FreeShot;
@@ -24,6 +26,11 @@ export type FreeShot = {
   /** What it struck, if decor */
   decorKey: null | string;
   casting: boolean;
+  /** The reflecting shield it ended on, to bounce off */
+  reflect?: null | { a: Geom.VectJson; b: Geom.VectJson };
+  /** Where it bounced on to, and whom it met there: they take its hit, unless another ray did */
+  leg?: null | THREE.Vector3;
+  legHit?: null | RayMeet;
 };
 
 /** What a shot at no one ended on. `nothing` is `alongMax` metres out */
@@ -193,6 +200,45 @@ const tmpGlide = new THREE.Vector3();
 /** Where a ray meets a part: reused by each call, so copy what is kept */
 export type PartHit = { part: string; local: THREE.Vector3; point: THREE.Vector3; dist: number };
 
+/** Whom an attachment's ray meets, where, and metres on the ground from its start */
+export type RayMeet = { on: Npc; part: string; at: THREE.Vector3; dist: number };
+
+/**
+ * Per ray of `attachment` from `tip` towards `end`, bar the shot's own line, the nearest of `npcs` it meets on `bones`
+ * within `reach(i)` metres on the ground: `null` where none
+ */
+export function raysMeet(
+  attachment: GunAttachment,
+  tip: THREE.Vector3,
+  end: THREE.Vector3,
+  npcs: Npc[],
+  bones: Iterable<string>,
+  reach: (i: number) => number,
+): (null | RayMeet)[] {
+  const way = tmpWay.subVectors(end, tip).normalize();
+  return Array.from({ length: rayCount(attachment) }, (_, i) => {
+    const { origin, dir, middle } = attachmentRay(attachment, i, tip, way, tmpRayOf);
+    return middle === true ? null : nearestOnRay(npcs, tmpMeetRay.set(origin, dir), bones, reach(i));
+  });
+}
+
+/** The nearest of `npcs` whose part on `bones` `ray` meets within `reach` metres on the ground, else `null` */
+export function nearestOnRay(npcs: Npc[], ray: THREE.Ray, bones: Iterable<string>, reach: number) {
+  let best: null | RayMeet = null;
+  for (const on of npcs) {
+    const hit = partOnRay(on, ray, bones);
+    if (hit === null) continue;
+    const dist = Math.hypot(hit.point.x - ray.origin.x, hit.point.z - ray.origin.z);
+    if (dist < reach && dist < (best?.dist ?? Number.POSITIVE_INFINITY))
+      best = { on, part: hit.part, at: hit.point.clone(), dist }; // shared, so copied
+  }
+  return best;
+}
+
+const tmpWay = new THREE.Vector3();
+const tmpRayOf = { origin: new THREE.Vector3(), dir: new THREE.Vector3() };
+const tmpMeetRay = new THREE.Ray();
+
 /**
  * The nearest of `bones` on `npc` whose part `ray` meets, by the box round what its bone moves most: its name, where
  * in its frame, and where. Only bones near the ray's height across them are tested. `null` for none
@@ -270,3 +316,25 @@ const beamConfig = {
   /** Metres round an npc's middle their parts may reach, an arm past their body: a ray missing it misses them */
   cullRadius: 0.45,
 } as const;
+
+/** A bounce: from just off its shield along `way`, on the ground, to `end` */
+export type Leg = { src: Geom.VectJson; way: Geom.VectJson; end: THREE.Vector3 };
+
+/** Whom of `npcs` a bounce `y` metres up meets first on `bones`, else `null` */
+export function legMeets(npcs: Npc[], leg: Leg, y: number, bones: Iterable<string>) {
+  const ray = tmpMeetRay.set(tmpLegFrom.set(leg.src.x, y, leg.src.y), tmpLegDir.set(leg.way.x, 0, leg.way.y));
+  return nearestOnRay(npcs, ray, bones, Math.hypot(leg.end.x - leg.src.x, leg.end.z - leg.src.y));
+}
+
+/** `way` on the ground reflected off the segment `a` to `b`, unit */
+export function reflect(way: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geom.VectJson }) {
+  const len = Math.hypot(way.x, way.y) || 1;
+  const [dx, dy] = [way.x / len, way.y / len];
+  const side = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const [nx, ny] = [-(b.y - a.y) / side, (b.x - a.x) / side];
+  const dot = dx * nx + dy * ny;
+  return { x: dx - 2 * dot * nx, y: dy - 2 * dot * ny };
+}
+
+const tmpLegFrom = new THREE.Vector3();
+const tmpLegDir = new THREE.Vector3();

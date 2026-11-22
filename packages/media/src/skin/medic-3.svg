@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<clipPath id="cloth"><path d="M16 64h16v4h-16zM80 64h4v4h-4zM108 64h36v4h-36zM176 64h16v4h-16zM16 68h16v4h-16zM80 68h4v4h-4zM108 68h36v4h-36zM176 68h16v4h-16zM16 72h16v4h-16zM80 72h4v4h-4zM108 72h36v4h-36zM176 72h16v4h-16zM16 76h16v4h-16zM80 76h4v4h-4zM108 76h36v4h-36zM176 76h16v4h-16zM0 80h224v4h-224zM0 84h36v4h-36zM44 84h180v4h-180zM0 88h36v4h-36zM44 88h180v4h-180zM0 92h36v4h-36zM44 92h180v4h-180zM0 96h36v4h-36zM44 96h180v4h-180zM64 100h160v4h-160zM64 104h160v4h-160zM64 108h160v4h-160zM64 112h160v4h-160zM64 116h160v4h-160zM64 120h96v4h-96zM64 124h96v4h-96zM80 192h16v4h-16zM144 192h16v4h-16zM80 196h16v4h-16zM144 196h16v4h-16zM80 200h16v4h-16zM144 200h16v4h-16zM80 204h16v4h-16zM144 204h16v4h-16zM64 208h128v4h-128zM64 212h4v4h-4zM76 212h116v4h-116zM64 216h4v4h-4zM76 216h116v4h-116zM64 220h4v4h-4zM76 220h116v4h-116zM64 224h4v4h-4zM76 224h116v4h-116zM128 228h64v4h-64zM128 232h64v4h-64zM128 236h64v4h-64zM128 240h64v4h-64zM128 244h64v4h-64z"/></clipPath>
+<linearGradient id="cloth-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #c4c4c4;"/></linearGradient>
+<linearGradient id="cloth-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #d8d8d8;"/><stop offset="1" style="stop-color: #a4a4a4;"/></linearGradient>
+<linearGradient id="cloth-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #e2e2e2;"/><stop offset="1" style="stop-color: #b0b0b0;"/></linearGradient>
+<filter id="cloth-folds" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.04 0.12" numOctaves="2" seed="13" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.3  0 0 0 0 0.32  5 0 0 0 -2.4"/>
+</filter>
+<filter id="cloth-weave" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.9 0.25" numOctaves="1" seed="63" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.35  0 0 0 0 0.37  0 0 0 0.9 -0.3"/>
+</filter>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=medic</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>medic-3--9cfe7da634bcee98</title>
+</image>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth form</title>
+<rect x="80" y="64" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="128" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="128" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="144" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="144" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="208" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="224" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="192" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="224" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="240" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+</g>
+<rect width="256" height="256" style="pointer-events: none; filter: url(&quot;#cloth-folds&quot;); opacity: 0.25; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth folds</title>
+</rect>
+<rect width="256" height="256" style="pointer-events: none; filter: url(&quot;#cloth-weave&quot;); opacity: 0.3; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth weave</title>
+</rect>
+<g style="pointer-events: none;">
+<title>refined</title>
+<g>
+<title>collar and tie</title>
+<path d="M90 80H102L96 91Z" style="fill: #d08c6c;"/>
+<path d="M85 80H91L96.2 91.5L91.5 94Z" style="fill: #4a6a8c; stroke: #2e4560; stroke-width: 0.6px; stroke-linejoin: round;"/>
+<path d="M107 80H101L95.8 91.5L100.5 94Z" style="fill: #4a6a8c; stroke: #2e4560; stroke-width: 0.6px; stroke-linejoin: round;"/>
+<path d="M94.3 88.5H97.7L97.3 92.2H94.7Z" style="fill: #181b24;"/>
+<path d="M94.7 92.2H97.3L98.4 100.5L96 103.5L93.6 100.5Z" style="fill: #1e2330;"/>
+<path d="M95 95L97.6 97.5M94.4 98.5L97.9 101.5" style="fill: none; stroke: #3a4458; stroke-width: 0.5px;"/>
+</g>
+<g>
+<title>coat front</title>
+<path d="M85 80L94.5 104M107 80L101.5 104" style="fill: none; stroke: #cfccc4; stroke-width: 0.8px;"/>
+<circle cx="98" cy="108" r="0.95" style="fill: #a09ea4; stroke: #6e6c72; stroke-width: 0.3px;"/>
+<circle cx="98" cy="116" r="0.95" style="fill: #a09ea4; stroke: #6e6c72; stroke-width: 0.3px;"/>
+<circle cx="98" cy="124" r="0.95" style="fill: #a09ea4; stroke: #6e6c72; stroke-width: 0.3px;"/>
+<path d="M102.5 100H110.5V109H102.5Z" style="fill: none; stroke: #cdc9c0; stroke-width: 0.7px;"/>
+<rect x="106.3" y="94.5" width="1.6" height="7.5" rx="0.6" style="fill: #c0503f;"/>
+<rect x="106.1" y="94" width="2" height="1.6" rx="0.4" style="fill: #c8a050;"/>
+</g>
+<g>
+<title>glasses</title>
+<rect x="162.3" y="45.5" width="10.4" height="7.6" rx="2.2" style="fill: none; stroke: #3c2618; stroke-width: 1.7px; stroke-linejoin: round;"/>
+<rect x="179.3" y="45.5" width="10.4" height="7.6" rx="2.2" style="fill: none; stroke: #3c2618; stroke-width: 1.7px; stroke-linejoin: round;"/>
+<path d="M172.7 48Q176 46.4 179.3 48" style="fill: none; stroke: #3c2618; stroke-width: 1.7px; stroke-linejoin: round;"/>
+<path d="M162.3 47.4H138M189.7 47.4H214" style="fill: none; stroke: #3c2618; stroke-width: 1.7px; stroke-linejoin: round;"/>
+</g>
+</g>
+</svg>

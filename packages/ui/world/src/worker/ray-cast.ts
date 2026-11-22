@@ -106,7 +106,7 @@ export function sendRaycastResults(msg: WW.GetRaycasts) {
   self.postMessage({ uid: msg.uid, output } satisfies WW.NavWorkerReply);
 }
 
-function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.RaycastResult {
+function raycast({ src, dst, grKey, debug }: WW.GetRaycasts["casts"][number]): JshCli.RaycastResult {
   const crossed: { o: Occluder; lambda: number }[] = [];
   getGrid().forEachOn(src, dst, (o, lambda) => void crossed.push({ o, lambda }));
   crossed.sort((a, b) => a.lambda - b.lambda);
@@ -168,6 +168,10 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
     return [{ decorKey, top, bottom, ...spanOf(outline, enter, leave) }];
   });
   const hit = stop === Infinity ? null : round(pointAt(src, dst, stop));
+  const crossings =
+    debug === true
+      ? crossed.flatMap(({ o, lambda }) => (lambda < stop && o.kind !== "wall" ? [lambda * length] : []))
+      : null;
   return {
     success: hit === null,
     hit,
@@ -178,6 +182,7 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
     shields: shieldsPassed(src, dst, stop),
     obstacles: obstacles.sort((a, b) => a.dist - b.dist),
     decor: decor.sort((a, b) => a.dist - b.dist),
+    ...(crossings !== null && { debug: { crossings } }),
   };
 }
 

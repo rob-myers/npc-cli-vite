@@ -28,6 +28,7 @@
     "gen-clip-keys": "./src/bins/gen-clip-keys.ts",
     "gen-current-glb": "./src/bins/gen-current-glb.ts",
     "gen-strafe-keys": "./src/bins/gen-strafe-keys.ts",
+    "gen-phaser-icon": "./src/bins/gen-phaser-icon.ts",
     "gen-ui": "./src/bins/gen-ui.ts"
   },
   "dependencies": {

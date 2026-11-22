@@ -50,6 +50,7 @@ export function Debug() {
       localBoundary: [] as XZSeg[],
       polylines: new Map(),
       decorShown: getWorldStore(w.key).read().decorShown,
+      raysShown: getWorldStore(w.key).read().raysShown ?? false,
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -492,6 +493,8 @@ export type State = {
   polylines: Map<string, Polyline>;
   /** Decorating: every runtime decor is drawn, labelled and opens its card — see `DecorInspector` */
   decorShown: boolean;
+  /** The rays overlay: each raycast drawn a moment — see `w.e.showRays` */
+  raysShown: boolean;
   doorNormalsShown: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;

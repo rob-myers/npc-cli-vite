@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<linearGradient id="screen-glass" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0" style="stop-color: #10151c;"/>
+<stop offset="1" style="stop-color: #030407;"/>
+</linearGradient>
+<filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.3"/></filter>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=robot</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>robot-4--cf9e073bbee7247c</title>
+</image>
+</g>
+<g style="pointer-events: none;">
+<title>screen</title>
+<rect x="36" y="36" width="24" height="24" rx="2.5" style="fill: url(&quot;#screen-glass&quot;);"/>
+<g style="opacity: 0.6; filter: url(&quot;#glow&quot;);">
+<circle cx="42.4" cy="47.6" r="3" style="fill: none; stroke: #04ffee; stroke-width: 1.5px;"/>
+<circle cx="53.6" cy="47.6" r="3" style="fill: none; stroke: #04ffee; stroke-width: 1.5px;"/>
+<circle cx="42.4" cy="47.6" r="0.9" style="fill: #04ffee;"/>
+<circle cx="53.6" cy="47.6" r="0.9" style="fill: #04ffee;"/>
+</g>
+<circle cx="42.4" cy="47.6" r="3" style="fill: none; stroke: #8afff6; stroke-width: 1.5px;"/>
+<circle cx="53.6" cy="47.6" r="3" style="fill: none; stroke: #8afff6; stroke-width: 1.5px;"/>
+<circle cx="42.4" cy="47.6" r="0.9" style="fill: #8afff6;"/>
+<circle cx="53.6" cy="47.6" r="0.9" style="fill: #8afff6;"/>
+<path d="M38 41Q38 38 41 38H50L38 50Z" style="fill: #ffffff; opacity: 0.07;">
+<title>glint</title>
+</path>
+</g>
+</svg>

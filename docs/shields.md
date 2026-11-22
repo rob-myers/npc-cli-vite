@@ -26,6 +26,7 @@ pick 1 | decor type:rect w:3 h:0.15 meta:'{ shield: true, freq: null }'
 - `decor` leaves a shield's `meta.shown` false unless told otherwise: the panel is what is seen.
 - In a symbol it is a `decor rect shield` node, with `freq=2` in its name for a frequency. A rect or
   circle node needs no image to be decor. NOT yet tried in a real symbol.
+- `meta.reflect`: a shot at no one it stops bounces off it, and may hit whom it meets (`docs/engagements.md`, `bounce`).
 - A rect under `shieldConfig.minSize` (1m) on either side is ignored, with a console warning. The
   depth is what lowers a raised phaser before its muzzle is through. A shield of no frequency is
   exempt, and may be a thin strip.
@@ -82,7 +83,7 @@ shield until the next cast returns. A beam let go of keeps its last shields, so 
 ## Deactivating a phaser
 
 Carrying an untuned phaser through a live shield of some frequency deactivates it. A dead phaser
-cannot be raised; its emitter is blue, in hand and in the bar; the player is told by toast.
+cannot be raised. Its emitter is blue in hand, and the bar's phaser has a red padlock at its corner. The player is told by toast.
 
 The item holds `meta.dead`, the frequencies it is dead to, and fires only whilst that is empty. A
 crossing TOGGLES the shield's frequency in it, so in is dead and back out through any shield of

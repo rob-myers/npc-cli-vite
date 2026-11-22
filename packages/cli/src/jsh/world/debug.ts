@@ -77,6 +77,89 @@ export async function debug_corners(
 }
 
 /**
+ * Spawn an npc per skin in a circle about an npc, facing them, each named after its skin sans hyphens.
+ * `as` keeps those whose key begins with it. Yields any skin that found no place.
+ * ```sh
+ * debug_skins rob
+ * debug_skins npc:rob r:2 as:mtf
+ * ```
+ */
+export async function* debug_skins(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey?: string; r?: number; as?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const { x: cx, z: cz } = w.npc.get(opts.npcKey).position;
+  const r = opts.r ?? 1.6;
+  const keys = w.npc.skin.entries.map((e) => e.key).filter((key) => key.startsWith(opts.as ?? ""));
+
+  for (const [i, as] of keys.entries()) {
+    const angle = (2 * Math.PI * i) / keys.length;
+    let placed = false;
+    // off the navmesh, try nearer, then further
+    for (const dist of [r, 0.75 * r, 0.5 * r, 1.25 * r]) {
+      const at = { x: cx + dist * Math.cos(angle), y: 0, z: cz + dist * Math.sin(angle) };
+      placed = await w.npc.spawn({ npcKey: as.replaceAll("-", ""), at, as, facing: { x: cx, y: 0, z: cz } }).then(
+        () => true,
+        () => false,
+      );
+      if (placed) break;
+    }
+    if (!placed) yield `${as}: not placable`;
+  }
+}
+
+/**
+ * Casts rays from an npc along their aim, else their facing: a `band` of parallel rays, or a `fan` from one point.
+ * The rays overlay draws them a moment, even when off. Prints what stopped each.
+ * ```sh
+ * rays band rob count:3 width:0.3
+ * rays fan rob count:5 spread:20 len:8
+ * ```
+ */
+export async function* rays(
+  ct: JshCli.RunArg,
+  opts: { count?: number; width?: number; spread?: number; len?: number } = ct.api.jsArg(ct.args),
+) {
+  const { args, w } = ct;
+  const [kind, npcKey] = args.filter((arg) => !arg.includes(":") && !arg.startsWith("-"));
+  if (kind !== "band" && kind !== "fan") throw Error("expected band or fan");
+  const npc = w.npc.get(npcKey);
+  const aim = w.phasers?.aimOf(npc.key) ?? {
+    from: { x: npc.position.x, y: npc.position.z },
+    bearing: npc.rotation.y,
+    y: 1.1,
+  };
+  const { count = kind === "band" ? 3 : 5, width = 0.3, spread = 20, len = 8 } = opts;
+  const along = (bearing: number) => ({ x: -Math.sin(bearing), y: -Math.cos(bearing) });
+  const dir = along(aim.bearing);
+
+  const segs = Array.from({ length: count }, (_, i) => {
+    /** `-0.5` to `0.5` across them */
+    const t = count === 1 ? 0 : i / (count - 1) - 0.5;
+    if (kind === "fan") {
+      const way = along(aim.bearing + (t * spread * Math.PI) / 180);
+      return { src: aim.from, dst: { x: aim.from.x + way.x * len, y: aim.from.y + way.y * len }, y: aim.y };
+    }
+    const src = { x: aim.from.x - dir.y * t * width, y: aim.from.y + dir.x * t * width };
+    return { src, dst: { x: src.x + dir.x * len, y: src.y + dir.y * len }, y: aim.y };
+  });
+  const shown = w.debug.raysShown;
+  w.debug.raysShown = true; // drawn even with the overlay off
+  const results = await w.e.raycasts(segs, { offMap: true, key: `jsh/${npc.key}` }).finally(() => {
+    w.debug.raysShown = shown;
+  });
+  for (const [i, result] of results.entries()) {
+    if (result === null) yield `${i}: not cast`;
+    else if (result.hit === null) yield `${i}: clear, ${result.debug?.crossings.length ?? 0} crossed`;
+    else {
+      const m = Math.hypot(result.hit.x - segs[i].src.x, result.hit.y - segs[i].src.y).toFixed(2);
+      yield `${i}: ${result.hitDoor ?? "wall"} at ${m}m, ${result.debug?.crossings.length ?? 0} crossed`;
+    }
+  }
+}
+
+/**
  * A line per crowd tick of an npc's agent, until killed — terse, for a thin tty:
  * `tick avo|sep f{fold} g{gap} t{target}/{least} c{x},{z}[*new] {corner dist}/{nearest} dv{deg}@{speed} v{deg}@{speed} m{max}`
  * ```sh

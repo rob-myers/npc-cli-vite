@@ -7,6 +7,7 @@ import {
   BinocularsIcon,
   FingerprintIcon,
   GearSixIcon,
+  LockIcon,
   PlugsIcon,
   SpeakerHighIcon,
   SpeakerSlashIcon,
@@ -17,6 +18,9 @@ import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
+import { gunAttachments, gunColors } from "../service/phaser-gun";
+import { type PhaserIconKey, phaserIconConfig, phaserIcons } from "../service/phaser-icon";
+import { beamStyles, defaultLook, type PhaserLook } from "../service/phaser-look";
 import { getWorldStore, type HudLayout } from "../service/storage";
 import { WorldContext } from "./world-context";
 
@@ -102,6 +106,26 @@ export default function WorldHud() {
         const saved = store.read();
         if (state.isColumn()) return saved.hudColumnY ?? defaultColumnY;
         return Math.max(state.getDragBounds().top, saved.hudY ?? 0);
+      },
+      lookMenu() {
+        const { key } = w.player;
+        const look = w.phasers?.lookOf(key);
+        if (look === undefined) return [];
+        const set = (partial: null | Partial<PhaserLook>) => {
+          w.phasers.setLook(key, partial);
+          state.update();
+        };
+        const attachment = look.attachment ?? "none";
+        return [
+          { label: `beam: ${look.style}`, keep: true, run: () => set({ style: cycle(beamStyles, look.style) }) },
+          { label: `color: ${look.color}`, keep: true, run: () => set({ color: cycle(debugColors, look.color) }) },
+          {
+            label: `attachment: ${attachment}`,
+            keep: true,
+            run: () => set({ attachment: cycle(debugAttachments, look.attachment) }),
+          },
+          { label: "reset look", keep: true, run: () => set(null) },
+        ];
       },
       isColumn() {
         return state.getLayout() !== "bar";
@@ -350,7 +374,7 @@ export default function WorldHud() {
       )}
       onClick={(e) => {
         e.stopPropagation();
-        const forceShot = shotCycle[(shotCycle.indexOf(w.debug.forceShot) + 1) % shotCycle.length];
+        const forceShot = cycle(shotCycle, w.debug.forceShot);
         w.debug.set({ forceShot });
         store.patch({ forceShot });
         state.update();
@@ -547,11 +571,21 @@ export default function WorldHud() {
                   active: armed,
                   plain: true,
                   drop: hasPhaser ? "phaser" : undefined,
-                  // dropped without drawing it first
-                  menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
+                  // dropped without drawing it first, and with the phaser debug its look
+                  menu: hasPhaser
+                    ? [
+                        { label: "drop", run: () => state.drop("phaser") },
+                        ...(w.debug?.hudDebugShown.includes("phaser") === true ? state.lookMenu() : []),
+                      ]
+                    : undefined,
                 },
                 <>
-                  <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
+                  <PhaserIcon
+                    armed={armed}
+                    locked={w.phasers?.isLocked(playerKey) === true}
+                    dead={dead}
+                    attachment={hasPhaser ? (w.phasers?.lookOf(playerKey).attachment ?? null) : null}
+                  />
                   {column === false && forceShot}
                 </>,
               )}
@@ -621,9 +655,11 @@ export default function WorldHud() {
               className="z-50"
             >
               <Menu.Popup className="pointer-events-auto max-h-48 select-none overflow-y-auto rounded-md border border-neutral-700 bg-neutral-800/90 py-1 text-xs shadow-lg">
-                {menus[state.menu?.index ?? -1]?.map(({ label, run }) => (
+                {menus[state.menu?.index ?? -1]?.map(({ label, run, keep }, i) => (
                   <Menu.Item
-                    key={label}
+                    // by place: a debug item's label changes as it is pressed
+                    key={i}
+                    closeOnClick={keep !== true}
                     className={cn(
                       "cursor-pointer px-3 py-1 text-neutral-300 hover:bg-neutral-700",
                       big && "py-2 text-sm",
@@ -1031,19 +1067,24 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" 
   );
 });
 
-/**
- * The gun `Phasers` draws, its boxes turned a little towards us — and whilst `locked`, its beam.
- * Generated: `shaderConfig.gunBoxes` projected at azimuth -38°, elevation 28°
- */
+/** The gun `Phasers` draws with its attachment, its boxes turned a little towards us (`gen-phaser-icon`), and whilst `locked` its beam */
 const PhaserIcon = memo(function PhaserIcon({
   armed,
   locked,
   dead,
+  attachment,
 }: {
   armed: boolean;
   locked: boolean;
+  /** Deactivated: a padlock by its top right corner, e.g. by a shield of another frequency */
   dead: boolean;
+  attachment: null | Exclude<PhaserIconKey, "none">;
 }) {
+  const {
+    faces,
+    beam: { from, to },
+  } = phaserIcons[attachment ?? "none"];
+  const beam = `M${from.x} ${from.y} ${to.x} ${to.y}`;
   return (
     <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
@@ -1051,66 +1092,48 @@ const PhaserIcon = memo(function PhaserIcon({
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
           <stop offset="1" stopColor="#ff8a5c" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="hud-phaser-beam" gradientUnits="userSpaceOnUse" x1="44.4" y1="32.5" x2="56" y2="36.7">
+        <linearGradient id="hud-phaser-beam" gradientUnits="userSpaceOnUse" x1={from.x} y1={from.y} x2={to.x} y2={to.y}>
           <stop offset="0" stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
         <mask id="hud-phaser-fade">
-          <rect x="40" y="26" width="20" height="16" fill="url(#hud-phaser-beam)" />
+          <rect
+            x={from.x - 4}
+            y={from.y - 6}
+            width={to.x - from.x + 6}
+            height={to.y - from.y + 12}
+            fill="url(#hud-phaser-beam)"
+          />
         </mask>
       </defs>
-      {/* the gun centred, whatever it is doing */}
-      <g transform="translate(8)">
-        <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
-          {phaserFaces.map(([face, d]) => (
-            // holstered, its emitter is as dull as the rest
-            <path key={d} d={d} fill={phaserFill[armed ? face : dead ? phaserDead[face] : phaserOff[face]]} />
-          ))}
-        </g>
-        {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
-        {/* its beam fades in, and out towards the edge rather than ending in a dot */}
-        <g
-          mask="url(#hud-phaser-fade)"
-          className={cn("transition-opacity duration-300", locked ? "opacity-100" : "opacity-0")}
-        >
-          <path d="M44.4 32.5 56 36.7" stroke="#ff8a5c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
-          <path d="M44.4 32.5 56 36.7" stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
-        </g>
+      <g strokeLinecap="round">
+        {faces.map((face) => (
+          <g key={face.d}>
+            {/* one fill, else its own put away and drawn */}
+            <path d={face.d} fill={"fill" in face ? face.fill : armed ? face.armed : face.off} />
+            {/* an attachment's edges black, so it stands out */}
+            <path
+              d={face.edges}
+              fill="none"
+              stroke={"attached" in face ? gunColors.attachEdge : gunColors.iconEdge}
+              strokeWidth={"attached" in face ? phaserIconConfig.attachEdgeWidth : phaserIconConfig.edgeWidth}
+            />
+          </g>
+        ))}
+      </g>
+      {dead && <LockIcon x={41} y={3} size={18} weight="fill" color="#f87171" aria-label="deactivated" />}
+      {armed === true && <circle cx={from.x - 2} cy={from.y - 1} r="8" fill="url(#hud-phaser-glow)" />}
+      {/* its beam fades in, and out towards the edge rather than ending in a dot */}
+      <g
+        mask="url(#hud-phaser-fade)"
+        className={cn("transition-opacity duration-300", locked ? "opacity-100" : "opacity-0")}
+      >
+        <path d={beam} stroke="#ff8a5c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
+        <path d={beam} stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
       </g>
     </svg>
   );
 });
-
-/** Lit from above, as the gun is: its top, the side towards us, the end it fires from */
-const phaserFill = {
-  top: "#8f98a5",
-  side: "#6c7582",
-  end: "#505863",
-  glowTop: "#ffa784",
-  glowSide: "#ff8a5c",
-  glowEnd: "#d9744d",
-  deadTop: "#6ea4ee",
-  deadSide: "#3d7fd9",
-  deadEnd: "#2f63ab",
-};
-
-/** Each face as it is with the gun put away */
-const phaserOff = { top: "top", side: "side", end: "end", glowTop: "top", glowSide: "side", glowEnd: "end" } as const;
-
-// biome-ignore format: a row
-const phaserDead = { top: "top", side: "side", end: "end", glowTop: "deadTop", glowSide: "deadSide", glowEnd: "deadEnd" } as const;
-
-const phaserFaces: [keyof typeof phaserOff, string][] = [
-  ["top", "M14.5 24.0 23.5 27.3 18.2 30.4 9.2 27.2Z"],
-  ["side", "M9.2 49.8 18.2 53.1 18.2 30.4 9.2 27.2Z"],
-  ["end", "M23.5 49.9 18.2 53.1 18.2 30.4 23.5 27.3Z"],
-  ["top", "M12.0 10.9 41.2 21.6 34.2 25.8 5.0 15.1Z"],
-  ["side", "M5.0 27.7 34.2 38.4 34.2 25.8 5.0 15.1Z"],
-  ["end", "M41.2 34.2 34.2 38.4 34.2 25.8 41.2 21.6Z"],
-  ["glowTop", "M39.9 24.9 46.6 27.4 42.2 30.0 35.5 27.6Z"],
-  ["glowSide", "M35.5 35.1 42.2 37.6 42.2 30.0 35.5 27.6Z"],
-  ["glowEnd", "M46.6 34.9 42.2 37.6 42.2 30.0 46.6 27.4Z"],
-];
 
 /**
  * A brain seen from its left: a see-through solid, its neurons `firing` whilst psi is on.
@@ -1251,12 +1274,21 @@ const lookingAtFadeMs = 400;
 /** How long a brief hud-toast shows */
 const noticeMs = 1500;
 
-type SlotMenuItem = { label: string; run(): void };
+/** `keep`: the menu stays open once it is pressed */
+type SlotMenuItem = { label: string; run(): void; keep?: boolean };
+
+/** The next of `list` after `value`, else its first */
+function cycle<T>(list: readonly T[], value: T): T {
+  return list[(list.indexOf(value) + 1) % list.length];
+}
+
+const debugColors = [defaultLook.color, "#4cf", "lime", "magenta", "gold", "white"];
+const debugAttachments = [null, ...gunAttachments];
 
 /** A hud-toast kept over the bar, its `end` the "x", greyed without one */
 type Kept = { label: string; title: string; end?: () => void };
 
-/** What the debug badge cycles through: `null` leaves it to jsh */
+/** How every shot ends, cycled by the phaser's debug badge */
 const shotCycle: JshCli.ShotOutcome[] = ["hit", "down", "ghost", "armour", "kill"];
 /** A debug badge on the bar: the shot's, or a mounted item's error */
 const debugBadgeClass = tw(
@@ -1296,6 +1328,8 @@ export type State = {
   getSavedY(): number;
   /** Whether it is a column on either side */
   isColumn(): boolean;
+  /** Debug: the player's phaser look, each field cycled by a press, overriding its item's meta */
+  lookMenu(): SlotMenuItem[];
   /** In the left column, moves it or the menu's out of `moved`'s way */
   makeWay(moved: "hud" | "menu"): void;
   persistY(): void;

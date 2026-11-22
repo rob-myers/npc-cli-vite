@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<filter id="spot-light-filter-1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<radialGradient id="face-shade" cx="0.5" cy="0.55" r="0.6">
+<stop offset="0.3" style="stop-color: #f4dccb;"/>
+<stop offset="1" style="stop-color: #6e4c3a;"/>
+</radialGradient>
+<linearGradient id="fringe-shadow" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.75;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<linearGradient id="chin-shadow" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0" style="stop-color: #2a1a12; stop-opacity: 0.5;"/>
+<stop offset="1" style="stop-color: #2a1a12; stop-opacity: 0;"/>
+</linearGradient>
+<clipPath id="suit-pale"><path d="M16 64h16v4h-16zM80 64h4v4h-4zM108 64h36v4h-36zM16 68h16v4h-16zM80 68h4v4h-4zM108 68h36v4h-36zM16 72h16v4h-16zM80 72h4v4h-4zM108 72h36v4h-36zM16 76h16v4h-16zM80 76h4v4h-4zM108 76h36v4h-36zM0 80h88v4h-88zM104 80h56v4h-56zM0 84h92v4h-92zM100 84h60v4h-60zM0 88h160v4h-160zM0 92h160v4h-160zM0 96h160v4h-160zM0 100h160v4h-160zM0 104h160v4h-160zM0 108h160v4h-160zM0 112h160v4h-160zM8 116h32v4h-32zM64 116h96v4h-96zM64 120h96v4h-96zM64 124h96v4h-96zM16 128h16v4h-16zM80 128h4v4h-4zM108 128h36v4h-36zM180 128h12v4h-12zM16 132h16v4h-16zM80 132h4v4h-4zM108 132h36v4h-36zM180 132h12v4h-12zM16 136h16v4h-16zM80 136h4v4h-4zM108 136h36v4h-36zM180 136h12v4h-12zM16 140h16v4h-16zM80 140h4v4h-4zM108 140h36v4h-36zM180 140h12v4h-12zM0 144h88v4h-88zM104 144h56v4h-56zM180 144h40v4h-40zM0 148h92v4h-92zM100 148h60v4h-60zM180 148h40v4h-40zM0 152h160v4h-160zM184 152h32v4h-32zM0 156h100v4h-100zM112 156h48v4h-48zM184 156h32v4h-32zM0 160h160v4h-160zM188 160h24v4h-24zM0 164h160v4h-160zM0 168h160v4h-160zM0 172h160v4h-160zM0 176h160v4h-160zM8 180h32v4h-32zM64 180h96v4h-96zM64 184h96v4h-96zM64 188h96v4h-96zM16 192h16v4h-16zM80 192h16v4h-16zM208 192h12v4h-12zM16 196h16v4h-16zM80 196h16v4h-16zM208 196h12v4h-12zM16 200h16v4h-16zM80 200h16v4h-16zM208 200h12v4h-12zM16 204h16v4h-16zM80 204h16v4h-16zM208 204h12v4h-12zM0 208h128v4h-128zM192 208h28v4h-28zM244 208h12v4h-12zM0 212h128v4h-128zM192 212h28v4h-28zM244 212h12v4h-12zM0 216h128v4h-128zM192 216h24v4h-24zM248 216h8v4h-8zM0 220h128v4h-128zM192 220h24v4h-24zM248 220h8v4h-8zM0 224h128v4h-128zM192 224h20v4h-20zM252 224h4v4h-4zM0 228h128v4h-128zM0 232h128v4h-128zM0 236h128v4h-128zM0 240h128v4h-128zM8 244h32v4h-32zM72 244h32v4h-32z"/></clipPath>
+<filter id="blotches" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="noise"/>
+<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.12  7 0 0 0 -3" result="blots"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="1" seed="4" result="fine"/>
+<feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0.9 -0.35" result="grain"/>
+<feMerge><feMergeNode in="blots"/><feMergeNode in="grain"/></feMerge>
+</filter>
+<filter id="worn" x="-20%" y="-50%" width="140%" height="200%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feGaussianBlur in="d" stdDeviation="0.45"/>
+</filter>
+<clipPath id="shaved"><path d="M0 44h4v4h-4zM0 48h4v4h-4zM0 52h4v4h-4zM0 56h4v4h-4zM4 44h4v4h-4zM4 48h4v4h-4zM4 52h4v4h-4zM4 56h4v4h-4zM8 44h4v4h-4zM8 48h4v4h-4zM8 52h4v4h-4zM8 56h4v4h-4zM12 44h4v4h-4zM12 48h4v4h-4zM12 52h4v4h-4zM16 44h4v4h-4zM16 48h4v4h-4zM16 52h4v4h-4zM20 44h4v4h-4zM24 44h4v4h-4zM28 44h4v4h-4zM28 48h4v4h-4zM64 44h4v4h-4zM64 48h4v4h-4zM68 44h4v4h-4zM72 44h4v4h-4zM76 44h4v4h-4zM76 48h4v4h-4zM76 52h4v4h-4zM80 44h4v4h-4zM80 48h4v4h-4zM80 52h4v4h-4zM84 44h4v4h-4zM84 48h4v4h-4zM84 52h4v4h-4zM84 56h4v4h-4zM88 44h4v4h-4zM88 48h4v4h-4zM88 52h4v4h-4zM88 56h4v4h-4zM92 44h4v4h-4zM92 48h4v4h-4zM92 52h4v4h-4zM92 56h4v4h-4zM96 48h4v4h-4zM96 52h4v4h-4zM96 56h4v4h-4zM100 48h4v4h-4zM100 52h4v4h-4zM100 56h4v4h-4zM104 48h4v4h-4zM104 52h4v4h-4zM104 56h4v4h-4zM104 60h4v4h-4zM108 48h4v4h-4zM108 52h4v4h-4zM108 56h4v4h-4zM108 60h4v4h-4zM112 48h4v4h-4zM112 52h4v4h-4zM112 56h4v4h-4zM112 60h4v4h-4zM116 48h4v4h-4zM116 52h4v4h-4zM116 56h4v4h-4zM116 60h4v4h-4zM120 48h4v4h-4zM120 52h4v4h-4zM120 56h4v4h-4zM124 48h4v4h-4zM124 52h4v4h-4zM124 56h4v4h-4z"/></clipPath>
+<linearGradient id="stubble-fade" x1="0" x2="0" y1="44" y2="64" gradientUnits="userSpaceOnUse">
+<stop offset="0" style="stop-color: #ffffff;"/>
+<stop offset="1" style="stop-color: #000000;"/>
+</linearGradient>
+<mask id="stubble-mask" maskUnits="userSpaceOnUse" x="0" y="32" width="128" height="32"><rect x="0" y="32" width="128" height="32" style="fill: url(&quot;#stubble-fade&quot;);"/></mask>
+<clipPath id="crew-cap"><path d="M160 0H192V32H160ZM162.0 3.4L162.0 2.2L164.0 3.2L166.0 3.7L168.0 3.7L170.0 3.0L172.0 3.3L174.0 2.7L176.0 3.1L178.0 2.2L180.0 3.4L182.0 3.2L184.0 2.6L186.0 2.8L188.0 3.5L190.0 2.9L188.1 2.0L188.1 2.0L188.3 4.0L189.8 6.0L189.8 8.0L189.4 10.0L189.3 12.0L188.6 14.0L188.3 16.0L188.9 18.0L188.7 20.0L188.9 22.0L189.9 24.0L188.9 26.0L189.6 28.0L189.2 30.0L190.0 30.0L190.0 28.7L188.0 28.2L186.0 29.9L184.0 28.8L182.0 30.0L180.0 29.3L178.0 29.7L176.0 28.3L174.0 28.5L172.0 28.2L170.0 29.6L168.0 28.6L166.0 28.6L164.0 29.0L162.0 28.2L163.2 30.0L162.6 30.0L163.4 28.0L163.0 26.0L162.4 24.0L163.2 22.0L162.1 20.0L162.9 18.0L163.1 16.0L162.0 14.0L163.3 12.0L162.2 10.0L163.3 8.0L162.7 6.0L162.1 4.0L164.0 2.0ZM160 32H192L192.0 35.5L190.0 34.9L188.0 35.3L186.0 36.2L184.0 35.7L182.0 36.3L180.0 35.0L178.0 35.4L176.0 36.0L174.0 35.4L172.0 36.0L170.0 35.6L168.0 34.9L166.0 34.9L164.0 36.3L162.0 34.9L160.0 35.5ZM128 32H160L160.0 38.0L158.0 41.5L156.0 37.5L154.0 40.7L152.0 38.8L150.0 42.3L148.0 38.4L146.0 42.2L144.0 37.8L142.0 42.9L140.0 38.2L138.0 43.1L136.0 38.3L134.0 43.4L132.0 37.9L130.0 40.6L128.0 38.0ZM133.4 40.0h1.5v2.1h-1.0zM154.1 44.5h1.7v1.5h-1.6zM148.3 44.1h1.0v2.5h-1.5zM137.9 45.9h1.5v2.1h-1.1zM148.2 41.1h1.3v2.1h-1.3zM132.5 41.8h1.3v2.2h-1.3zM130.4 41.3h0.9v2.4h-1.7zM148.0 44.3h1.0v2.4h-1.5zM148.7 40.9h1.1v2.5h-1.2zM133.3 44.1h0.9v1.5h-1.5zM145.2 39.5h1.0v1.7h-1.1zM157.9 43.7h1.4v2.2h-1.4zM156.3 39.2h1.5v1.9h-1.5zM151.6 40.2h1.0v1.9h-1.4zM155.7 41.5h1.7v1.6h-1.0zM137.4 41.0h1.6v2.2h-1.1zM142.5 40.6h1.0v1.9h-1.7zM152.9 44.8h1.5v2.2h-0.9zM152.2 44.3h1.2v1.7h-1.1zM144.2 40.0h0.9v2.4h-1.1zM149.9 39.2h1.2v1.5h-1.4zM192 32H224L224.0 38.0L222.0 42.0L220.0 38.1L218.0 42.9L216.0 37.4L214.0 40.7L212.0 38.0L210.0 43.0L208.0 38.6L206.0 43.4L204.0 37.9L202.0 42.9L200.0 37.2L198.0 41.6L196.0 37.1L194.0 43.3L192.0 38.0ZM203.4 44.6h1.2v2.4h-1.1zM217.4 40.1h1.2v2.5h-1.2zM219.1 44.9h1.8v2.4h-1.5zM219.0 41.4h1.3v1.9h-1.7zM212.7 42.4h1.4v1.6h-1.5zM212.1 42.7h1.2v1.6h-1.7zM217.4 40.9h1.8v1.6h-1.3zM199.4 39.1h1.7v1.8h-1.7zM201.2 39.3h1.2v1.4h-1.3zM220.9 39.6h1.7v2.1h-1.8zM218.8 42.2h1.7v2.3h-1.5zM209.2 39.1h1.3v1.8h-1.1zM210.7 39.2h1.0v2.5h-1.7zM203.4 41.7h1.8v2.5h-1.7zM212.8 42.6h1.2v1.5h-1.8zM207.0 40.9h1.0v1.9h-1.0zM216.2 44.8h1.1v2.3h-1.6zM207.1 41.5h1.0v2.0h-1.7zM220.5 40.0h1.6v1.5h-1.3zM198.9 42.8h1.0v1.9h-1.3zM202.7 41.4h1.2v2.3h-1.0zM201.0 39.7h1.3v2.4h-1.8zM224 32H256L256.0 39.0L254.0 44.3L252.0 39.8L250.0 41.9L248.0 38.7L246.0 41.4L244.0 38.6L242.0 42.0L240.0 38.5L238.0 42.3L236.0 39.9L234.0 43.1L232.0 39.8L230.0 43.1L228.0 39.5L226.0 43.7L224.0 39.0ZM237.2 41.8h1.3v1.4h-1.8zM231.8 40.1h1.3v2.4h-1.8zM249.2 43.2h1.2v2.5h-1.1zM249.1 40.3h1.3v1.3h-1.3zM236.9 44.3h1.7v2.1h-1.3zM246.9 41.9h1.0v1.4h-0.9zM238.1 40.3h1.2v1.6h-1.2zM241.3 41.8h0.9v1.8h-1.3zM245.5 43.7h1.6v2.1h-1.8zM240.3 43.9h1.0v2.1h-1.0zM245.5 45.5h1.7v2.6h-1.6zM229.7 41.3h1.8v1.2h-0.9zM252.6 43.2h1.7v1.6h-1.7zM237.6 43.6h0.9v1.3h-1.3zM232.2 44.2h0.9v2.5h-1.5zM244.9 42.1h1.5v1.8h-1.7zM243.5 41.5h1.8v1.9h-1.3zM232.4 40.5h1.5v1.5h-1.6zM239.9 45.1h1.7v1.2h-1.5zM248.3 42.7h1.2v2.3h-1.6zM244.5 40.9h1.7v2.3h-1.4zM224.8 44.9h1.4v1.2h-1.2zM250.6 42.6h1.6v1.7h-1.8zM248.3 45.4h1.6v2.4h-1.7zM253.6 46.6h1.4v2.5h-1.4z" style="clip-rule: evenodd;"/></clipPath>
+<radialGradient id="crew-top" cx="0.5" cy="0.45" r="0.7">
+<stop offset="0" style="stop-color: #5a4230;"/>
+<stop offset="0.6" style="stop-color: #3c2b1d;"/>
+<stop offset="1" style="stop-color: #241810;"/>
+</radialGradient>
+<linearGradient id="crew-down" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #46331f;"/>
+<stop offset="1" style="stop-color: #1e140c;"/>
+</linearGradient>
+<linearGradient id="crew-front" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #3e2c1e;"/>
+<stop offset="1" style="stop-color: #22170f;"/>
+</linearGradient>
+<clipPath id="arm-faces"><path d="M176 64h16v16h-16zM192 64h16v16h-16zM160 80h16v48h-16zM176 80h16v48h-16zM192 80h16v48h-16zM208 80h16v48h-16zM144 192h16v16h-16zM160 192h16v16h-16zM128 208h16v48h-16zM144 208h16v48h-16zM160 208h16v48h-16zM176 208h16v48h-16z"/></clipPath>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=d overlay-backfaces=head</title>
+<image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAGYktHRAD/AP8A/6C9p5MAAAmbSURBVHja1VtNiBzHFf56dqand7p3umd3tYuEMYvQQTgEIkwYECHCh5AgyGFDEmIcmxiDfbEIBEIgR8NekqONIbo4JBgHYVDIQeTnEARBRgchEhJFOLKi2ImkkTUz3bPTPT29s1s5dL/u6pqanp4/7eqDZfunqra+r957VfW6VsEYfOHZFQYAmlqEHwxA1wDgBwN8v34GiqKk6vB3P7l0VRn3Nw4TxTyFNLUIIxKArruRGAS3H6TujbJ62NxyoZCnkEj4cdePr61SeYg8AHT7AczS0RchlwDdYBCPPpC4A90/zcglgM+NvugK2TjS7p9PAE0tpoIeuQKRd/YC6BJ/N8oqek+BALls2OAEIFFICLOkQlGGxzr0/4PD5je7AL4Q7Skg0nMGBjAF1aKaUoGx6N0Rh8LP80S4H+yhrJbAPxf9nRcBQFxHE6yF2qB7vpwfDPCPT3cP1U8KfAeJPD3T1CKcbi8mzJM3ovfrhhaT7gd7cTviDLFuaCmxjgqKfDT3g0E8OmTqZbWEH77wVRzf3EBRN3D5LzehaypcP8C1j/8WiwFjOR7ldUNDNxKBnpGAZbV0pARQfvPmdzMdda8fwLIsLEeRvtenzjPYto3SmBXfz3//p1hcXhAgtLIbd9qH6gLSINhqtWDoOtRyGZZlQfniWfzorXexs30GjtOG9ZXz+Olb72Jn+0twex6Cfh9d18Xq6upQWz/+xtcyO/C9dy4dJn+5AIauQwGwFwS49sDGWeUj7GyfwZ9v3gIAvGB+hJ1vncG1T/4H1w/w5RMWDF0/VCJzEYBG3t1z0fH2sLZSwtZyAY+bLdz7rImVQlj8xl//hVNb69haBopWCfc7NqqV8J3reajVaofNK78A/248DBczUGDoOrp7LoySDlZx8Xh3D1ZJxQFjePaZ0LzVJQXgtr+DvoJqpYSVUlRX12G322AAnCDcJDEwHFtJu8ejTgsF5fBXikM9+PW3N1NB8Z3PtgAAjuMAAG7fvp3Z61sXwD7RXoXttOG6HgAGvaLDNC2c6v8SNx5sZnbo5Q8bme2//8Y2M00LDEDHsQEAdA8A3/zZexOpOnYlSMRN08zdaKdjw/O8yFAUeL3oujxJ1+QwTUt633FsuJ43cXtjBSDiJMS0UOZo7jTa1Yg8i66rgjhzEWAaC6BR6bougHBWMU0L6M1O3nHsmCi5QNW04Dg2XM+duD3ljz/YYADQ6CrYNBh0bgl7t7WPTYPF7whU5m5rH2uVRqrBtWjFe0fZhhl1DABOsctYKQP3BEPaMoHdfnjd9NPtrJSBu8uvSrdUjmPDrFpwnLYgfi0V2cbFhAKRzwteoJOrSwCAth/+AGGnV8pArXc5Jl/rheQJfHm+zpYZEt8ykSpPI03EZZjG/wHOBfgRznomou0DNmfaNHJrGrClXsbNBrBmhe92+8PlgZAwoekn5O85AFvGVL6dF7lSYiLcYAA3WtPzZOxeYsZEoqYl101/uPxaskmMXYEXk0fHseP4Ys5JlKEg6AaD2CU2DUS/kzhwt7WPxMn2hxps+4kVyN5loekPk1aA1Jw/Cnqlktww5E5HDlmArhaxabBUQORjBO8WmwaDtZzU5a/F0ZSVsZbTgQ9IC0fvRnFxOqEoov93Otli8ZBOg7ok20vEdbWIk9yq9nMvTYo3eRJht58mxpfnIXMHJzJ7k5vzFQC2k02ed5csFHhy06Cmpa95M+dNercfvhfLyyBaDx/5syzb9bx4QZQ3RhQaXUU6DfKBjmJAo6vEz/n3Ipl7TkKCprhRook+z68JSMwqt54gWBHBlO/nEElE8QPveQDAi7gRPdqXNkPlIEy3b65fkY4kEaCAuFJO+3tNYu5kMSnyVSsuR+5A9mqaFhzbjkXQp8hJFJvNJjRNwwd4Pn6o6zpcN72sdF0Xvu9D07T4D7mui+LGRjxDkCU1vdBqjlWAj1sKCoUGTkU82j5wcBDuCDcNBicAPvcepdyHypxcXUKL6wO/HujES2LOfVlaqFwCAIDv+zE5kTS9J4y6JkJAEkTdYICTq0twgw3csR8BAI5VNtDopsvq6gm4wQAHBwrafgPHKhvQ1aWITBumVUPVtFJrfyLqeh70SiX+7Th27qkTWFA+4Lm35W546wLYrPkAagcIXad+cbbvb2N3g9evXz/8tM0CMVaAer3OgPwW8CRQ1YHO5Dvf6QSYJh+waMyLPLCAfADt70XfvP462DT5AFk8obYAeXuEUbGIx9zzAUDY8SuvJPPTlVeSDo8qn5UPECG+E9vb7Y/ei4hYaD7g1gWwm430cnjSfIAMz70NhWYCsT0SL8/opwSYBLQE1tXicD5ASy9/axrQ/c4f0AXwn0//i95vX0uVpwUSCcRjbcRegco2ffnzSfBE8gHHf/d1AMDDRnZeVJYPGIX6RSi8m4nvphYgzAckI8wLwotB14VCYoJiPkDmx9Zyujxv8oA8HzAK5381+yGkI58PWDSeinzAIlHkzZkHv9dPm/1A2pCYDyDiojWIQuXJBywSsQ+JmyARozYpYiBq+4kYbT+M8lnTGi+ALB/w0qXFHjYs1ut1pmkaXv4w+1T3uXPnmDQfUPjnQvMBwP1F8g+D4NWrVxUSAkCKIBDu+6nMk84HLBpj8wE7fw9Pe9BmaNz2eNb677+xzaqmBQXDmR3HsfHSLy5n1uf3CXlWg2NXgrNuf2f5vG6aFu4/uA+9UkmlxueJsQKcPn2a8UQmTZBMup2uCvn/E8dPTEWsmjM/uvADEpPW73Df//mcnylJjWe2kzNnMDIfwK8D+HwAv0qUlZm0fqN0No5ECsLv+04nf1Z36eF7qXvaWWblC2knCUi+DfI7Pb6zspyBbMk8TX1vxLd9fsSzMrxtyaIpK5/A5wuGBJB1dJKl8qz1ZSDyMhEoH2D30iJkzQD1i1BIoCEB8nRW/Cw2z/qKgtQZAD4m0PSYBf6zXBbICooAhnJ+4Z5fTkbMB2was9VHDagI3/fo6y9/BI6fHcYhTz6gfhHK9dfBYiflSfABSxwpMR8wa31KqXpRtAeST9/0lYdAn7z5k2Kz7BXqF6EUxU5Rx0dBzAe4wWCm+mDp5ajt2LBMK/5N6wGWFI/FmAdyBUESKQ8mrS8720fkIZCneyCMD/M4PCXNB7jBYGgUR+UDZq1PlGTf+Ql8DCDy80KR9vn8JibsbPqcwKh8wPnz5xnAny+Q1x91vuDFZ/j/OFEmIjePRMHM+YBZzxcAvADhGIgjLmKSJfFYAYDZ8wEznS9ggNtLvvEDyX9hiucBiDx/VmBW/B8kZsqsMCT44AAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyNi0xMS0yMVQxNToyNDo1NiswMDowMEwr9roAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjYtMTEtMjFUMTU6MjQ6NTYrMDA6MDA9dk4GAAAAKHRFWHRkYXRlOnRpbWVzdGFtcAAyMDI2LTExLTIxVDE1OjI0OjU2KzAwOjAwamNv2QAAAABJRU5ErkJggg==" width="256" height="256" style="image-rendering: pixelated;">
+<title>d-5--1938c8e17e34ebdc</title>
+</image>
+</g>
+<rect width="256" height="256" style="pointer-events: none; fill: #808080; mix-blend-mode: saturation; clip-path: url(&quot;#suit-pale&quot;);">
+<title>grey suit</title>
+</rect>
+<rect width="256" height="256" style="pointer-events: none; fill: #808080; mix-blend-mode: multiply; clip-path: url(&quot;#suit-pale&quot;);">
+<title>darker suit</title>
+</rect>
+<g style="pointer-events: none; opacity: 0.6; clip-path: url(&quot;#suit-pale&quot;);">
+<title>blotches</title>
+<rect width="256" height="256" style="filter: url(&quot;#blotches&quot;);"/>
+</g>
+<g transform="translate(0 64)" style="pointer-events: none; fill: #e6e1d6; font-family: 'Arial Black', Impact, sans-serif; font-weight: 900; text-anchor: middle;">
+<title>inmate marks</title>
+<rect x="98" y="93" width="12" height="7" style="fill-opacity: 0.9;">
+<title>chest patch</title>
+</rect>
+<text x="104" y="98.6" style="fill: #141414; font-size: 4.4px; filter: url(&quot;#worn&quot;); opacity: 0.7;">D-46</text>
+<text x="144" y="106" style="font-size: 20px; fill-opacity: 0.85;">D<title>back letter</title></text>
+<text x="144" y="118" style="font-size: 7px; fill-opacity: 0.85; filter: url(&quot;#worn&quot;); opacity: 0.7;">4690<title>back number</title></text>
+</g>
+<g style="pointer-events: none;">
+<title>suit</title>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>body</title>
+<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="113" y="65" width="30" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="65" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="81" y="81" width="30" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="113" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="129" y="81" width="30" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>right-arm</title>
+<rect x="177" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="193" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="161" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="177" y="81" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="193" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+<title>left</title>
+</rect>
+<rect x="209" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>left-arm</title>
+<rect x="145" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="161" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="129" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+<title>right</title>
+</rect>
+<rect x="145" y="209" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="161" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="177" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>right-leg</title>
+<rect x="17" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="33" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="1" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+<title>right</title>
+</rect>
+<rect x="17" y="81" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="33" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+<title>left</title>
+</rect>
+<rect x="49" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+<g style="fill: #000000; stroke: #000000; stroke-opacity: 0.35; stroke-width: 2px;">
+<title>left-leg</title>
+<rect x="81" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="97" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+<title>bottom</title>
+</rect>
+<rect x="65" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+<title>right</title>
+</rect>
+<rect x="81" y="209" width="14" height="46" style="fill-opacity: 0;">
+<title>front</title>
+</rect>
+<rect x="97" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+<title>left</title>
+</rect>
+<rect x="113" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+<title>back</title>
+</rect>
+</g>
+</g>
+<g style="pointer-events: none; clip-path: url(&quot;#arm-faces&quot;);">
+<title>tattoos</title>
+<path d="M150 238L150 242M154 234L158 238M154 234L150 238M158 238L158 242M162 90L162 94M162 94L166 94M162 94L162 98M162 98L166 98M162 114L166 114M162 114L162 118M166 94L170 94M166 94L166 98M166 98L170 98M166 98L166 102M166 102L170 102M166 110L170 110M166 110L166 114M166 114L170 114M166 218L170 222M166 226L170 226M166 226L166 230M166 238L166 242M170 94L174 94M170 94L170 98M170 98L174 98M170 98L170 102M170 110L170 114M170 114L174 114M170 222L170 226M170 226L174 226M174 90L174 94M174 94L174 98M174 114L174 118M174 218L170 222M174 226L174 230M174 246L174 250M178 106L178 110M178 110L182 114M182 98L182 102M182 114L182 118M182 222L182 226M182 226L182 230M182 238L182 242M186 106L186 110M186 110L190 114M186 110L182 114M190 98L190 102M190 114L190 118M190 242L190 246M190 246L190 250M194 106L194 110M194 110L198 114M198 98L198 102M198 114L198 118M210 102L214 102M214 98L218 98M214 98L214 102M218 106L222 110" style="fill: none; stroke: #3a241a; stroke-width: 1.7px; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9;"/>
+<path d="M165 250a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM173 238a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM181 250a1 1 0 1 0 2 0a1 1 0 1 0 -2 0zM189 222a1 1 0 1 0 2 0a1 1 0 1 0 -2 0z" style="fill: #3a241a; opacity: 0.9;"/>
+</g>
+<g style="pointer-events: none;">
+<title>head</title>
+<rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+<title>top</title>
+</rect>
+<rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: #000000; stroke-opacity: 0.25; stroke-width: 4px;">
+<title>bottom-neck</title>
+</rect>
+<rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.35; mix-blend-mode: hard-light; fill: #777777;" y="32">
+<title>front</title>
+</rect>
+<rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+<title>back</title>
+</rect>
+<rect x="64" width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32">
+<title>left</title>
+</rect>
+<rect width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<title>right</title>
+</rect>
+</g>
+<g style="pointer-events: none;">
+<title>face shadows</title>
+<rect x="32" y="32" width="32" height="32" style="fill: url(&quot;#face-shade&quot;); mix-blend-mode: multiply;">
+<title>sides</title>
+</rect>
+<rect x="32" y="40" width="32" height="7" style="fill: url(&quot;#fringe-shadow&quot;);">
+<title>under fringe</title>
+</rect>
+<rect x="32" y="59" width="32" height="5" style="fill: url(&quot;#chin-shadow&quot;);">
+<title>chin</title>
+</rect>
+</g>
+<g style="pointer-events: none; clip-path: url(&quot;#shaved&quot;);">
+<title>crew cut, stubble</title>
+<path d="M79.7 57.8h0.8v0.8h-0.8zM101.8 62.6h0.8v0.8h-0.8zM94.7 62.1h0.8v0.8h-0.8zM3.7 51.2h0.8v0.8h-0.8zM120.7 55.6h0.8v0.8h-0.8zM115.3 42.7h0.8v0.8h-0.8zM60.0 45.9h0.8v0.8h-0.8zM69.6 53.8h0.8v0.8h-0.8zM1.7 45.2h0.8v0.8h-0.8zM35.8 62.0h0.8v0.8h-0.8zM98.0 43.8h0.8v0.8h-0.8zM102.0 43.3h0.8v0.8h-0.8zM79.0 43.0h0.8v0.8h-0.8zM0.2 60.9h0.8v0.8h-0.8zM26.8 45.2h0.8v0.8h-0.8zM125.7 60.9h0.8v0.8h-0.8zM37.0 63.1h0.8v0.8h-0.8zM69.0 56.3h0.8v0.8h-0.8zM26.2 62.6h0.8v0.8h-0.8zM88.4 63.2h0.8v0.8h-0.8zM114.4 47.2h0.8v0.8h-0.8zM46.2 44.0h0.8v0.8h-0.8zM18.6 41.6h0.8v0.8h-0.8zM38.6 54.5h0.8v0.8h-0.8zM0.4 56.3h0.8v0.8h-0.8zM43.3 47.4h0.8v0.8h-0.8zM104.8 51.5h0.8v0.8h-0.8zM40.4 51.5h0.8v0.8h-0.8zM90.2 41.4h0.8v0.8h-0.8zM124.8 40.5h0.8v0.8h-0.8zM96.0 60.3h0.8v0.8h-0.8zM2.3 58.9h0.8v0.8h-0.8zM46.9 53.9h0.8v0.8h-0.8zM1.2 41.1h0.8v0.8h-0.8zM23.2 62.9h0.8v0.8h-0.8zM25.2 58.1h0.8v0.8h-0.8zM119.0 62.6h0.8v0.8h-0.8zM44.1 48.5h0.8v0.8h-0.8zM67.2 58.6h0.8v0.8h-0.8zM13.8 58.0h0.8v0.8h-0.8zM102.0 60.6h0.8v0.8h-0.8zM4.7 62.7h0.8v0.8h-0.8zM11.7 48.2h0.8v0.8h-0.8zM78.2 62.0h0.8v0.8h-0.8zM43.5 62.2h0.8v0.8h-0.8zM69.8 47.5h0.8v0.8h-0.8zM40.6 44.3h0.8v0.8h-0.8zM10.0 43.6h0.8v0.8h-0.8zM88.2 63.9h0.8v0.8h-0.8zM20.7 41.2h0.8v0.8h-0.8zM126.3 52.8h0.8v0.8h-0.8zM52.0 45.7h0.8v0.8h-0.8zM76.0 59.8h0.8v0.8h-0.8zM58.3 50.1h0.8v0.8h-0.8zM7.1 62.0h0.8v0.8h-0.8zM4.2 51.8h0.8v0.8h-0.8zM107.3 43.1h0.8v0.8h-0.8zM93.7 62.8h0.8v0.8h-0.8zM80.7 58.9h0.8v0.8h-0.8zM13.6 50.4h0.8v0.8h-0.8zM19.1 60.3h0.8v0.8h-0.8zM37.7 50.9h0.8v0.8h-0.8zM127.9 60.5h0.8v0.8h-0.8zM124.9 50.9h0.8v0.8h-0.8zM62.5 57.5h0.8v0.8h-0.8zM61.3 47.0h0.8v0.8h-0.8zM51.7 43.5h0.8v0.8h-0.8zM48.3 63.7h0.8v0.8h-0.8zM122.9 55.0h0.8v0.8h-0.8zM63.9 48.1h0.8v0.8h-0.8zM11.4 46.5h0.8v0.8h-0.8zM100.1 60.8h0.8v0.8h-0.8zM46.2 58.9h0.8v0.8h-0.8zM99.2 56.7h0.8v0.8h-0.8zM85.0 58.2h0.8v0.8h-0.8zM46.5 56.9h0.8v0.8h-0.8zM35.9 51.7h0.8v0.8h-0.8zM98.5 56.6h0.8v0.8h-0.8zM37.6 62.7h0.8v0.8h-0.8zM83.2 53.9h0.8v0.8h-0.8zM1.5 53.1h0.8v0.8h-0.8zM32.1 56.1h0.8v0.8h-0.8zM59.3 59.6h0.8v0.8h-0.8zM82.9 59.1h0.8v0.8h-0.8zM44.5 55.5h0.8v0.8h-0.8zM94.4 59.9h0.8v0.8h-0.8zM44.8 60.2h0.8v0.8h-0.8zM111.3 56.5h0.8v0.8h-0.8zM124.9 63.0h0.8v0.8h-0.8zM66.3 52.7h0.8v0.8h-0.8zM21.3 60.1h0.8v0.8h-0.8zM120.0 51.5h0.8v0.8h-0.8zM88.5 57.3h0.8v0.8h-0.8zM93.5 44.1h0.8v0.8h-0.8zM99.9 53.9h0.8v0.8h-0.8zM85.2 50.1h0.8v0.8h-0.8zM79.8 58.6h0.8v0.8h-0.8zM81.5 57.3h0.8v0.8h-0.8zM3.5 43.8h0.8v0.8h-0.8zM56.5 55.6h0.8v0.8h-0.8zM28.0 56.5h0.8v0.8h-0.8zM80.8 41.0h0.8v0.8h-0.8zM60.4 45.4h0.8v0.8h-0.8zM6.9 43.2h0.8v0.8h-0.8zM40.6 44.4h0.8v0.8h-0.8zM24.8 40.9h0.8v0.8h-0.8zM59.6 49.1h0.8v0.8h-0.8zM78.3 54.2h0.8v0.8h-0.8zM30.4 61.7h0.8v0.8h-0.8zM0.1 49.7h0.8v0.8h-0.8zM35.7 49.8h0.8v0.8h-0.8zM14.7 60.0h0.8v0.8h-0.8zM47.9 40.9h0.8v0.8h-0.8zM78.5 42.3h0.8v0.8h-0.8zM69.8 48.1h0.8v0.8h-0.8zM74.4 63.0h0.8v0.8h-0.8zM104.8 50.1h0.8v0.8h-0.8zM104.1 55.4h0.8v0.8h-0.8zM47.3 43.4h0.8v0.8h-0.8zM76.3 53.5h0.8v0.8h-0.8zM122.5 63.2h0.8v0.8h-0.8zM77.9 48.4h0.8v0.8h-0.8zM114.4 40.0h0.8v0.8h-0.8zM13.8 53.6h0.8v0.8h-0.8zM78.7 43.4h0.8v0.8h-0.8zM80.6 61.4h0.8v0.8h-0.8zM48.1 50.4h0.8v0.8h-0.8zM29.0 47.0h0.8v0.8h-0.8zM124.5 49.1h0.8v0.8h-0.8zM123.0 61.9h0.8v0.8h-0.8zM76.3 46.2h0.8v0.8h-0.8zM125.6 51.9h0.8v0.8h-0.8zM53.2 47.7h0.8v0.8h-0.8zM126.0 51.8h0.8v0.8h-0.8zM36.7 51.4h0.8v0.8h-0.8zM15.6 54.9h0.8v0.8h-0.8zM56.8 47.0h0.8v0.8h-0.8zM100.1 59.8h0.8v0.8h-0.8zM1.7 52.8h0.8v0.8h-0.8zM35.0 62.4h0.8v0.8h-0.8zM100.1 45.9h0.8v0.8h-0.8zM34.3 43.7h0.8v0.8h-0.8zM126.6 47.0h0.8v0.8h-0.8zM77.8 51.4h0.8v0.8h-0.8zM82.5 54.5h0.8v0.8h-0.8zM95.2 42.8h0.8v0.8h-0.8zM97.3 47.2h0.8v0.8h-0.8zM68.3 48.1h0.8v0.8h-0.8zM38.0 52.7h0.8v0.8h-0.8zM59.4 48.7h0.8v0.8h-0.8zM95.4 54.2h0.8v0.8h-0.8zM4.7 46.1h0.8v0.8h-0.8zM58.3 62.0h0.8v0.8h-0.8zM113.7 53.1h0.8v0.8h-0.8zM1.9 58.7h0.8v0.8h-0.8zM54.7 53.8h0.8v0.8h-0.8zM90.6 55.2h0.8v0.8h-0.8zM61.7 61.9h0.8v0.8h-0.8zM49.3 49.4h0.8v0.8h-0.8zM109.0 44.7h0.8v0.8h-0.8zM37.9 59.9h0.8v0.8h-0.8zM8.5 60.1h0.8v0.8h-0.8zM88.9 50.4h0.8v0.8h-0.8zM36.7 58.7h0.8v0.8h-0.8zM116.6 43.4h0.8v0.8h-0.8zM61.2 53.2h0.8v0.8h-0.8zM63.7 47.9h0.8v0.8h-0.8zM19.7 54.1h0.8v0.8h-0.8zM103.9 41.6h0.8v0.8h-0.8zM29.4 59.7h0.8v0.8h-0.8zM101.3 55.9h0.8v0.8h-0.8zM3.3 57.3h0.8v0.8h-0.8zM125.3 64.0h0.8v0.8h-0.8zM89.8 41.2h0.8v0.8h-0.8zM107.8 45.3h0.8v0.8h-0.8zM82.7 62.9h0.8v0.8h-0.8zM91.2 43.2h0.8v0.8h-0.8zM37.4 62.0h0.8v0.8h-0.8zM19.2 54.7h0.8v0.8h-0.8zM53.0 43.9h0.8v0.8h-0.8zM79.7 41.0h0.8v0.8h-0.8zM13.9 49.1h0.8v0.8h-0.8zM9.2 41.4h0.8v0.8h-0.8zM73.6 57.8h0.8v0.8h-0.8zM112.4 43.2h0.8v0.8h-0.8zM55.3 47.5h0.8v0.8h-0.8zM76.8 51.7h0.8v0.8h-0.8zM120.1 49.0h0.8v0.8h-0.8zM7.1 56.7h0.8v0.8h-0.8zM19.3 55.2h0.8v0.8h-0.8zM64.7 61.9h0.8v0.8h-0.8zM71.0 54.9h0.8v0.8h-0.8zM33.7 53.2h0.8v0.8h-0.8zM32.5 58.0h0.8v0.8h-0.8zM66.2 43.2h0.8v0.8h-0.8zM30.0 48.9h0.8v0.8h-0.8zM94.3 44.3h0.8v0.8h-0.8zM91.3 55.7h0.8v0.8h-0.8zM10.9 56.0h0.8v0.8h-0.8zM11.7 43.0h0.8v0.8h-0.8zM76.0 45.7h0.8v0.8h-0.8zM112.2 51.5h0.8v0.8h-0.8zM41.4 59.1h0.8v0.8h-0.8zM3.8 57.4h0.8v0.8h-0.8zM6.9 43.6h0.8v0.8h-0.8zM121.9 56.3h0.8v0.8h-0.8zM28.6 42.8h0.8v0.8h-0.8zM124.5 56.0h0.8v0.8h-0.8zM105.0 43.4h0.8v0.8h-0.8zM80.0 48.5h0.8v0.8h-0.8zM30.1 48.0h0.8v0.8h-0.8zM78.6 48.4h0.8v0.8h-0.8zM49.4 43.3h0.8v0.8h-0.8zM106.4 55.5h0.8v0.8h-0.8zM103.0 50.4h0.8v0.8h-0.8zM109.0 52.4h0.8v0.8h-0.8zM75.9 53.8h0.8v0.8h-0.8zM94.7 49.5h0.8v0.8h-0.8zM12.4 40.8h0.8v0.8h-0.8zM25.9 40.9h0.8v0.8h-0.8zM113.8 51.5h0.8v0.8h-0.8zM97.3 40.0h0.8v0.8h-0.8zM60.2 61.4h0.8v0.8h-0.8zM79.3 50.3h0.8v0.8h-0.8zM59.6 42.4h0.8v0.8h-0.8zM19.8 43.8h0.8v0.8h-0.8zM48.0 49.3h0.8v0.8h-0.8zM112.7 43.7h0.8v0.8h-0.8zM32.5 46.7h0.8v0.8h-0.8zM20.7 46.9h0.8v0.8h-0.8zM30.1 51.6h0.8v0.8h-0.8zM4.1 62.2h0.8v0.8h-0.8zM47.2 62.5h0.8v0.8h-0.8zM88.0 56.2h0.8v0.8h-0.8zM60.4 62.7h0.8v0.8h-0.8zM15.1 56.0h0.8v0.8h-0.8zM37.3 56.2h0.8v0.8h-0.8zM93.4 43.9h0.8v0.8h-0.8zM25.7 40.6h0.8v0.8h-0.8zM29.5 41.9h0.8v0.8h-0.8zM51.3 63.4h0.8v0.8h-0.8zM46.6 47.5h0.8v0.8h-0.8zM59.9 46.8h0.8v0.8h-0.8zM93.7 57.2h0.8v0.8h-0.8zM20.9 45.8h0.8v0.8h-0.8zM86.0 62.6h0.8v0.8h-0.8zM82.7 50.3h0.8v0.8h-0.8zM124.9 40.2h0.8v0.8h-0.8zM7.8 58.7h0.8v0.8h-0.8zM52.5 41.1h0.8v0.8h-0.8zM70.2 63.8h0.8v0.8h-0.8zM66.4 48.4h0.8v0.8h-0.8zM12.0 41.7h0.8v0.8h-0.8zM115.0 51.8h0.8v0.8h-0.8zM119.8 41.3h0.8v0.8h-0.8zM31.2 41.2h0.8v0.8h-0.8zM50.9 41.4h0.8v0.8h-0.8zM32.7 49.8h0.8v0.8h-0.8zM39.2 41.2h0.8v0.8h-0.8zM4.8 63.3h0.8v0.8h-0.8zM23.0 52.2h0.8v0.8h-0.8zM51.5 52.8h0.8v0.8h-0.8zM10.8 47.5h0.8v0.8h-0.8zM13.8 53.0h0.8v0.8h-0.8zM117.9 54.4h0.8v0.8h-0.8zM109.7 45.1h0.8v0.8h-0.8zM2.2 53.0h0.8v0.8h-0.8zM62.3 53.7h0.8v0.8h-0.8zM48.2 55.0h0.8v0.8h-0.8zM92.9 61.9h0.8v0.8h-0.8zM39.4 50.8h0.8v0.8h-0.8zM105.8 45.4h0.8v0.8h-0.8zM14.8 47.5h0.8v0.8h-0.8zM11.2 58.5h0.8v0.8h-0.8zM104.9 47.5h0.8v0.8h-0.8zM16.6 42.0h0.8v0.8h-0.8zM31.3 42.0h0.8v0.8h-0.8zM54.9 53.8h0.8v0.8h-0.8zM31.4 41.5h0.8v0.8h-0.8zM89.7 41.2h0.8v0.8h-0.8zM25.6 46.9h0.8v0.8h-0.8zM47.8 42.4h0.8v0.8h-0.8zM53.8 47.5h0.8v0.8h-0.8zM96.3 53.3h0.8v0.8h-0.8zM114.7 55.7h0.8v0.8h-0.8zM97.2 53.8h0.8v0.8h-0.8zM56.6 59.6h0.8v0.8h-0.8zM83.9 62.9h0.8v0.8h-0.8zM93.2 56.8h0.8v0.8h-0.8zM34.3 59.5h0.8v0.8h-0.8zM48.9 43.1h0.8v0.8h-0.8zM8.4 44.1h0.8v0.8h-0.8zM33.6 56.2h0.8v0.8h-0.8zM36.5 41.5h0.8v0.8h-0.8zM97.8 53.4h0.8v0.8h-0.8zM3.5 41.2h0.8v0.8h-0.8zM16.7 48.6h0.8v0.8h-0.8zM110.1 62.8h0.8v0.8h-0.8zM78.3 45.5h0.8v0.8h-0.8zM54.9 48.7h0.8v0.8h-0.8zM42.3 40.3h0.8v0.8h-0.8zM74.8 59.8h0.8v0.8h-0.8zM93.0 42.3h0.8v0.8h-0.8zM67.9 44.1h0.8v0.8h-0.8zM90.8 50.7h0.8v0.8h-0.8zM120.1 59.1h0.8v0.8h-0.8zM15.1 47.6h0.8v0.8h-0.8zM117.1 51.1h0.8v0.8h-0.8zM55.6 50.6h0.8v0.8h-0.8zM98.2 62.5h0.8v0.8h-0.8zM68.2 63.3h0.8v0.8h-0.8zM76.3 42.5h0.8v0.8h-0.8zM104.2 50.1h0.8v0.8h-0.8zM6.7 63.5h0.8v0.8h-0.8zM4.2 53.8h0.8v0.8h-0.8zM61.7 61.2h0.8v0.8h-0.8zM50.3 45.2h0.8v0.8h-0.8zM35.5 44.8h0.8v0.8h-0.8zM72.0 48.6h0.8v0.8h-0.8zM96.1 45.8h0.8v0.8h-0.8zM45.0 46.0h0.8v0.8h-0.8zM125.7 60.2h0.8v0.8h-0.8zM108.8 54.8h0.8v0.8h-0.8zM51.3 43.4h0.8v0.8h-0.8zM106.5 51.8h0.8v0.8h-0.8zM4.8 44.1h0.8v0.8h-0.8zM12.6 57.2h0.8v0.8h-0.8zM115.2 44.8h0.8v0.8h-0.8zM102.0 47.8h0.8v0.8h-0.8zM87.4 60.7h0.8v0.8h-0.8zM79.8 59.2h0.8v0.8h-0.8zM48.2 40.2h0.8v0.8h-0.8zM65.5 54.1h0.8v0.8h-0.8zM23.6 49.3h0.8v0.8h-0.8zM40.6 40.6h0.8v0.8h-0.8zM39.9 49.2h0.8v0.8h-0.8zM60.9 56.9h0.8v0.8h-0.8zM51.1 63.6h0.8v0.8h-0.8zM104.4 62.2h0.8v0.8h-0.8zM88.7 56.1h0.8v0.8h-0.8zM68.7 59.2h0.8v0.8h-0.8zM46.4 54.2h0.8v0.8h-0.8zM87.0 52.5h0.8v0.8h-0.8zM36.4 41.9h0.8v0.8h-0.8zM11.2 48.5h0.8v0.8h-0.8zM74.3 58.2h0.8v0.8h-0.8zM91.5 47.4h0.8v0.8h-0.8zM118.9 46.6h0.8v0.8h-0.8zM91.7 41.7h0.8v0.8h-0.8zM96.4 56.1h0.8v0.8h-0.8zM122.5 61.5h0.8v0.8h-0.8zM88.0 60.1h0.8v0.8h-0.8zM94.5 54.7h0.8v0.8h-0.8zM26.7 52.4h0.8v0.8h-0.8zM114.7 45.7h0.8v0.8h-0.8zM124.8 53.1h0.8v0.8h-0.8zM50.4 40.1h0.8v0.8h-0.8zM49.9 44.3h0.8v0.8h-0.8zM83.6 61.6h0.8v0.8h-0.8zM116.5 54.7h0.8v0.8h-0.8zM49.5 42.6h0.8v0.8h-0.8zM88.2 53.3h0.8v0.8h-0.8zM91.6 49.0h0.8v0.8h-0.8zM113.5 45.1h0.8v0.8h-0.8zM39.1 46.4h0.8v0.8h-0.8zM79.6 61.5h0.8v0.8h-0.8zM21.4 55.2h0.8v0.8h-0.8zM98.1 45.4h0.8v0.8h-0.8zM8.0 53.6h0.8v0.8h-0.8zM106.3 61.1h0.8v0.8h-0.8zM93.2 50.0h0.8v0.8h-0.8zM54.5 52.7h0.8v0.8h-0.8zM115.8 47.3h0.8v0.8h-0.8zM35.9 54.5h0.8v0.8h-0.8zM123.7 44.5h0.8v0.8h-0.8zM3.9 42.8h0.8v0.8h-0.8zM72.0 54.5h0.8v0.8h-0.8zM23.5 44.6h0.8v0.8h-0.8zM76.1 55.5h0.8v0.8h-0.8zM88.3 57.5h0.8v0.8h-0.8zM7.9 51.6h0.8v0.8h-0.8zM106.8 63.0h0.8v0.8h-0.8zM40.8 60.4h0.8v0.8h-0.8zM82.6 62.2h0.8v0.8h-0.8zM29.3 56.7h0.8v0.8h-0.8zM107.6 51.4h0.8v0.8h-0.8zM12.9 44.6h0.8v0.8h-0.8zM20.1 42.2h0.8v0.8h-0.8zM19.5 54.8h0.8v0.8h-0.8zM13.4 58.2h0.8v0.8h-0.8zM94.2 59.6h0.8v0.8h-0.8zM102.9 57.1h0.8v0.8h-0.8zM118.3 63.0h0.8v0.8h-0.8zM80.0 63.2h0.8v0.8h-0.8zM13.2 42.5h0.8v0.8h-0.8zM8.3 45.0h0.8v0.8h-0.8zM47.9 51.0h0.8v0.8h-0.8zM87.1 57.8h0.8v0.8h-0.8zM10.7 49.7h0.8v0.8h-0.8zM69.6 49.0h0.8v0.8h-0.8zM15.0 54.3h0.8v0.8h-0.8zM47.9 56.4h0.8v0.8h-0.8zM63.4 63.1h0.8v0.8h-0.8zM121.0 41.7h0.8v0.8h-0.8zM97.3 57.3h0.8v0.8h-0.8zM37.9 42.8h0.8v0.8h-0.8zM61.3 48.5h0.8v0.8h-0.8zM94.4 62.0h0.8v0.8h-0.8zM48.9 47.0h0.8v0.8h-0.8zM63.8 56.7h0.8v0.8h-0.8zM101.0 53.8h0.8v0.8h-0.8zM37.9 48.1h0.8v0.8h-0.8zM108.5 52.5h0.8v0.8h-0.8zM6.5 50.1h0.8v0.8h-0.8zM30.4 56.0h0.8v0.8h-0.8zM9.4 46.5h0.8v0.8h-0.8zM12.3 51.5h0.8v0.8h-0.8zM126.0 53.0h0.8v0.8h-0.8zM49.4 62.4h0.8v0.8h-0.8zM11.8 48.5h0.8v0.8h-0.8zM103.8 40.1h0.8v0.8h-0.8zM98.0 48.7h0.8v0.8h-0.8zM2.1 46.0h0.8v0.8h-0.8zM58.7 49.2h0.8v0.8h-0.8zM66.1 41.3h0.8v0.8h-0.8zM28.0 63.4h0.8v0.8h-0.8zM56.7 51.3h0.8v0.8h-0.8zM10.9 46.7h0.8v0.8h-0.8zM122.2 56.5h0.8v0.8h-0.8zM65.0 41.3h0.8v0.8h-0.8zM50.3 58.7h0.8v0.8h-0.8zM55.6 54.2h0.8v0.8h-0.8zM115.5 55.5h0.8v0.8h-0.8zM81.4 40.9h0.8v0.8h-0.8zM3.0 58.5h0.8v0.8h-0.8zM52.9 61.0h0.8v0.8h-0.8zM105.7 62.0h0.8v0.8h-0.8zM48.5 64.0h0.8v0.8h-0.8zM96.8 61.4h0.8v0.8h-0.8zM19.0 58.7h0.8v0.8h-0.8zM54.0 63.3h0.8v0.8h-0.8zM127.3 45.2h0.8v0.8h-0.8zM53.9 46.5h0.8v0.8h-0.8zM60.1 46.9h0.8v0.8h-0.8zM85.3 43.0h0.8v0.8h-0.8zM21.7 51.0h0.8v0.8h-0.8zM9.5 49.1h0.8v0.8h-0.8zM114.9 61.2h0.8v0.8h-0.8zM25.2 40.4h0.8v0.8h-0.8zM106.0 63.1h0.8v0.8h-0.8zM76.7 43.3h0.8v0.8h-0.8zM30.3 62.1h0.8v0.8h-0.8zM120.0 40.7h0.8v0.8h-0.8zM23.7 50.3h0.8v0.8h-0.8zM34.1 58.1h0.8v0.8h-0.8zM47.7 58.6h0.8v0.8h-0.8zM19.5 52.4h0.8v0.8h-0.8zM124.8 56.8h0.8v0.8h-0.8zM11.5 42.7h0.8v0.8h-0.8zM82.4 49.0h0.8v0.8h-0.8zM47.2 51.5h0.8v0.8h-0.8zM74.5 63.2h0.8v0.8h-0.8zM30.8 53.6h0.8v0.8h-0.8zM33.7 53.1h0.8v0.8h-0.8zM93.6 43.2h0.8v0.8h-0.8zM61.6 56.9h0.8v0.8h-0.8zM1.0 58.5h0.8v0.8h-0.8zM53.6 52.1h0.8v0.8h-0.8zM78.1 59.0h0.8v0.8h-0.8zM7.2 52.0h0.8v0.8h-0.8zM4.9 49.3h0.8v0.8h-0.8zM44.3 40.5h0.8v0.8h-0.8zM38.1 50.8h0.8v0.8h-0.8zM83.8 62.2h0.8v0.8h-0.8zM47.4 52.7h0.8v0.8h-0.8zM91.3 62.5h0.8v0.8h-0.8zM121.6 63.7h0.8v0.8h-0.8zM38.6 44.0h0.8v0.8h-0.8zM119.3 41.9h0.8v0.8h-0.8zM57.4 57.7h0.8v0.8h-0.8zM67.7 49.3h0.8v0.8h-0.8zM118.3 47.2h0.8v0.8h-0.8zM70.6 59.9h0.8v0.8h-0.8zM17.7 48.4h0.8v0.8h-0.8zM63.3 53.6h0.8v0.8h-0.8zM26.5 50.9h0.8v0.8h-0.8zM7.7 42.1h0.8v0.8h-0.8zM43.8 43.5h0.8v0.8h-0.8zM123.8 46.3h0.8v0.8h-0.8zM35.3 58.8h0.8v0.8h-0.8zM94.9 46.3h0.8v0.8h-0.8zM106.1 55.0h0.8v0.8h-0.8zM49.7 55.1h0.8v0.8h-0.8zM31.5 46.3h0.8v0.8h-0.8zM112.2 50.5h0.8v0.8h-0.8zM114.9 44.2h0.8v0.8h-0.8zM17.6 41.2h0.8v0.8h-0.8zM94.7 53.5h0.8v0.8h-0.8zM1.2 41.0h0.8v0.8h-0.8zM105.5 51.9h0.8v0.8h-0.8zM111.5 41.0h0.8v0.8h-0.8zM75.4 42.8h0.8v0.8h-0.8zM92.3 54.7h0.8v0.8h-0.8zM78.3 45.3h0.8v0.8h-0.8zM121.5 42.7h0.8v0.8h-0.8zM8.2 56.4h0.8v0.8h-0.8zM11.9 41.6h0.8v0.8h-0.8zM58.9 55.6h0.8v0.8h-0.8zM114.2 57.3h0.8v0.8h-0.8zM8.9 55.4h0.8v0.8h-0.8zM108.0 42.9h0.8v0.8h-0.8zM96.6 46.2h0.8v0.8h-0.8zM38.2 40.0h0.8v0.8h-0.8zM97.1 52.4h0.8v0.8h-0.8zM115.5 51.2h0.8v0.8h-0.8zM19.9 45.2h0.8v0.8h-0.8zM33.7 62.7h0.8v0.8h-0.8zM26.3 42.1h0.8v0.8h-0.8zM45.2 41.9h0.8v0.8h-0.8zM54.4 54.9h0.8v0.8h-0.8z" style="fill: #241808; opacity: 0.55; mask: url(&quot;#stubble-mask&quot;);"/>
+</g>
+<g style="pointer-events: none;">
+<title>crew cut, overlay</title>
+<path d="M160 0H192V32H160ZM162.0 3.4L162.0 2.2L164.0 3.2L166.0 3.7L168.0 3.7L170.0 3.0L172.0 3.3L174.0 2.7L176.0 3.1L178.0 2.2L180.0 3.4L182.0 3.2L184.0 2.6L186.0 2.8L188.0 3.5L190.0 2.9L188.1 2.0L188.1 2.0L188.3 4.0L189.8 6.0L189.8 8.0L189.4 10.0L189.3 12.0L188.6 14.0L188.3 16.0L188.9 18.0L188.7 20.0L188.9 22.0L189.9 24.0L188.9 26.0L189.6 28.0L189.2 30.0L190.0 30.0L190.0 28.7L188.0 28.2L186.0 29.9L184.0 28.8L182.0 30.0L180.0 29.3L178.0 29.7L176.0 28.3L174.0 28.5L172.0 28.2L170.0 29.6L168.0 28.6L166.0 28.6L164.0 29.0L162.0 28.2L163.2 30.0L162.6 30.0L163.4 28.0L163.0 26.0L162.4 24.0L163.2 22.0L162.1 20.0L162.9 18.0L163.1 16.0L162.0 14.0L163.3 12.0L162.2 10.0L163.3 8.0L162.7 6.0L162.1 4.0L164.0 2.0Z" style="fill: url(&quot;#crew-top&quot;); fill-rule: evenodd;">
+<title>top</title>
+</path>
+<path d="M160 32H192L192.0 35.5L190.0 34.9L188.0 35.3L186.0 36.2L184.0 35.7L182.0 36.3L180.0 35.0L178.0 35.4L176.0 36.0L174.0 35.4L172.0 36.0L170.0 35.6L168.0 34.9L166.0 34.9L164.0 36.3L162.0 34.9L160.0 35.5Z" style="fill: url(&quot;#crew-front&quot;);">
+<title>front hairline</title>
+</path>
+<path d="M128 32H160L160.0 38.0L158.0 41.5L156.0 37.5L154.0 40.7L152.0 38.8L150.0 42.3L148.0 38.4L146.0 42.2L144.0 37.8L142.0 42.9L140.0 38.2L138.0 43.1L136.0 38.3L134.0 43.4L132.0 37.9L130.0 40.6L128.0 38.0ZM133.4 40.0h1.5v2.1h-1.0zM154.1 44.5h1.7v1.5h-1.6zM148.3 44.1h1.0v2.5h-1.5zM137.9 45.9h1.5v2.1h-1.1zM148.2 41.1h1.3v2.1h-1.3zM132.5 41.8h1.3v2.2h-1.3zM130.4 41.3h0.9v2.4h-1.7zM148.0 44.3h1.0v2.4h-1.5zM148.7 40.9h1.1v2.5h-1.2zM133.3 44.1h0.9v1.5h-1.5zM145.2 39.5h1.0v1.7h-1.1zM157.9 43.7h1.4v2.2h-1.4zM156.3 39.2h1.5v1.9h-1.5zM151.6 40.2h1.0v1.9h-1.4zM155.7 41.5h1.7v1.6h-1.0zM137.4 41.0h1.6v2.2h-1.1zM142.5 40.6h1.0v1.9h-1.7zM152.9 44.8h1.5v2.2h-0.9zM152.2 44.3h1.2v1.7h-1.1zM144.2 40.0h0.9v2.4h-1.1zM149.9 39.2h1.2v1.5h-1.4z" style="fill: url(&quot;#crew-down&quot;);">
+<title>right side</title>
+</path>
+<path d="M192 32H224L224.0 38.0L222.0 42.0L220.0 38.1L218.0 42.9L216.0 37.4L214.0 40.7L212.0 38.0L210.0 43.0L208.0 38.6L206.0 43.4L204.0 37.9L202.0 42.9L200.0 37.2L198.0 41.6L196.0 37.1L194.0 43.3L192.0 38.0ZM203.4 44.6h1.2v2.4h-1.1zM217.4 40.1h1.2v2.5h-1.2zM219.1 44.9h1.8v2.4h-1.5zM219.0 41.4h1.3v1.9h-1.7zM212.7 42.4h1.4v1.6h-1.5zM212.1 42.7h1.2v1.6h-1.7zM217.4 40.9h1.8v1.6h-1.3zM199.4 39.1h1.7v1.8h-1.7zM201.2 39.3h1.2v1.4h-1.3zM220.9 39.6h1.7v2.1h-1.8zM218.8 42.2h1.7v2.3h-1.5zM209.2 39.1h1.3v1.8h-1.1zM210.7 39.2h1.0v2.5h-1.7zM203.4 41.7h1.8v2.5h-1.7zM212.8 42.6h1.2v1.5h-1.8zM207.0 40.9h1.0v1.9h-1.0zM216.2 44.8h1.1v2.3h-1.6zM207.1 41.5h1.0v2.0h-1.7zM220.5 40.0h1.6v1.5h-1.3zM198.9 42.8h1.0v1.9h-1.3zM202.7 41.4h1.2v2.3h-1.0zM201.0 39.7h1.3v2.4h-1.8z" style="fill: url(&quot;#crew-down&quot;);">
+<title>left side</title>
+</path>
+<path d="M224 32H256L256.0 39.0L254.0 44.3L252.0 39.8L250.0 41.9L248.0 38.7L246.0 41.4L244.0 38.6L242.0 42.0L240.0 38.5L238.0 42.3L236.0 39.9L234.0 43.1L232.0 39.8L230.0 43.1L228.0 39.5L226.0 43.7L224.0 39.0ZM237.2 41.8h1.3v1.4h-1.8zM231.8 40.1h1.3v2.4h-1.8zM249.2 43.2h1.2v2.5h-1.1zM249.1 40.3h1.3v1.3h-1.3zM236.9 44.3h1.7v2.1h-1.3zM246.9 41.9h1.0v1.4h-0.9zM238.1 40.3h1.2v1.6h-1.2zM241.3 41.8h0.9v1.8h-1.3zM245.5 43.7h1.6v2.1h-1.8zM240.3 43.9h1.0v2.1h-1.0zM245.5 45.5h1.7v2.6h-1.6zM229.7 41.3h1.8v1.2h-0.9zM252.6 43.2h1.7v1.6h-1.7zM237.6 43.6h0.9v1.3h-1.3zM232.2 44.2h0.9v2.5h-1.5zM244.9 42.1h1.5v1.8h-1.7zM243.5 41.5h1.8v1.9h-1.3zM232.4 40.5h1.5v1.5h-1.6zM239.9 45.1h1.7v1.2h-1.5zM248.3 42.7h1.2v2.3h-1.6zM244.5 40.9h1.7v2.3h-1.4zM224.8 44.9h1.4v1.2h-1.2zM250.6 42.6h1.6v1.7h-1.8zM248.3 45.4h1.6v2.4h-1.7zM253.6 46.6h1.4v2.5h-1.4z" style="fill: url(&quot;#crew-down&quot;);">
+<title>back</title>
+</path>
+<g style="clip-path: url(&quot;#crew-cap&quot;);">
+<path d="M163.8 16.4l0.4 2.0M163.7 24.3l-0.4 1.6M176.9 4.8l-0.4 2.0M174.2 28.9l0.1 1.6M164.7 6.8l0.2 1.8M191.4 4.6l-0.3 1.3M179.7 27.1l-0.3 1.8M175.6 27.6l0.4 1.4M164.5 20.8l0.3 1.8M189.8 10.2l0.4 1.7M186.5 21.4l-0.2 1.8M182.6 19.5l0.3 1.3M160.5 25.0l0.3 1.9M186.9 7.9l0.3 1.7M178.5 23.5l0.0 1.5M183.3 12.1l0.1 1.8M181.8 2.4l-0.2 1.9M162.3 0.9l0.3 1.3M174.1 25.4l-0.0 1.6M191.2 6.7l-0.4 1.5M171.9 3.3l-0.3 1.2M188.2 21.9l-0.3 1.5M182.6 14.2l-0.3 1.5M171.8 3.4l0.1 1.5M169.4 0.7l-0.4 1.5M160.7 17.5l0.5 1.9M189.2 3.0l-0.3 1.2M179.2 24.0l-0.0 1.8M189.0 19.3l0.0 1.3M184.6 10.1l0.2 1.3M163.1 20.4l0.4 1.7M176.4 15.1l-0.1 1.3M174.4 2.7l0.2 1.4M163.3 9.9l0.4 1.4M171.2 29.8l-0.4 1.5M181.6 14.8l-0.4 1.9M181.8 14.5l0.4 1.2M169.4 8.7l0.3 1.6M179.6 13.1l-0.1 1.3M165.9 14.3l0.2 1.2M169.3 20.9l-0.5 1.6M179.7 26.8l-0.3 1.6M164.5 23.7l0.2 1.6M165.9 13.3l0.4 1.5M179.7 14.1l0.1 1.6M161.6 25.9l0.2 1.4M178.5 16.1l0.4 1.8M171.0 19.5l-0.3 1.9M176.0 9.0l0.0 1.2M191.2 24.9l-0.3 1.6M164.3 6.4l0.5 1.4M186.4 24.8l-0.2 1.3M162.5 5.9l0.2 1.6M188.8 17.8l-0.1 1.7M161.6 8.6l-0.0 1.3M183.6 18.9l-0.2 1.5M180.2 27.0l0.3 1.4M160.8 18.6l-0.3 1.2M167.6 6.9l0.2 1.7M181.9 3.0l-0.3 1.6M163.5 23.5l-0.2 1.6M164.6 14.3l0.1 1.4M189.3 1.1l-0.0 1.4M168.9 5.5l-0.1 1.9M171.4 22.0l0.1 1.2M169.2 28.2l-0.1 1.4M175.5 5.1l0.2 1.8M177.2 24.4l0.5 1.7M176.2 21.0l-0.2 1.7M162.4 23.9l-0.3 1.6M182.9 24.2l-0.0 2.0M190.2 25.4l0.3 1.3M162.0 30.2l-0.2 1.6M168.0 21.2l0.1 1.9M170.7 8.5l-0.1 1.2M165.1 10.3l0.3 2.0M168.2 9.6l0.1 1.6M176.7 8.8l-0.4 1.8M174.1 24.2l0.0 1.9M189.8 1.9l0.4 1.5M165.1 31.1l0.1 1.4M175.2 10.0l0.3 1.4M163.7 7.9l0.5 1.7M181.4 21.3l0.0 1.5M171.0 7.7l-0.2 1.6M178.9 7.0l-0.3 1.3M166.1 14.3l0.4 1.9M184.8 4.7l0.4 1.9M186.5 29.5l0.2 1.3M180.8 28.7l0.2 1.2M171.2 5.8l-0.3 1.6M189.4 1.5l0.4 1.3M173.8 6.5l-0.3 1.3M190.0 30.0l-0.2 1.5M161.9 14.7l-0.3 1.7M169.7 9.9l0.1 1.6M169.4 28.1l0.1 1.8M186.3 9.4l0.1 1.8M168.7 10.7l0.5 1.7M177.9 20.8l-0.2 1.3M191.1 15.9l-0.1 1.6M184.1 18.3l-0.4 2.0M183.7 17.5l0.1 1.7M167.2 21.2l0.2 1.4M178.8 25.0l0.1 2.0M183.2 14.0l0.1 1.4M177.5 19.3l0.4 1.7M180.8 34.0l0.4 1.5M183.8 34.5l-0.1 2.1M176.0 34.8l-0.2 1.4M168.7 34.7l0.5 1.8M179.4 35.4l0.1 1.3M180.0 32.6l-0.6 1.6M175.8 32.7l0.1 1.9M175.1 33.3l-0.2 2.1M167.0 35.5l0.6 1.4M183.1 33.7l-0.0 1.9M178.9 33.1l-0.3 1.7M188.2 32.9l0.5 1.5M158.8 38.1l-0.4 1.6M136.2 35.2l-0.4 1.9M137.5 34.5l-0.4 1.3M130.8 36.7l-0.3 2.0M143.1 39.6l-0.0 1.7M152.0 35.4l0.5 1.9M149.8 37.3l0.6 2.0M143.9 40.0l0.1 1.8M145.8 34.6l-0.5 1.5M151.1 34.6l-0.1 1.6M156.8 36.0l0.4 1.8M135.0 37.1l0.3 1.4M137.1 35.3l0.0 1.4M140.4 37.0l0.1 1.4M138.7 34.4l0.2 1.8M143.1 35.8l0.2 2.1M145.2 37.0l0.2 1.4M157.1 33.7l0.2 1.5M142.5 34.4l-0.4 2.2M147.0 39.7l0.2 1.3M150.7 36.0l0.2 2.1M133.1 33.3l0.2 1.6M135.7 38.6l0.3 1.9M143.7 35.7l-0.0 1.5M156.0 34.5l0.4 1.6M153.4 37.1l-0.3 2.1M149.4 40.4l-0.2 1.7M137.3 36.8l0.6 1.9M149.7 37.4l-0.2 1.9M216.7 35.6l0.4 1.5M202.7 33.5l0.4 2.2M199.9 39.6l0.4 1.4M207.9 33.6l-0.3 1.6M203.1 33.7l-0.2 2.2M201.2 35.0l-0.1 2.1M195.7 32.6l-0.2 1.9M212.5 36.6l-0.2 1.6M198.7 33.6l0.3 2.0M196.5 40.0l0.5 2.2M218.6 36.4l-0.0 2.2M216.4 37.4l0.3 1.7M215.0 38.3l-0.4 1.7M216.8 37.0l0.1 1.2M209.9 38.0l0.4 1.8M216.1 34.8l0.3 1.3M203.2 36.3l-0.3 1.3M199.9 33.9l-0.2 1.3M222.7 32.9l0.5 1.6M205.8 36.6l-0.5 1.7M201.8 38.2l0.4 1.4M203.2 37.8l0.5 1.8M213.8 36.6l0.4 1.7M213.3 34.7l-0.3 1.6M193.5 35.4l0.6 1.7M201.0 38.0l-0.1 1.9M212.3 34.1l-0.0 1.7M249.5 45.1l-0.4 1.4M231.0 35.6l0.1 1.9M250.0 43.7l-0.2 1.2M231.3 43.8l-0.0 1.7M250.3 38.7l0.3 2.0M225.6 32.9l-0.0 1.3M230.5 37.4l0.1 2.0M246.9 37.7l-0.4 1.9M255.1 36.8l-0.4 1.3M247.2 37.9l0.4 2.0M234.0 35.9l-0.3 1.2M235.0 38.4l0.0 2.2M228.7 44.2l-0.3 1.7M252.3 44.6l0.1 1.3M246.3 39.9l-0.3 1.6M237.0 43.2l-0.1 1.7M246.6 37.9l-0.1 2.0M226.9 40.8l0.3 1.3M252.0 39.1l-0.1 1.3M242.7 44.4l0.2 2.2M226.6 36.9l-0.2 1.3M229.7 36.4l-0.3 1.4M238.8 42.6l-0.5 1.7M248.9 44.3l0.4 1.7M233.3 42.1l-0.0 1.4M235.0 40.5l-0.4 1.7M248.9 35.0l-0.3 1.3M241.3 35.5l-0.5 2.1M233.5 39.8l-0.4 2.1M243.9 40.6l0.5 1.5M242.2 35.1l0.2 1.7M250.8 39.9l0.4 1.5M252.5 35.9l0.1 1.8M225.7 44.3l0.2 2.0M251.7 35.5l0.1 1.7M250.6 36.2l0.3 1.6M254.3 34.4l-0.5 1.2M238.7 35.7l-0.5 1.8M246.5 38.3l-0.1 1.9M235.1 35.6l-0.4 2.1M227.8 40.3l0.4 1.5M236.4 42.5l0.3 1.3M238.3 41.6l0.3 2.0M247.1 44.5l0.3 1.7M251.6 39.1l-0.4 1.8" style="fill: none; stroke: #1c120a; stroke-width: 0.7px; stroke-linecap: round;"/>
+<path d="M191.1 17.3l-0.1 1.4M190.7 13.8l-0.3 1.6M172.3 20.1l0.4 1.5M183.6 8.4l-0.0 1.8M178.5 8.3l-0.1 1.2M164.3 24.2l-0.2 1.7M187.7 4.6l-0.1 1.5M177.1 15.3l-0.4 1.4M180.5 7.6l-0.2 1.2M185.2 24.3l0.1 1.9M182.7 26.9l0.1 1.2M169.8 23.1l-0.1 1.3M173.2 1.3l-0.0 1.8M187.2 21.7l0.3 1.9M185.1 13.4l0.2 1.7M181.6 24.4l-0.3 1.6M174.2 26.0l-0.3 1.4M162.7 17.1l-0.3 1.7M163.4 23.1l-0.1 1.5M176.2 26.7l0.1 1.6M187.7 10.0l-0.1 1.7M183.9 28.6l-0.4 1.3M170.8 22.0l0.0 1.9M179.9 3.9l0.4 1.5M189.7 29.6l-0.1 1.9M162.5 3.9l0.5 1.8M169.9 26.8l0.4 1.8M168.2 11.9l0.5 1.6M183.1 6.9l0.4 1.3M182.4 23.2l-0.0 1.9M186.5 9.9l0.1 1.7M170.2 9.2l-0.0 1.7M179.6 19.5l0.2 1.9M182.5 22.3l-0.3 1.7M178.1 31.2l-0.2 1.8M163.1 24.6l0.2 1.6M187.2 5.0l-0.0 1.7M188.8 29.8l0.3 1.5M177.0 21.2l0.1 1.9M190.6 15.8l-0.0 1.7M166.4 29.3l-0.2 1.4M168.5 31.2l0.2 1.8M160.7 10.0l-0.0 1.9M173.7 16.6l-0.0 1.4M161.4 4.2l-0.1 1.2M186.9 15.5l-0.4 1.3M178.4 9.5l0.2 1.2M189.5 21.1l-0.4 1.5M188.0 9.7l0.5 1.5M168.8 13.3l0.4 1.7M183.4 23.8l0.1 1.6M184.7 15.8l-0.3 1.9M181.6 15.2l0.4 1.6M189.3 19.8l0.1 1.8M166.5 13.4l-0.3 1.2M170.7 8.4l-0.5 1.2M171.6 14.0l0.2 1.9M167.3 31.2l-0.3 1.7M178.5 19.1l0.5 1.7M164.6 23.2l-0.2 1.3M183.7 24.2l-0.1 1.3M180.7 20.0l-0.1 1.4M172.5 1.7l-0.3 1.5M177.1 35.1l0.5 1.4M177.0 35.3l-0.2 1.9M191.2 33.5l-0.1 1.3M162.7 35.0l-0.4 1.4M191.0 33.1l0.5 2.1M178.5 34.1l0.3 1.8M178.0 35.0l-0.5 1.3M186.4 32.5l0.5 1.8M182.2 33.6l-0.5 2.0M131.8 35.0l0.6 1.6M155.0 40.1l0.5 1.4M129.5 34.6l-0.1 1.6M128.7 36.2l0.5 2.2M149.1 36.4l0.5 2.2M158.0 32.8l-0.5 1.5M133.0 38.5l-0.4 1.4M132.5 39.2l0.2 2.1M140.2 36.2l-0.1 2.1M130.5 37.8l0.4 2.1M143.9 34.1l-0.1 2.0M132.9 38.4l-0.2 1.4M158.9 34.2l0.2 1.6M150.4 33.7l-0.5 2.2M148.7 33.0l0.2 2.2M130.8 33.7l0.5 1.9M158.3 38.9l-0.4 1.9M139.2 39.6l0.5 1.3M140.3 36.2l0.1 2.1M197.0 37.3l-0.2 2.1M213.3 34.7l0.3 1.5M205.6 38.0l0.3 1.9M222.0 38.4l-0.5 1.4M208.2 38.5l0.3 1.3M204.4 38.4l-0.2 1.6M198.6 36.0l-0.4 2.1M199.5 39.4l0.1 2.0M202.6 39.9l0.0 1.2M223.3 37.5l-0.0 1.7M211.6 36.4l0.5 2.1M198.8 40.1l-0.3 2.0M205.0 32.7l-0.4 1.8M203.5 37.3l-0.4 1.9M205.1 33.1l-0.5 2.2M204.7 40.3l0.5 1.4M212.4 35.2l0.2 1.5M209.8 37.2l-0.5 2.1M221.9 35.0l-0.5 1.4M207.4 35.1l-0.0 1.8M206.7 38.1l0.0 1.6M228.4 38.5l0.3 2.0M249.1 35.0l-0.2 1.3M242.5 39.4l0.1 1.7M225.3 40.8l-0.0 1.9M247.2 41.5l-0.2 1.9M242.6 38.5l-0.3 2.0M235.1 35.6l0.3 1.8M230.3 37.5l0.1 2.2M250.7 43.3l-0.1 1.7M232.7 35.8l0.2 1.8M242.8 38.8l0.5 1.3M252.7 44.1l-0.4 1.3M246.7 33.4l0.3 1.5M237.8 34.5l0.1 1.7M231.2 37.7l0.4 1.9M241.4 36.9l0.0 1.3M250.5 44.4l0.4 1.8M230.0 45.3l0.1 1.4M228.4 34.6l0.1 2.1M242.1 42.9l0.5 1.6M242.7 43.2l-0.3 1.4M225.3 34.5l0.5 1.5M231.1 32.7l-0.6 1.3M230.1 38.2l0.3 1.5M230.3 39.8l-0.5 2.1M242.4 38.7l-0.1 1.9M247.3 33.1l0.5 1.7M252.9 36.3l-0.5 2.1M254.9 45.4l0.4 1.7" style="fill: none; stroke: #5a4330; stroke-width: 0.6px; stroke-linecap: round;"/>
+</g>
+</g>
+</svg>

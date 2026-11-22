@@ -176,6 +176,30 @@
       "outputWidth": 43,
       "outputHeight": 43
     },
+    "phaser-caliber": {
+      "key": "phaser-caliber",
+      "filename": "phaser-caliber.svg",
+      "width": 16,
+      "height": 12,
+      "outputWidth": 205,
+      "outputHeight": 154
+    },
+    "phaser-rotator": {
+      "key": "phaser-rotator",
+      "filename": "phaser-rotator.svg",
+      "width": 16,
+      "height": 12,
+      "outputWidth": 205,
+      "outputHeight": 154
+    },
+    "phaser-shotgun": {
+      "key": "phaser-shotgun",
+      "filename": "phaser-shotgun.svg",
+      "width": 16,
+      "height": 12,
+      "outputWidth": 205,
+      "outputHeight": 154
+    },
     "phaser": {
       "key": "phaser",
       "filename": "phaser.svg",

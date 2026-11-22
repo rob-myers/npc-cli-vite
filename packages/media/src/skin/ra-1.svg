@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<clipPath id="form-body"><path d="M16 64h32v4h-32zM80 64h64v4h-64zM176 64h32v4h-32zM16 68h32v4h-32zM80 68h64v4h-64zM176 68h32v4h-32zM16 72h32v4h-32zM80 72h64v4h-64zM176 72h32v4h-32zM16 76h32v4h-32zM80 76h64v4h-64zM176 76h32v4h-32zM0 80h224v4h-224zM0 84h224v4h-224zM0 88h224v4h-224zM0 92h224v4h-224zM0 96h224v4h-224zM0 100h224v4h-224zM0 104h224v4h-224zM0 108h224v4h-224zM0 112h224v4h-224zM0 116h224v4h-224zM0 120h224v4h-224zM0 124h224v4h-224zM80 128h4v4h-4zM108 128h4v4h-4zM80 132h4v4h-4zM108 132h4v4h-4zM80 136h4v4h-4zM108 136h4v4h-4zM80 140h4v4h-4zM108 140h4v4h-4zM64 144h20v4h-20zM108 144h28v4h-28zM152 144h8v4h-8zM64 148h20v4h-20zM108 148h28v4h-28zM152 148h8v4h-8zM0 160h20v4h-20zM56 160h8v4h-8zM160 172h64v4h-64zM160 176h64v4h-64zM0 184h28v4h-28zM52 184h12v4h-12zM20 188h8v4h-8zM80 192h32v4h-32zM144 192h32v4h-32zM80 196h32v4h-32zM144 196h32v4h-32zM80 200h32v4h-32zM144 200h32v4h-32zM80 204h32v4h-32zM144 204h32v4h-32zM64 208h128v4h-128zM64 212h128v4h-128zM64 216h128v4h-128zM64 220h128v4h-128zM28 224h28v4h-28zM64 224h128v4h-128zM64 228h128v4h-128zM64 232h128v4h-128zM64 236h192v4h-192zM64 240h192v4h-192zM64 244h128v4h-128zM20 248h40v4h-40zM64 248h128v4h-128zM20 252h8v4h-8zM64 252h128v4h-128z"/></clipPath>
+<clipPath id="form-head"><path d="M32 0h64v4h-64zM32 4h64v4h-64zM32 8h64v4h-64zM32 12h64v4h-64zM32 16h64v4h-64zM32 20h64v4h-64zM32 24h64v4h-64zM32 28h64v4h-64zM168 28h12v4h-12zM0 32h128v4h-128zM168 32h12v4h-12zM0 36h128v4h-128zM132 36h4v4h-4zM144 36h4v4h-4zM160 36h20v4h-20zM184 36h4v4h-4zM204 36h4v4h-4zM216 36h4v4h-4zM228 36h4v4h-4zM240 36h4v4h-4zM248 36h4v4h-4zM0 40h128v4h-128zM132 40h8v4h-8zM144 40h8v4h-8zM156 40h20v4h-20zM180 40h16v4h-16zM200 40h8v4h-8zM212 40h8v4h-8zM224 40h8v4h-8zM236 40h4v4h-4zM248 40h8v4h-8zM0 44h128v4h-128zM132 44h8v4h-8zM144 44h24v4h-24zM184 44h24v4h-24zM212 44h8v4h-8zM224 44h8v4h-8zM236 44h8v4h-8zM248 44h8v4h-8zM0 48h132v4h-132zM136 48h8v4h-8zM148 48h4v4h-4zM156 48h4v4h-4zM192 48h4v4h-4zM200 48h4v4h-4zM208 48h8v4h-8zM220 48h8v4h-8zM232 48h16v4h-16zM252 48h4v4h-4zM0 52h128v4h-128zM136 52h4v4h-4zM148 52h4v4h-4zM200 52h4v4h-4zM212 52h4v4h-4zM224 52h4v4h-4zM236 52h4v4h-4zM252 52h4v4h-4zM0 56h128v4h-128zM0 60h128v4h-128z"/></clipPath>
+<linearGradient id="form-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #d8d8d8;"/></linearGradient>
+<linearGradient id="form-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #e8e8e8;"/><stop offset="1" style="stop-color: #c2c2c2;"/></linearGradient>
+<linearGradient id="form-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #eeeeee;"/><stop offset="1" style="stop-color: #cacaca;"/></linearGradient>
+<radialGradient id="form-face" cx="0.5" cy="0.45" r="0.7"><stop offset="0.45" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #dcdcdc;"/></radialGradient>
+<linearGradient id="form-head-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #eeeeee;"/><stop offset="1" style="stop-color: #d6d6d6;"/></linearGradient>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=ra</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>ra-1--2e367f0724df8057</title>
+</image>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#form-body&quot;);">
+<title>body form</title>
+<rect x="80" y="64" width="32" height="16" style="fill: #f6f6f6;"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #b4b4b4;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(#form-front);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(#form-back);"/>
+<rect x="80" y="128" width="32" height="16" style="fill: #f6f6f6;"/>
+<rect x="112" y="128" width="32" height="16" style="fill: #b4b4b4;"/>
+<rect x="64" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="80" y="144" width="32" height="48" style="fill: url(#form-front);"/>
+<rect x="112" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="128" y="144" width="32" height="48" style="fill: url(#form-back);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="176" y="128" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="192" y="128" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="160" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="176" y="144" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="192" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="208" y="144" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="16" y="128" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="32" y="128" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="0" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="16" y="144" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="32" y="144" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="48" y="144" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="208" y="192" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="224" y="192" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="192" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="208" y="208" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="224" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="240" y="208" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(#form-back);"/>
+<rect x="16" y="192" width="16" height="16" style="fill: #f6f6f6;"/>
+<rect x="32" y="192" width="16" height="16" style="fill: #b4b4b4;"/>
+<rect x="0" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="16" y="208" width="16" height="48" style="fill: url(#form-front);"/>
+<rect x="32" y="208" width="16" height="48" style="fill: url(#form-side);"/>
+<rect x="48" y="208" width="16" height="48" style="fill: url(#form-back);"/>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#form-head&quot;);">
+<title>head form</title>
+<rect x="32" y="0" width="32" height="32" style="fill: #fafafa;"/>
+<rect x="64" y="0" width="32" height="32" style="fill: #b4b4b4;"/>
+<rect x="0" y="32" width="32" height="32" style="fill: url(#form-head-side);"/>
+<rect x="32" y="32" width="32" height="32" style="fill: url(#form-face);"/>
+<rect x="64" y="32" width="32" height="32" style="fill: url(#form-head-side);"/>
+<rect x="96" y="32" width="32" height="32" style="fill: #e6e6e6;"/>
+<rect x="160" y="0" width="32" height="32" style="fill: #fafafa;"/>
+<rect x="192" y="0" width="32" height="32" style="fill: #b4b4b4;"/>
+<rect x="128" y="32" width="32" height="32" style="fill: url(#form-head-side);"/>
+<rect x="160" y="32" width="32" height="32" style="fill: url(#form-face);"/>
+<rect x="192" y="32" width="32" height="32" style="fill: url(#form-head-side);"/>
+<rect x="224" y="32" width="32" height="32" style="fill: #e6e6e6;"/>
+</g>
+</svg>

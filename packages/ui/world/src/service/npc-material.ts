@@ -4,6 +4,7 @@ import {
   cameraProjectionMatrix,
   cameraViewMatrix,
   float,
+  frontFacing,
   mix,
   modelWorldMatrix,
   mrt,
@@ -40,6 +41,8 @@ export type NpcUniforms = {
   labelRectUniform: THREE.UniformNode<"vec4", THREE.Vector4>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
+  /** `1` to show the head overlay's sides from within too — see `setOverlayBackfaces` */
+  overlayBackfaces: THREE.UniformNode<"float", number>;
   pickIdUniform: THREE.UniformNode<"float", number>;
   /** `1` in the player's room, eased — see `NpcAnimation.tickRoomLit` */
   roomLit: THREE.UniformNode<"float", number>;
@@ -91,7 +94,7 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   // moment its alpha started dropping
   const mainColor = vec4(
     mix(vec3(0).mul(positionLocal.y), mix(litRgb, dotScreen(litRgb), u.dotScreen), u.colorScale),
-    skinTex.a.mul(fold),
+    skinTex.a.mul(fold).mul(shownFace(u)),
   );
 
   // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
@@ -110,7 +113,8 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   const material = new THREE.MeshStandardNodeMaterial({
     transparent: true,
     depthWrite: true,
-    side: THREE.FrontSide, // one draw call
+    side: THREE.FrontSide, // DoubleSide only if `setOverlayBackfaces` asks
+    forceSinglePass: true, // one draw call either way
     // - keep these fixed or they'll effect label quad
     // - could add metalness map but we'll handle via SVG edit instead
     metalness: 0,
@@ -160,12 +164,33 @@ function createUniforms(pickId: number, skinIndex: number): NpcUniforms {
     labelRectUniform: uniform(new THREE.Vector4(0, 0, 1, 1)),
     labelYShiftUniform: uniform(0, "float"),
     npcLit: uniform(0),
+    overlayBackfaces: uniform(0),
     // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
     pickIdUniform: uniform(pickId),
     roomLit: uniform(0),
     roomSlot: uniform(alwaysShownSlot, "float"),
     skinIndexUniform: uniform(skinIndex),
   };
+}
+
+/**
+ * Shows the head overlay's sides from within too, if a skin's meta has `overlay-backfaces=head`.
+ * Its material is double-sided only then: other back faces are discarded (`shownFace`).
+ */
+export function setOverlayBackfaces(target: Pick<NpcMaterial, "material" | "overlayBackfaces">, meta: Meta) {
+  const on = meta["overlay-backfaces"] === "head";
+  target.overlayBackfaces.value = on ? 1 : 0;
+  const side = on ? THREE.DoubleSide : THREE.FrontSide;
+  if (target.material.side !== side) {
+    target.material.side = side;
+    target.material.needsUpdate = true;
+  }
+}
+
+/** `1`, except on a back face outside the head overlay's sides (u 0.5..1, v 0.125..0.25) */
+function shownFace(u: NpcUniforms) {
+  const inHeadSides = step(0.5, uv().x).mul(step(0.125, uv().y)).mul(step(uv().y, 0.25));
+  return mix(u.overlayBackfaces.mul(inHeadSides), float(1), float(frontFacing));
 }
 
 /** Billboard expansion for the label, standard skinned MVP otherwise */

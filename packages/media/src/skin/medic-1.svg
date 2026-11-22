@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<clipPath id="cloth"><path d="M16 64h16v4h-16zM16 68h16v4h-16zM16 72h16v4h-16zM16 76h16v4h-16zM0 80h64v4h-64zM0 84h64v4h-64zM0 88h64v4h-64zM0 92h64v4h-64zM0 96h64v4h-64zM0 100h64v4h-64zM0 104h64v4h-64zM0 108h64v4h-64zM0 112h64v4h-64zM8 116h32v4h-32zM64 120h40v4h-40zM116 120h44v4h-44zM64 124h44v4h-44zM112 124h48v4h-48zM80 128h4v4h-4zM108 128h4v4h-4zM176 128h16v4h-16zM80 132h4v4h-4zM108 132h4v4h-4zM176 132h16v4h-16zM80 136h4v4h-4zM108 136h4v4h-4zM176 136h16v4h-16zM80 140h4v4h-4zM108 140h4v4h-4zM176 140h16v4h-16zM64 144h16v4h-16zM112 144h112v4h-112zM64 148h16v4h-16zM112 148h112v4h-112zM64 152h16v4h-16zM112 152h112v4h-112zM64 156h16v4h-16zM112 156h112v4h-112zM64 160h16v4h-16zM112 160h48v4h-48zM64 164h16v4h-16zM112 164h48v4h-48zM64 168h16v4h-16zM112 168h48v4h-48zM64 172h16v4h-16zM112 172h48v4h-48zM64 176h16v4h-16zM112 176h48v4h-48zM64 180h16v4h-16zM112 180h48v4h-48zM64 184h16v4h-16zM112 184h48v4h-48zM64 188h16v4h-16zM112 188h48v4h-48zM80 192h16v4h-16zM208 192h16v4h-16zM80 196h16v4h-16zM208 196h16v4h-16zM80 200h16v4h-16zM208 200h16v4h-16zM80 204h16v4h-16zM208 204h16v4h-16zM64 208h64v4h-64zM192 208h64v4h-64zM64 212h64v4h-64zM192 212h64v4h-64zM64 216h64v4h-64zM192 216h64v4h-64zM64 220h64v4h-64zM192 220h64v4h-64zM64 224h64v4h-64zM64 228h64v4h-64zM64 232h64v4h-64zM64 236h64v4h-64zM64 240h64v4h-64zM72 244h32v4h-32z"/></clipPath>
+<linearGradient id="cloth-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ffffff;"/><stop offset="1" style="stop-color: #c4c4c4;"/></linearGradient>
+<linearGradient id="cloth-side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #d8d8d8;"/><stop offset="1" style="stop-color: #a4a4a4;"/></linearGradient>
+<linearGradient id="cloth-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #e2e2e2;"/><stop offset="1" style="stop-color: #b0b0b0;"/></linearGradient>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=medic</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>medic-1--677d5973bd6d1678</title>
+</image>
+</g>
+<g style="pointer-events: none;">
+<title>refined</title>
+<defs>
+<clipPath id="shirt"><path d="M80 64h64v4h-64zM176 64h16v4h-16zM80 68h4v4h-4zM108 68h36v4h-36zM176 68h16v4h-16zM80 72h4v4h-4zM108 72h36v4h-36zM176 72h16v4h-16zM80 76h64v4h-64zM176 76h16v4h-16zM64 80h24v4h-24zM104 80h120v4h-120zM64 84h28v4h-28zM100 84h124v4h-124zM64 88h160v4h-160zM64 92h160v4h-160zM64 96h96v4h-96zM64 100h96v4h-96zM64 104h96v4h-96zM64 108h96v4h-96zM64 112h96v4h-96zM64 116h96v4h-96zM104 120h12v4h-12zM108 124h4v4h-4z"/></clipPath>
+<linearGradient id="shirt-tone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #ad3a4b;"/><stop offset="1" style="stop-color: #8a2a3a;"/></linearGradient>
+<linearGradient id="coat-tone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color: #fbfaf6;"/><stop offset="1" style="stop-color: #d9d6cb;"/></linearGradient>
+</defs>
+<g style="clip-path: url(&quot;#shirt&quot;);">
+<title>shirt</title>
+<rect width="256" height="128" style="fill: url(&quot;#shirt-tone&quot;);"/>
+<path d="M96 86V128" style="fill: none; stroke: #6e1e2c; stroke-width: 0.9px;"/>
+<path d="M88 80L94 88L96 82M104 80L98 88L96 82" style="fill: #b84456; stroke: #6e1e2c; stroke-width: 0.6px;"/>
+<circle cx="97.6" cy="94" r="0.8" style="fill: #e8d8cc;"/><circle cx="97.6" cy="104" r="0.8" style="fill: #e8d8cc;"/><circle cx="97.6" cy="114" r="0.8" style="fill: #e8d8cc;"/>
+</g>
+<g>
+<title>coat front</title>
+<path d="M80 144H88.5L95.6 176V192H80Z" style="fill: url(&quot;#coat-tone&quot;);"/>
+<path d="M112 144H103.5L96.4 176V192H112Z" style="fill: url(&quot;#coat-tone&quot;);"/>
+<path d="M88.5 144L95.6 176M103.5 144L96.4 176M96 176V192" style="fill: none; stroke: #c7c2b4; stroke-width: 0.8px;"/>
+<path d="M85 144L90.5 164M107 144L101.5 164" style="fill: none; stroke: #ddd9cd; stroke-width: 0.9px;"/>
+<circle cx="98.4" cy="181" r="0.9" style="fill: #c9c4b6;"/><circle cx="98.4" cy="188" r="0.9" style="fill: #c9c4b6;"/>
+<path d="M101.5 166H109.5V174.5H101.5Z" style="fill: none; stroke: #cdc8ba; stroke-width: 0.7px;"/>
+<rect x="104.6" y="160.5" width="1.6" height="7" rx="0.6" style="fill: #1f5a2c;"/>
+<rect x="104.4" y="160" width="2" height="1.6" rx="0.4" style="fill: #b8bcc0;"/>
+</g>
+</g>
+<g style="pointer-events: none; mix-blend-mode: multiply; clip-path: url(&quot;#cloth&quot;);">
+<title>cloth form</title>
+<rect x="80" y="64" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="128" width="32" height="16" style="fill: #f2f2f2;"/>
+<rect x="112" y="128" width="32" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="144" width="32" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="112" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="128" y="144" width="32" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="176" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="192" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="160" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="192" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="128" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="128" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="144" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="144" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="144" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="208" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="224" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="192" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="208" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="224" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="240" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+<rect x="16" y="192" width="16" height="16" style="fill: #f2f2f2;"/>
+<rect x="32" y="192" width="16" height="16" style="fill: #9a9a9a;"/>
+<rect x="0" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="16" y="208" width="16" height="48" style="fill: url(&quot;#cloth-front&quot;);"/>
+<rect x="32" y="208" width="16" height="48" style="fill: url(&quot;#cloth-side&quot;);"/>
+<rect x="48" y="208" width="16" height="48" style="fill: url(&quot;#cloth-back&quot;);"/>
+</g>
+<g style="pointer-events: none;">
+<title>glasses</title>
+<rect x="160.9" y="44.6" width="13.2" height="9.4" rx="2.6" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>right lens</title>
+</rect>
+<rect x="177.9" y="44.6" width="13.2" height="9.4" rx="2.6" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>left lens</title>
+</rect>
+<path d="M174 47.4Q176 45.6 178 47.4" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>bridge</title>
+</path>
+<path d="M160 46.2H138" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>right arm</title>
+</path>
+<path d="M192 46.2H214" style="fill: none; stroke: #16120e; stroke-width: 1.9px; stroke-linejoin: round;">
+<title>left arm</title>
+</path>
+<circle cx="157.6" cy="46.2" r="1" style="fill: #b8a070;"/>
+<circle cx="194.4" cy="46.2" r="1" style="fill: #b8a070;"/>
+</g>
+</svg>

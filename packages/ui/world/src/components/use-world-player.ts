@@ -15,6 +15,9 @@ import type { State as WorldState } from "./World";
  * Their per-map position is persisted alongside every other npc — see
  * `w.e.persistNpcs`.
  */
+/** Game seconds between a rotator's shots whilst its fire is held */
+const rapidFireSecs = 0.15;
+
 export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
@@ -22,6 +25,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       tap: null,
       fireTouch: null,
       runTap: { code: "", ms: 0, on: false },
+      stopAutofire: null,
       lookAt: null,
       snapFlip: false,
       strafeLatch: null,
@@ -377,6 +381,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (far?.doors.includes(gdKey) === true) state.castFarLook(far.bearing);
       },
       releaseCharge() {
+        if (state.stopAutofire !== null) {
+          state.stopAutofire();
+          state.stopAutofire = null;
+          return;
+        }
         if (w.phasers?.isCharging(state.key) !== true) return;
         // paused, no shot leaves: it is called off instead
         if (w.disabled === true) state.cancelCharge();
@@ -527,10 +536,25 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.lookAtPoint(x - Math.sin(to) * snapTurnMetres, z - Math.cos(to) * snapTurnMetres);
         if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [to, false];
       },
+      startAutofire() {
+        const fire = () => {
+          if (w.phasers?.isArmed(state.key) !== true || w.phasers.lookOf(state.key).attachment !== "rotator") {
+            state.stopAutofire = null;
+            return;
+          }
+          if (w.npcFocus?.fire(state.key) === true) w.hud?.fireHint?.fired();
+          else if (w.phasers.isDrawnIn(state.key)) w.hud?.say("phaser blocked");
+          // on game time: a pause holds it
+          state.stopAutofire = w.e.after(rapidFireSecs, fire);
+        };
+        fire();
+      },
       startCharge() {
         const raised = w.phasers?.isArmed(state.key) === true;
         w.npcFocus?.target(state.key); // lowered, it is raised
         if (raised === false) return;
+        // a rotator fires as long as held, uncharged
+        if (w.phasers.lookOf(state.key).attachment === "rotator") return state.startAutofire();
         if (w.phasers.charge(state.key))
           w.hud?.fireHint?.update(); // the hint pulses. Not whilst cooling
         else if (w.phasers.isDrawnIn(state.key)) w.hud?.say("phaser blocked");
@@ -735,6 +759,10 @@ export type State = {
   onKeyUp(e: KeyboardEvent): void;
   /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it instead, e.g. from the bar's fire button */
   startCharge(): void;
+  /** A rotator's: fires now, then every `rapidFireSecs` until `releaseCharge` */
+  startAutofire(): void;
+  /** Ends the rotator's autofire, whilst it runs */
+  stopAutofire: null | (() => void);
   /** Fires the shot charging: at whom its line crosses, else along it. Paused, cancels it */
   releaseCharge(): void;
   /** Ends a charge into a cooldown, the phaser left raised: `false` if none */

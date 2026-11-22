@@ -79,4 +79,18 @@
       <title>skin-layout-labels</title>
     </image>
   </g>
+<g style="pointer-events: none;">
+<title>belt and tattoo</title>
+<g>
+<title>belt, outlined</title>
+<path d="M64 118.9H160M64 123.1H160" style="fill: none; stroke: #4a4d52; stroke-width: 0.5px;"/>
+<rect x="93.6" y="119.2" width="4.8" height="3.6" rx="0.6" style="fill: none; stroke: #6f757c; stroke-width: 0.55px;"/>
+<path d="M94.8 121H97.2" style="fill: none; stroke: #6f757c; stroke-width: 0.4px; stroke-linecap: round;"/>
+</g>
+<g style="opacity: 0.55;">
+<title>tattoo, a benzene ring on the left forearm's outer face</title>
+<path d="M170.94 248.70L168.00 250.40L165.06 248.70L165.06 245.30L168.00 243.60L170.94 245.30Z" style="fill: none; stroke: #263040; stroke-width: 0.55px; stroke-linejoin: round;"/>
+<circle cx="168" cy="247" r="1.87" style="fill: none; stroke: #263040; stroke-width: 0.45px;"/>
+</g>
+</g>
 </svg>

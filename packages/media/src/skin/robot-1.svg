@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #24212a;"/>
+<stop offset="1" style="stop-color: #0b0a0d;"/>
+</linearGradient>
+<linearGradient id="plate-side" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #1a181e;"/>
+<stop offset="1" style="stop-color: #070608;"/>
+</linearGradient>
+<linearGradient id="plate-top" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #322e38;"/>
+<stop offset="1" style="stop-color: #1e1b22;"/>
+</linearGradient>
+<radialGradient id="lens" cx="0.45" cy="0.42" r="0.6">
+<stop offset="0" style="stop-color: #fff1b0;"/>
+<stop offset="0.3" style="stop-color: #ffb81f;"/>
+<stop offset="0.75" style="stop-color: #f76d11;"/>
+<stop offset="1" style="stop-color: #6e2604;"/>
+</radialGradient>
+<filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.6"/></filter>
+</defs>
+<g style="pointer-events: none;">
+<title>meta prefix=robot noEyes</title>
+<image href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>robot-1--a3b7b376df1e7ac5</title>
+</image>
+</g>
+<g style="pointer-events: none;">
+<title>plates</title>
+<rect x="32" y="0" width="32" height="32" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="64" y="0" width="32" height="32" style="fill: #050405;"/>
+<rect x="0" y="32" width="32" height="32" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="32" y="32" width="32" height="32" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="64" y="32" width="32" height="32" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="96" y="32" width="32" height="32" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="80" y="64" width="32" height="16" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="112" y="64" width="32" height="16" style="fill: #050405;"/>
+<rect x="64" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="80" y="80" width="32" height="48" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="112" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="128" y="80" width="32" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="176" y="64" width="16" height="16" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="192" y="64" width="16" height="16" style="fill: #050405;"/>
+<rect x="160" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="176" y="80" width="16" height="48" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="192" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="208" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="16" y="64" width="16" height="16" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="32" y="64" width="16" height="16" style="fill: #050405;"/>
+<rect x="0" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="16" y="80" width="16" height="48" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="32" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="48" y="80" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="144" y="192" width="16" height="16" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="160" y="192" width="16" height="16" style="fill: #050405;"/>
+<rect x="128" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="144" y="208" width="16" height="48" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="160" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="176" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="80" y="192" width="16" height="16" style="fill: url(&quot;#plate-top&quot;);"/>
+<rect x="96" y="192" width="16" height="16" style="fill: #050405;"/>
+<rect x="64" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="80" y="208" width="16" height="48" style="fill: url(&quot;#plate&quot;);"/>
+<rect x="96" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<rect x="112" y="208" width="16" height="48" style="fill: url(&quot;#plate-side&quot;);"/>
+<path d="M160 104.0H176M176 104.0H192M192 104.0H208M208 104.0H224M0 104.0H16M16 104.0H32M32 104.0H48M48 104.0H64M128 232.0H144M144 232.0H160M160 232.0H176M176 232.0H192M64 232.0H80M80 232.0H96M96 232.0H112M112 232.0H128M64 96H80M64 112H80M80 96H112M80 112H112M112 96H128M112 112H128M128 96H160M128 112H160" style="fill: none; stroke: #000000; stroke-width: 0.9px;">
+<title>seams</title>
+</path>
+<path d="M1 32.8H31M33 32.8H63M65 32.8H95M97 32.8H127M65 80.8H79M81 80.8H111M113 80.8H127M129 80.8H159M161 80.8H175M177 80.8H191M193 80.8H207M209 80.8H223M1 80.8H15M17 80.8H31M33 80.8H47M49 80.8H63M129 208.8H143M145 208.8H159M161 208.8H175M177 208.8H191M65 208.8H79M81 208.8H95M97 208.8H111M113 208.8H127M161 105.2H175M177 105.2H191M193 105.2H207M209 105.2H223M1 105.2H15M17 105.2H31M33 105.2H47M49 105.2H63M129 233.2H143M145 233.2H159M161 233.2H175M177 233.2H191M65 233.2H79M81 233.2H95M97 233.2H111M113 233.2H127" style="fill: none; stroke: #4a4652; stroke-width: 0.6px; stroke-opacity: 0.8;">
+<title>bevels</title>
+</path>
+<path d="M96 80V128M144 80V128" style="fill: none; stroke: #000000; stroke-width: 0.9px;">
+<title>spine</title>
+</path>
+</g>
+<g style="pointer-events: none;">
+<title>lens</title>
+<circle cx="48" cy="48" r="10.5" style="fill: #ff8a1a; opacity: 0.5; filter: url(&quot;#glow&quot;);"/>
+<circle cx="48" cy="48" r="8.6" style="fill: #050405; stroke: #3a3640; stroke-width: 0.8px;"/>
+<circle cx="48" cy="48" r="6.6" style="fill: url(&quot;#lens&quot;);"/>
+<circle cx="45.8" cy="45.6" r="1.4" style="fill: #ffffff; opacity: 0.8;"/>
+<path d="M36 37.5Q48 33 60 37.5" style="fill: none; stroke: #4a4652; stroke-width: 0.6px; stroke-opacity: 0.8;"/>
+</g>
+<g style="pointer-events: none;">
+<title>chest glints</title>
+<path d="M81.5 96.8L88 102.6M110.5 96.8L104 102.6" style="fill: none; stroke: #ffcf5a; stroke-width: 2.2px; stroke-linecap: round; stroke: #ff9a2a; stroke-width: 4px; opacity: 0.55; filter: url(&quot;#glow&quot;);"/>
+<path d="M81.5 96.8L88 102.6M110.5 96.8L104 102.6" style="fill: none; stroke: #ffcf5a; stroke-width: 2.2px; stroke-linecap: round;"/>
+</g>
+</svg>

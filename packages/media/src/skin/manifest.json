@@ -19,10 +19,55 @@
       "meta": {
         "skinKey": "d-1",
         "prefix": "d",
+        "overlay-backfaces": "head",
         "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
       },
       "url": "https://namemc.com/skin/2a2804c8ff60ef75",
       "svgPath": "skin/d-1.svg"
+    },
+    "d-2": {
+      "key": "d-2",
+      "id": "7c1b9cf9056113c0",
+      "filename": "d-2--7c1b9cf9056113c0.png",
+      "meta": {
+        "skinKey": "d-2",
+        "prefix": "d",
+        "eyes": {"open": [1, 2, 3, 4], "pupil": [2, 5, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/7c1b9cf9056113c0",
+      "svgPath": "skin/d-2.svg"
+    },
+    "d-3": {
+      "key": "d-3",
+      "id": "b14deaed093be445",
+      "filename": "d-3--b14deaed093be445.png",
+      "meta": {
+        "skinKey": "d-3",
+        "prefix": "d",
+        "eyes": {"open": [1, 2, 3, 4], "pupil": [2, 2, 2, 4]}
+      },
+      "url": "https://namemc.com/skin/b14deaed093be445",
+      "svgPath": "skin/d-3.svg"
+    },
+    "d-4": {
+      "key": "d-4",
+      "id": "01e468ce1edd3688",
+      "filename": "d-4--01e468ce1edd3688.png",
+      "meta": {
+        "skinKey": "d-4",
+        "prefix": "d",
+        "eyes": {"open": [1, 2, 3, 1], "pupil": [1, 2, 3, 1]}
+      },
+      "url": "https://namemc.com/skin/01e468ce1edd3688",
+      "svgPath": "skin/d-4.svg"
+    },
+    "d-5": {
+      "key": "d-5",
+      "id": "1938c8e17e34ebdc",
+      "filename": "d-5--1938c8e17e34ebdc.png",
+      "meta": {"skinKey": "d-5", "prefix": "d", "overlay-backfaces": "head"},
+      "url": "https://namemc.com/skin/1938c8e17e34ebdc",
+      "svgPath": "skin/d-5.svg"
     },
     "medic-0": {
       "key": "medic-0",
@@ -37,6 +82,66 @@
       },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
+    },
+    "medic-1": {
+      "key": "medic-1",
+      "id": "677d5973bd6d1678",
+      "filename": "medic-1--677d5973bd6d1678.png",
+      "meta": {
+        "skinKey": "medic-1",
+        "prefix": "medic",
+        "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/677d5973bd6d1678",
+      "svgPath": "skin/medic-1.svg"
+    },
+    "medic-2": {
+      "key": "medic-2",
+      "id": "88ecd22f251083c2",
+      "filename": "medic-2--88ecd22f251083c2.png",
+      "meta": {
+        "skinKey": "medic-2",
+        "prefix": "medic",
+        "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
+      },
+      "url": "https://namemc.com/skin/88ecd22f251083c2",
+      "svgPath": "skin/medic-2.svg"
+    },
+    "medic-3": {
+      "key": "medic-3",
+      "id": "9cfe7da634bcee98",
+      "filename": "medic-3--9cfe7da634bcee98.png",
+      "meta": {
+        "skinKey": "medic-3",
+        "prefix": "medic",
+        "eyes": {"open": [2, 4, 2, 3], "pupil": [2, 4, 2, 3]}
+      },
+      "url": "https://namemc.com/skin/9cfe7da634bcee98",
+      "svgPath": "skin/medic-3.svg"
+    },
+    "medic-4": {
+      "key": "medic-4",
+      "id": "377631a97d922e6a",
+      "filename": "medic-4--377631a97d922e6a.png",
+      "meta": {
+        "skinKey": "medic-4",
+        "prefix": "medic",
+        "eyes": {"open": [1, 5, 2, 1], "pupil": [2, 5, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/377631a97d922e6a",
+      "svgPath": "skin/medic-4.svg"
+    },
+    "medic-5": {
+      "key": "medic-5",
+      "id": "212b959e126fa575",
+      "filename": "medic-5--212b959e126fa575.png",
+      "meta": {
+        "skinKey": "medic-5",
+        "prefix": "medic",
+        "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/212b959e126fa575",
+      "svgPath": "skin/medic-5.svg"
     },
     "mtf-0": {
       "key": "mtf-0",
@@ -79,18 +184,62 @@
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
       "svgPath": "skin/postdoc-0.svg"
     },
-    "ra-0": {
-      "key": "ra-0",
-      "id": "23aa3d70ee53af87",
-      "filename": "ra-0--23aa3d70ee53af87.png",
+    "postdoc-1": {
+      "key": "postdoc-1",
+      "id": "da2e61ba815d2854",
+      "filename": "postdoc-1--da2e61ba815d2854.png",
       "meta": {
-        "skinKey": "ra-0",
-        "prefix": "ra",
+        "skinKey": "postdoc-1",
+        "prefix": "postdoc",
+        "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/da2e61ba815d2854",
+      "svgPath": "skin/postdoc-1.svg"
+    },
+    "postdoc-2": {
+      "key": "postdoc-2",
+      "id": "23aa3d70ee53af87",
+      "filename": "postdoc-2--23aa3d70ee53af87.png",
+      "meta": {
+        "skinKey": "postdoc-2",
+        "prefix": "postdoc",
         "firstSeen": "J_az",
         "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
       },
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
+      "svgPath": "skin/postdoc-2.svg"
+    },
+    "ra-0": {
+      "key": "ra-0",
+      "id": "86403319024aa40f",
+      "filename": "ra-0--86403319024aa40f.png",
+      "meta": {
+        "skinKey": "ra-0",
+        "prefix": "ra",
+        "eyes": {"open": [1, 6, 2, 1], "pupil": [2, 6, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/86403319024aa40f",
       "svgPath": "skin/ra-0.svg"
+    },
+    "ra-1": {
+      "key": "ra-1",
+      "id": "2e367f0724df8057",
+      "filename": "ra-1--2e367f0724df8057.png",
+      "meta": {
+        "skinKey": "ra-1",
+        "prefix": "ra",
+        "eyes": {"open": [1, 5, 2, 1], "pupil": [2, 5, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/2e367f0724df8057",
+      "svgPath": "skin/ra-1.svg"
+    },
+    "ra-2": {
+      "key": "ra-2",
+      "id": "a8d658133fdbfe9e",
+      "filename": "ra-2--a8d658133fdbfe9e.png",
+      "meta": {"skinKey": "ra-2", "prefix": "ra"},
+      "url": "https://namemc.com/skin/a8d658133fdbfe9e",
+      "svgPath": "skin/ra-2.svg"
     },
     "robot-0": {
       "key": "robot-0",
@@ -103,6 +252,38 @@
       },
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
+    },
+    "robot-1": {
+      "key": "robot-1",
+      "id": "a3b7b376df1e7ac5",
+      "filename": "robot-1--a3b7b376df1e7ac5.png",
+      "meta": {"skinKey": "robot-1", "prefix": "robot", "noEyes": true},
+      "url": "https://namemc.com/skin/a3b7b376df1e7ac5",
+      "svgPath": "skin/robot-1.svg"
+    },
+    "robot-2": {
+      "key": "robot-2",
+      "id": "29eccb4e7d6df073",
+      "filename": "robot-2--29eccb4e7d6df073.png",
+      "meta": {"skinKey": "robot-2", "prefix": "robot"},
+      "url": "https://namemc.com/skin/29eccb4e7d6df073",
+      "svgPath": "skin/robot-2.svg"
+    },
+    "robot-3": {
+      "key": "robot-3",
+      "id": "5cb2fcd064096582",
+      "filename": "robot-3--5cb2fcd064096582.png",
+      "meta": {"skinKey": "robot-3", "prefix": "robot"},
+      "url": "https://namemc.com/skin/5cb2fcd064096582",
+      "svgPath": "skin/robot-3.svg"
+    },
+    "robot-4": {
+      "key": "robot-4",
+      "id": "cf9e073bbee7247c",
+      "filename": "robot-4--cf9e073bbee7247c.png",
+      "meta": {"skinKey": "robot-4", "prefix": "robot"},
+      "url": "https://namemc.com/skin/cf9e073bbee7247c",
+      "svgPath": "skin/robot-4.svg"
     }
   }
 }

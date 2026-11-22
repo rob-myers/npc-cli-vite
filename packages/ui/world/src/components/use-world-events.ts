@@ -23,6 +23,7 @@ import { helper } from "../service/helper";
 import { probeWebRtcWhenIdle } from "../service/net-signaling";
 import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
+import type { Polyline } from "./Debug";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -46,6 +47,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       litRooms: new Map(),
       movesBegun: new WeakMap(),
       timers: new Set(),
+      shownRays: new Map(),
+      pendingRays: new Map(),
       npcToAccess: {},
       npcToDoors: {},
       pendingUnreachable: {},
@@ -172,6 +175,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      clearRays(key) {
+        const keys = key === undefined ? [...state.shownRays.keys()] : [key];
+        const removed: [string, null][] = [];
+        for (const k of keys) {
+          const shown = state.shownRays.get(k);
+          if (shown === undefined) continue;
+          shown.cancel();
+          for (let i = 0; i < shown.count; i++) removed.push([`rays/${k}/${i}`, null]);
+          state.shownRays.delete(k);
+        }
+        state.queueRays(removed);
       },
       closestExitFrom(grKey, npc, near) {
         const room = w.gmRoomGraph.getNode(grKey);
@@ -416,40 +431,45 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
         const moveId = state.getMoveId(npc);
         npc.rejectAll(new Error("move again"));
-        const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
-        if (state.moveOverridden(npc, moveId)) return;
-
-        // doable overrides navigable
-        if (doResult.type !== "none") {
-          return state.moveOntoDoable(npc, dst, doResult, fades, opts);
-        }
-        if (result.success === false) {
-          throw Error("not navigable");
-        }
-
-        // a room with `maxWalkers` admits them if it has room. Else from outside `walkTo` stops them at its door
-        const into = w.gmRoomGraph.walkerRooms.size === 0 ? undefined : w.findRoomContaining(groundPoint)?.grKey;
-        if (
-          into !== undefined &&
-          state.admitWalker(into, npcKey) === false &&
-          w.npc.npcToRoom.get(npcKey)?.grKey === into
-        ) {
-          throw state.roomFull(npc); // inside it, e.g. getting up
-        }
-
-        /** Off a doable on the navmesh: they turn along their way first, rather than slide round */
-        const turnFirst = npc.agentId !== null && w.npc.npcToDoable[npcKey] != null;
-        if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
-          // fade off the doable: onto the target if near, else beside it, walking on
-          if (fades && npc.agentId === null) {
-            return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
-          }
-          await state.stepOff(npc, groundPoint);
+        try {
+          const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
           if (state.moveOverridden(npc, moveId)) return;
-        }
 
-        if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
-        await state.walkTo(npc, groundPoint, result, { ...opts, turnFirst }, moveId);
+          // doable overrides navigable
+          if (doResult.type !== "none") {
+            return state.moveOntoDoable(npc, dst, doResult, fades, opts);
+          }
+          if (result.success === false) {
+            throw Error("not navigable");
+          }
+
+          // a room with `maxWalkers` admits them if it has room. Else from outside `walkTo` stops them at its door
+          const into = w.gmRoomGraph.walkerRooms.size === 0 ? undefined : w.findRoomContaining(groundPoint)?.grKey;
+          if (
+            into !== undefined &&
+            state.admitWalker(into, npcKey) === false &&
+            w.npc.npcToRoom.get(npcKey)?.grKey === into
+          ) {
+            throw state.roomFull(npc); // inside it, e.g. getting up
+          }
+
+          /** Off a doable on the navmesh: they turn along their way first, rather than slide round */
+          const turnFirst = npc.agentId !== null && w.npc.npcToDoable[npcKey] != null;
+          if (npc.agentId === null || w.npc.npcToDoable[npcKey] != null) {
+            // fade off the doable: onto the target if near, else beside it, walking on
+            if (fades && npc.agentId === null) {
+              return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
+            }
+            if ((await state.stepOff(npc, groundPoint)) || state.moveOverridden(npc, moveId)) return;
+          }
+
+          if (state.canShuffle(npc, groundPoint, opts)) return state.shuffleTo(npc, groundPoint, result);
+          await state.walkTo(npc, groundPoint, result, { ...opts, turnFirst }, moveId);
+        } catch (e) {
+          // failed before its own move began: at rest, else a stale `moving` fails every later move as stuck
+          if (state.moveOverridden(npc, moveId) === false && npc.anim.moving === true) state.moveFailed(npc, e);
+          throw e;
+        }
       },
       moveFailed(npc, e) {
         if (e instanceof Error && e.message === "move again") {
@@ -1143,7 +1163,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           ? meta.gdKey
           : null;
       },
-      async raycast(origSrc, origDst, { offMap = false } = {}) {
+      queueRays(entries) {
+        if (entries.length === 0) return;
+        const first = state.pendingRays.size === 0;
+        for (const [key, polyline] of entries) state.pendingRays.set(key, polyline);
+        if (first === false) return;
+        // the casts landing together are drawn as one
+        queueMicrotask(() => {
+          w.debug?.setPolylines(state.pendingRays);
+          state.pendingRays.clear();
+          w.r3f?.invalidate();
+        });
+      },
+      async raycast(origSrc, origDst, { offMap = false, key = "ray" } = {}) {
         const src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
 
@@ -1156,24 +1188,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
 
-        const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
+        const debug = w.debug?.raysShown === true;
+        const msg: WW.GetRaycast = {
+          type: "get-raycast",
+          uid: shortUuid.generate(),
+          src,
+          dst,
+          grKey: srcGrId.grKey,
+          ...(debug && { debug }),
+        };
         const signal = new AbortController().signal;
-        return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+        const result = (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+        if (debug) state.showRays(key, [{ src, dst, result }]);
+        return result;
       },
-      async raycasts(segs, { offMap = false } = {}) {
+      async raycasts(segs, { offMap = false, key = "rays" } = {}) {
+        const debug = w.debug?.raysShown === true;
         const casts: WW.GetRaycasts["casts"] = [];
         /** Each seg's index in `casts`: `-1` if not sent */
         const sent = segs.map((seg) => {
           const grKey = seg === null ? undefined : w.findRoomContaining(seg.src, true)?.grKey;
           if (seg === null || grKey === undefined) return -1;
           if (offMap === false && w.findRoomContaining(seg.dst, true) === null) return -1;
-          return casts.push({ src: seg.src, dst: seg.dst, grKey }) - 1;
+          return casts.push({ src: seg.src, dst: seg.dst, grKey, ...(debug && { debug }) }) - 1;
         });
         if (casts.length === 0 || w.navWorker.workers === null) return segs.map(() => null);
         const msg: WW.GetRaycasts = { type: "get-raycasts", uid: shortUuid.generate(), casts };
         const signal = new AbortController().signal;
         const output = (await w.navWorker.request(msg, signal, "fast")) as (null | JshCli.RaycastResult)[];
-        return sent.map((i) => (i === -1 ? null : output[i]));
+        const results = sent.map((i) => (i === -1 ? null : output[i]));
+        if (debug)
+          state.showRays(
+            key,
+            segs.map((seg, i) => seg && { ...seg, result: results[i] }),
+          );
+        return results;
       },
       async reachFor(npc, clip, at, act, side) {
         // turned to it, unless it is at their own feet
@@ -1575,6 +1624,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many", npcKeys });
       },
+      showRays(key, rays) {
+        const prev = state.shownRays.get(key);
+        prev?.cancel();
+        const entries: [string, null | Polyline][] = rays.map((ray, i) => [
+          `rays/${key}/${i}`,
+          ray && rayPolyline(ray),
+        ]);
+        for (let i = rays.length; i < (prev?.count ?? 0); i++) entries.push([`rays/${key}/${i}`, null]);
+        const cancel = state.after(raysDebug.secs, () => state.clearRays(key));
+        state.shownRays.set(key, { count: rays.length, cancel });
+        state.queueRays(entries);
+      },
       standUpStrandedDoers() {
         // navmesh and decor rebuild on separate queries, so whichever lands last does this
         if (w.client === true || w.npc === undefined || w.decor?.ready !== true || w.nav.navMesh === undefined) {
@@ -1620,13 +1681,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // no room on its floor for them: out through a door they may pass, if near it, else they stay put
           const at = state.closestExitFrom(grKey, npc, npc.point);
           if (at === null) throw state.roomFull(npc);
-          // a target just outside, e.g. in its doorway, is faded onto at once rather than walked back to
+          // a target just outside is faded onto at once rather than walked back to
           const ahead = { x: 2 * toward.x - npc.point.x, y: 2 * toward.y - npc.point.y };
           if (
             w.findRoomContaining(toward)?.grKey !== grKey &&
             Math.hypot(toward.x - at.x, toward.y - at.y) < 2 * doorwayOut
-          )
-            return void (await npc.fadeSpawn({ at: toward, facing: ahead }));
+          ) {
+            // one in its doorway, just past it: a door's area is refused to walkers whilst the room is full
+            await npc.fadeSpawn({ at: w.npc.inDoorArea(toward) ? at : toward, facing: ahead });
+            return true;
+          }
           return void (await npc.fadeSpawn({ at, facing: toward }));
         }
         if (npc.agentId !== null) return void w.npc.setNpcDo(npc.key, null); // on the navmesh already: they walk off
@@ -2057,6 +2121,10 @@ export type State = {
   movesBegun: WeakMap<Npc, number>;
   /** Game-time timers, run after each npc tick — see `after` */
   timers: Set<{ at: number; fn: () => void }>;
+  /** By key, how many rays the rays overlay draws, and how to cancel their clearing — see `showRays` */
+  shownRays: Map<string, { count: number; cancel: () => void }>;
+  /** The rays overlay's polylines to set or remove, as one redraw — see `queueRays` */
+  pendingRays: Map<string, null | Polyline>;
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
@@ -2070,6 +2138,8 @@ export type State = {
   setRoomLit(input: Geomorph.GmRoomKey | Geomorph.GmRoomId, next?: boolean): void;
   /** Puts out every room lit by hand, leaving what the player can see and the lit npcs */
   clearHandLitRooms(): void;
+  /** Stops drawing `key`'s rays, else every key's — see `showRays` */
+  clearRays(key?: string): void;
   dispatchToKeyedListeners(e: JshCli.Event): void;
   /** Lights `npc` or puts them out. Toggles when `next` is omitted */
   setNpcLit(npc: Npc, next?: boolean): void;
@@ -2186,9 +2256,9 @@ export type State = {
   ): Promise<void>;
   /**
    * Takes `npc` off their doable: out of a full room's door, else let go on the navmesh, else faded beside it on the way
-   * to `toward` (in front, if `meta.front-only`)
+   * to `toward` (in front, if `meta.front-only`). True if faded there, or just past its doorway: no walk follows
    */
-  stepOff(npc: Npc, toward: Geom.VectJson): Promise<void>;
+  stepOff(npc: Npc, toward: Geom.VectJson): Promise<void | true>;
   /** Walks them to `groundPoint`, else as near a locked door in the way as they can. Interruptible by the next move */
   walkTo(
     npc: Npc,
@@ -2232,6 +2302,8 @@ export type State = {
    */
   reseatAllNpcs(): void;
   /** Stands up anyone whose doable decor an edit removed, onto the nearest navmesh */
+  /** The rays overlay: draws `key`'s casts in place of its last, for `raysDebug.secs` of game time */
+  showRays(key: string, rays: (null | ShownRay)[]): void;
   standUpStrandedDoers(): void;
   /** Respawn the player, or drop anyone else, when an edit leaves them nowhere to stand */
   strandNpc(npc: Npc): void;
@@ -2259,16 +2331,18 @@ export type State = {
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
+  /** Sets or removes the rays overlay's polylines on the next microtask, as one redraw */
+  queueRays(entries: [string, null | Polyline][]): void;
   /** `offMap`: `dst` may lie off the map, which the hull's walls close: else it must be in a room or doorway */
   raycast(
     src: MaybeMeta<JshCli.PointAnyFormat>,
     dst: MaybeMeta<JshCli.PointAnyFormat>,
-    opts?: { offMap?: boolean },
+    opts?: RaycastOpts,
   ): Promise<JshCli.RaycastResult>;
   /** Several `raycast`s as one worker request: `null` for each that cannot be cast */
   raycasts(
-    segs: (null | { src: Geom.VectJson; dst: Geom.VectJson })[],
-    opts?: { offMap?: boolean },
+    segs: (null | { src: Geom.VectJson; dst: Geom.VectJson; y?: number })[],
+    opts?: RaycastOpts,
   ): Promise<(null | JshCli.RaycastResult)[]>;
   removeNpcs(...npcKeys: string[]): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
@@ -2362,4 +2436,39 @@ function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State[
   const dist = Math.hypot(dx, dz);
   const ahead = -dx * Math.sin(npc.rotation.y) - dz * Math.cos(npc.rotation.y);
   return dist < config.dist.backStep && ahead < dist * Math.cos(config.angle.backStep);
+}
+
+/** `offMap`: `dst` may lie off the map. `key`: the rays overlay draws each key's last casts, in place of its earlier */
+type RaycastOpts = { offMap?: boolean; key?: string };
+
+/** A cast the rays overlay draws, `y` metres up */
+type ShownRay = { src: Geom.VectJson; dst: Geom.VectJson; result: null | JshCli.RaycastResult; y?: number };
+
+/** The rays overlay: how long each shows, its default height, and its look as `sees --debug`'s */
+const raysDebug = {
+  secs: 2,
+  y: 1.1,
+  style: { width: 0.008, opacity: 0.6, discRadius: 0.03 },
+  /** By what stopped it */
+  color: { wall: "#e04040", door: "#f0a030", none: "#40d080", failed: "#808080" },
+} as const;
+
+/** A ray from its start, through each crossing, to where it stopped: coloured by what stopped it */
+function rayPolyline({ src, dst, result, y = raysDebug.y }: ShownRay): Polyline {
+  const { color, style } = raysDebug;
+  const len = Math.hypot(dst.x - src.x, dst.y - src.y) || 1;
+  const along = (m: number): [number, number, number] => [
+    src.x + ((dst.x - src.x) * m) / len,
+    src.y + ((dst.y - src.y) * m) / len,
+    y,
+  ];
+  const end = result?.hit ?? dst;
+  const points: [number, number, number][] = [
+    [src.x, src.y, y],
+    ...(result?.debug?.crossings ?? []).map(along),
+    [end.x, end.y, y],
+  ];
+  const stoppedBy =
+    result === null ? "failed" : result.hit === null ? "none" : result.hitDoor !== null ? "door" : "wall";
+  return { ...style, points, color: color[stoppedBy] };
 }

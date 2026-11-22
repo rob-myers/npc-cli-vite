@@ -9,6 +9,8 @@ import {
   type HoldParams,
   holdBus,
   holds,
+  type PhaserSfxLook,
+  plainLook,
   playSfx,
   type SfxKey,
   sfxBus,
@@ -59,6 +61,8 @@ export type SfxOpts = {
   speed?: number;
   /** An item's kind */
   kind?: string;
+  /** A phaser's look, for `fire` */
+  look?: PhaserSfxLook;
 };
 
 /** The page's one audio engine, made on first use — see `docs/audio.md` */
@@ -252,10 +256,10 @@ function createEngine() {
       window.setTimeout(() => engine.voices--, sfxSecs * 1000);
       const level = (opts.gain ?? 1) * vary();
       const sample = (bank: SampleBank) => pickSample(samples, bank);
-      const { amount = 1, voice = "glide", speed = 1, kind = "" } = opts;
+      const { amount = 1, voice = "glide", speed = 1, kind = "", look = plainLook } = opts;
       const out = sfxBus(key) === "world" ? world : fx;
       const pitch = vary() * Math.max(minSpeed, speed);
-      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice, kind });
+      playSfx(key, { ctx, out, at, level, pan, amount, pitch, sample, voice, kind, look });
     },
     /** One of the player's footfalls, heard at once whilst playing */
     footfall(footfall: Footfall) {

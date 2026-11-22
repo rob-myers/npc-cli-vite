@@ -25,8 +25,8 @@
 
     <text x="20" y="62" class="fn">Phasers.land</text>
     <text x="20" y="77" class="file">Phasers.tsx</text>
-    <text x="20" y="94" class="note">outcome from the hud badge</text>
-    <text x="20" y="109" class="note">(forceShot, saved per World)</text>
+    <text x="20" y="94" class="note">outcome: w.phasers.decide,</text>
+    <text x="20" y="109" class="note">else the hud badge (forceShot)</text>
     <text x="20" y="146" class="fn">npc-shot</text>
     <text x="20" y="161" class="file">jsh audio.ts</text>
     <text x="20" y="178" class="note">sounds: hit, armour, ghost</text>

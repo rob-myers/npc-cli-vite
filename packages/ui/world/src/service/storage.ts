@@ -59,6 +59,8 @@ export type WorldSettings = {
   pickDoors: boolean;
   /** Whether we are decorating — see `Debug`'s `decorShown` */
   decorShown: boolean;
+  /** Whether raycasts are drawn a moment — see `Debug`'s `raysShown` */
+  raysShown: boolean;
   /** Whether a right click or long press opens a menu on an npc, decor or door — see `Debug`'s `contextMenu` */
   contextMenu: boolean;
   /** Whether the map's spots are drawn — see `Debug`'s `spotsShown` */
@@ -121,6 +123,7 @@ const defaultWorldSettings: WorldSettings = {
   pickOpenDoors: true,
   pickDoors: false,
   decorShown: false,
+  raysShown: false,
   contextMenu: true,
   spotsShown: false,
   statsShown: import.meta.env.DEV,

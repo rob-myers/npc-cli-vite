@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12">
+  <style>
+    .stage { fill: #e6e6e6; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+    .panel { fill: #262a31; stroke: #3a404a; }
+    .yours { fill: #2e2a22; stroke: #f0a35a; stroke-width: 2; }
+    .fn { fill: #e6e6e6; font-size: 13px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; }
+    .accent { fill: #f0a35a; font-size: 13px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; }
+    .file { fill: #5aa0f0; font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+    .note { fill: #9aa0a6; font-size: 12px; }
+    .ray { fill: #ff8a5c; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+    .arrow { fill: none; stroke: #7a8290; stroke-width: 1.5; }
+  </style>
+  <defs><marker id="next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker></defs>
+  <rect width="960" height="420" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">A shot: fire, lock on, strike. Each npc it meets is given an outcome</text>
+
+  <text x="28" y="62" class="stage">1 · FIRE</text>
+  <rect x="24" y="72" width="280" height="140" rx="10" class="panel"/>
+  <text x="40" y="100" class="fn">fire · fireAlong</text>
+  <text x="40" y="116" class="file">Phasers.tsx</text>
+  <text x="40" y="142" class="note">emits phaser-fired</text>
+  <text x="40" y="160" class="note">a new shot: arm.met is reset</text>
+
+  <text x="344" y="62" class="stage">2 · LOCK ON</text>
+  <rect x="340" y="72" width="280" height="140" rx="10" class="panel"/>
+  <text x="356" y="100" class="fn">shoot · passOn</text>
+  <text x="356" y="116" class="note">once raised and on target (onLine)</text>
+  <text x="356" y="146" class="ray">own</text>
+  <text x="400" y="146" class="note">the target</text>
+  <text x="356" y="166" class="ray">beyond</text>
+  <text x="414" y="166" class="note">past a ghost, or a miss</text>
+
+  <text x="660" y="62" class="stage">3 · STRIKE</text>
+  <rect x="656" y="72" width="280" height="140" rx="10" class="panel"/>
+  <text x="672" y="100" class="fn">strike · spreadOn</text>
+  <text x="672" y="116" class="note">the beam arrives, a frame or two on</text>
+  <text x="672" y="146" class="ray">side</text>
+  <text x="716" y="146" class="note">an attachment's other rays</text>
+  <text x="672" y="166" class="ray">bounce</text>
+  <text x="730" y="166" class="note">off a reflecting shield</text>
+  <text x="672" y="194" class="note">npc-shot, once per npc met</text>
+
+  <path d="M304 142 H336" class="arrow" marker-end="url(#next)"/>
+  <path d="M620 142 H652" class="arrow" marker-end="url(#next)"/>
+
+  <path d="M480 212 V244 M796 212 V244 M164 244 H796" class="arrow"/>
+  <path d="M164 244 V276" class="arrow" marker-end="url(#next)"/>
+  <text x="250" y="238" class="note">each npc met, with its ray</text>
+
+  <rect x="24" y="280" width="280" height="96" rx="10" class="panel"/>
+  <text x="40" y="306" class="fn">outcomeFor</text>
+  <text x="40" y="326" class="note">already given one this shot?</text>
+  <text x="40" y="344" class="note">that again (arm.met)</text>
+  <text x="40" y="362" class="note">so every ray on them agrees</text>
+
+  <rect x="340" y="280" width="252" height="96" rx="10" class="yours"/>
+  <text x="356" y="306" class="accent">w.phasers.decide</text>
+  <text x="356" y="326" fill="#e6e6e6" font-size="12">yours: return an outcome</text>
+  <text x="356" y="344" class="note">({ by, npcKey, ray, attachment })</text>
+  <text x="356" y="362" class="note">undefined leaves it to the badge</text>
+
+  <rect x="656" y="280" width="280" height="96" rx="10" class="panel"/>
+  <text x="672" y="306" class="fn">the debug badge</text>
+  <text x="672" y="322" class="file">w.debug.forceShot</text>
+  <text x="672" y="344" class="note">its outcome, hit by default</text>
+
+  <path d="M304 328 H336" class="arrow" marker-end="url(#next)"/>
+  <path d="M592 328 H652" class="arrow" marker-end="url(#next)"/>
+  <text x="598" y="320" class="note" font-size="10">undefined</text>
+
+  <text x="24" y="404" class="note">Outcomes: hit · down · ghost · armour · kill. The first ray to land on an npc takes the hit (landRay): the rest show a ring.</text>
+</svg>

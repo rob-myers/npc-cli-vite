@@ -317,6 +317,8 @@ export function WorldMenu() {
         return w.debug?.decorShown ?? false;
       case "spots":
         return w.spots?.shown ?? false;
+      case "rays":
+        return w.debug?.raysShown ?? false;
       case "context menu":
         return w.debug?.contextMenu ?? false;
       case "fps":
@@ -465,6 +467,13 @@ export function WorldMenu() {
       case "spots":
         w.spots?.toggle();
         break;
+      case "rays": {
+        const next = !w.debug?.raysShown;
+        w.debug?.set({ raysShown: next });
+        store.patch({ raysShown: next });
+        if (next === false) w.e.clearRays();
+        break;
+      }
     }
   };
 
@@ -1682,6 +1691,7 @@ const debugGroups = {
     "door normals",
     "grid",
     "navmesh",
+    "rays",
     "room outlines",
     "spots",
   ].map((value) => ({
