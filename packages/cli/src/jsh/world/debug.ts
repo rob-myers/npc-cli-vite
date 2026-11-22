@@ -1,4 +1,4 @@
-import { getFirstUnknownNaked, wSleep } from "./core";
+import { getFirstUnknownNaked } from "./core";
 import { npcQuery, plan } from "./plan.main";
 
 /**
@@ -112,28 +112,18 @@ export async function* debug_skins(
 /**
  * Casts rays from an npc along their aim, else their facing: a `band` of parallel rays, or a `fan` from one point.
  * The rays overlay draws them a moment, even when off. Prints what stopped each.
- * A `burst` is `n` casts `every` game seconds, a little apart, as rapid fire: each reuses the last if it can (dotted).
  * ```sh
  * rays band rob count:3 width:0.3
  * rays fan rob count:5 spread:20 len:8
- * rays burst rob n:20 every:0.05 jitter:0.005
  * ```
  */
 export async function* rays(
   ct: JshCli.RunArg,
-  opts: {
-    count?: number;
-    width?: number;
-    spread?: number;
-    len?: number;
-    n?: number;
-    every?: number;
-    jitter?: number;
-  } = ct.api.jsArg(ct.args),
+  opts: { count?: number; width?: number; spread?: number; len?: number } = ct.api.jsArg(ct.args),
 ) {
   const { args, w } = ct;
   const [kind, npcKey] = args.filter((arg) => !arg.includes(":") && !arg.startsWith("-"));
-  if (kind !== "band" && kind !== "fan" && kind !== "burst") throw Error("expected band, fan or burst");
+  if (kind !== "band" && kind !== "fan") throw Error("expected band or fan");
   const npc = w.npc.get(npcKey);
   const aim = w.phasers?.aimOf(npc.key) ?? {
     from: { x: npc.position.x, y: npc.position.z },
@@ -143,29 +133,6 @@ export async function* rays(
   const { count = kind === "band" ? 3 : 5, width = 0.3, spread = 20, len = 8 } = opts;
   const along = (bearing: number) => ({ x: -Math.sin(bearing), y: -Math.cos(bearing) });
   const dir = along(aim.bearing);
-
-  if (kind === "burst") {
-    const { n = 20, every = 0.05, jitter = 0.005 } = opts;
-    const jit = () => (Math.random() * 2 - 1) * jitter;
-    const burst: {
-      src: Geom.VectJson;
-      dst: Geom.VectJson;
-      y: number;
-      result: JshCli.RaycastResult;
-      reused: boolean;
-    }[] = [];
-    for (let i = 0; i < n; i++) {
-      if (i > 0) await wSleep(ct, every);
-      const src = { x: aim.from.x + jit(), y: aim.from.y + jit() };
-      const dst = { x: src.x + dir.x * len + jit(), y: src.y + dir.y * len + jit() };
-      const result = await w.e.raycast(src, dst, { offMap: true, key: `jsh/${npc.key}/burst`, reuse: true });
-      burst.push({ src, dst, y: aim.y, result, reused: result === burst.at(-1)?.result });
-    }
-    w.e.showRays(`jsh/${npc.key}`, burst); // all of them together
-    const reused = burst.filter((b) => b.reused).length;
-    yield `${reused} reused, ${n - reused} cast`;
-    return;
-  }
 
   const segs = Array.from({ length: count }, (_, i) => {
     /** `-0.5` to `0.5` across them */

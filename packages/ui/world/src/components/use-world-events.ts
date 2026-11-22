@@ -48,7 +48,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       movesBegun: new WeakMap(),
       timers: new Set(),
       shownRays: new Map(),
-      lastCasts: new Map(),
       pendingRays: new Map(),
       npcToAccess: {},
       npcToDoors: {},
@@ -1171,15 +1170,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.r3f?.invalidate();
         });
       },
-      async raycast(origSrc, origDst, { offMap = false, key = "ray", reuse = false, y } = {}) {
+      async raycast(origSrc, origDst, { offMap = false, key = "ray" } = {}) {
         const src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
-        const now = w.gameTime.now();
-        const last = reuse ? state.lastCasts.get(key) : undefined;
-        if (last !== undefined && now - last.secs < raysReuse.secs && isSameRay(last, src, dst)) {
-          if (w.debug?.raysShown === true) state.showRays(key, [{ src, dst, result: last.result, y, reused: true }]);
-          return last.result;
-        }
 
         // Both points must reside in a room or doorway
         const srcGrId = w.findRoomContaining(src, true);
@@ -1201,8 +1194,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         };
         const signal = new AbortController().signal;
         const result = (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
-        if (debug) state.showRays(key, [{ src, dst, result, y }]);
-        if (reuse) state.lastCasts.set(key, { src, dst, secs: now, result });
+        if (debug) state.showRays(key, [{ src, dst, result }]);
         return result;
       },
       async raycasts(segs, { offMap = false, key = "rays" } = {}) {
@@ -2123,8 +2115,6 @@ export type State = {
   timers: Set<{ at: number; fn: () => void }>;
   /** By key, how many rays the rays overlay draws, and how to cancel their clearing — see `showRays` */
   shownRays: Map<string, { count: number; cancel: () => void }>;
-  /** By key, the last cast `raycast` may reuse — see its `reuse` */
-  lastCasts: Map<string, { src: Geom.VectJson; dst: Geom.VectJson; secs: number; result: JshCli.RaycastResult }>;
   /** The rays overlay's polylines to set or remove, as one redraw — see `queueRays` */
   pendingRays: Map<string, null | Polyline>;
   /**
@@ -2335,14 +2325,11 @@ export type State = {
   recomputeNpcRoomRelationships(): void;
   /** Sets or removes the rays overlay's polylines on the next microtask, as one redraw */
   queueRays(entries: [string, null | Polyline][]): void;
-  /**
-   * `offMap`: `dst` may lie off the map, which the hull's walls close: else it must be in a room or doorway.
-   * `reuse`: `key`'s last result, if this ray barely differs and it is recent, as for rapid fire. No round trip
-   */
+  /** `offMap`: `dst` may lie off the map, which the hull's walls close: else it must be in a room or doorway */
   raycast(
     src: MaybeMeta<JshCli.PointAnyFormat>,
     dst: MaybeMeta<JshCli.PointAnyFormat>,
-    opts?: RaycastOpts & { y?: number; reuse?: boolean },
+    opts?: RaycastOpts,
   ): Promise<JshCli.RaycastResult>;
   /** Several `raycast`s as one worker request: `null` for each that cannot be cast */
   raycasts(
@@ -2446,21 +2433,8 @@ function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State[
 /** `offMap`: `dst` may lie off the map. `key`: the rays overlay draws each key's last casts, in place of its earlier */
 type RaycastOpts = { offMap?: boolean; key?: string };
 
-/** A cast the rays overlay draws, `y` metres up. `reused`: `raycast` answered it with the last */
-type ShownRay = {
-  src: Geom.VectJson;
-  dst: Geom.VectJson;
-  result: null | JshCli.RaycastResult;
-  y?: number;
-  reused?: boolean;
-};
-
-/** A keyed cast is reused within `tol` metres at both ends, for `secs` of game time: else a door may have moved */
-const raysReuse = { tol: 0.01, secs: 0.1 };
-
-const isSameRay = (last: { src: Geom.VectJson; dst: Geom.VectJson }, src: Geom.VectJson, dst: Geom.VectJson) =>
-  Math.hypot(src.x - last.src.x, src.y - last.src.y) <= raysReuse.tol &&
-  Math.hypot(dst.x - last.dst.x, dst.y - last.dst.y) <= raysReuse.tol;
+/** A cast the rays overlay draws, `y` metres up */
+type ShownRay = { src: Geom.VectJson; dst: Geom.VectJson; result: null | JshCli.RaycastResult; y?: number };
 
 /** The rays overlay: how long each shows, its default height, and its look as `sees --debug`'s */
 const raysDebug = {
@@ -2469,13 +2443,11 @@ const raysDebug = {
   style: { width: 0.008, opacity: 0.6, discRadius: 0.03 },
   /** By what stopped it */
   color: { wall: "#e04040", door: "#f0a030", none: "#40d080", failed: "#808080" },
-  /** Metres of dash of a reused cast: a fresh one is solid */
-  reusedDash: 0.02,
 } as const;
 
-/** A ray from its start, through each crossing, to where it stopped: coloured by what stopped it, dotted if reused */
-function rayPolyline({ src, dst, result, y = raysDebug.y, reused = false }: ShownRay): Polyline {
-  const { color, reusedDash, style } = raysDebug;
+/** A ray from its start, through each crossing, to where it stopped: coloured by what stopped it */
+function rayPolyline({ src, dst, result, y = raysDebug.y }: ShownRay): Polyline {
+  const { color, style } = raysDebug;
   const len = Math.hypot(dst.x - src.x, dst.y - src.y) || 1;
   const along = (m: number): [number, number, number] => [
     src.x + ((dst.x - src.x) * m) / len,
@@ -2490,5 +2462,5 @@ function rayPolyline({ src, dst, result, y = raysDebug.y, reused = false }: Show
   ];
   const stoppedBy =
     result === null ? "failed" : result.hit === null ? "none" : result.hitDoor !== null ? "door" : "wall";
-  return { ...style, points, color: color[stoppedBy], dash: reused ? reusedDash : 0 };
+  return { ...style, points, color: color[stoppedBy] };
 }
