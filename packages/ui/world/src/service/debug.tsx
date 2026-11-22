@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { cn } from "@npc-cli/util";
+import { cn, Tip } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { ArrowSquareOutIcon, XIcon } from "@phosphor-icons/react";
@@ -522,15 +522,16 @@ function SkinCard({
       <div className="flex items-center justify-between gap-2">
         <span className="truncate font-mono text-sm text-slate-100">{skinKey}</span>
         {skinEntry?.url && (
-          <a
-            href={skinEntry.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="on namemc"
-            className="rounded p-0.5 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
-          >
-            <ArrowSquareOutIcon className="size-4" />
-          </a>
+          <Tip content="on namemc">
+            <a
+              href={skinEntry.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded p-0.5 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
+            >
+              <ArrowSquareOutIcon className="size-4" />
+            </a>
+          </Tip>
         )}
       </div>
       <canvas
@@ -544,17 +545,19 @@ function SkinCard({
       {eyes !== undefined ? (
         <div className="grid grid-cols-4 gap-1.5">
           {eyeFrames.map((frame, frameId) => (
-            <div key={frame} className="flex min-w-0 flex-col items-center gap-0.5" title={frame}>
-              <canvas
-                width={skinSliceDims.slice}
-                height={skinSliceDims.slice}
-                className="aspect-square w-full cursor-zoom-in rounded-sm border border-slate-700/70"
-                style={{ imageRendering: "pixelated" }}
-                onClick={() => onZoom({ skinKey, index, frameId })}
-                ref={(el) => void (el && drawZoom(el, w, { skinKey, index, frameId }))}
-              />
-              <span className="max-w-full truncate text-[10px] text-slate-500">{frame}</span>
-            </div>
+            <Tip key={frame} content={frame}>
+              <div className="flex min-w-0 flex-col items-center gap-0.5">
+                <canvas
+                  width={skinSliceDims.slice}
+                  height={skinSliceDims.slice}
+                  className="aspect-square w-full cursor-zoom-in rounded-sm border border-slate-700/70"
+                  style={{ imageRendering: "pixelated" }}
+                  onClick={() => onZoom({ skinKey, index, frameId })}
+                  ref={(el) => void (el && drawZoom(el, w, { skinKey, index, frameId }))}
+                />
+                <span className="max-w-full truncate text-[10px] text-slate-500">{frame}</span>
+              </div>
+            </Tip>
           ))}
         </div>
       ) : (

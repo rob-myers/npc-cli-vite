@@ -1,4 +1,4 @@
-import { cn, tw, useStateRef } from "@npc-cli/util";
+import { cn, Tip, tw, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { PushPinIcon, TargetIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
@@ -336,14 +336,11 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
   const pivot = (el: HTMLElement | null) => void (entry.pivotEl = el);
   const endDrag = () => void (entry.drag = null);
   const close = (
-    <Button
-      ref={npcMenu ? undefined : pivot}
-      title="close"
-      className={cancelClass}
-      onClick={() => state.close(menuKey)}
-    >
-      ✕
-    </Button>
+    <Tip content="close">
+      <Button ref={npcMenu ? undefined : pivot} className={cancelClass} onClick={() => state.close(menuKey)}>
+        ✕
+      </Button>
+    </Tip>
   );
 
   return (
@@ -405,20 +402,16 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
           {!npcMenu && close}
           <ScrollLabel ref={npcMenu ? pivot : undefined} text={labelOf(target)} />
           <span className="flex-1" />
-          <Button
-            title={collapsed ? "expand" : "collapse"}
-            className={actionClass}
-            onClick={() => state.setCollapsed(menuKey)}
-          >
-            {collapsed ? "▸" : "▾"}
-          </Button>
-          <Button
-            title={pinned ? "unpin: back beside it" : "drag it to pin it on screen"}
-            className={cn(actionClass, !pinned && "opacity-40")}
-            onClick={() => state.resetOffset(menuKey)}
-          >
-            <PushPinIcon className="size-3" weight={pinned ? "fill" : "regular"} />
-          </Button>
+          <Tip content={collapsed ? "expand" : "collapse"}>
+            <Button className={actionClass} onClick={() => state.setCollapsed(menuKey)}>
+              {collapsed ? "▸" : "▾"}
+            </Button>
+          </Tip>
+          <Tip content={pinned ? "unpin: back beside it" : "drag it to pin it on screen"}>
+            <Button className={cn(actionClass, !pinned && "opacity-40")} onClick={() => state.resetOffset(menuKey)}>
+              <PushPinIcon className="size-3" weight={pinned ? "fill" : "regular"} />
+            </Button>
+          </Tip>
           {npcMenu && close}
         </div>
         {collapsed === false && (
@@ -443,14 +436,15 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
   const itemToggle = (name: "psi" | "phaser", className?: string) => {
     const had = w.e.hasItem(npcKey, name);
     return (
-      <Toggle
-        on={had}
-        className={className}
-        title={`${had ? "take away" : "give"} ${name}`}
-        onClick={act(() => (had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name)))}
-      >
-        {name}
-      </Toggle>
+      <Tip content={`${had ? "take away" : "give"} ${name}`}>
+        <Toggle
+          on={had}
+          className={className}
+          onClick={act(() => (had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name)))}
+        >
+          {name}
+        </Toggle>
+      </Tip>
     );
   };
   const hasPhaser = w.e.hasItem(npcKey, "phaser");
@@ -460,19 +454,20 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
       {/* one wrapping row: where they are, their pose, and what they have, lit if so */}
       <div className="flex max-w-56 flex-wrap items-center gap-1">
         {grKey !== undefined && <Info label="room">{grKey}</Info>}
-        <Picker
-          value={npc.anim.pose}
-          options={Object.keys(npc.clips) as AnimationClipKey[]}
-          title="anim"
-          className="pointer-events-auto border-white/20 bg-black/60 text-white"
-          popupClassName="font-mono"
-          onChange={(next) => {
-            if (w.n[npcKey] === undefined) return;
-            w.n[npcKey].anim.setHurt(null); // else they go back to it
-            w.n[npcKey].anim.setPose(next);
-            touch();
-          }}
-        />
+        <Tip content="anim">
+          <Picker
+            value={npc.anim.pose}
+            options={Object.keys(npc.clips) as AnimationClipKey[]}
+            className="pointer-events-auto border-white/20 bg-black/60 text-white"
+            popupClassName="font-mono"
+            onChange={(next) => {
+              if (w.n[npcKey] === undefined) return;
+              w.n[npcKey].anim.setHurt(null); // else they go back to it
+              w.n[npcKey].anim.setPose(next);
+              touch();
+            }}
+          />
+        </Tip>
         {itemToggle("psi")}
         {npcKey === w.player?.key ? (
           itemToggle("phaser")
@@ -480,31 +475,28 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
           // sight is the phaser's laser dot, so joined to it
           <span className="flex">
             {itemToggle("phaser", "rounded-r-none")}
-            <Toggle
-              on={hasPhaser && w.npcFocus.lasers.has(npcKey)}
-              disabled={hasPhaser === false}
-              className="flex items-center rounded-l-none border-l border-white/20"
-              title="sight: their phaser's laser dot"
-              onClick={act(() => w.npcFocus.setLaser(npcKey))}
-            >
-              <TargetIcon className="size-3" weight="bold" aria-label="sight" />
-            </Toggle>
+            <Tip content="sight: their phaser's laser dot">
+              <Toggle
+                on={hasPhaser && w.npcFocus.lasers.has(npcKey)}
+                disabled={hasPhaser === false}
+                className="flex items-center rounded-l-none border-l border-white/20"
+                onClick={act(() => w.npcFocus.setLaser(npcKey))}
+              >
+                <TargetIcon className="size-3" weight="bold" aria-label="sight" />
+              </Toggle>
+            </Tip>
           </span>
         )}
-        <Toggle
-          on={npc.anim.breath.on}
-          title={`${npc.anim.breath.on ? "stop" : "start"} breathing`}
-          onClick={act(() => npc.anim.setBreathing(!npc.anim.breath.on))}
-        >
-          breath
-        </Toggle>
-        <Toggle
-          on={npc.anim.dead}
-          title={npc.anim.dead ? "revive: they get up" : "kill: they fall dead"}
-          onClick={act(() => (npc.anim.dead ? npc.revive() : void npc.kill()))}
-        >
-          dead
-        </Toggle>
+        <Tip content={`${npc.anim.breath.on ? "stop" : "start"} breathing`}>
+          <Toggle on={npc.anim.breath.on} onClick={act(() => npc.anim.setBreathing(!npc.anim.breath.on))}>
+            breath
+          </Toggle>
+        </Tip>
+        <Tip content={npc.anim.dead ? "revive: they get up" : "kill: they fall dead"}>
+          <Toggle on={npc.anim.dead} onClick={act(() => (npc.anim.dead ? npc.revive() : void npc.kill()))}>
+            dead
+          </Toggle>
+        </Tip>
         {npcKey !== w.player?.key && (
           <Toggle on={npc.lit} onClick={act(() => w.e.setNpcLit(npc))}>
             lit

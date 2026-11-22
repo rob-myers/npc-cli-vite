@@ -1,5 +1,5 @@
 import type { PausedPillProps } from "@npc-cli/ui__world/paused-pill";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, Tip, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, PlayIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
@@ -67,32 +67,34 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
       )}
     >
       <div className="flex items-center">
-        <button
-          type="button"
-          title={ready ? "resume" : label}
-          // a press is still the camera's, so a pinch begun there still pinches. Only once ready does a tap resume
-          {...(ready ? resumeProps : { onPointerDown: resumeProps.onPointerDown, onWheel: resumeProps.onWheel })}
-          className={cn(
-            "flex items-center gap-3 pl-5 pr-2 py-2 touch-none",
-            "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
-            ready ? "cursor-pointer hover:text-yellow-100" : "opacity-60",
-          )}
-        >
-          {state.step === null ? (
-            <PlayIcon className="size-4 shrink-0" weight="fill" />
-          ) : (
-            <div className="size-3.5 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
-          )}
-          {label}
-        </button>
-        <button
-          type="button"
-          title={state.open ? "hide autorun" : "autorun"}
-          className="mr-3 p-1 rounded cursor-pointer outline-none text-yellow-200/50 hover:text-yellow-100 focus-visible:ring-1 focus-visible:ring-yellow-200/50"
-          onClick={() => state.set({ open: !state.open })}
-        >
-          <CaretDownIcon className={cn("size-3.5 transition-transform duration-300", state.open && "rotate-180")} />
-        </button>
+        <Tip content={ready ? "resume" : label}>
+          <button
+            type="button"
+            // a press is still the camera's, so a pinch begun there still pinches. Only once ready does a tap resume
+            {...(ready ? resumeProps : { onPointerDown: resumeProps.onPointerDown, onWheel: resumeProps.onWheel })}
+            className={cn(
+              "flex items-center gap-3 pl-5 pr-2 py-2 touch-none",
+              "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
+              ready ? "cursor-pointer hover:text-yellow-100" : "opacity-60",
+            )}
+          >
+            {state.step === null ? (
+              <PlayIcon className="size-4 shrink-0" weight="fill" />
+            ) : (
+              <div className="size-3.5 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
+            )}
+            {label}
+          </button>
+        </Tip>
+        <Tip content={state.open ? "hide autorun" : "autorun"}>
+          <button
+            type="button"
+            className="mr-3 p-1 rounded cursor-pointer outline-none text-yellow-200/50 hover:text-yellow-100 focus-visible:ring-1 focus-visible:ring-yellow-200/50"
+            onClick={() => state.set({ open: !state.open })}
+          >
+            <CaretDownIcon className={cn("size-3.5 transition-transform duration-300", state.open && "rotate-180")} />
+          </button>
+        </Tip>
       </div>
 
       {/* grows from no height, so it slides open rather than appearing */}
