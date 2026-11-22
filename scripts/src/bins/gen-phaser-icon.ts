@@ -2,7 +2,7 @@
 
 /**
  * Draws the hud's phaser icons (`service/phaser-icon.ts`) to a png: a row each, bare and with each attachment,
- * put away, armed and deactivated.
+ * put away and armed.
  * ```sh
  * gen-phaser-icon --png /tmp/phaser-icon.png
  * ```
@@ -18,12 +18,12 @@ if (opts.png === undefined) throw Error("expected --png {file}");
 
 const { size, edgeWidth, attachEdgeWidth } = phaserIconConfig;
 const zoom = 8;
-const canvas = new Canvas(3 * size * zoom, phaserIconKeys.length * size * zoom);
+const canvas = new Canvas(2 * size * zoom, phaserIconKeys.length * size * zoom);
 const ctx = canvas.getContext("2d");
 ctx.fillStyle = "#1b1f26";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 for (const [row, key] of phaserIconKeys.entries())
-  (["off", "armed", "dead"] as const).forEach((state, i) => {
+  [false, true].forEach((armed, i) => {
     const { faces, beam } = phaserIcons[key];
     ctx.save();
     ctx.scale(zoom, zoom);
@@ -31,13 +31,13 @@ for (const [row, key] of phaserIconKeys.entries())
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     for (const face of faces) {
-      ctx.fillStyle = "fill" in face ? face.fill : face[state];
+      ctx.fillStyle = "fill" in face ? face.fill : armed ? face.armed : face.off;
       ctx.fill(new Path2D(face.d));
       ctx.strokeStyle = face.attached ? gunColors.attachEdge : gunColors.iconEdge;
       ctx.lineWidth = face.attached ? attachEdgeWidth : edgeWidth;
       ctx.stroke(new Path2D(face.edges));
     }
-    if (state === "armed") {
+    if (armed) {
       ctx.strokeStyle = gunColors.beam;
       ctx.lineWidth = 1.5;
       ctx.beginPath();

@@ -7,6 +7,7 @@ import {
   BinocularsIcon,
   FingerprintIcon,
   GearSixIcon,
+  LockIcon,
   PlugsIcon,
   SpeakerHighIcon,
   SpeakerSlashIcon,
@@ -1075,6 +1076,7 @@ const PhaserIcon = memo(function PhaserIcon({
 }: {
   armed: boolean;
   locked: boolean;
+  /** Deactivated: a padlock by its top right corner, e.g. by a shield of another frequency */
   dead: boolean;
   attachment: null | Exclude<PhaserIconKey, "none">;
 }) {
@@ -1107,8 +1109,8 @@ const PhaserIcon = memo(function PhaserIcon({
       <g strokeLinecap="round">
         {faces.map((face) => (
           <g key={face.d}>
-            {/* one fill, else its own put away, drawn and deactivated */}
-            <path d={face.d} fill={"fill" in face ? face.fill : armed ? face.armed : dead ? face.dead : face.off} />
+            {/* one fill, else its own put away and drawn */}
+            <path d={face.d} fill={"fill" in face ? face.fill : armed ? face.armed : face.off} />
             {/* an attachment's edges black, so it stands out */}
             <path
               d={face.edges}
@@ -1119,6 +1121,7 @@ const PhaserIcon = memo(function PhaserIcon({
           </g>
         ))}
       </g>
+      {dead && <LockIcon x={41} y={3} size={18} weight="fill" color="#f87171" aria-label="deactivated" />}
       {armed === true && <circle cx={from.x - 2} cy={from.y - 1} r="8" fill="url(#hud-phaser-glow)" />}
       {/* its beam fades in, and out towards the edge rather than ending in a dot */}
       <g

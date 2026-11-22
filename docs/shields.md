@@ -83,7 +83,7 @@ shield until the next cast returns. A beam let go of keeps its last shields, so 
 ## Deactivating a phaser
 
 Carrying an untuned phaser through a live shield of some frequency deactivates it. A dead phaser
-cannot be raised; its emitter is blue, in hand and in the bar; the player is told by toast.
+cannot be raised. Its emitter is blue in hand, and the bar's phaser has a red padlock at its corner. The player is told by toast.
 
 The item holds `meta.dead`, the frequencies it is dead to, and fires only whilst that is empty. A
 crossing TOGGLES the shield's frequency in it, so in is dead and back out through any shield of

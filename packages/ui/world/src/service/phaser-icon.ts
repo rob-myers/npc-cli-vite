@@ -110,24 +110,23 @@ const beamDir = { x: ca, y: sa * se };
 const faceShade = (n: number[]) => 1 + 0.32 * n[0] - 0.26 * Math.abs(n[1]);
 const glowShade = (n: number[]) => 1 + 0.15 * n[0] - 0.15 * Math.abs(n[1]);
 
-/** A face's fill put away, drawn and deactivated. An attachment is white, untoned, its emitters holes */
+/** A face's fill put away and drawn. An attachment is white, untoned, its emitters holes */
 const fillsOf = ({ kind, tone }: GunBox, n: number[], attached: boolean) => {
   const body = attached ? shade(gunColors.attach, faceShade(n)) : shade(gunColors.iconGun, tone * faceShade(n));
   if (kind === "emitter") {
     const off = attached ? shade(gunColors.hole, faceShade(n)) : body;
-    return { off, armed: shade(gunColors.beam, glowShade(n)), dead: shade(gunColors.dead, glowShade(n)) };
+    return { off, armed: shade(gunColors.beam, glowShade(n)) };
   }
   if (kind === "strip") {
     const slot = shade(gunColors.slot, faceShade(n));
-    return { off: slot, armed: mix(slot, gunColors.beam, 0.55), dead: slot };
+    return { off: slot, armed: mix(slot, gunColors.beam, 0.55) };
   }
-  return { off: body, armed: body, dead: body };
+  return { off: body, armed: body };
 };
 
 type Fills = ReturnType<typeof fillsOf>;
-/** One `fill` where put away, drawn and deactivated alike */
-const fillOf = (fills: Fills): { fill: string } | Fills =>
-  fills.off === fills.armed && fills.armed === fills.dead ? { fill: fills.off } : fills;
+/** One `fill` where put away and drawn alike */
+const fillOf = (fills: Fills): { fill: string } | Fills => (fills.off === fills.armed ? { fill: fills.off } : fills);
 
 const pathOf = (points: Pt[], closed: boolean) =>
   `M${points
@@ -136,8 +135,8 @@ const pathOf = (points: Pt[], closed: boolean) =>
     .join(" ")}${closed ? "Z" : ""}`;
 
 /**
- * By key, its faces farthest first: each its path, its edges, and its `fill`, else its fill put away, drawn and
- * deactivated (`attached` if the attachment's). And where its beam leaves and meets the icon's edge
+ * By key, its faces farthest first: each its path, its edges, and its `fill`, else its fill put away and drawn
+ * (`attached` if the attachment's). And where its beam leaves and meets the icon's edge
  */
 export const phaserIcons = Object.fromEntries(
   phaserIconKeys.map((key) => {
