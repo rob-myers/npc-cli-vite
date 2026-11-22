@@ -252,6 +252,12 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`.
   - Tile N sub-panels with `uvCoord.x.mul(cols).fract()`, then detect seams with `step(seamW, subU).add(step(subU, seamW).clamp(0,1))`.
 - **`DerivedGmsData.findRoomIdContaining`** throws `"Value is not of type 'long'"` on NaN or Infinity, e.g. from a divide-by-zero in a normal. Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering.
+- **TS2590, "too complex to represent".** TSL types sit near tsc's limit, and pass or fail by the order files are checked in. So a fix at one line often moves the error to the next.
+  - Name the node type rather than have it inferred: `varyingAs<"vec3">(node, name)` and `selectAs<"vec4">(cond, a, b)` (`service/tsl.ts`). Use them for a shader's every `varying`, not just the line reported.
+  - Check with `pnpm types --force`: a plain `pnpm types` may reuse a stale build.
+
+**Scripts importing the World**
+- A script in `scripts/` imports World code by a package subpath, e.g. `@npc-cli/ui__world/phaser-icon`, added to `exports` in its `package.json`. A relative path into `packages/ui/world/src` is TS6307: the file is not in the scripts project.
 
 **`w.view.forceUpdate` runs a tick**
 - It runs `w.npc.onTick` and `w.e.postNpcTick`, keyed ticks included, then renders.
