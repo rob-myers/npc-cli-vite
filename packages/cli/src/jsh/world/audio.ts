@@ -424,7 +424,8 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       heard(e.npcKey) && playAt(w, e.taken ? "take" : "put", e.npcKey, { kind: e.kind, amount: e.floor ? 1 : 0 });
       break;
     case "phaser-fired":
-      heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge });
+      // its look shapes it: attachment and beam style
+      heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge, look: w.phasers?.lookOf(e.by) });
       break;
     case "npc-shot":
       heard(e.by, e.npcKey) && playAt(w, e.outcome === "down" || e.outcome === "kill" ? "hit" : e.outcome, e.npcKey);

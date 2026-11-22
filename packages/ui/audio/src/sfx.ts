@@ -33,11 +33,17 @@ export type SfxContext = {
   kind: string;
   /** A door's voice */
   voice: DoorVoice;
+  /** A phaser's look, which shapes its `fire` */
+  look: PhaserSfxLook;
   /** One of `bank`'s samples, else `null` before they load */
   sample(bank: SampleBank): null | AudioBuffer;
 };
 
 export type SfxBuilder = (c: SfxContext, out: AudioNode) => void;
+
+/** A phaser's beam style and attachment, as the World names them: plain strings, so audio never imports it */
+export type PhaserSfxLook = { style: string; attachment: null | string };
+export const plainLook: PhaserSfxLook = { style: "plain", attachment: null };
 
 /** Seconds a sound effect is kept for, its room's tail included */
 export const sfxSecs = 2;

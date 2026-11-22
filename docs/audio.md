@@ -102,13 +102,26 @@ Synthesised, over a few recorded layers (`phaser.ts`).
 | `lower` | `phasers` not armed | a click as it is made safe, a rustle, the leather taking it back |
 | `charge` (held) | `w.phasers.isCharging` | a low tone throbbing faster as it fills, 3 to 18 times a second, with a swell of air |
 | `charged` | the charge reaching full | a snap of current |
-| `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`) |
+| `fire` | `phaser-fired` | a recorded zap of electricity (`zap`, six), its body lifted and fizz eased (`zapBody`, `zapSoft`): a tap as recorded, a full charge lower, louder and longer (`zapRate`, `zapSecs`). Its look shapes it: see below |
 | `cool` | a charge cancelled (`isCooling`) | its pulse slowing, sinking and fading, the air falling away |
 | `hit` | `npc-shot` hit, down or kill | a recorded electric hum (`shock`, one): a shot striking someone |
 | `armour` | `npc-shot` armour | a recorded plate pitched down, the charge soaked up (`absorb`), sparks off it, and a low knock |
 | `struck` | `phaser-struck` | the charge soaked up alone (`absorb`): a shot striking a wall, door, obstacle or decor |
 | `ghost` | `npc-shot` ghost | recorded static (`static`) as it passes through them, then the charge soaked up beyond, as `struck` |
 
+- `fire` takes the shooter's look (`w.phasers.lookOf`, passed as `look` by jsh `sounds`). Its attachment reshapes the zap (`zapShapes`) and adds a layer (`fireAttachments`), and its beam style another (`fireStyles`):
+
+  | look | sound |
+  | --- | --- |
+  | `caliber` | parallel rays: a lower zap with one either side, panned apart, warmly overdriven (`warmed`), over a tight punchy thump |
+  | `shotgun` | fat: a lower zap and four side rays in tight unison fanned wide, warmly overdriven (`warmed`), over a sub sliding down and a heavy thump |
+  | `rotator` | a short, higher zap and the barrel's click, so held fire rattles |
+  | `lightning` | a sharp snap, then a hissing sizzle crackling all along it |
+  | `tesla` | a coil's raspy roar, two arcs overdriven and flickering, a falling zip, and sparks |
+  | `static` | a hum and static hiss cutting in and out irregularly, as a bad connection |
+  | `bolts` | three quick falling chirps, a dash each racing to the target |
+
+  The look is plain strings (`PhaserSfxLook`), so audio never imports the World.
 - A one-shot's key goes in `sfxKeys` and its builder in `phaserSfx`. Label it in the desk's `sfxLabels`.
 - `absorb` is a shot's charge soaked up: its `shock` cut short, and a sawtooth sinking under it. Armour's lasts
   `absorbSecs`, a wall's or door's longer, `struckSecs`.
