@@ -11420,7 +11420,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[1.5, -0.5], [1.5, 0.75], [0, 0.75], [0, -0.5]]],
-          "meta": {"decor": true, "rect": true, "shield": true}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false
+          }
         }
       ],
       "doors": [],
@@ -18945,7 +18950,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[1.5, -0.5], [1.5, 0.75], [0, 0.75], [0, -0.5]]],
-          "meta": {"decor": true, "rect": true, "shield": true}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false
+          }
         }
       ],
       "doors": [],
@@ -31900,7 +31910,13 @@
               [12.7625, 17.2375]
             ]
           ],
-          "meta": {"decor": true, "rect": true, "shield": true, "y": 0.01}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false,
+            "y": 0.01
+          }
         },
         {
           "type": "Polygon",
@@ -31912,7 +31928,13 @@
               [18.7256, 17.2456]
             ]
           ],
-          "meta": {"decor": true, "rect": true, "shield": true, "y": 0.01}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false,
+            "y": 0.01
+          }
         },
         {
           "type": "Polygon",
@@ -45749,7 +45771,13 @@
               [20.2482, 6.6458]
             ]
           ],
-          "meta": {"decor": true, "rect": true, "shield": true, "y": 0.01}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false,
+            "y": 0.01
+          }
         },
         {
           "type": "Polygon",
@@ -45961,7 +45989,13 @@
               [11.2517, 6.6458]
             ]
           ],
-          "meta": {"decor": true, "rect": true, "shield": true, "y": 0.01}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false,
+            "y": 0.01
+          }
         },
         {
           "type": "Polygon",
@@ -55118,7 +55152,13 @@
               [0.7455, -0.6458]
             ]
           ],
-          "meta": {"decor": true, "rect": true, "shield": true, "y": 0.01}
+          "meta": {
+            "decor": true,
+            "rect": true,
+            "shield": true,
+            "reflect": false,
+            "y": 0.01
+          }
         },
         {
           "type": "Polygon",
@@ -64193,6 +64233,7 @@
             "decor": true,
             "rect": true,
             "shield": true,
+            "reflect": false,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -64215,6 +64256,7 @@
             "decor": true,
             "rect": true,
             "shield": true,
+            "reflect": false,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -85639,6 +85681,7 @@
             "decor": true,
             "rect": true,
             "shield": true,
+            "reflect": false,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -85905,6 +85948,7 @@
             "decor": true,
             "rect": true,
             "shield": true,
+            "reflect": false,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
