@@ -6,7 +6,7 @@ import {
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { Menu } from "@base-ui/react/menu";
-import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
+import { cn, Tip, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import {
   ArrowSquareOutIcon,
   FolderIcon,
@@ -182,23 +182,24 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           }}
         />
 
-        <button
-          className={cn(
-            "flex items-center justify-center text-on-background/50 hover:text-on-background",
-            node.locked && "text-on-background/80",
-          )}
-          title={node.locked ? "Unlock (or alt-click)" : "Lock"}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (root.isReadOnly()) return;
-            const locked = !node.locked;
-            root.pushHistory(); // `locked` is saved with the node, so this is a real change
-            traverseNodesSync([node], (n) => (n.locked = locked));
-            root.update();
-          }}
-        >
-          {node.locked ? <LockIcon className="size-3 text-red-400" /> : <LockOpenIcon className="size-3" />}
-        </button>
+        <Tip content={node.locked ? "Unlock (or alt-click)" : "Lock"}>
+          <button
+            className={cn(
+              "flex items-center justify-center text-on-background/50 hover:text-on-background",
+              node.locked && "text-on-background/80",
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (root.isReadOnly()) return;
+              const locked = !node.locked;
+              root.pushHistory(); // `locked` is saved with the node, so this is a real change
+              traverseNodesSync([node], (n) => (n.locked = locked));
+              root.update();
+            }}
+          >
+            {node.locked ? <LockIcon className="size-3 text-red-400" /> : <LockOpenIcon className="size-3" />}
+          </button>
+        </Tip>
       </div>
 
       {symbolKey !== null && (

@@ -24,7 +24,7 @@ export function AboutModal({ open, onOpenChange }: { open: boolean; onOpenChange
           <div className="flex items-center justify-between pl-5 pr-2 py-2 border-b border-neutral-800">
             <Dialog.Title className="flex items-center gap-2.5 text-base font-medium text-neutral-100">
               <img src="/favicon.svg" alt="" className="size-6" />
-              About NPC CLI
+              About
             </Dialog.Title>
             <Dialog.Close className="grid place-items-center size-9 rounded text-neutral-300 cursor-pointer hover:bg-neutral-700">
               <XIcon className="size-4" weight="bold" />

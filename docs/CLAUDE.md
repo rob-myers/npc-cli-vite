@@ -109,6 +109,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Perception | `docs/perception.md` | Spot and sight queries (`spotQuery`) are answered on the nav worker, beside the plan ops. `worker.main.ts` sets it up per map with what blocks sight, and tells it of doors as they change. `worker/handle-perception.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spots show`). `sees --debug a b` says and draws why. |
 | Jsh jobs | `docs/jsh-jobs.md` | A tty's jobs show in a panel beside it, toggled by **jobs** at the tty's top right, above its menu, and dragged by its grip button to an edge's centre, which shows its destination rect. A sash resizes it. `jobs.{shown,at,size}` is saved in the Jsh's meta. Only CSS moves the panel, so the tty never remounts. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
+| Development | `docs/development.md` | Quick start, layout, scripts, hooks and the docs list. `README.md` is generated from the About modal's `about.mdx` by `pnpm sync-readme` (and the pre-commit hook), so edit that instead. |
 | Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
 ## Renderer
@@ -137,7 +138,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
     - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `gazeYieldSecs` after. Its hud-toast greys meanwhile.
   - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
   - Sat, they look over a shoulder at most: a look more than `sitLookMaxRad` (120°) off their facing is ignored.
-  - `,` and `.` turn them to the next 90° step, their facing swinging to the screen's left or right (`w.player.snapTurn`). Facing the camera that is the other way round, so the way is fixed by a chain's first press. A step is a look held `lookHoldMs`, with no cross and their look's reach kept. Quick presses chain on from the step under way. `/` turns them to the nearest 90°. Raised, the body faces the step exactly, not the muzzle's line.
+  - `l`, `,`, `.` and `/` look as the w, a, s and d keys head, onto the nearest world axis (`lookTurnByCode`, `w.player.lookAlong`). Two held look diagonally between them (`w.player.lookCodes`). A look lasts whilst its key is held, then `lookHoldMs`, with no cross and their look's reach kept. Raised, the body faces it exactly, not the muzzle's line.
   - Space held with the phaser lowered looks as far as sight goes along their facing (`setFarLook`), extending their frontier, recast as they turn or walk. Raised, the same look runs along the muzzle's line. It overrides any look whilst held. In gaze mode, or whilst `r` is held, it casts along the pointer instead, and gaze mode stays on. The bar says "focal max" ("gaze max"). Letting go of Space ends it, giving the look back.
   - A look caps their frontier at its distance (`w.player.look`). A tap or right-click sets it until another, or the hud-toast's x. It starts at 1.5m (`lookBase`, kept per World). `r` held a while, or gaze mode, steers it only whilst on. See Following the player in `docs/camera.md`.
 
@@ -251,6 +252,12 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`.
   - Tile N sub-panels with `uvCoord.x.mul(cols).fract()`, then detect seams with `step(seamW, subU).add(step(subU, seamW).clamp(0,1))`.
 - **`DerivedGmsData.findRoomIdContaining`** throws `"Value is not of type 'long'"` on NaN or Infinity, e.g. from a divide-by-zero in a normal. Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering.
+- **TS2590, "too complex to represent".** TSL types sit near tsc's limit, and pass or fail by the order files are checked in. So a fix at one line often moves the error to the next.
+  - Name the node type rather than have it inferred: `varyingAs<"vec3">(node, name)` and `selectAs<"vec4">(cond, a, b)` (`service/tsl.ts`). Use them for a shader's every `varying`, not just the line reported.
+  - Check with `pnpm types --force`: a plain `pnpm types` may reuse a stale build.
+
+**Scripts importing the World**
+- A script in `scripts/` imports World code by a package subpath, e.g. `@npc-cli/ui__world/phaser-icon`, added to `exports` in its `package.json`. A relative path into `packages/ui/world/src` is TS6307: the file is not in the scripts project.
 
 **`w.view.forceUpdate` runs a tick**
 - It runs `w.npc.onTick` and `w.e.postNpcTick`, keyed ticks included, then renders.

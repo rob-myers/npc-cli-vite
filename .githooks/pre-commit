@@ -6,6 +6,11 @@ pnpm gen-starship-sheets
 # Stage any generated/updated sheet files
 git add packages/app/public/sheet/ packages/app/public/sheets.json packages/app/public/assets.json
 
+# README's intro is the About modal's text
+if git diff --cached --name-only | grep -q 'packages/app/src/components/about.mdx$'; then
+  pnpm sync-readme && git add README.md
+fi
+
 # production loads current.glb, written from a staged current.gltf
 if git diff --cached --name-only | grep -q 'blockbench/current/current.gltf$'; then
   pnpm exec gen-current-glb && git add packages/media/src/blockbench/current/current.glb

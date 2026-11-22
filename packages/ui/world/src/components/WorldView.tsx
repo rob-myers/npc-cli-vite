@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, redrawForSnapshotEvent, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, redrawForSnapshotEvent, Tip, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
@@ -1857,29 +1857,30 @@ export function WorldView(props: React.PropsWithChildren) {
       {/* paused indicator, which is also how you resume: the menu's play button is a long way from
           where the eye is whilst playing, and the world's own centre is not */}
       {PausedPill === null ? (
-        <button
-          type="button"
-          title="resume"
-          ref={state.ref("pausedEl")}
-          onClick={() => w.setDisabled(false)}
-          onWheel={state.forwardWheel}
-          // a press is still the camera's, so a pinch begun there still pinches — and no card beneath
-          // takes it. The tap that resumes is found by `onPointerUp`
-          onPointerDown={state.forwardPointer}
-          className={cn(
-            indicatorClassName,
-            // over npc focus's labels (`z-20`)
-            "top-[40%] z-30 transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
-            // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
-            // paused — else an invisible button sits over the middle of a running world
-            state.showsPaused() === false
-              ? "pointer-events-none opacity-0"
-              : "cursor-pointer opacity-100 hover:text-yellow-100",
-          )}
-        >
-          <PlayIcon className="size-4 shrink-0" weight="fill" />
-          paused
-        </button>
+        <Tip content="resume">
+          <button
+            type="button"
+            ref={state.ref("pausedEl")}
+            onClick={() => w.setDisabled(false)}
+            onWheel={state.forwardWheel}
+            // a press is still the camera's, so a pinch begun there still pinches — and no card beneath
+            // takes it. The tap that resumes is found by `onPointerUp`
+            onPointerDown={state.forwardPointer}
+            className={cn(
+              indicatorClassName,
+              // over npc focus's labels (`z-20`)
+              "top-[40%] z-30 transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
+              // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
+              // paused — else an invisible button sits over the middle of a running world
+              state.showsPaused() === false
+                ? "pointer-events-none opacity-0"
+                : "cursor-pointer opacity-100 hover:text-yellow-100",
+            )}
+          >
+            <PlayIcon className="size-4 shrink-0" weight="fill" />
+            paused
+          </button>
+        </Tip>
       ) : (
         <PausedPill
           w={w}

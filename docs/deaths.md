@@ -106,6 +106,17 @@ the clip they fell by, e.g. `get_up_back` (`startRise`). Its first frame is the 
 - `get_up_back` sits up, then rolls forward into a squat. `get_up_forward` pushes up onto hands and knees, then kneels
   up over one foot.
 - A fall with no get-up in `deathConfig.getUp` is let go at once, as is a death sat or lain.
+- A respawn (`spawn`) lets them go at once, dead or hurt, with no get-up or fade (`setHurt`'s `snap`, in `rawSpawn`).
+
+## Spawned dead
+
+`spawn rob at:… dead` spawns them dead (`SpawnOpts.dead`), and `dead:die_back` in a clip of choice. By default they
+lie sat or lain as their idle is (`deathConfig.dead`), else fallen either way (`anim.restoreDead()`). A corpse may lie
+off the navmesh, so long as it is in a room: it lies exactly where put, out of the crowd. A saved corpse is restored
+this way.
+
+- Lain at once, their label is put at its height, not glided down as by a fall.
+- Any stance hold is let go first (`docs/npc-stance.md`). Else its sink, from standing, drags the body under the floor.
 
 ## Saved
 

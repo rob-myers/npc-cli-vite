@@ -101,6 +101,8 @@ export const npcConfig = {
     walkSquare: 0.7,
     /** Within this of a wall square ahead they walk. Further, up to `armInNear.run`, a straight run slows instead */
     walkNear: 1,
+    /** Strafing, `walkNear` by way, blended. A run's guard reaches 0.57m ahead, 0.32m past the navmesh's edge */
+    strafeWalkNear: { run_ahead: 1, run_strafe_right: 0.4, run_backwards: 0, run_strafe_left: 0.4 },
     /** Rays this far either side of a square hit, both clear, make it a post, e.g. a thin wall between doors: they keep running */
     postHalf: 0.6,
     /** How far past a post's face those rays must run clear */

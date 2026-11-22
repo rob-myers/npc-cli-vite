@@ -124,9 +124,11 @@ export default function NpcRings() {
       showSelectRing(npcKey, color) {
         const now = w.realTime.node.value;
         const ring = state.selectRingByNpc.get(npcKey);
+        const look = selectRingOnDeck[w.getTheme().floor.deck];
         // recolouring one already up leaves it where it is rather than closing on them again
         if (ring !== undefined) {
-          ring.color.set(color);
+          ring.color.set(color).multiplyScalar(look.darken);
+          ring.style = look.style;
           state.fadeRing(ring, 1);
           return;
         }
@@ -137,13 +139,14 @@ export default function NpcRings() {
         const radius = w.n[npcKey]?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
         const next: RingInstance = {
           ...selectRingLook,
+          style: look.style,
           x: 0,
           y: 0,
           z: 0,
           roomSlot: alwaysShownSlot,
           fade: arrivedAt(0, now),
           radius: arrivedAt(radius, now),
-          color: new THREE.Color(color),
+          color: new THREE.Color(color).multiplyScalar(look.darken),
         };
         state.selectRingByNpc.set(npcKey, next);
         state.fadeRing(next, 1);
@@ -359,6 +362,11 @@ const selectRingLook: RingLook = {
   color: /* @__PURE__ */ new THREE.Color(),
   radius: /* @__PURE__ */ arrivedAt(0, 0),
   fadeSecs: ringFadeSecs,
+};
+/** A select ring's style and darkening by deck. On a light one a faint pale ring vanishes, so it is drawn as ink */
+const selectRingOnDeck = {
+  dark: { style: selectRingLook.style, darken: 1 },
+  light: { style: { ...selectRingLook.style, alpha: 0.5 }, darken: 0.55 },
 };
 const selectRingSeatedRadius = npcShadowRadius * 0.7 * perMetre;
 const selectRingStandingRadius = npcShadowRadius * 1.15 * perMetre;

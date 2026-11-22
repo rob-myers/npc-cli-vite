@@ -27,7 +27,9 @@
     "./talk": "./src/service/talk.ts",
     "./worker/nav": "./src/worker/nav.worker.ts",
     "./worker/nav-util": "./src/worker/nav-util.ts",
-    "./nav-worker-factory": "./src/service/nav-worker-factory.ts"
+    "./nav-worker-factory": "./src/service/nav-worker-factory.ts",
+    "./phaser-gun": "./src/service/phaser-gun.ts",
+    "./phaser-icon": "./src/service/phaser-icon.ts"
   },
   "scripts": {},
   "dependencies": {

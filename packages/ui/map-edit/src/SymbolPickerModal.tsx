@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import { cn, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, Tip, useStateRef } from "@npc-cli/util";
 import { XIcon } from "@phosphor-icons/react";
 import { memo, useEffect } from "react";
 import type { SymbolsManifest } from "./editor.schema";
@@ -55,32 +55,32 @@ function SymbolPickerModal({
             ) : (
               <div className="flex flex-wrap justify-center sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {entries.map((entry) => (
-                  <button
-                    key={entry.filename}
-                    type="button"
-                    className="flex flex-col justify-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 cursor-pointer"
-                    onClick={() => {
-                      onSelect(entry.key);
-                      onOpenChange(false);
-                    }}
-                    title={entry.filename}
-                  >
-                    <div className="h-full flex items-center justify-center">
-                      <img
-                        src={`/symbol/${entry.thumbnailFilename}?${state.cachedBustingQuery}`}
-                        alt={entry.filename}
-                        className={cn("size-20 object-contain", !state.loadedImages.has(entry.filename) && "hidden")}
-                        onLoad={() => {
-                          state.loadedImages.add(entry.filename);
-                          state.update();
-                        }}
-                      />
-                      {!state.loadedImages.has(entry.filename) && <Spinner />}
-                    </div>
-                    <span className="text-[12px] text-slate-400 truncate w-full text-center">
-                      {entry.filename.replace(/\.json$/, "")}
-                    </span>
-                  </button>
+                  <Tip key={entry.filename} content={entry.filename}>
+                    <button
+                      type="button"
+                      className="flex flex-col justify-center gap-1 p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500 cursor-pointer"
+                      onClick={() => {
+                        onSelect(entry.key);
+                        onOpenChange(false);
+                      }}
+                    >
+                      <div className="h-full flex items-center justify-center">
+                        <img
+                          src={`/symbol/${entry.thumbnailFilename}?${state.cachedBustingQuery}`}
+                          alt={entry.filename}
+                          className={cn("size-20 object-contain", !state.loadedImages.has(entry.filename) && "hidden")}
+                          onLoad={() => {
+                            state.loadedImages.add(entry.filename);
+                            state.update();
+                          }}
+                        />
+                        {!state.loadedImages.has(entry.filename) && <Spinner />}
+                      </div>
+                      <span className="text-[12px] text-slate-400 truncate w-full text-center">
+                        {entry.filename.replace(/\.json$/, "")}
+                      </span>
+                    </button>
+                  </Tip>
                 ))}
               </div>
             )}

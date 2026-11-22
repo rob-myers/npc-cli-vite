@@ -108,6 +108,8 @@ export class NpcAnimation {
   strafing = false;
   /** Strafing, the top speed this heading allows walking and running — see `syncStrafe` */
   strafeTop = { walk: strafeSpeed.walk, run: strafeSpeed.run_ahead };
+  /** Strafing, `walkNear` for this heading — see `syncStrafe` */
+  strafeWalkNear: number = npcConfig.dist.walkNear;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
@@ -625,9 +627,9 @@ export class NpcAnimation {
     return runLeast + (run - runLeast) * t;
   }
 
-  /** Whether a wall square ahead has them walk: strafing at once, else within `walkNear` */
+  /** Whether a wall square ahead has them walk: within `walkNear`, strafing its share by heading */
   wallStops() {
-    return this.nearWall === "ahead" && (this.strafe === true || this.wallRoom < npcConfig.dist.walkNear);
+    return this.nearWall === "ahead" && this.wallRoom < (this.strafe ? this.strafeWalkNear : npcConfig.dist.walkNear);
   }
 
   /** As the pose left the arm, before `held` reached with it, unless its clip has written it since */
@@ -680,9 +682,15 @@ export class NpcAnimation {
     return inTheWay(this);
   }
 
-  /** Dead as restored, e.g. from a save, held at the end of `clip` — see `npc-death` */
-  restoreDead(clip: AnimationClipKey) {
-    restoreDead(this, clip);
+  /**
+   * Dead as restored, e.g. from a save, held at the end of `clip` — see `npc-death`.
+   * By default sat or lain as their idle is, else fallen either way
+   */
+  restoreDead(clip?: AnimationClipKey) {
+    if (this.stance.held === true) letGo(this.stance); // a hold from standing would sink them through the floor
+    const fall = deathConfig.die[Math.random() < 0.5 ? "back" : "forward"];
+    const fallen = Math.random() < 0.5 ? (mirrorOf.get(fall) ?? fall) : fall;
+    restoreDead(this, clip ?? deathConfig.dead[postureOf(keyOf(this.idleClip))] ?? fallen);
   }
 
   /** Where they stagger to, killed by `clip` with no room to fall here — see `npc-death` */
@@ -746,12 +754,15 @@ export class NpcAnimation {
     this.syncMaxSpeed();
   }
 
-  /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
-  setHurt(key: null | AnimationClipKey, impact?: HitImpact) {
+  /**
+   * Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them.
+   * Released, a fallen corpse gets up first. With `snap` they are let go at once, with no fade
+   */
+  setHurt(key: null | AnimationClipKey, impact?: HitImpact, { snap = false } = {}) {
     const dead = this.dead === true;
     if (impact !== undefined) flinch(this, impact.part, impact.at, impact.dir, dead ? flinchConfig : hitFlinchConfig);
     if (key !== null && dead) return; // a corpse only jolts
-    if (key === null && dead && startRise(this) === true) return; // a fallen corpse gets up first
+    if (key === null && dead && !snap && startRise(this) === true) return;
     const kill = impact?.outcome === "kill";
     /** Radians they turn as they fall dead, to fit — see `fitDeath` */
     let [turn, slide] = [0, null as null | Geom.VectJson];
@@ -792,7 +803,8 @@ export class NpcAnimation {
         if (near.success === true) this.w.npc.placeNpcAt(this.npc, near);
       }
     }
-    this.setPose(this.restKey, { force: key !== null, fade: key === null ? undefined : hitConfig.fadeInSecs });
+    const fade = key !== null ? hitConfig.fadeInSecs : snap ? 0 : undefined;
+    this.setPose(this.restKey, { force: key !== null, fade });
     if (key !== null) this.mixer.existingAction(this.npc.clips[key])?.setEffectiveTimeScale(rate);
     if (key === hitConfig.sink) this.setEyes("scared"); // until released
     this.w.r3f?.invalidate();
@@ -1153,11 +1165,12 @@ export class NpcAnimation {
       const heading = headingOf(rotation.y, vx, vz);
       actions.forEach((action, i) => void (action.weight += (gaitWeight(heading, i) - action.weight) * ease));
     }
-    const blend = (byKey: Record<GaitKey, number>, set: readonly GaitKey[] = keys) =>
-      actions.reduce((sum, action, i) => sum + action.weight * byKey[set[i]], 0);
+    const blend = (byKey: Partial<Record<GaitKey, number>>, set: readonly GaitKey[] = keys) =>
+      actions.reduce((sum, action, i) => sum + action.weight * (byKey[set[i]] ?? 0), 0);
     const { strafeTop } = this;
     strafeTop.walk = blend(strafeSpeed, strafeClipKeys);
     strafeTop.run = blend(strafeSpeed, runStrafeClipKeys);
+    this.strafeWalkNear = blend(npcConfig.dist.strafeWalkNear, runStrafeClipKeys);
     // as fast as that way allows, running whilst `fast`
     if (agent !== null && this.strafe === true)
       agent.maxSpeed = this.shuffling ? this.shuffleSpeed() : this.fast === true ? strafeTop.run : blend(strafeSpeed);

@@ -20,12 +20,12 @@ import {
   screenSize,
   sin,
   smoothstep,
-  varying,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { type PhaserUniforms, type PhaserView, seenBy } from "./phaser.shader";
+import { varyingAs } from "./tsl";
 
 export const MAX_BEAM_SEGMENTS = 512;
 
@@ -147,25 +147,25 @@ export function beamNodes({ phase, gain, faint }: PhaserUniforms, view: PhaserVi
   const seen = seenBy(view);
   const name = (key: string) => (tip ? `vBall${key}` : `vBeam${key}`);
   /** As their npcs are: the ball the target, the beam each end nearer it */
-  const vSeen = varying(
+  const vSeen = varyingAs<"float">(
     tip ? seen(rooms.y, rooms.w) : mix(seen(rooms.x, rooms.z), seen(rooms.y, rooms.w), t.mul(locked)),
     name("Seen"),
   );
-  const vShown = varying(shown, name("Shown"));
-  const vLocked = varying(locked, name("Locked"));
+  const vShown = varyingAs<"float">(shown, name("Shown"));
+  const vLocked = varyingAs<"float">(locked, name("Locked"));
   /** Its alpha's gain by the charge it was fired with */
-  const vFired = varying(fired.mul(cfg.chargeBright).add(1), name("Fired"));
-  const along = varying(t, name("T"));
-  const vColor = varying(tint.xyz, name("Color"));
+  const vFired = varyingAs<"float">(fired.mul(cfg.chargeBright).add(1), name("Fired"));
+  const along = varyingAs<"float">(t, name("T"));
+  const vColor = varyingAs<"vec3">(tint.xyz, name("Color"));
   /** Metres short of the end, where the beam meets the body part */
-  const toEnd = varying(t.oneMinus().mul(len), name("ToEnd"));
+  const toEnd = varyingAs<"float">(t.oneMinus().mul(len), name("ToEnd"));
   /** `-1` to `1` across the ribbon */
-  const vAcross = varying(positionLocal.x.mul(2) as F, name("Across"));
-  const vSeed = varying(look.y, name("Seed"));
+  const vAcross = varyingAs<"float">(positionLocal.x.mul(2), name("Across"));
+  const vSeed = varyingAs<"float">(look.y, name("Seed"));
   /** Its style, one-hot: jagged, crackling, bolted */
-  const vStyle = varying(vec3(jagged, crackling, bolted), name("Style"));
+  const vStyle = varyingAs<"vec3">(vec3(jagged, crackling, bolted), name("Style"));
   /** Lightning's brightness, flickering as it is redrawn: the same along the segment */
-  const vFlash = varying(
+  const vFlash = varyingAs<"float">(
     hash(look.y.add(tickOf(cfg.jagHz).mul(31)))
       .mul(0.3)
       .add(0.7)

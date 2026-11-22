@@ -43,6 +43,12 @@ export function leaves<L extends object>(node: PaneNode<L>): PaneLeaf<L>[] {
   return node.type === "leaf" ? [node] : node.children.flatMap(leaves);
 }
 
+/** Its leaves on screen: none under a child its split hides */
+export function shownLeaves<L extends object>(node: PaneNode<L>): PaneLeaf<L>[] {
+  if (node.type === "leaf") return [node];
+  return node.children.filter((child) => !node.hiddenIds?.includes(child.id)).flatMap(shownLeaves);
+}
+
 /** The largest id in the tree, so a new node takes the next */
 export function maxPaneId<L extends object>(node: PaneNode<L>): number {
   return node.type === "leaf" ? node.id : Math.max(node.id, ...node.children.map(maxPaneId));

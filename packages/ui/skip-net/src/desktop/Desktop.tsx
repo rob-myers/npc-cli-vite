@@ -1,4 +1,4 @@
-import { cn, tw } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -71,6 +71,9 @@ export function Desktop() {
   return (
     <div
       ref={deskRef}
+      data-skip-net-desk
+      // a press on the bare desk ends distraction-free
+      onPointerDown={(e) => (e.target as HTMLElement).closest(".react-grid-item") || state.toggleDistractionFree(false)}
       className={cn("relative flex-1 min-h-0 scrollbar-thin", showAll ? "overflow-hidden" : "overflow-auto")}
       style={deskStyle}
     >
@@ -142,16 +145,17 @@ export function Desktop() {
                   >
                     <span className={showAllTitleClass}>{titleOf(win, state.items)}</span>
                   </div>
-                  <button
-                    type="button"
-                    data-show-all-close
-                    title="close"
-                    className={cn(showAllCloseClass, touchDevice && "opacity-100")}
-                    style={{ transform: `translate(${slot.dx + slot.width - 10}px, ${slot.dy - 10}px)` }}
-                    onClick={() => state.close(win.id)}
-                  >
-                    <XIcon weight="bold" className="size-3" />
-                  </button>
+                  <Tip content="close">
+                    <button
+                      type="button"
+                      data-show-all-close
+                      className={cn(showAllCloseClass, touchDevice && "opacity-100")}
+                      style={{ transform: `translate(${slot.dx + slot.width - 10}px, ${slot.dy - 10}px)` }}
+                      onClick={() => state.close(win.id)}
+                    >
+                      <XIcon weight="bold" className="size-3" />
+                    </button>
+                  </Tip>
                 </>
               )}
             </div>

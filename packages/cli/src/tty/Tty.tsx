@@ -38,6 +38,7 @@ export function Tty(props: Props) {
       bounds,
       canContOrStop: null as null | "CONT" | "STOP",
       disabled: props.disabled,
+      onEscape: props.onEscape,
       /** A fit was skipped whilst hidden. The next forces a resize, else a scrollbar may not show */
       fitSkipped: false,
       isTouchDevice: isTouchDevice(),
@@ -195,6 +196,7 @@ export function Tty(props: Props) {
   );
 
   state.disabled = props.disabled;
+  state.onEscape = props.onEscape;
 
   // Pause/resume
   React.useEffect(() => {
@@ -221,11 +223,11 @@ export function Tty(props: Props) {
     } = baseRef.current;
 
     xterm.attachCustomKeyEventHandler((e) => {
-      // xterm.js should not handle shift/ctrl + enter,
-      // so we can unpause Tabs from Tty
-      // if (e.type === "keyup") {
-      //   props.onKey?.(e); // handle shift/ctrl + enter
-      // }
+      if (e.key === "Escape") {
+        // canonical mode shell doesn't need Escape
+        if (e.type === "keydown") state.onEscape?.();
+        return false;
+      }
       if (e.key === "Enter" && (e.shiftKey === true || e.ctrlKey === true)) {
         return false;
       } else {
@@ -341,6 +343,8 @@ export interface Props {
   shFiles: Record<string, string>;
 
   onBooted(): void;
+  /** Escape key pressed whilst terminal focused */
+  onEscape?(): void;
   /** Scales its font, e.g. its tab's zoom */
   zoom?: number;
 }

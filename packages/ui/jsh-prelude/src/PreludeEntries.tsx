@@ -1,7 +1,7 @@
 import { tokenCss, tokenizeShell } from "@npc-cli/cli/shell/sh-tokens";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, tw } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -54,17 +54,16 @@ function EntryRow(props: { entry: PreludeEntry; tty?: JshUiMeta["sessionKey"]; g
         </span>
       </button>
       <span className="flex items-start gap-0.5">
-        <button
-          type="button"
-          title={expanded ? "hide command" : "show command"}
-          className={iconButtonCss}
-          onClick={toggle}
-        >
-          {expanded ? <CaretUpIcon className="size-3.5" /> : <CaretDownIcon className="size-3.5" />}
-        </button>
-        <button type="button" title="remove" className={iconButtonCss} onClick={onRemove}>
-          <XIcon className="size-3.5" />
-        </button>
+        <Tip content={expanded ? "hide command" : "show command"}>
+          <button type="button" className={iconButtonCss} onClick={toggle}>
+            {expanded ? <CaretUpIcon className="size-3.5" /> : <CaretDownIcon className="size-3.5" />}
+          </button>
+        </Tip>
+        <Tip content="remove">
+          <button type="button" className={iconButtonCss} onClick={onRemove}>
+            <XIcon className="size-3.5" />
+          </button>
+        </Tip>
       </span>
       {expanded && (
         <code className={cn(codeCss, "col-span-2 mt-2 px-2 py-1.5 rounded bg-term-fence text-sh-text")}>

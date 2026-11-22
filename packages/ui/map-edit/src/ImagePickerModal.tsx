@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { type StarshipSymbolGroup, type StarshipSymbolImageKey, symbolByGroup } from "@npc-cli/media/starship-symbol";
-import { cn, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, Tip, useStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
@@ -78,32 +78,32 @@ export function ImagePickerModal({
                     className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
                   >
                     {decorKeys.map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className="aspect-square rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
-                        onClick={() => {
-                          onSelect({ type: "decor", key });
-                          onOpenChange(false);
-                        }}
-                        title={key}
-                      >
-                        <img
-                          // versioned, or a decor whose art changed under an unchanged key keeps
-                          // the thumbnail the browser cached the first time it was drawn
-                          src={`/decor/${key}.thumbnail.png?v=${decorVersion}`}
-                          alt={key}
-                          className={cn(
-                            "size-full object-contain bg-[repeating-linear-gradient(-45deg,#999_0,#999_10px,#dde_10px,#dde_20px)]",
-                            !state.loadedImages.has(key) && "hidden",
-                          )}
-                          onLoad={() => {
-                            state.loadedImages.add(key);
-                            state.update();
+                      <Tip key={key} content={key}>
+                        <button
+                          type="button"
+                          className="aspect-square rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
+                          onClick={() => {
+                            onSelect({ type: "decor", key });
+                            onOpenChange(false);
                           }}
-                        />
-                        {!state.loadedImages.has(key) && <Spinner />}
-                      </button>
+                        >
+                          <img
+                            // versioned, or a decor whose art changed under an unchanged key keeps
+                            // the thumbnail the browser cached the first time it was drawn
+                            src={`/decor/${key}.thumbnail.png?v=${decorVersion}`}
+                            alt={key}
+                            className={cn(
+                              "size-full object-contain bg-[repeating-linear-gradient(-45deg,#999_0,#999_10px,#dde_10px,#dde_20px)]",
+                              !state.loadedImages.has(key) && "hidden",
+                            )}
+                            onLoad={() => {
+                              state.loadedImages.add(key);
+                              state.update();
+                            }}
+                          />
+                          {!state.loadedImages.has(key) && <Spinner />}
+                        </button>
+                      </Tip>
                     ))}
                   </div>
                 )}
@@ -131,27 +131,27 @@ export function ImagePickerModal({
                     className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"
                   >
                     {keys(symbols).map((imageKey) => (
-                      <button
-                        key={imageKey}
-                        type="button"
-                        className="aspect-square bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
-                        onClick={() => {
-                          onSelect({ type: "symbol", key: imageKey });
-                          onOpenChange(false);
-                        }}
-                        title={imageKey}
-                      >
-                        <img
-                          src={`/starship-symbol/${imageKey}.png`}
-                          alt={imageKey}
-                          className={cn("size-full object-contain", !state.loadedImages.has(imageKey) && "hidden")}
-                          onLoad={() => {
-                            state.loadedImages.add(imageKey);
-                            state.update();
+                      <Tip key={imageKey} content={imageKey}>
+                        <button
+                          type="button"
+                          className="aspect-square bg-slate-800 rounded border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden cursor-pointer"
+                          onClick={() => {
+                            onSelect({ type: "symbol", key: imageKey });
+                            onOpenChange(false);
                           }}
-                        />
-                        {!state.loadedImages.has(imageKey) && <Spinner />}
-                      </button>
+                        >
+                          <img
+                            src={`/starship-symbol/${imageKey}.png`}
+                            alt={imageKey}
+                            className={cn("size-full object-contain", !state.loadedImages.has(imageKey) && "hidden")}
+                            onLoad={() => {
+                              state.loadedImages.add(imageKey);
+                              state.update();
+                            }}
+                          />
+                          {!state.loadedImages.has(imageKey) && <Spinner />}
+                        </button>
+                      </Tip>
                     ))}
                   </div>
                 )}

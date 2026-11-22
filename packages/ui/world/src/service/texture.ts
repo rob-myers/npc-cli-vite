@@ -158,6 +158,10 @@ export const deckConfig = {
     lipInk: "rgba(190, 205, 225, 0.16)",
     /** Laid over every other plate, chequering the deck — `null` for none */
     chequerInk: "rgba(190, 205, 225, 0.03)" as null | string,
+    /** Each plate lit at its middle and darker at its edges, `[middle, edge]`, so it reads as dished metal */
+    shadeInks: null as null | [string, string],
+    /** How many plates one shading spans across, e.g. `2` for one over every four */
+    shadeSpan: 2,
   },
 
   /** A rivet at each plate corner, lit from the upper-left like the seams */
@@ -276,6 +280,7 @@ const deckInks = {
       seamInk: deckConfig.plate.seamInk,
       lipInk: deckConfig.plate.lipInk,
       chequerInk: deckConfig.plate.chequerInk,
+      shadeInks: deckConfig.plate.shadeInks,
     },
     rivet: { ink: deckConfig.rivet.ink, lipInk: deckConfig.rivet.lipInk },
     wiring: {
@@ -293,12 +298,13 @@ const deckInks = {
       seamInk: "rgba(25, 35, 50, 0.55)",
       lipInk: "rgba(255, 255, 255, 0.2)",
       chequerInk: "rgba(25, 40, 65, 0.12)",
+      shadeInks: ["rgba(255, 255, 255, 0.25)", "rgba(25, 35, 50, 0.3)"] as [string, string],
     },
     rivet: { ink: "rgba(25, 35, 50, 0.45)", lipInk: "rgba(255, 255, 255, 0.4)" },
     wiring: {
-      inks: ["rgba(200, 60, 45, 0.55)", "rgba(30, 120, 190, 0.55)"],
-      backingInk: "rgba(40, 55, 75, 0.25)",
-      clampInk: "rgba(70, 85, 105, 0.7)",
+      inks: ["rgba(150, 35, 25, 0.75)", "rgba(20, 80, 140, 0.75)"],
+      backingInk: "rgba(30, 40, 55, 0.4)",
+      clampInk: "rgba(45, 55, 70, 0.8)",
     },
     doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.55)" },
     skirt: { ink: "rgba(25, 35, 50, 0.3)" }, // a contact shadow: light on a light deck would only glare
@@ -852,26 +858,40 @@ function getPlatePattern(): CanvasPattern {
 function createPlatePattern(): CanvasPattern {
   const { plate, rivet } = deckConfig;
   const side = Math.max(1, Math.round(plate.size * worldToCanvas));
+  /** Plates across the pattern: as many as one shading spans */
+  const span = plate.shadeInks === null ? 1 : plate.shadeSpan;
   const canvas = document.createElement("canvas");
-  canvas.width = side;
-  canvas.height = side;
+  canvas.width = side * span;
+  canvas.height = side * span;
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-  // the seams are `drawSeams`', straight onto the grid: only the rivets are patterned
+  if (plate.shadeInks !== null) {
+    // its lit middle a little towards the light, `+x, +y` on this canvas
+    const [cx, cy] = [canvas.width * 0.58, canvas.height * 0.58];
+    const shade = ctx.createRadialGradient(cx, cy, 0, cx, cy, canvas.width * 0.8);
+    shade.addColorStop(0, plate.shadeInks[0]);
+    shade.addColorStop(1, plate.shadeInks[1]);
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // the seams are `drawSeams`', straight onto the grid: only the shading and rivets are patterned
   if (rivet.shown === true) {
     const radius = rivet.radius * worldToCanvas;
     const inset = rivet.inset * worldToCanvas;
-    // biome-ignore format: one rivet per plate corner
-    for (const [x, y] of [[inset, inset], [side - inset, inset], [inset, side - inset], [side - inset, side - inset]]) {
-      ctx.fillStyle = rivet.ink;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = rivet.lipInk;
-      ctx.beginPath();
-      ctx.arc(x - radius * 0.28, y - radius * 0.28, radius * 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    /** One rivet per plate corner: inset from each plate's edges, along either axis */
+    const at = Array.from({ length: span }, (_, i) => [i * side + inset, (i + 1) * side - inset]).flat();
+    for (const x of at)
+      for (const y of at) {
+        ctx.fillStyle = rivet.ink;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = rivet.lipInk;
+        ctx.beginPath();
+        ctx.arc(x - radius * 0.28, y - radius * 0.28, radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
   }
 
   return ctx.createPattern(canvas, "repeat") as CanvasPattern;

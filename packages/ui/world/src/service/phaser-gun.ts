@@ -36,7 +36,7 @@ export const gunColors = {
 };
 
 /** What may be fitted to the end of the gun, in the shader's order from `1` (`phaserBox.z`) */
-export const gunAttachments = ["caliber", "shotgun", "rotator"] as const;
+export const gunAttachments = ["caliber" as const, "shotgun" as const, "rotator" as const];
 export type GunAttachment = (typeof gunAttachments)[number];
 
 /**

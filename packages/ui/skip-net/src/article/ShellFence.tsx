@@ -134,15 +134,16 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
         narrowRowCss,
       )}
     >
-      <button
-        type="button"
-        title={sessionKey === null ? "no tty to run in" : "run"}
-        disabled={sessionKey === null}
-        className={cn(runButtonCss, "@max-xs:order-3")}
-        onClick={() => run(example.id, src)}
-      >
-        <PlayIcon weight="fill" className={runIconCss} />
-      </button>
+      <Tip content={sessionKey === null ? "no tty to run in" : "run"}>
+        <button
+          type="button"
+          disabled={sessionKey === null}
+          className={cn(runButtonCss, "@max-xs:order-3")}
+          onClick={() => run(example.id, src)}
+        >
+          <PlayIcon weight="fill" className={runIconCss} />
+        </button>
+      </Tip>
       {commented ? (
         <code
           className={cn(codeCss, tokenCss.comment, narrowTextCss, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
@@ -155,18 +156,21 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
       )}
       <span className="flex items-center gap-0.5 @max-xs:order-4 @max-xs:justify-self-end">
         {example.bootable && <AutorunToggle example={example} />}
-        <button type="button" title="copy" className={iconButtonCss} onClick={() => copy(src)}>
-          {copiedSrc === src ? <CheckIcon className={cn(iconCss, "text-term-ok")} /> : <CopyIcon className={iconCss} />}
-        </button>
-        {commented && (
-          <button
-            type="button"
-            title={expanded ? "hide command" : "show command"}
-            className={iconButtonCss}
-            onClick={toggle}
-          >
-            {expanded ? <CaretUpIcon className={iconCss} /> : <CaretDownIcon className={iconCss} />}
+        <Tip content="copy">
+          <button type="button" className={iconButtonCss} onClick={() => copy(src)}>
+            {copiedSrc === src ? (
+              <CheckIcon className={cn(iconCss, "text-term-ok")} />
+            ) : (
+              <CopyIcon className={iconCss} />
+            )}
           </button>
+        </Tip>
+        {commented && (
+          <Tip content={expanded ? "hide command" : "show command"}>
+            <button type="button" className={iconButtonCss} onClick={toggle}>
+              {expanded ? <CaretUpIcon className={iconCss} /> : <CaretDownIcon className={iconCss} />}
+            </button>
+          </Tip>
         )}
       </span>
       {commented && expanded && (

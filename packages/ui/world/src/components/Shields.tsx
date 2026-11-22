@@ -174,9 +174,11 @@ export default function Shields() {
           // along its length, between the middles of its two ends
           const [p0, p1, p2, p3] = d.points;
           const [w01, w12] = [Math.hypot(p1.x - p0.x, p1.y - p0.y), Math.hypot(p2.x - p1.x, p2.y - p1.y)];
-          if (d.meta.freq !== null && Math.min(w01, w12) < shieldConfig.minSize - 0.01) {
+          const deep = Math.min(w01, w12);
+          if (d.meta.freq !== null && deep < shieldConfig.minSize - 0.01) {
             // too thin to lower a drawn phaser before its muzzle is through
-            if (tooSmall.has(d.key) === false) warn(`shield "${d.key}" ignored: under ${shieldConfig.minSize}m a side`);
+            if (tooSmall.has(d.key) === false)
+              warn(`shield "${d.key}" ignored: ${+deep.toFixed(2)}m deep is under ${shieldConfig.minSize}m`);
             tooSmall.add(d.key);
             continue;
           }

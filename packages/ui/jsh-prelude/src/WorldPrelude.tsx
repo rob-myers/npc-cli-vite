@@ -126,7 +126,9 @@ function RebootButton({ disabled, onReboot }: { disabled: boolean; onReboot(): v
             confirming ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0",
           )}
         >
-          <span className="overflow-hidden whitespace-nowrap pl-1">confirm</span>
+          <span className="overflow-hidden">
+            <span className="whitespace-nowrap pl-1">confirm</span>
+          </span>
         </span>
       </button>
     </Tip>

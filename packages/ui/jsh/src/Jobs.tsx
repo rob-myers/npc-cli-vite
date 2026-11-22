@@ -9,7 +9,7 @@ import {
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
-import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Tip, useStateRef } from "@npc-cli/util";
 import { error, throttle } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
@@ -267,17 +267,18 @@ export function Jobs(props: Props) {
       className="bg-term-dashboard h-full overflow-hidden text-term-foreground flex flex-col select-none"
     >
       <div className="flex-1 min-h-0 relative">
-        <button
-          type="button"
-          title="drag to move"
-          className={cn(
-            "absolute z-10 top-1 right-1 p-1 rounded cursor-grab touch-none",
-            "bg-term-surface/60 backdrop-blur-xs text-term-muted opacity-60 transition-opacity hover:opacity-100",
-          )}
-          onPointerDown={props.onGrip}
-        >
-          <DotsSixVerticalIcon alt="drag" weight="bold" className="size-4" />
-        </button>
+        <Tip content="drag to move">
+          <button
+            type="button"
+            className={cn(
+              "absolute z-10 top-1 right-1 p-1 rounded cursor-grab touch-none",
+              "bg-term-surface/60 backdrop-blur-xs text-term-muted opacity-60 transition-opacity hover:opacity-100",
+            )}
+            onPointerDown={props.onGrip}
+          >
+            <DotsSixVerticalIcon alt="drag" weight="bold" className="size-4" />
+          </button>
+        </Tip>
         <div
           className={cn(
             "size-full overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
@@ -338,19 +339,15 @@ export function Jobs(props: Props) {
                           <XIcon alt="kill" className="size-4" />
                         </div>
                         {/* available when killed, where it just re-runs */}
-                        <div
-                          className={controlCss}
-                          title={p.pid === 0 ? "re-run in background" : "reset"}
-                          onClick={state.changeProcess}
-                          data-act="reset"
-                          data-pid={p.pid}
-                        >
-                          {p.pid === 0 ? (
-                            <span className="text-sm leading-none text-term-muted">{"&"}</span>
-                          ) : (
-                            <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
-                          )}
-                        </div>
+                        <Tip content={p.pid === 0 ? "re-run in background" : "reset"}>
+                          <div className={controlCss} onClick={state.changeProcess} data-act="reset" data-pid={p.pid}>
+                            {p.pid === 0 ? (
+                              <span className="text-sm leading-none text-term-muted">{"&"}</span>
+                            ) : (
+                              <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                            )}
+                          </div>
+                        </Tip>
                         <JobTags
                           job={p}
                           session={session}
@@ -362,28 +359,29 @@ export function Jobs(props: Props) {
 
                       {/* `data-more` whilst the source scrolls on below, which the fade shows */}
                       <div className="group relative grow basis-40 min-w-0 flex">
-                        <div
-                          title={p.src}
-                          data-uid={p.uid}
-                          onClick={state.toggleExpanded}
-                          ref={(el) => syncMoreBelow(el, expanded)}
-                          onScroll={(e) => syncMoreBelow(e.currentTarget, expanded)}
-                          onTransitionEnd={(e) => syncMoreBelow(e.currentTarget, expanded)}
-                          className={cn(
-                            // `min-w-0` lets it shrink past its content, so `truncate` bites
-                            "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
-                            "dark:border-l dark:border-term-border-subtle",
-                            "transition-[max-height] duration-200",
-                            expanded
-                              ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                                "max-h-12 overflow-auto scrollbar-thin break-words"
-                              : // one line, however long the source
-                                "max-h-7 truncate",
-                            killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
-                          )}
-                        >
-                          {p.src || "[empty]"}
-                        </div>
+                        <Tip content={p.src}>
+                          <div
+                            data-uid={p.uid}
+                            onClick={state.toggleExpanded}
+                            ref={(el) => syncMoreBelow(el, expanded)}
+                            onScroll={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                            onTransitionEnd={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                            className={cn(
+                              // `min-w-0` lets it shrink past its content, so `truncate` bites
+                              "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
+                              "dark:border-l dark:border-term-border-subtle",
+                              "transition-[max-height] duration-200",
+                              expanded
+                                ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
+                                  "max-h-12 overflow-auto scrollbar-thin break-words"
+                                : // one line, however long the source
+                                  "max-h-7 truncate",
+                              killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
+                            )}
+                          >
+                            {p.src || "[empty]"}
+                          </div>
+                        </Tip>
                         <div className={moreBelowFadeCss} />
                       </div>
                     </div>
@@ -411,31 +409,33 @@ function JobTags(props: {
   const { always, pid, status, src } = props.job;
   return (
     <Popover.Root>
-      <Popover.Trigger
-        title="process tags"
-        disabled={status === toProcessStatus.Killed}
-        className={cn(
-          controlCss,
-          always && "text-term-accent",
-          "disabled:pointer-events-none disabled:text-term-faint",
-        )}
-      >
-        <DotsThreeIcon alt="process tags" weight="bold" className="size-4" />
-      </Popover.Trigger>
+      <Tip content="process tags">
+        <Popover.Trigger
+          disabled={status === toProcessStatus.Killed}
+          className={cn(
+            controlCss,
+            always && "text-term-accent",
+            "disabled:pointer-events-none disabled:text-term-faint",
+          )}
+        >
+          <DotsThreeIcon alt="process tags" weight="bold" className="size-4" />
+        </Popover.Trigger>
+      </Tip>
       <Popover.Portal>
         <Popover.Positioner className="z-50" side="bottom" align="start" sideOffset={4}>
           <Popover.Popup className={cn(popupCss, "max-w-64 flex flex-wrap gap-1 p-2")}>
-            <div
-              className={cn(ptagCss, "flex items-center cursor-pointer hover:bg-term-hover-strong text-term-muted")}
-              title="copy"
-              onClick={() => props.onCopy(src)}
-            >
-              {props.copied ? (
-                <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
-              ) : (
-                <CopyIcon alt="copy" className="size-3.5" />
-              )}
-            </div>
+            <Tip content="copy">
+              <div
+                className={cn(ptagCss, "flex items-center cursor-pointer hover:bg-term-hover-strong text-term-muted")}
+                onClick={() => props.onCopy(src)}
+              >
+                {props.copied ? (
+                  <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
+                ) : (
+                  <CopyIcon alt="copy" className="size-3.5" />
+                )}
+              </div>
+            </Tip>
             <div
               className={cn(
                 ptagCss,

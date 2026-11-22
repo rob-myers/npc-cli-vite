@@ -33,13 +33,13 @@
     "bridge--042 2": {
       "symbolKey": "bridge--042",
       "obstacleId": 2,
-      "rect": {"x": 8, "y": 2039, "width": 1217, "height": 302},
+      "rect": {"x": 8, "y": 2039, "width": 1218, "height": 298.55},
       "sheetId": 0
     },
     "lab--018 0": {
       "symbolKey": "lab--018",
       "obstacleId": 0,
-      "rect": {"x": 8, "y": 2349, "width": 1205.5, "height": 1216},
+      "rect": {"x": 8, "y": 2346, "width": 1205.5, "height": 1216},
       "sheetId": 0
     },
     "misc-stellar-cartography--023 0": {
@@ -51,7 +51,7 @@
     "office--061 0": {
       "symbolKey": "office--061",
       "obstacleId": 0,
-      "rect": {"x": 1222, "y": 2349, "width": 880, "height": 1180},
+      "rect": {"x": 1222, "y": 2346, "width": 880, "height": 1180},
       "sheetId": 0
     },
     "extra--023--machine 0": {
@@ -99,7 +99,7 @@
     "engineering--045 0": {
       "symbolKey": "engineering--045",
       "obstacleId": 0,
-      "rect": {"x": 8, "y": 3573, "width": 804.5, "height": 442},
+      "rect": {"x": 8, "y": 3570, "width": 804.5, "height": 442},
       "sheetId": 0
     },
     "engineering--047 0": {
@@ -111,7 +111,7 @@
     "misc-stellar-cartography--020 1": {
       "symbolKey": "misc-stellar-cartography--020",
       "obstacleId": 1,
-      "rect": {"x": 821, "y": 3573, "width": 696, "height": 300.5},
+      "rect": {"x": 821, "y": 3570, "width": 696, "height": 300.5},
       "sheetId": 0
     },
     "misc-stellar-cartography--020 2": {
@@ -123,13 +123,13 @@
     "office--006 0": {
       "symbolKey": "office--006",
       "obstacleId": 0,
-      "rect": {"x": 1525, "y": 3537, "width": 620, "height": 157},
+      "rect": {"x": 1525, "y": 3534, "width": 620, "height": 157},
       "sheetId": 0
     },
     "office--004 0": {
       "symbolKey": "office--004",
       "obstacleId": 0,
-      "rect": {"x": 1525, "y": 3702, "width": 620, "height": 165},
+      "rect": {"x": 1525, "y": 3699, "width": 620, "height": 165},
       "sheetId": 0
     },
     "lounge--017 0": {
@@ -141,13 +141,13 @@
     "counter--006 0": {
       "symbolKey": "counter--006",
       "obstacleId": 0,
-      "rect": {"x": 821, "y": 3882, "width": 607.5, "height": 127.5},
+      "rect": {"x": 821, "y": 3879, "width": 607.5, "height": 127.5},
       "sheetId": 0
     },
     "window--005 0": {
       "symbolKey": "window--005",
       "obstacleId": 0,
-      "rect": {"x": 1437, "y": 3882, "width": 607.5, "height": 70},
+      "rect": {"x": 1437, "y": 3879, "width": 607.5, "height": 70},
       "sheetId": 0
     },
     "console--010 0": {
@@ -297,7 +297,7 @@
     "extra--007--desk 0": {
       "symbolKey": "extra--007--desk",
       "obstacleId": 0,
-      "rect": {"x": 2053, "y": 3891, "width": 205, "height": 122.5},
+      "rect": {"x": 3855, "y": 933, "width": 205, "height": 122.5},
       "sheetId": 0
     },
     "table--009 0": {
@@ -333,31 +333,31 @@
     "console--019 1": {
       "symbolKey": "console--019",
       "obstacleId": 1,
-      "rect": {"x": 3937, "y": 933, "width": 150, "height": 150},
+      "rect": {"x": 3937, "y": 1064, "width": 150, "height": 150},
       "sheetId": 0
     },
     "extra--001--fresher 0": {
       "symbolKey": "extra--001--fresher",
       "obstacleId": 0,
-      "rect": {"x": 2266, "y": 3897, "width": 140, "height": 116},
+      "rect": {"x": 2053, "y": 3891, "width": 140, "height": 116},
       "sheetId": 0
     },
     "lounge--015 0": {
       "symbolKey": "lounge--015",
       "obstacleId": 0,
-      "rect": {"x": 2414, "y": 3897, "width": 120, "height": 97},
+      "rect": {"x": 3855, "y": 1222, "width": 120, "height": 97},
       "sheetId": 0
     },
     "lounge--015 1": {
       "symbolKey": "lounge--015",
       "obstacleId": 1,
-      "rect": {"x": 2542, "y": 3897, "width": 120, "height": 115},
+      "rect": {"x": 2201, "y": 3897, "width": 120, "height": 115},
       "sheetId": 0
     },
     "lounge--015 2": {
       "symbolKey": "lounge--015",
       "obstacleId": 2,
-      "rect": {"x": 2670, "y": 3897, "width": 120, "height": 102},
+      "rect": {"x": 2329, "y": 3897, "width": 120, "height": 102},
       "sheetId": 0
     },
     "couch-and-chairs--006 0": {
@@ -369,7 +369,7 @@
     "couch-and-chairs--006 1": {
       "symbolKey": "couch-and-chairs--006",
       "obstacleId": 1,
-      "rect": {"x": 3438, "y": 2145, "width": 115, "height": 70},
+      "rect": {"x": 3719, "y": 3942, "width": 115, "height": 70},
       "sheetId": 0
     },
     "counter--010 0": {
@@ -381,25 +381,25 @@
     "extra--024--fresher 0": {
       "symbolKey": "extra--024--fresher",
       "obstacleId": 0,
-      "rect": {"x": 3438, "y": 2223, "width": 104, "height": 88},
+      "rect": {"x": 3983, "y": 1222, "width": 104, "height": 88},
       "sheetId": 0
     },
     "extra--003--chair 0": {
       "symbolKey": "extra--003--chair",
       "obstacleId": 0,
-      "rect": {"x": 2798, "y": 3897, "width": 100, "height": 102.5},
+      "rect": {"x": 3983, "y": 1318, "width": 100, "height": 102.5},
       "sheetId": 0
     },
     "extra--005--chair 0": {
       "symbolKey": "extra--005--chair",
       "obstacleId": 0,
-      "rect": {"x": 3438, "y": 2319, "width": 100, "height": 100},
+      "rect": {"x": 2457, "y": 3897, "width": 100, "height": 100},
       "sheetId": 0
     },
     "extra--018--table 0": {
       "symbolKey": "extra--018--table",
       "obstacleId": 0,
-      "rect": {"x": 3438, "y": 2427, "width": 95, "height": 95},
+      "rect": {"x": 2565, "y": 3897, "width": 95, "height": 95},
       "sheetId": 0
     },
     "g-102--research-deck 0": {
@@ -482,10 +482,10 @@
     }
   },
   "symbolSheetDims": [
-    {"width": 4102, "height": 4023},
+    {"width": 4102, "height": 4020},
     {"width": 2037, "height": 1826}
   ],
-  "maxSymbolSheetDim": {"width": 4102, "height": 4023},
+  "maxSymbolSheetDim": {"width": 4102, "height": 4020},
   "decor": {
     "screen-graph": {
       "key": "screen-graph",

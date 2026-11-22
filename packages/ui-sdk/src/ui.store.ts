@@ -1,6 +1,7 @@
 import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { getDefaultTabs } from "@npc-cli/ui-registry/default-ui";
 import { uiSchemas } from "@npc-cli/ui-registry/schemas";
+import { paneTree } from "@npc-cli/util";
 import { castDraft, type Draft } from "immer";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -31,10 +32,26 @@ export const uiStoreApi = {
       }
     });
   },
+  /** Whether `tabId` is a tab whose Tabs is in a pane on screen, so `focusTab` can show it */
+  canFocusTab(tabId: string) {
+    const { byId, persistedPanes } = uiStore.getState();
+    const parentId = byId[tabId]?.meta.parentId;
+    return parentId !== undefined && isLeafShown(persistedPanes.root, parentId);
+  },
   clearUis(): void {
     uiStore.setState((draft) => {
       draft.byId = {};
     });
+  },
+  /** Shows `tabId` in its Tabs and asks it to take focus. `false` if it is gone, or its pane is hidden */
+  focusTab(tabId: string) {
+    if (uiStoreApi.canFocusTab(tabId) === false) return false;
+    const parentId = uiStore.getState().byId[tabId].meta.parentId as string;
+    uiStore.setState((draft) => {
+      (draft.byId[parentId].meta as { currentTabId?: string }).currentTabId = tabId;
+      draft.focusRequest = { tabId, ms: Date.now() };
+    });
+    return true;
   },
   getAllUis() {
     const { byId } = uiStore.getState();
@@ -78,6 +95,14 @@ export const uiStoreApi = {
       if (ui) ui.everSeen = next;
     });
   },
+  /** Puts `tabId` first in `focusedTabIds` */
+  noteFocusedTab(tabId: string) {
+    const ids = uiStore.getState().persistedPanes.focusedTabIds ?? [];
+    if (ids[0] === tabId) return;
+    uiStore.setState((draft) => {
+      draft.persistedPanes.focusedTabIds = [tabId, ...ids.filter((id) => id !== tabId)].slice(0, maxFocusedTabs);
+    });
+  },
   removeItem(itemId: string) {
     const ui = uiStore.getState().byId[itemId];
     if (!ui) return;
@@ -107,6 +132,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
         devtools(
           (_set, _get): UiStoreState => ({
             byId: {},
+            focusRequest: null,
             ready: false,
             persistedPanes: getDefaultPanes(),
           }),
@@ -161,6 +187,8 @@ if (import.meta.hot) {
 
 export type UiStoreState = {
   byId: { [id: string]: UiStoreByIdEntry };
+  /** A tab whose Tabs should focus it, e.g. by `focusTab`. `ms` tells one ask from the next */
+  focusRequest: null | { tabId: string; ms: number };
   ready: boolean;
   persistedPanes: PersistedPanesLayout;
 };
@@ -176,6 +204,8 @@ export type PersistedPanesLayout = {
   toUi: { [uiId: string]: UiInstanceMeta };
   /** The Tabs last focused, so a reload can focus it again */
   focusedTabsUiId?: string;
+  /** The tabs last focused, most recent first — see `noteFocusedTab` */
+  focusedTabIds?: string[];
 };
 
 export type PersistedPaneNode =
@@ -198,9 +228,11 @@ export function isUiOnScreen({ byId, persistedPanes }: UiStoreState, uiId: strin
   return isLeafShown(persistedPanes.root, parentId ?? uiId);
 }
 
+/** How many tabs `focusedTabIds` keeps */
+const maxFocusedTabs = 8;
+
 function isLeafShown(node: PersistedPaneNode, uiId: string): boolean {
-  if (node.type === "leaf") return node.uiId === uiId;
-  return node.children.some((child) => !node.hiddenIds?.includes(child.id) && isLeafShown(child, uiId));
+  return paneTree.shownLeaves(node).some((leaf) => leaf.uiId === uiId);
 }
 
 /** The layout a first visit gets, with fresh uis — see `resetPanes` for going back to it */
@@ -253,8 +285,7 @@ function withoutUnknownUis(toUi: PersistedPanesLayout["toUi"]): PersistedPanesLa
 /** Older default layouts gave the root and a leaf id `0`, so closing that leaf closed everything */
 function withUniqueIds(root: PersistedPaneNode): PersistedPaneNode {
   const seen = new Set<number>();
-  const maxId = (n: PersistedPaneNode): number => (n.type === "leaf" ? n.id : Math.max(n.id, ...n.children.map(maxId)));
-  let nextId = maxId(root) + 1;
+  let nextId = paneTree.maxPaneId(root) + 1;
   const visit = (node: PersistedPaneNode): PersistedPaneNode => {
     const id = seen.has(node.id) ? nextId++ : node.id;
     seen.add(id);

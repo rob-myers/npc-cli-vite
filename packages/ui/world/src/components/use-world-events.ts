@@ -147,9 +147,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (state.frontAllows(npc, dst, doResult) === false) return false;
         if (far === true) return true;
         if (npc.distanceTo(groundPoint) > w.npc.config.dist.doableLook) return false;
-        // only a fade onto or off a doable heeds walls
+        // only a fade onto or off a doable heeds walls, shut doors and windows
         if (doResult.type === "use-current" || (doResult.type === "none" && npc.agentId !== null)) return true;
-        return state.raycast(npc.point, groundPoint).then(({ hit, hitDoor }) => hit === null && hitDoor === null);
+        return state
+          .raycast(npc.point, groundPoint)
+          .then(({ hit, hitDoor, windows }) => hit === null && hitDoor === null && windows === 0);
       },
       canShuffle(npc, groundPoint, { fast, backwards, shuffle }) {
         const { anim, position } = npc;
@@ -1482,11 +1484,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               at: { ...at, meta: decorKey ? w.decor.byKey[decorKey]?.meta : undefined },
               angle,
               as: skinKey,
+              // lying where they fell, as they were left
+              dead: dead !== undefined && dead in w.npc.clips ? dead : false,
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
-            // lying where they fell, as they were left
-            if (dead !== undefined && dead in w.npc.clips) spawned?.anim.restoreDead(dead as AnimationClipKey);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable

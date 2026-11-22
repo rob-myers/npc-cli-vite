@@ -13,7 +13,6 @@ import {
   positionLocal,
   smoothstep,
   uniform,
-  varying,
   vec2,
   vec3,
   vec4,
@@ -32,6 +31,7 @@ import {
   gunStripY,
   isHole,
 } from "./phaser-gun";
+import { varyingAs } from "./tsl";
 
 export const MAX_PHASERS = 128;
 
@@ -195,16 +195,16 @@ export function gunNodes(
   const glow = box.x.equal(gunKindIndex.emitter).select(1, 0) as THREE.Node<"float">;
   const isStrip = box.x.equal(gunKindIndex.strip).select(1, 0) as THREE.Node<"float">;
   /** Its emitter, its strip, an attachment's (white, edged black, its holes on its front), and its tone */
-  const vKind = varying(vec4(glow, isStrip, box.z.greaterThan(0).select(1, 0), box.y), "vGunKind");
+  const vKind = varyingAs<"vec4">(vec4(glow, isStrip, box.z.greaterThan(0).select(1, 0), box.y), "vGunKind");
   const [vGlow, vStrip, vAttached, vTone] = [vKind.x, vKind.y, vKind.z, vKind.w];
   const tint = attribute<"vec4">("gunTint", "vec4");
   const charge = tint.w;
-  const vTint = varying(tint.xyz, "vGunTint");
+  const vTint = varyingAs<"vec3">(tint.xyz, "vGunTint");
   /**
    * Armed (its quaternion's `w` positive: `q` and `-q` turn alike), dead (its scale negative), its charge, and how much
    * of the beam's colour it gains as it does: its emitter most, per vertex as each box is one or other
    */
-  const vState = varying(
+  const vState = varyingAs<"vec4">(
     vec4(
       quat.w.greaterThan(0).select(1, 0),
       gun.w.lessThan(0).select(1, 0),
@@ -217,7 +217,7 @@ export function gunNodes(
   /** Lit from above, so its faces tell apart */
   const lit = turned(normalLocal as THREE.Node<"vec3">).dot(normalize(vec3(0.3, 1, 0.2)));
   /** Seen, its shade, how far along the strip from its back (which a charge fills to), and the attachment fitted */
-  const vMisc = varying(
+  const vMisc = varyingAs<"vec4">(
     vec4(
       seenBy(view)(rooms.x, rooms.y),
       lit.mul(0.3).add(0.7),
@@ -227,9 +227,9 @@ export function gunNodes(
     "vGunMisc",
   );
   const [vSeen, vShade, vStripT, vFitted] = [vMisc.x, vMisc.y, vMisc.z, vMisc.w];
-  const vBary = varying(attribute<"vec3">("gunBary", "vec3"), "vGunBary");
+  const vBary = varyingAs<"vec3">(attribute<"vec3">("gunBary", "vec3"), "vGunBary");
   /** Where on its box, and whether it faces forward: an attachment's holes are drawn there */
-  const vLocal = varying(vec4(positionLocal, normalLocal.y.lessThan(-0.5).select(1, 0)), "vGunLocal");
+  const vLocal = varyingAs<"vec4">(vec4(positionLocal, normalLocal.y.lessThan(-0.5).select(1, 0)), "vGunLocal");
   const vForward = vLocal.w;
   const colorNode = Fn(() => {
     const a = view.objectPick.notEqual(0).select(0, vSeen.mul(view.foldNode));

@@ -9,9 +9,9 @@
  */
 
 import { parseArgs } from "node:util";
+import { gunColors } from "@npc-cli/ui__world/phaser-gun";
+import { phaserIconConfig, phaserIconKeys, phaserIcons } from "@npc-cli/ui__world/phaser-icon";
 import { Canvas, Path2D } from "skia-canvas";
-import { gunColors } from "../../../packages/ui/world/src/service/phaser-gun.ts";
-import { phaserIconConfig, phaserIconKeys, phaserIcons } from "../../../packages/ui/world/src/service/phaser-icon.ts";
 
 const { values: opts } = parseArgs({ options: { png: { type: "string" } } });
 if (opts.png === undefined) throw Error("expected --png {file}");

@@ -120,6 +120,7 @@ export function restoreDead(anim: NpcAnimation, clip: AnimationClipKey) {
   anim.dead = true;
   anim.hurt = { key: clip, secs: duration, next: null };
   anim.setPose(clip, { force: true, fade: 0 });
+  npc.setLabelYShift(npc.labelShift ?? npc.labelYShiftUniform.value); // lain already, so no glide
   const hips = npc.group?.getObjectByName("hips");
   const action = anim.mixer.existingAction(npc.clips[clip]);
   if (dieClips.has(clip) && hips !== undefined && action !== null) {

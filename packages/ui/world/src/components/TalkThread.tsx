@@ -1,4 +1,4 @@
-import { cn } from "@npc-cli/util";
+import { cn, Tip } from "@npc-cli/util";
 import { CaretUpIcon, DotsThreeIcon, MicrophoneIcon, XIcon } from "@phosphor-icons/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -40,19 +40,20 @@ export function TalkThread(props: {
     // room for the tails either side
     <div className="flex flex-col gap-3 px-2 py-1">
       {foldable && (
-        <button
-          type="button"
-          title={spread ? "fold them away" : "show them"}
-          className="self-center flex items-center gap-1 px-2 rounded-full border border-zinc-700 bg-zinc-900/70 text-[10px] text-zinc-400 cursor-pointer hover:bg-zinc-800 hover:text-zinc-100"
-          onClick={() => setSpread(spread === false)}
-        >
-          {spread ? (
-            <CaretUpIcon weight="bold" className="size-4" />
-          ) : (
-            <DotsThreeIcon weight="bold" className="size-4" />
-          )}
-          {rows.length - 2} earlier
-        </button>
+        <Tip content={spread ? "fold them away" : "show them"}>
+          <button
+            type="button"
+            className="self-center flex items-center gap-1 px-2 rounded-full border border-zinc-700 bg-zinc-900/70 text-[10px] text-zinc-400 cursor-pointer hover:bg-zinc-800 hover:text-zinc-100"
+            onClick={() => setSpread(spread === false)}
+          >
+            {spread ? (
+              <CaretUpIcon weight="bold" className="size-4" />
+            ) : (
+              <DotsThreeIcon weight="bold" className="size-4" />
+            )}
+            {rows.length - 2} earlier
+          </button>
+        </Tip>
       )}
       {rows.map((row, i) => {
         const latest = i === rows.length - 1;
@@ -80,18 +81,19 @@ export function TalkThread(props: {
               </div>
             )}
             {/* said and answered on one row, the answer a little lower: on its own only when too long */}
-            <div
-              title={piled ? "show the earlier ones" : piles ? "fold the earlier ones away" : undefined}
-              className={cn(
-                "talk-row flex flex-row-reverse flex-wrap items-start gap-x-3",
-                (piled || piles) && "cursor-pointer",
-                piled && "talk-dim",
-              )}
-              onClick={piled ? () => setSpread(true) : piles ? () => setSpread(false) : undefined}
-            >
-              {row.right !== undefined && <Bubble line={row.right} faded={latest === false} />}
-              {row.left !== undefined && <Bubble line={row.left} faded={latest === false} />}
-            </div>
+            <Tip content={piled ? "show the earlier ones" : piles ? "fold the earlier ones away" : undefined}>
+              <div
+                className={cn(
+                  "talk-row flex flex-row-reverse flex-wrap items-start gap-x-3",
+                  (piled || piles) && "cursor-pointer",
+                  piled && "talk-dim",
+                )}
+                onClick={piled ? () => setSpread(true) : piles ? () => setSpread(false) : undefined}
+              >
+                {row.right !== undefined && <Bubble line={row.right} faded={latest === false} />}
+                {row.left !== undefined && <Bubble line={row.left} faded={latest === false} />}
+              </div>
+            </Tip>
           </Fragment>
         );
       })}
@@ -100,25 +102,28 @@ export function TalkThread(props: {
           {props.replies.map((reply, i) => {
             const refused = reply.refused !== undefined;
             return (
-              <button
+              <Tip
                 // a refusal remounts it, so it shakes each time
                 key={`${i}:${reply.refused ?? ""}`}
-                type="button"
-                disabled={reply.disabled === true}
-                title={reply.pips.length === 0 ? undefined : `needs ${reply.pips.map((pip) => pip.label).join(", ")}`}
-                className={cn(
-                  "talk-choice flex items-center gap-1.5 pl-1 pr-2.5 py-1 cursor-pointer",
-                  refused && "talk-shake",
-                )}
-                style={refused ? undefined : { animationDelay: `${i * choiceStaggerMs}ms` }}
-                onClick={reply.onChoose}
+                content={reply.pips.length === 0 ? undefined : `needs ${reply.pips.map((pip) => pip.label).join(", ")}`}
               >
-                <span className="grid place-items-center size-4 rounded-full bg-zinc-800 text-[10px] text-zinc-400">
-                  {i + 1}
-                </span>
-                <Glyphed text={reply.text} />
-                <Pips pips={reply.pips} />
-              </button>
+                <button
+                  type="button"
+                  disabled={reply.disabled === true}
+                  className={cn(
+                    "talk-choice flex items-center gap-1.5 pl-1 pr-2.5 py-1 cursor-pointer",
+                    refused && "talk-shake",
+                  )}
+                  style={refused ? undefined : { animationDelay: `${i * choiceStaggerMs}ms` }}
+                  onClick={reply.onChoose}
+                >
+                  <span className="grid place-items-center size-4 rounded-full bg-zinc-800 text-[10px] text-zinc-400">
+                    {i + 1}
+                  </span>
+                  <Glyphed text={reply.text} />
+                  <Pips pips={reply.pips} />
+                </button>
+              </Tip>
             );
           })}
         </div>

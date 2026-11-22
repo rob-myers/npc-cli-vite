@@ -1,27 +1,29 @@
+import { Tip } from "@npc-cli/util";
 import { type ReactNode, useRef } from "react";
 
 /** An icon and its label. A double-click opens it, as does a tap, but not a scroll */
 export function DeskIcon({ children, label, onOpen }: { children: ReactNode; label: string; onOpen(): void }) {
   const downAt = useRef<null | { x: number; y: number }>(null);
   return (
-    <button
-      type="button"
-      title={label}
-      className="group skip-net-no-drag flex flex-col items-center gap-1 w-22 cursor-default outline-none select-none"
-      onDoubleClick={onOpen}
-      onPointerDown={(e) => void (downAt.current = { x: e.clientX, y: e.clientY })}
-      onPointerUp={(e) => {
-        const at = downAt.current;
-        downAt.current = null;
-        const tapped = at !== null && Math.hypot(e.clientX - at.x, e.clientY - at.y) < tapSlopPx;
-        if (e.pointerType === "touch" && tapped) onOpen();
-      }}
-    >
-      <span className="group-focus:invert">{children}</span>
-      <span className="px-1 max-w-full truncate text-[11px] leading-tight bg-mac-window text-mac-text group-focus:bg-mac-select group-focus:text-mac-on-select">
-        {label}
-      </span>
-    </button>
+    <Tip content={label}>
+      <button
+        type="button"
+        className="group skip-net-no-drag flex flex-col items-center gap-1 w-22 cursor-default outline-none select-none"
+        onDoubleClick={onOpen}
+        onPointerDown={(e) => void (downAt.current = { x: e.clientX, y: e.clientY })}
+        onPointerUp={(e) => {
+          const at = downAt.current;
+          downAt.current = null;
+          const tapped = at !== null && Math.hypot(e.clientX - at.x, e.clientY - at.y) < tapSlopPx;
+          if (e.pointerType === "touch" && tapped) onOpen();
+        }}
+      >
+        <span className="group-focus:invert">{children}</span>
+        <span className="px-1 max-w-full truncate text-[11px] leading-tight bg-mac-window text-mac-text group-focus:bg-mac-select group-focus:text-mac-on-select">
+          {label}
+        </span>
+      </button>
+    </Tip>
   );
 }
 

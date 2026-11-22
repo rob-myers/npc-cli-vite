@@ -18,7 +18,7 @@ import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, Tip, useStateRef } from "@npc-cli/util";
 import type React from "react";
 import { useContext, useEffect } from "react";
 import { Jobs } from "./Jobs";
@@ -27,7 +27,7 @@ import { shellFunctionFiles } from "./sources";
 
 /** A tty, and beside it its jobs if shown. Only CSS moves the jobs, so the tty never remounts */
 export default function Jsh({ meta }: { meta: JshUiMeta }) {
-  const { uiStoreApi } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
   const { jobs } = meta;
   const across = acrossOf(jobs.at);
 
@@ -51,6 +51,12 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
         }
         state.drag = null;
         if (state.moving) state.set({ dropAt: null, moving: false });
+      },
+      onEscape() {
+        if (state.drag !== null) return; // ends jobs drag
+        // goto last focused non-tty tab
+        const { byId, persistedPanes } = uiStore.getState();
+        persistedPanes.focusedTabIds?.find((id) => byId[id]?.meta.uiKey !== "Jsh" && uiStoreApi.focusTab(id));
       },
       onGrip(e) {
         state.startDrag({ kind: "move", x: e.clientX, y: e.clientY });
@@ -125,6 +131,7 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           env={meta.env}
           modules={modules} // actual JS
           onBooted={() => uiStoreApi.setUiMeta(meta.id, (draft) => ((draft as JshUiMeta).sessionBootedAt = Date.now()))}
+          onEscape={state.onEscape}
           originalProfileKey={
             typeof meta.env.PROFILE_KEY === "string" ? meta.env.PROFILE_KEY : ("default_profile" satisfies ProfileKey)
           }
@@ -133,17 +140,18 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           zoom={meta.zoom}
         />
         {/* over the tty's menu, whose trigger stays below `minY` (40px) */}
-        <button
-          type="button"
-          title={jobs.shown ? "hide jobs" : "show jobs"}
-          className={cn(
-            "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer select-none transition-colors",
-            jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
-          )}
-          onClick={() => state.setJobs({ shown: !jobs.shown })}
-        >
-          jobs
-        </button>
+        <Tip content={jobs.shown ? "hide jobs" : "show jobs"}>
+          <button
+            type="button"
+            className={cn(
+              "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer select-none transition-colors",
+              jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
+            )}
+            onClick={() => state.setJobs({ shown: !jobs.shown })}
+          >
+            jobs
+          </button>
+        </Tip>
       </div>
       {jobs.shown && (
         <>
@@ -219,6 +227,8 @@ type State = {
   moving: boolean;
   rootEl: null | HTMLDivElement;
   endDrag(): void;
+  /** Focuses the last tab focused that is not a tty */
+  onEscape(): void;
   onGrip(e: React.PointerEvent): void;
   onKeyDown(e: KeyboardEvent): void;
   onPointerMove(e: PointerEvent): void;

@@ -1,6 +1,6 @@
 import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, tw } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
@@ -195,14 +195,15 @@ export function NetMenu() {
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              title="re-read this page's worlds"
-              className="shrink-0 cursor-pointer text-slate-500 hover:text-slate-300"
-              onClick={() => setNetTick((x) => x + 1)}
-            >
-              <ArrowClockwiseIcon className={big ? "size-4" : "size-3.5"} />
-            </button>
+            <Tip content="re-read this page's worlds">
+              <button
+                type="button"
+                className="shrink-0 cursor-pointer text-slate-500 hover:text-slate-300"
+                onClick={() => setNetTick((x) => x + 1)}
+              >
+                <ArrowClockwiseIcon className={big ? "size-4" : "size-3.5"} />
+              </button>
+            </Tip>
           </div>
 
           <div role="tabpanel" className={cn("flex flex-col gap-1 px-2 py-2", big && "px-3")}>
@@ -227,19 +228,20 @@ export function NetMenu() {
                 {leaveArmed ? "confirm" : "disconnect"}
               </button>
             ) : (
-              <button
-                type="button"
-                // a client cannot be joined, nor a world not live in its tab
-                disabled={chosen.mode === "client" || chosen.live === false}
-                title={chosen.mode === "client" ? "it is itself a client" : chosen.live ? undefined : "not open"}
-                className={cn(
-                  worldButtonClass,
-                  "border-slate-600 text-sky-300 not-disabled:hover:border-sky-400/70 disabled:cursor-default disabled:text-slate-600",
-                )}
-                onClick={() => void net.join(chosen.target).catch(warn)}
-              >
-                connect
-              </button>
+              <Tip content={chosen.mode === "client" ? "it is itself a client" : chosen.live ? undefined : "not open"}>
+                <button
+                  type="button"
+                  // a client cannot be joined, nor a world not live in its tab
+                  disabled={chosen.mode === "client" || chosen.live === false}
+                  className={cn(
+                    worldButtonClass,
+                    "border-slate-600 text-sky-300 not-disabled:hover:border-sky-400/70 disabled:cursor-default disabled:text-slate-600",
+                  )}
+                  onClick={() => void net.join(chosen.target).catch(warn)}
+                >
+                  connect
+                </button>
+              </Tip>
             )}
           </div>
         </>

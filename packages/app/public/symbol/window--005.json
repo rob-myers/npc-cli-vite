@@ -35,6 +35,16 @@
       "type": "rect",
       "baseRect": {"width": 121.5, "height": 14},
       "cssTransform": "matrix(1, 0, 0, 1, -0.5, -1)"
+    },
+    {
+      "id": "8df177b8-48f3-43f8-9579-56d3605aab47",
+      "name": "decor rect shield reflect=false",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -20},
+      "type": "rect",
+      "baseRect": {"width": 120.5, "height": 50},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, -20)"
     }
   ],
   "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},

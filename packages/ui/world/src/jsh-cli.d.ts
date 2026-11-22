@@ -305,6 +305,8 @@ declare namespace JshCli {
      * we'll use the first match, else defaultSkinKey.
      */
     as?: string;
+    /** Spawned dead, lying in this clip, else `true` for one by their posture. Off the navmesh too */
+    dead?: boolean | string;
   };
 
   type SpawnManyOpts = {
@@ -367,6 +369,8 @@ declare namespace JshCli {
     decor: { decorKey: string; top: number; bottom: number; dist: number; leave: number }[];
     /** The rooms it passes through, in order: its first, then each beyond a door or window */
     rooms: Geomorph.GmRoomKey[];
+    /** How many windows it passed */
+    windows: number;
     /** Metres from its start to where a hull window first lets it out of the ship, which stops it not */
     out: null | number;
     /** Asked for by the rays overlay */

@@ -29,9 +29,6 @@ import type { TabsUiMeta } from "./schema";
 
 export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const { layoutApi, theme, uiRegistry, uiStore, uiStoreApi } = useContext(UiContext);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const newTabButtonRef = useRef<HTMLButtonElement>(null);
-  const tabBarRef = useRef<HTMLDivElement>(null);
 
   const byId = useStore(uiStore, (s) => s.byId);
 
@@ -40,12 +37,22 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       isDropTarget: false,
       /** Over the bar yet no tab, so a drop goes last */
       isDropAtEnd: false,
+      rootEl: null as null | HTMLDivElement,
+      tabBarEl: null as null | HTMLDivElement,
+      /** Focus the current tab's content — a tty's input, else a focusable inside it, else the content itself */
+      focusCurrent() {
+        const content = state.rootEl?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
+        if (!content) return;
+        (
+          content.querySelector<HTMLElement>('.xterm-helper-textarea, [tabindex]:not([tabindex="-1"])') ?? content
+        ).focus();
+      },
       onAddNewTab(e: React.MouseEvent<HTMLElement>) {
         e.stopPropagation();
         pause(30); // avoid immediate select context menu item
 
         layoutApi.overrideContextMenu({
-          refObject: newTabButtonRef,
+          refObject: e.currentTarget, // the new tab button
           addItem({ uiMeta: subUiMeta }) {
             const result = uiRegistry[subUiMeta.uiKey].schema.safeParse(subUiMeta);
 
@@ -66,19 +73,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             });
           },
         });
-      },
-      /** Focus the current tab's content — a tty's input, else a focusable inside it, else the content itself */
-      focusCurrent() {
-        const content = rootRef.current?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
-        if (!content) return;
-        (
-          content.querySelector<HTMLElement>('.xterm-helper-textarea, [tabindex]:not([tabindex="-1"])') ?? content
-        ).focus();
-      },
-      onFocusCapture() {
-        if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
-          uiStore.setState((draft) => void (draft.persistedPanes.focusedTabsUiId = meta.id));
-        }
       },
       onClickTab(tab: UiInstanceMeta) {
         if (tab.id === meta.currentTabId) {
@@ -132,21 +126,41 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         });
         uiStoreApi.removeItem(tab.id);
       },
+      /** Native, not React's: a tab's content is portalled in, so React's focus events never reach here */
+      onFocusIn(e: FocusEvent) {
+        if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
+          uiStore.setState((draft) => void (draft.persistedPanes.focusedTabsUiId = meta.id));
+        }
+        const tabId = (e.target as HTMLElement).closest("[data-tab-content]")?.getAttribute("data-tab-content");
+        if (tabId != null) uiStoreApi.noteFocusedTab(tabId);
+      },
+      /** Asked by `uiStoreApi.focusTab`. A tab newly shown is focused by the effect on `currentTabId` */
+      onFocusRequest(tabId: string) {
+        if (tabId === meta.currentTabId) state.focusCurrent();
+      },
     }),
     { deps: [meta, layoutApi] },
   );
 
-  // Root-level drop target so drops anywhere on this Tabs are "handled"
   useEffect(() => {
-    if (!rootRef.current) return;
-    return dropTargetForElements({
-      element: rootRef.current,
-      canDrop: ({ source }) => source.data.type === "tab",
+    const el = state.rootEl;
+    if (!el) return;
+    const onFocusIn = (e: FocusEvent) => state.onFocusIn(e);
+    el.addEventListener("focusin", onFocusIn);
+    // fired before React renders, so `currentTabId` is still the tab shown
+    const unsubscribe = uiStore.subscribe(({ focusRequest }, prev) => {
+      if (focusRequest !== null && focusRequest !== prev.focusRequest) state.onFocusRequest(focusRequest.tabId);
     });
+    return combine(
+      // drops anywhere on this Tabs are "handled"
+      dropTargetForElements({ element: el, canDrop: ({ source }) => source.data.type === "tab" }),
+      () => el.removeEventListener("focusin", onFocusIn),
+      unsubscribe,
+    );
   }, []);
 
   useEffect(() => {
-    const el = tabBarRef.current;
+    const el = state.tabBarEl;
     if (!el) return;
 
     return dropTargetForElements({
@@ -211,17 +225,13 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
-    <div
-      ref={rootRef}
-      className="flex flex-col size-full overflow-auto font-mono"
-      onFocusCapture={state.onFocusCapture}
-    >
+    <div ref={state.ref("rootEl")} className="flex flex-col size-full overflow-auto font-mono">
       <div
         className="flex justify-between min-h-10 w-full border-b border-on-background/30 border-outline"
         onContextMenu={state.onContextMenu}
       >
         <div
-          ref={tabBarRef}
+          ref={state.ref("tabBarEl")}
           className={cn(
             "w-full", // easier drag between tabs
             "flex items-end overflow-x-auto scrollbar-thin touch-pan-x",
@@ -242,7 +252,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             />
           ))}
           <button
-            ref={newTabButtonRef}
             type="button"
             className="sticky right-0 shrink-0 cursor-pointer bg-background p-2" // in view however many tabs
             onClick={state.onAddNewTab}

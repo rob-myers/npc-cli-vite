@@ -1,5 +1,5 @@
 import { usePrelude } from "@npc-cli/ui__jsh-prelude/store";
-import { cn, tw, useStateRef } from "@npc-cli/util";
+import { cn, Tip, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { Picker } from "@npc-cli/util/picker";
 import {
@@ -61,6 +61,7 @@ export const Window = memo(function Window(props: WindowProps) {
 
   return (
     <div
+      data-front={front || undefined}
       className={cn(
         // folded on the desktop its bar overflows its one row, past the gap below
         shaded && !stacked ? "w-full" : "size-full",
@@ -95,9 +96,11 @@ export const Window = memo(function Window(props: WindowProps) {
           <span className={cn("absolute inset-x-1 inset-y-0.75", stacked && "opacity-40")} style={stripesStyle} />
         )}
         {stacked && (
-          <span data-stack-grip title="drag to resize" className={cn(gripClass, "shrink-0 -mx-1", big ? "w-7" : "w-4")}>
-            <DotsSixVerticalIcon weight="bold" className={big ? "size-4" : "size-3"} />
-          </span>
+          <Tip content="drag to resize">
+            <span data-stack-grip className={cn(gripClass, "shrink-0 -mx-1", big ? "w-7" : "w-4")}>
+              <DotsSixVerticalIcon weight="bold" className={big ? "size-4" : "size-3"} />
+            </span>
+          </Tip>
         )}
         <span
           className={cn(
@@ -143,7 +146,9 @@ export const Window = memo(function Window(props: WindowProps) {
         </span>
         {big && (
           // a second grip, unmarked, filling the bar between the title and the picker, easier to find with a thumb
-          <span data-stack-grip title="drag to resize" className={cn(gripClass, "flex-1 min-w-0")} />
+          <Tip content="drag to resize">
+            <span data-stack-grip className={cn(gripClass, "flex-1 min-w-0")} />
+          </Tip>
         )}
         <span className={cn("relative min-w-0 shrink-[10] flex items-center gap-1", !big && "ml-auto")}>
           <span ref={frame.setTitleSlot} className="min-w-0 flex items-center gap-1 bg-mac-title" />
@@ -151,15 +156,16 @@ export const Window = memo(function Window(props: WindowProps) {
         {/* Show All closes it by a badge of its own instead */}
         {!(showAll && !stacked) && (
           <>
-            <button
-              type="button"
-              title={shaded ? undefined : "collapse"}
-              disabled={shaded} // greyed whilst folded, keeping the bar's boxes in place
-              className={cn(boxClass, big && bigBoxClass, "disabled:opacity-35 disabled:cursor-default")}
-              onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
-            >
-              <MinusIcon weight="bold" className={boxIconClass(big)} />
-            </button>
+            <Tip content={shaded ? undefined : "collapse"}>
+              <button
+                type="button"
+                disabled={shaded} // greyed whilst folded, keeping the bar's boxes in place
+                className={cn(boxClass, big && bigBoxClass, "disabled:opacity-35 disabled:cursor-default")}
+                onClick={() => (stack ? stack.collapse(win.id) : state.toggleShade(win.id))}
+              >
+                <MinusIcon weight="bold" className={boxIconClass(big)} />
+              </button>
+            </Tip>
             <CloseBox big={big} onClose={() => (stack ? stack.close(win.id) : state.close(win.id))} />
           </>
         )}
@@ -208,15 +214,20 @@ function CloseBox({ big, onClose }: { big: boolean; onClose(): void }) {
   useEffect(() => () => window.clearTimeout(box.timeoutId), []);
   const { armed } = box;
   return (
-    <button
-      type="button"
-      title={armed ? "press again to close" : "close"}
-      className={cn(boxClass, big && bigBoxClass, armed && "bg-red-600 border-red-700 dark:border-red-400 text-white")}
-      onClick={() => (armed ? onClose() : box.arm())}
-      onBlur={box.disarm}
-    >
-      <XIcon weight="bold" className={boxIconClass(big)} />
-    </button>
+    <Tip content={armed ? "press again to close" : "close"}>
+      <button
+        type="button"
+        className={cn(
+          boxClass,
+          big && bigBoxClass,
+          armed && "bg-red-600 border-red-700 dark:border-red-400 text-white",
+        )}
+        onClick={() => (armed ? onClose() : box.arm())}
+        onBlur={box.disarm}
+      >
+        <XIcon weight="bold" className={boxIconClass(big)} />
+      </button>
+    </Tip>
   );
 }
 

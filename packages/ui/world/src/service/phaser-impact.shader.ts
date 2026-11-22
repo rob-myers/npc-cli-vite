@@ -13,12 +13,12 @@ import {
   normalize,
   positionLocal,
   smoothstep,
-  varying,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { type PhaserUniforms, type PhaserView, seenBy } from "./phaser.shader";
+import { varyingAs } from "./tsl";
 
 export const MAX_IMPACTS = 64;
 
@@ -86,10 +86,10 @@ export function impactNodes({ phase, gain }: PhaserUniforms, view: PhaserView) {
   const p = centre.add(side.mul(positionLocal.x).add(up.mul(positionLocal.y)).mul(r));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
-  const vAt = varying(positionLocal.xy, "vImpactAt");
-  const vAge = varying(age as F, "vImpactAge");
-  const vSeen = varying(seenBy(view)(rooms.x, rooms.y), "vImpactSeen");
-  const vColor = varying(look.xyz, "vImpactColor");
+  const vAt = varyingAs<"vec2">(positionLocal.xy, "vImpactAt");
+  const vAge = varyingAs<"float">(age as F, "vImpactAge");
+  const vSeen = varyingAs<"float">(seenBy(view)(rooms.x, rooms.y), "vImpactSeen");
+  const vColor = varyingAs<"vec3">(look.xyz, "vImpactColor");
 
   const colorNode = Fn(() => {
     const d = vAt.length();
