@@ -7,6 +7,7 @@ import {
   ChartLineIcon,
   InfoIcon,
   MoonIcon,
+  PlayIcon,
   RobotIcon,
   SquareHalfBottomIcon,
   SquareHalfIcon,
@@ -15,6 +16,7 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react";
 import { hasWebMcp } from "../web-mcp";
+import { openIntro } from "./intro-service";
 import { flattenPanes, splitTabs } from "./pane-service";
 
 /** `GlobalMenu`'s items. Lazy, so their icons stay out of the page's entry */
@@ -88,6 +90,11 @@ export default function GlobalMenuItems(props: GlobalMenuItemsProps) {
       <Menu.Item className={itemClass} onClick={props.onAbout}>
         <InfoIcon className={iconClass} />
         About
+      </Menu.Item>
+
+      <Menu.Item className={itemClass} onClick={() => openIntro()}>
+        <PlayIcon className={iconClass} />
+        Intro video
       </Menu.Item>
 
       <Menu.Item

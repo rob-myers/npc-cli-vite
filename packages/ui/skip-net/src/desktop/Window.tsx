@@ -61,6 +61,7 @@ export const Window = memo(function Window(props: WindowProps) {
 
   return (
     <div
+      data-front={front || undefined}
       className={cn(
         // folded on the desktop its bar overflows its one row, past the gap below
         shaded && !stacked ? "w-full" : "size-full",

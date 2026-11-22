@@ -1,11 +1,20 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { useStateRef } from "@npc-cli/util";
+import { cn, tw, useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useLayoutEffect } from "react";
 import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
 import { Stack } from "./desktop/Stack";
 import { Toolbar } from "./desktop/Toolbar";
-import { frontOf, newWindow, restack, stackOrdered, stackPx, toggleShade, withLayout } from "./desktop/windows";
+import {
+  centredIn,
+  frontOf,
+  newWindow,
+  restack,
+  stackOrdered,
+  stackPx,
+  toggleShade,
+  withLayout,
+} from "./desktop/windows";
 import type { SkipNetUiMeta } from "./schema";
 import { useSkipNetItems } from "./use-skip-net-items";
 
@@ -16,6 +25,7 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
   const state = useStateRef(
     (): State => ({
       clearAsked: false,
+      distractionFree: false,
       hovered: false,
       items: [],
       meta,
@@ -51,13 +61,15 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
           })),
         );
       },
-      open(content, { fresh = false, below } = {}) {
+      open(content, { fresh = false, below, centre = false } = {}) {
         const { windows } = state.meta;
         const shown = windows.find(
           (x) => x.kind === content.kind && x.articleKey === content.articleKey && x.itemKey === content.itemKey,
         );
         if (shown !== undefined && !fresh) return state.bringToFront(shown.id);
         const win = newWindow(windows, content);
+        const desk = centre && !state.narrow && state.rootEl?.querySelector<HTMLElement>("[data-skip-net-desk]");
+        if (desk) Object.assign(win, centredIn(win, desk));
         // stacked, an even share of the height, as `stackFlex` may be saved in px
         const shares = windows.filter((x) => x.shadedH === undefined).map((x) => x.stackFlex ?? x.h);
         if (shares.length > 0) win.stackFlex = shares.reduce((sum, x) => sum + x, 0) / shares.length;
@@ -93,6 +105,9 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
       toggleShade(id) {
         state.setWindows(state.meta.windows.map((x) => (x.id === id ? toggleShade(x) : x)));
       },
+      toggleDistractionFree(on = !state.distractionFree) {
+        if (on !== state.distractionFree) state.set({ distractionFree: on });
+      },
       toggleShowAll(on = !state.showAll) {
         if (on !== state.showAll) state.set({ showAll: on });
       },
@@ -117,13 +132,16 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
 
   useEffect(() => {
     if (meta.opening === undefined) return;
-    state.open(meta.opening);
+    const { distractionFree, ...content } = meta.opening;
+    state.open(content, { centre: true });
+    if (distractionFree === true) state.toggleDistractionFree(true);
     uiStoreApi.setUiMeta(meta.id, (draft) => void delete (draft as SkipNetUiMeta).opening);
   }, [meta.opening]);
 
   useEffect(() => {
     /** A backtick over SkipNet toggles Show All, unless typing */
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && state.hovered && state.distractionFree) return state.toggleDistractionFree(false);
       if (e.key !== "`" || !state.hovered || state.narrow || state.meta.windows.length === 0) return;
       if ((e.target as HTMLElement).closest("input, textarea, [contenteditable]") !== null) return;
       e.preventDefault();
@@ -139,7 +157,10 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         ref={(el) => void (state.rootEl = el)}
         onPointerEnter={() => void (state.hovered = true)}
         onPointerLeave={() => void (state.hovered = false)}
-        className="relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide [--color-spinner:var(--color-mac-muted)]"
+        className={cn(
+          "relative size-full flex flex-col bg-mac-desk text-mac-text text-xs tracking-wide [--color-spinner:var(--color-mac-muted)]",
+          state.distractionFree && distractionFreeClass,
+        )}
       >
         <Toolbar />
         {state.narrow ? <Stack /> : <Desktop />}
@@ -147,3 +168,8 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
     </SkipNetContext.Provider>
   );
 }
+
+/** The front window's shadow dims all else, which SkipNet clips */
+const distractionFreeClass = tw(
+  "[&_[data-front]]:relative [&_[data-front]]:z-10 [&_[data-front]]:shadow-[0_0_0_200vmax_rgb(0_0_0/0.55)]",
+);

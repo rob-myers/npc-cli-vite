@@ -71,6 +71,9 @@ export function Desktop() {
   return (
     <div
       ref={deskRef}
+      data-skip-net-desk
+      // a press on the bare desk ends distraction-free
+      onPointerDown={(e) => (e.target as HTMLElement).closest(".react-grid-item") || state.toggleDistractionFree(false)}
       className={cn("relative flex-1 min-h-0 scrollbar-thin", showAll ? "overflow-hidden" : "overflow-auto")}
       style={deskStyle}
     >

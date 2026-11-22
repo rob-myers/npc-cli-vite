@@ -2,13 +2,13 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { PlayIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
-import { findIntroSkipNet, isIntroSeen, openIntro, setIntroSeen } from "./intro-service";
+import { findSkipNet, isIntroSeen, openIntro, setIntroSeen } from "./intro-service";
 
 /** Waits for the World to boot first */
 const showAfterMs = 4000;
 const touchDevice = isTouchDevice();
 
-/** Points a first visit to SkipNet's demo video, until watched or dismissed. `?intro` shows it anyway */
+/** Points to SkipNet's demo video until dismissed. Watch hides it until the next visit. `?intro` shows it anyway */
 export function IntroToast() {
   const state = useStateRef(() => ({
     shown: false,
@@ -18,7 +18,7 @@ export function IntroToast() {
       state.set({ shown: false });
     },
     watch() {
-      state.dismiss();
+      state.set({ shown: false });
       openIntro();
     },
   }));
@@ -26,7 +26,7 @@ export function IntroToast() {
   useEffect(() => {
     const forced = new URLSearchParams(location.search).has("intro");
     if (!forced && isIntroSeen()) return;
-    const timeoutId = setTimeout(() => findIntroSkipNet() !== null && state.set({ shown: true }), showAfterMs);
+    const timeoutId = setTimeout(() => findSkipNet() !== null && state.set({ shown: true }), showAfterMs);
     return () => clearTimeout(timeoutId);
   }, []);
 

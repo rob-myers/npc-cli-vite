@@ -3,11 +3,11 @@ import { Menu } from "@base-ui/react/menu";
 import { Menubar } from "@base-ui/react/menubar";
 import { cn, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
+import { FlashlightIcon, SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
 import { SkipNetContext } from "../context";
 
-/** SkipNet's toolbar: Show All, Clear, and the ◆ menu, portalled into SkipNet */
+/** SkipNet's toolbar: Show All, distraction-free, Clear, and the ◆ menu, portalled into SkipNet */
 export function Toolbar() {
   const state = useContext(SkipNetContext);
   const { windows, worldKey } = state.meta;
@@ -26,6 +26,15 @@ export function Toolbar() {
             <SquaresFourIcon weight="bold" className="size-4" />
           </button>
         )}
+        <button
+          type="button"
+          title="distraction-free: dims all but the front window. Escape, or a press on the desk, ends it"
+          className={cn(barButtonClass, state.distractionFree && "bg-mac-select text-mac-on-select")}
+          disabled={windows.length === 0}
+          onClick={() => state.toggleDistractionFree()}
+        >
+          <FlashlightIcon weight="bold" className="size-4" />
+        </button>
         {/* asks first, in a classic alert box */}
         <button
           type="button"

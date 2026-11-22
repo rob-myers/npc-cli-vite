@@ -6,6 +6,8 @@ import type { SkipNetContent, SkipNetUiMeta, SkipNetWindow } from "./schema";
 export type State = {
   /** The alert asking to clear the desktop is open */
   clearAsked: boolean;
+  /** Distraction-free: the front window is shown over the rest, which are dimmed */
+  distractionFree: boolean;
   /** Every window is shown at once, tiled and shrunk, as macOS's Mission Control */
   showAll: boolean;
   /** What jsh mounted on our World, read once for every window */
@@ -27,9 +29,9 @@ export type State = {
   moveInStack(id: string, by: -1 | 1, flexById?: Record<string, number>): void;
   /**
    * A new window, else fronts the one already showing that folder, article or item. `fresh` always opens one.
-   * `below` places it just beneath that window in the stack
+   * `below` places it just beneath that window in the stack. `centre` places a new one in the middle of the desk in view
    */
-  open(content: SkipNetContent, opts?: { fresh?: boolean; below?: string }): void;
+  open(content: SkipNetContent, opts?: { fresh?: boolean; below?: string; centre?: boolean }): void;
   /** Keeps where each window was dragged or resized to */
   saveLayout(layout: Layout): void;
   setClearAsked(clearAsked: boolean): void;
@@ -39,6 +41,8 @@ export type State = {
   setWindows(windows: SkipNetWindow[]): void;
   /** Rolls it up to its title bar, or back down */
   toggleShade(id: string): void;
+  /** Turns distraction-free on or off, else flips it */
+  toggleDistractionFree(on?: boolean): void;
   /** Turns Show All on or off, else flips it */
   toggleShowAll(on?: boolean): void;
 };

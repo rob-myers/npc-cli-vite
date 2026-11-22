@@ -23,7 +23,7 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 - **Resizing.** A window resizes from any edge or corner. Only the bottom-right grow box is drawn, larger on touch. The rest are invisible strips (`desktop/desktop.css`).
 - **Session picker.** An article window picks its tty in its title bar (`SessionPicker`, through `InTitle`), with a spinner whilst a run starts and "awaits {world}" whilst its World is not open.
 - **Opening.** A new window is cascaded from the last opened (`newWindow`), sized by its kind. An article window is then fitted to its article once loaded (`fit`, `FitWindow`), between 6 rows and `articleRows`. An item window is fitted to its item likewise, its width too, at most `itemCols`. One opened before its item is mounted keeps its default size. Picking another article in its bar fits it again. In that picker each row starts with its doc or video icon, yellow if any of its commands autoruns (`docs/autorun.md`).
-- **Opened from outside.** `meta.opening` is a window to open once SkipNet is shown, then cleared. The app's intro toast sets it to `video/demo` (`intro-service.ts`), focusing the tab.
+- **Opened from outside.** `meta.opening` is a window to open once SkipNet is shown, then cleared. A new one is centred in the desk's view (`open`'s `centre`), and `distractionFree` turns that mode on. The app's `openArticle` sets it (`intro-service.ts`), focusing the tab: the intro toast and the GlobalMenu's Intro video open `video/demo` this way.
 - **Sessions.** An article window runs in one session (`useWindowSession`). By default it is the first tty whose `WORLD_KEY` is SkipNet's World, else the first of all. Another may be picked, saved as the window's `sessionKey`. A picked session since removed gives way to the default.
 
 ## Toolbar
@@ -31,6 +31,7 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 A small base-ui `Menubar` floating over the desk's top-right, above every window, so the desk takes the panel's full height (`desktop/Toolbar.tsx`). Stacked, it floats centred in the last window's bar, often folded, clear of its title and close box (`stackedClass`, sized to the bar). Windows are opened from the desktop icons, which sit below it.
 
 - Show All Windows (`` ` ``, hidden whilst stacked)
+- Distraction-free: the front window is shown over the rest, which its shadow dims (`state.distractionFree`). Fronting another lights it instead. The button, Escape whilst over SkipNet, or a press on the bare desk ends it
 - Clear, which asks first in a classic alert box (`ClearAlert`)
 - **◆**, a menu portalled into SkipNet: the World's key
 

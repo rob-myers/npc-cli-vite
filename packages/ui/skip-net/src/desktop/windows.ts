@@ -30,6 +30,13 @@ export function rowsOfPx(px: number) {
   return Math.ceil((px + rowGapPx) / (cellPx + rowGapPx));
 }
 
+/** `win`'s grid place centred in what is in view of the `desk`, kept on it */
+export function centredIn(win: SkipNetWindow, desk: HTMLElement): Pick<SkipNetWindow, "x" | "y"> {
+  const x = Math.round((desk.scrollLeft + desk.clientWidth / 2 - desktopPadPx) / cellPx - win.w / 2);
+  const y = Math.round((desk.scrollTop + desk.clientHeight / 2 - desktopPadPx) / (cellPx + rowGapPx) - win.h / 2);
+  return { x: Math.min(Math.max(0, x), desktopCols - win.w), y: Math.max(0, y) };
+}
+
 /** Where a window moves to in Show All, how far it shrinks, and its size once shrunk */
 export type ShowAllSlot = { dx: number; dy: number; scale: number; width: number; height: number };
 
