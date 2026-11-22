@@ -17,10 +17,10 @@ import "./world-hud.css";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
-import { gunAttachments } from "../service/phaser-gun";
+import { gunAttachments, gunColors } from "../service/phaser-gun";
+import { type PhaserIconKey, phaserIconConfig, phaserIcons } from "../service/phaser-icon";
 import { beamStyles, defaultLook, type PhaserLook } from "../service/phaser-look";
 import { getWorldStore, type HudLayout } from "../service/storage";
-import { phaserIcons } from "./phaser-icon.gen";
 import { WorldContext } from "./world-context";
 
 /**
@@ -1076,7 +1076,7 @@ const PhaserIcon = memo(function PhaserIcon({
   armed: boolean;
   locked: boolean;
   dead: boolean;
-  attachment: null | keyof typeof phaserIcons;
+  attachment: null | Exclude<PhaserIconKey, "none">;
 }) {
   const {
     faces,
@@ -1113,8 +1113,8 @@ const PhaserIcon = memo(function PhaserIcon({
             <path
               d={face.edges}
               fill="none"
-              stroke={"attached" in face ? "#0b0d10" : "#2b3038"}
-              strokeWidth={"attached" in face ? 0.9 : 0.5}
+              stroke={"attached" in face ? gunColors.attachEdge : gunColors.iconEdge}
+              strokeWidth={"attached" in face ? phaserIconConfig.attachEdgeWidth : phaserIconConfig.edgeWidth}
             />
           </g>
         ))}

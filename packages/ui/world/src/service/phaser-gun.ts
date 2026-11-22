@@ -15,6 +15,26 @@ export const gunBoxes: GunBox[] = [
   { name: "tip", min: [0.095, -0.565, -0.0225], max: [0.145, -0.53, 0.0225], kind: "emitter", tone: 1, under: true },
 ];
 
+/** The gun's colours, for its shader and the hud's icon (`service/phaser-icon.ts`) */
+export const gunColors = {
+  gun: "#5f6875",
+  paleGun: "#7d8591",
+  /** The icon's gun, a little lighter */
+  iconGun: "#6c7582",
+  /** The strip along its side, dark */
+  slot: "#2e353f",
+  /** Its emitter, deactivated */
+  dead: "#3d7fd9",
+  /** An attachment's body, white, edged black, its holes put away */
+  attach: "#e4e7eb",
+  attachEdge: "#0b0d10",
+  hole: "#16191d",
+  /** The icon's edges, bar an attachment's */
+  iconEdge: "#2b3038",
+  /** The default beam */
+  beam: "#ff8a5c",
+};
+
 /** What may be fitted to the end of the gun, in the shader's order from `1` (`phaserBox.z`) */
 export const gunAttachments = ["caliber", "shotgun", "rotator"] as const;
 export type GunAttachment = (typeof gunAttachments)[number];

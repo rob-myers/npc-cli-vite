@@ -26,6 +26,7 @@ import {
   type GunBox,
   gunAttachments,
   gunBoxes,
+  gunColors,
   gunFaces,
   gunKindIndex,
   gunStripY,
@@ -283,18 +284,18 @@ export const gunShaderConfig = {
   edgePx: 1,
   edgeDarken: 0.6,
   /** An attachment's body, white, and its edges instead: pixels of line, and their colour. Its holes put away */
-  attachColor: "#e4e7eb",
+  attachColor: gunColors.attach,
   attachEdgePx: 1.5,
-  attachEdgeColor: "#0b0d10",
-  holeColor: "#16191d",
-  gunColor: "#5f6875",
-  paleGunColor: "#7d8591",
+  attachEdgeColor: gunColors.attachEdge,
+  holeColor: gunColors.hole,
+  gunColor: gunColors.gun,
+  paleGunColor: gunColors.paleGun,
   /** The strip along its side: dark, `stripArmed` of the beam's colour whilst armed, `stripFull` times it where charged */
-  slotColor: "#2e353f",
+  slotColor: gunColors.slot,
   stripArmed: 0.45,
   stripFull: 1.3,
   /** Its emitter, deactivated */
-  deadColor: "#3d7fd9",
+  deadColor: gunColors.dead,
   /** Charging, how much of the beam's colour the gun gains: its body, and its emitter */
   chargeBody: 0.25,
   chargeEmitter: 1.2,

@@ -1,6 +1,7 @@
 import { uniform } from "three/tsl";
 import type * as THREE from "three/webgpu";
 import type { FadeRooms } from "./fade-rooms";
+import { gunColors } from "./phaser-gun";
 
 /** What the phaser meshes read of the World's view */
 export type PhaserView = {
@@ -30,7 +31,7 @@ export const seenBy =
     fadeRoomsFx.getVisiblity(slot).max(lit.mul(litNpcsEnabled));
 
 export const phaserLook = {
-  color: "#ff8a5c",
+  color: gunColors.beam,
   /** Over a pale deck: the lightness `color`'s hue is drawn at, fully saturated */
   paleLightness: 0.4,
   /** The beam's alpha on the way, over a dark deck and a pale one */
