@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" width="960" height="430" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12">
+  <style>
+    .npc { fill: #262a31; stroke: #e6e6e6; stroke-width: 1.5; }
+    .ghost { fill: none; stroke: #9aa0a6; stroke-width: 1.5; stroke-dasharray: 3 3; }
+    .name { fill: #e6e6e6; font-size: 12px; font-weight: 600; }
+    .ray { fill: #ff8a5c; font-size: 13px; font-weight: 600; font-family: ui-monospace, Menlo, monospace; }
+    .note { fill: #9aa0a6; font-size: 12px; }
+    .beam { fill: none; stroke: #ff8a5c; stroke-width: 2; }
+    .side { fill: none; stroke: #ff8a5c; stroke-width: 1.3; opacity: 0.75; }
+    .through { fill: none; stroke: #ff8a5c; stroke-width: 2; stroke-dasharray: 5 4; }
+    .wall { stroke: #6b717c; stroke-width: 6; stroke-linecap: round; }
+    .shield { stroke: #4cc9e0; stroke-width: 5; stroke-linecap: round; }
+  </style>
+  <rect width="960" height="430" rx="10" fill="#1b1d22"/>
+  <text x="24" y="32" fill="#e6e6e6" font-size="15" font-weight="600">How a shot meets each npc: the ray decide is told. A shotgun, from above, its fan widened</text>
+
+  <line x1="880" y1="60" x2="880" y2="300" class="wall"/>
+  <text x="868" y="318" class="note" text-anchor="end">wall</text>
+
+  <!-- rob, firing -->
+  <circle cx="90" cy="200" r="16" class="npc"/>
+  <text x="90" y="236" class="name" text-anchor="middle">rob</text>
+
+  <!-- own: the target, here a ghost, so it passes on -->
+  <path d="M112 200 H434" class="beam"/>
+  <circle cx="450" cy="200" r="16" class="ghost"/>
+  <path d="M434 200 H594" class="through"/>
+  <text x="450" y="236" class="name" text-anchor="middle">kate</text>
+  <text x="450" y="252" class="note" text-anchor="middle">a ghost: passes it on</text>
+  <text x="250" y="218" class="ray">own</text>
+
+  <!-- beyond: whom it meets past her -->
+  <circle cx="610" cy="200" r="16" class="npc"/>
+  <text x="610" y="236" class="name" text-anchor="middle">rf1</text>
+  <text x="520" y="192" class="ray">beyond</text>
+
+  <!-- side: the other rays -->
+  <path d="M112 200 L597 81" class="side"/>
+  <circle cx="612" cy="77" r="16" class="npc"/>
+  <text x="640" y="82" class="name">rf2</text>
+  <text x="330" y="132" class="ray">side</text>
+  <path d="M112 200 L880 135" class="side"/>
+  <path d="M112 200 L880 265" class="side"/>
+
+  <!-- bounce: off a reflecting shield -->
+  <line x1="600" y1="300" x2="600" y2="362" class="shield"/>
+  <text x="612" y="352" class="note">shield, meta.reflect</text>
+  <path d="M112 200 L598 330" class="side"/>
+  <path d="M598 330 L396 384" class="beam"/>
+  <circle cx="380" cy="388" r="16" class="npc"/>
+  <text x="352" y="393" class="name" text-anchor="end">rf3</text>
+  <text x="470" y="384" class="ray">bounce</text>
+
+  <text x="24" y="416" class="note">Each npc is asked about once a shot: decide({ by: "rob", npcKey, ray, attachment: "shotgun" }). Rays that meet no one end at a wall.</text>
+</svg>

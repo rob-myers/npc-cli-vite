@@ -71,6 +71,8 @@ export type ArmEntry = {
   spread: null | (SpreadRay & { leg: null | Leg })[];
   /** An attachment's rays once struck: each ending on whom it meets, its bounce only after it met no one. See `spreadOn` */
   spreadHit: null | SpreadRay[];
+  /** Whom their shot met, by npcKey: each one's outcome, and whether it has landed. Reset as it fires */
+  met: Map<string, { outcome: JshCli.ShotOutcome; landed: boolean }>;
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** World seconds a one-off shot is lowered by at the latest, whilst there is one */

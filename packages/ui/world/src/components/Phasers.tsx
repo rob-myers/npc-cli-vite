@@ -58,7 +58,6 @@ import {
   type Leg,
   legMeets,
   type NpcTarget,
-  nearestMeet,
   partOnRay,
   raysMeet,
   reflect,
@@ -66,7 +65,7 @@ import {
   targetPoint,
 } from "../service/phaser-beam";
 import { type BeamResources, beamNodes, createBeamResources, MAX_BEAM_SEGMENTS } from "../service/phaser-beam.shader";
-import { gunAttachments, muzzleOf } from "../service/phaser-gun";
+import { type GunAttachment, gunAttachments, muzzleOf } from "../service/phaser-gun";
 import {
   createGunResources,
   type GunResources,
@@ -115,6 +114,7 @@ export default function Phasers() {
       landed: [],
       arms: new Map(),
       looks: new Map(),
+      decide: null,
       pale: false,
       tickedSecs: w.gameTime.now(),
 
@@ -320,6 +320,7 @@ export default function Phasers() {
             cast: null,
             spread: null,
             spreadHit: null,
+            met: new Map(),
             casting: false,
             castSecs: -Infinity,
             charge: null,
@@ -374,6 +375,7 @@ export default function Phasers() {
         const npc = w.n[npcKey];
         if (end !== undefined && npc !== undefined) void state.bounce(npc, arm, shot);
         arm.hitAt = null;
+        arm.met = new Map();
         state.takeCharge(arm);
         state.sync();
         w.events.next({ key: "phaser-fired", by: npcKey, charge: arm.fireCharge });
@@ -686,7 +688,7 @@ export default function Phasers() {
             const tip = tipOf(npc, arm, tmpTip);
             state.impact(npc, at, tip ?? npc.position, null);
             // its own line met no one: an attachment's other rays may, else what it reflects on to
-            to.taken = tip !== null && state.spreadOn(npc, arm, tip, at, null, w.debug?.forceShot ?? "hit");
+            if (tip !== null) state.spreadOn(npc, arm, tip, at);
             state.strikeLeg(npc, to);
           }
           arm.target = arm.firedSecs = null;
@@ -707,12 +709,12 @@ export default function Phasers() {
         const outcome = shot?.outcome ?? "hit";
         /** A ghost passes it on. Anyone else is where the burst ends, rather than following them as they writhe */
         const landOn = (on: Npc, target: NpcTarget, outcome: JshCli.ShotOutcome, at: THREE.Vector3) => {
-          state.landRay(npc, on, target.part, outcome, at, tip ?? from, true);
+          state.landRay(npc, on, target.part, outcome, at, tip ?? from);
           if (outcome !== "ghost") arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
         };
         // one passing them, unless a ghost, has no outcome
         if (outcome === "ghost" || end === part) landOn(dst, to, outcome, part);
-        if (outcome !== "ghost" && end === part && tip !== null) state.spreadOn(npc, arm, tip, part, dst, outcome);
+        if (outcome !== "ghost" && end === part && tip !== null) state.spreadOn(npc, arm, tip, part);
         // on through whoever it meets beyond, to the one it lands on
         for (const next of shot?.beyond ?? []) {
           const on = w.n[next.npcKey];
@@ -724,14 +726,14 @@ export default function Phasers() {
       strikeLeg(npc, shot) {
         const { leg } = shot;
         if (leg == null || shot.at === null) return;
-        const hit = shot.taken === true ? null : (shot.legHit ?? null); // one hit a shot
-        if (hit === null) state.impact(npc, leg, shot.at, null);
-        else state.landRay(npc, hit.on, hit.part, w.debug?.forceShot ?? "hit", leg, shot.at, true);
+        const met = shot.legHit ?? null;
+        if (met === null) state.impact(npc, leg, shot.at, null);
+        else state.landRay(npc, met.on, met.part, state.outcomeFor(npc, met.on, "bounce"), leg, shot.at);
       },
 
-      spreadOn(npc, arm, tip, end, struck, outcome) {
+      spreadOn(npc, arm, tip, end) {
         const attachment = arm.look?.attachment ?? null;
-        if (attachment !== "shotgun" && attachment !== "caliber") return false;
+        if (attachment !== "shotgun" && attachment !== "caliber") return;
         // a shotgun's rays go to their own walls or shields. A caliber's share the shot's, a little past to meet whom it struck
         const shot = Math.hypot(end.x - tip.x, end.z - tip.z) + 0.05;
         const wall = (i: number) =>
@@ -746,23 +748,29 @@ export default function Phasers() {
           const m = legMeets(all, leg, tip.y, hitBones);
           return m && { ...m, from: new THREE.Vector3(leg.src.x, tip.y, leg.src.y) };
         });
-        // one hit a shot: its own line's, else the nearest another ray meets, else a bounce. Whoever else is met is landed on
-        const hit = struck === null ? (nearestMeet(met) ?? nearestMeet(legMet)) : null;
-        const ghost = outcome === "ghost";
-        for (const m of [...met, ...legMet])
-          if (m !== null) state.landRay(npc, m.on, m.part, outcome, m.at, m.from, m === hit);
-        // each ending on whom it meets: a bounce drawn only after it met no one
+        // nearest first, so each npc takes the shot from the nearest ray, then bounce, meeting them
+        const byDist = (ms: typeof met) => ms.filter((m) => m !== null).sort((a, b) => a.dist - b.dist);
+        for (const [ms, ray] of [
+          [met, "side"],
+          [legMet, "bounce"],
+        ] as const)
+          for (const m of byDist(ms)) state.landRay(npc, m.on, m.part, state.outcomeFor(npc, m.on, ray), m.at, m.from);
+        // each ending on whom it meets, bar a ghost: a bounce drawn only after it met no one
+        const solid = (m: null | { on: Npc }) => m !== null && arm.met?.get(m.on.key)?.outcome !== "ghost";
         arm.spreadHit = met.map((m, i) => {
           const leg = legs[i] ?? null;
+          const legMeet = legMet[i] ?? null;
           return {
-            dist: m === null || ghost ? (attachment === "shotgun" ? wall(i) : Number.POSITIVE_INFINITY) : m.dist,
-            legEnd: leg === null || (m !== null && !ghost) ? null : ghost ? leg.end : (legMet[i]?.at ?? leg.end),
+            dist: solid(m) ? (m?.dist ?? 0) : attachment === "shotgun" ? wall(i) : Number.POSITIVE_INFINITY,
+            legEnd: leg === null || solid(m) ? null : solid(legMeet) ? (legMeet?.at ?? leg.end) : leg.end,
           };
         });
-        return hit !== null;
       },
 
-      landRay(npc, on, part, outcome, at, from, hits) {
+      landRay(npc, on, part, outcome, at, from) {
+        const arm = state.arms.get(npc.key);
+        const hits = arm?.met?.get(on.key)?.landed !== true; // once a shot each
+        arm?.met?.set(on.key, { outcome, landed: true });
         if (hits) {
           if (outcome === "ghost") w.npcGhost?.struck(on);
           state.land(npc, on, part, outcome, at, from);
@@ -828,6 +836,20 @@ export default function Phasers() {
         Object.assign(to, { part: met.part, local: met.local.clone() });
         return true;
       },
+      outcomeFor(npc, on, ray) {
+        const arm = state.arms.get(npc.key);
+        const known = arm?.met?.get(on.key)?.outcome;
+        if (known !== undefined) return known;
+        let decided: undefined | JshCli.ShotOutcome;
+        try {
+          decided = state.decide?.({ by: npc.key, npcKey: on.key, ray, attachment: arm?.look?.attachment ?? null });
+        } catch (e) {
+          console.warn("w.phasers.decide threw", e);
+        }
+        const outcome = decided ?? w.debug?.forceShot ?? "hit";
+        arm?.met?.set(on.key, { outcome, landed: false });
+        return outcome;
+      },
       passOn(npc, arm, shot) {
         const { through, past } = shot;
         const dst = w.n[shot.to.npcKey];
@@ -848,7 +870,7 @@ export default function Phasers() {
           .sort((a, b) => a.dist - b.dist);
         for (const { on, part, local, x, y } of met) {
           // a ghost already passes it on too
-          const outcome = w.npcGhost?.ghosts.has(on.key) === true ? "ghost" : (w.debug?.forceShot ?? "hit");
+          const outcome = w.npcGhost?.ghosts.has(on.key) === true ? "ghost" : state.outcomeFor(npc, on, "beyond");
           shot.beyond.push({ npcKey: on.key, part, local, outcome });
           if (outcome !== "ghost") {
             shot.past = { x, y }; // it ends on them
@@ -859,10 +881,12 @@ export default function Phasers() {
         w.r3f?.invalidate();
       },
       shoot(npc, arm, to) {
-        const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null, beyond: null };
+        const dst = w.n[to.npcKey];
+        arm.met = new Map();
+        const outcome = dst === undefined ? (w.debug?.forceShot ?? "hit") : state.outcomeFor(npc, dst, "own");
+        const shot: ArmShot = { to, outcome, through: null, past: null, beyond: null };
         arm.shot = shot;
         w.events.next({ key: "phaser-fired", by: npc.key, charge: arm.fireCharge });
-        const dst = w.n[to.npcKey];
         if (dst === undefined) return;
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
         const clear = to.local != null && state.meetPart(npc, arm, dst, to) === false;
@@ -1319,24 +1343,27 @@ export default function Phasers() {
   );
 }
 
+/** Which of a shot's rays met them: its own line, beyond whom it passed, an attachment's other rays, or a bounce */
+export type ShotRay = "own" | "beyond" | "side" | "bounce";
+
+/** Decides `npcKey`'s outcome as `by`'s shot meets them. `undefined` leaves it to the debug badge */
+export type ShotDecide = (meet: {
+  by: string;
+  npcKey: string;
+  ray: ShotRay;
+  attachment: null | GunAttachment;
+}) => undefined | JshCli.ShotOutcome;
+
 export type State = PhaserUniforms & {
   /** A shot at no one stopped by a reflecting shield bounces off it once: its `leg`, by a raycast, and whom it meets there */
   bounce(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
   /** A struck shot's bounce lands: on whom it met, unless another ray took its hit, a ring there */
   strikeLeg(npc: Npc, shot: FreeShot): void;
   /**
-   * An attachment's rays from `tip` along the shot's way to `end`, bar its own line: each ends on the nearest npc it meets, a
-   * ring there, glancing off armour. With `struck` `null` the shot met no one, and the nearest they meet takes its hit.
-   * Sets `arm.spreadHit`. True if a ray took the hit
+   * An attachment's rays from `tip` along the shot's way to `end`, bar its own line: each ends on the nearest npc it meets.
+   * Sets `arm.spreadHit`
    */
-  spreadOn(
-    npc: Npc,
-    arm: ArmEntry,
-    tip: THREE.Vector3,
-    end: THREE.Vector3,
-    struck: null | Npc,
-    outcome: JshCli.ShotOutcome,
-  ): boolean;
+  spreadOn(npc: Npc, arm: ArmEntry, tip: THREE.Vector3, end: THREE.Vector3): void;
   /**
    * How far a shotgun's rays go from `from` along `bearing`, on the ground, as `attachmentBeams.shotgun.angles`: to a wall,
    * else a shield. Off a reflecting one each bar the middle bounces on: its leg
@@ -1350,7 +1377,7 @@ export type State = PhaserUniforms & {
     y: number,
     to: THREE.Vector3,
   ): null | { at: THREE.Vector3; reflect: null | { a: Geom.VectJson; b: Geom.VectJson } };
-  /** A ray of their shot landing `at` on `on`'s `part`, from `from`: a ring, sparks off armour. `hits`: it takes the shot's hit */
+  /** A ray of their shot landing `at` on `on`'s `part`, from `from`: a ring, sparks off armour. The first on them takes its hit */
   landRay(
     npc: Npc,
     on: Npc,
@@ -1358,7 +1385,6 @@ export type State = PhaserUniforms & {
     outcome: JshCli.ShotOutcome,
     at: THREE.Vector3,
     from: THREE.Vector3,
-    hits: boolean,
   ): void;
   /** Each start's bounce off its shield, `y` metres up, cast as one: `null` for none */
   castLegs(
@@ -1382,6 +1408,10 @@ export type State = PhaserUniforms & {
   arms: Map<string, ArmEntry>;
   /** By npcKey: how jsh `phaser` overrides their phaser's look. Not saved */
   looks: Map<string, Partial<PhaserLook>>;
+  /** Overrides each npc's outcome as a shot meets them, e.g. set from jsh. `undefined` leaves it to the debug badge */
+  decide: null | ShotDecide;
+  /** Their shot's outcome on `on`, met by `ray`: `decide`'s, else the debug badge's. Decided once per npc a shot (`arm.met`) */
+  outcomeFor(npc: Npc, on: Npc, ray: ShotRay): JshCli.ShotOutcome;
   /** Over a pale deck, where beams are laid over it rather than added: see `syncTheme` */
   pale: boolean;
   tickedSecs: number;

@@ -28,10 +28,9 @@ export type FreeShot = {
   casting: boolean;
   /** The reflecting shield it ended on, to bounce off */
   reflect?: null | { a: Geom.VectJson; b: Geom.VectJson };
-  /** Where it bounced on to, and whom it met there: they take its hit, unless another ray did (`taken`) */
+  /** Where it bounced on to, and whom it met there: they take its hit, unless another ray did */
   leg?: null | THREE.Vector3;
   legHit?: null | RayMeet;
-  taken?: boolean;
 };
 
 /** What a shot at no one ended on. `nothing` is `alongMax` metres out */
@@ -235,10 +234,6 @@ export function nearestOnRay(npcs: Npc[], ray: THREE.Ray, bones: Iterable<string
   }
   return best;
 }
-
-/** The nearest of what rays met, else `null` */
-export const nearestMeet = (met: (null | RayMeet)[]) =>
-  met.reduce<null | RayMeet>((a, b) => (b !== null && (a === null || b.dist < a.dist) ? b : a), null);
 
 const tmpWay = new THREE.Vector3();
 const tmpRayOf = { origin: new THREE.Vector3(), dir: new THREE.Vector3() };
