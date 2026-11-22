@@ -147,7 +147,7 @@ export function GlobalMenu() {
     async open(switching = false) {
       // set at once: Ctrl may be let go before the items load
       Object.assign(state, { pick: 0, switching, switchTabs: getSwitchTabs() });
-      await state.loadItems();
+      await Promise.all([state.loadItems(), switching && new Promise((r) => setTimeout(r, switchShowMs))]);
       if (switching === true && state.switching === false) return; // let go already, and chosen
       state.set({ menuOpen: true, resetArmed: false, returnFocus: true });
     },
@@ -335,6 +335,8 @@ const tabsShownKey = "global-menu-tabs-shown";
 const minY = 120;
 /** How far a press moves before it drags, as motion's drag did */
 const dragThresholdPx = 3;
+/** Ctrl+` shows its tabs only once held this long, so a quick press and release switches unseen */
+const switchShowMs = 500;
 
 /** Its trigger: the same box as WorldSpeech's */
 const triggerPx = touchDevice ? 48 : 36;
