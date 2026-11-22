@@ -1,8 +1,9 @@
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactElement, ReactNode } from "react";
 
-/** A base-ui tooltip over `children`, which must take a ref and props, e.g. a `button` */
+/** A base-ui tooltip over `children`, which must take a ref and props, e.g. a `button`. No `content`, no tooltip */
 export function Tip({ content, children, side = "top" }: { content: ReactNode; children: ReactElement; side?: Side }) {
+  if (content == null || content === "") return children;
   return (
     <Tooltip.Root>
       <Tooltip.Trigger delay={tipDelayMs} render={children} />

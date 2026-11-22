@@ -3,7 +3,7 @@ import { Popover } from "@base-ui/react/popover";
 import { Select } from "@base-ui/react/select";
 import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Spinner, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, Tip, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
@@ -517,21 +517,22 @@ export function WorldMenu() {
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
             <div className={cn("flex justify-between items-center", touch && "max-w-none")}>
-              <span
-                title="remount world"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  state.onRemountWorld();
-                }}
-                className={cn(
-                  "flex items-center gap-1 pl-2 text-xs text-neutral-300 cursor-pointer",
-                  touch && "pl-3 text-sm",
-                  state.unconfirmed === "remount-world" ? "text-red-300" : "hover:text-white",
-                )}
-              >
-                <PowerIcon className="size-3.5" />
-                {state.unconfirmed === "remount-world" && "remount"}
-              </span>
+              <Tip content="remount world">
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.onRemountWorld();
+                  }}
+                  className={cn(
+                    "flex items-center gap-1 pl-2 text-xs text-neutral-300 cursor-pointer",
+                    touch && "pl-3 text-sm",
+                    state.unconfirmed === "remount-world" ? "text-red-300" : "hover:text-white",
+                  )}
+                >
+                  <PowerIcon className="size-3.5" />
+                  {state.unconfirmed === "remount-world" && "remount"}
+                </span>
+              </Tip>
               <LightSlider touch={touch} />
             </div>
             <div
@@ -554,29 +555,29 @@ export function WorldMenu() {
                 className={cn("flex items-center gap-1.5 pr-2 py-1", touch && "pr-3 py-2")}
                 onClick={(e) => e.stopPropagation()}
               >
-                <span
-                  title={`follow the player: ${w.view.follow ? "on" : "off"}`}
-                  onClick={() => w.view.setFollow(!w.view.follow)}
-                >
-                  <CrosshairSimpleIcon
+                <Tip content={`follow the player: ${w.view.follow ? "on" : "off"}`}>
+                  <span onClick={() => w.view.setFollow(!w.view.follow)}>
+                    <CrosshairSimpleIcon
+                      className={cn(
+                        "size-3.5 cursor-pointer",
+                        w.view.follow === true ? "text-amber-300" : "hover:text-white",
+                      )}
+                    />
+                  </span>
+                </Tip>
+                <Tip content="reset camera">
+                  <span
+                    onClick={state.onResetCamera}
                     className={cn(
-                      "size-3.5 cursor-pointer",
-                      w.view.follow === true ? "text-amber-300" : "hover:text-white",
+                      "flex items-center gap-1 cursor-pointer",
+                      state.unconfirmed === "reset-camera" ? "text-red-300" : "hover:text-white",
                     )}
-                  />
-                </span>
-                <span
-                  title="reset camera"
-                  onClick={state.onResetCamera}
-                  className={cn(
-                    "flex items-center gap-1 cursor-pointer",
-                    state.unconfirmed === "reset-camera" ? "text-red-300" : "hover:text-white",
-                  )}
-                >
-                  {/* the word too: a title says nothing on touch */}
-                  {state.unconfirmed === "reset-camera" && "reset"}
-                  <ArrowsClockwiseIcon className="size-3.5" />
-                </span>
+                  >
+                    {/* the word too: a title says nothing on touch */}
+                    {state.unconfirmed === "reset-camera" && "reset"}
+                    <ArrowsClockwiseIcon className="size-3.5" />
+                  </span>
+                </Tip>
               </div>
             </div>
             <CameraSliders touch={touch} />
@@ -598,46 +599,46 @@ export function WorldMenu() {
                 }}
               />
               {/* reset this map's npcs, lit rooms and locked doors, or take another world's */}
-              <div
-                className={cn("flex", touch && "items-center border-t border-neutral-800")}
-                title="reset, or use another world's npcs, lit rooms, locked doors"
-              >
-                <MenuSelect
-                  label="state"
-                  value={null}
-                  items={["reset-world-state", ...otherWorldKeys].map((value) => ({
-                    key: value === "reset-world-state" ? "reset" : value,
-                    el: state.unconfirmed === value ? <span className="text-red-300">confirm</span> : undefined,
-                    value,
-                  }))}
-                  side="bottom"
-                  onValueChange={state.onSelectState}
-                  open={state.stateSelectOpen}
-                  onOpenChange={state.onStateSelectOpenChange}
-                />
-              </div>
+              <Tip content="reset, or use another world's npcs, lit rooms, locked doors">
+                <div className={cn("flex", touch && "items-center border-t border-neutral-800")}>
+                  <MenuSelect
+                    label="state"
+                    value={null}
+                    items={["reset-world-state", ...otherWorldKeys].map((value) => ({
+                      key: value === "reset-world-state" ? "reset" : value,
+                      el: state.unconfirmed === value ? <span className="text-red-300">confirm</span> : undefined,
+                      value,
+                    }))}
+                    side="bottom"
+                    onValueChange={state.onSelectState}
+                    open={state.stateSelectOpen}
+                    onOpenChange={state.onStateSelectOpenChange}
+                  />
+                </div>
+              </Tip>
             </div>
 
             <div className={cn("flex", touch && "items-center border-t border-neutral-800")}>
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>
                 player:
               </div>
-              <button
-                type="button"
-                title="previous player"
-                className={cn(
-                  "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
-                  touch && "px-3",
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (npcKeys.length === 0) return;
-                  const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
-                  w.player.setKey(npcKeys[(currentIdx - 1 + npcKeys.length) % npcKeys.length]);
-                }}
-              >
-                <CaretLeftIcon className="size-3" />
-              </button>
+              <Tip content="previous player">
+                <button
+                  type="button"
+                  className={cn(
+                    "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
+                    touch && "px-3",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (npcKeys.length === 0) return;
+                    const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                    w.player.setKey(npcKeys[(currentIdx - 1 + npcKeys.length) % npcKeys.length]);
+                  }}
+                >
+                  <CaretLeftIcon className="size-3" />
+                </button>
+              </Tip>
               <MenuSelect
                 label={truncateLabel(w.player?.key ?? "no npc", 10)}
                 value={w.player?.key ?? ""}
@@ -645,22 +646,23 @@ export function WorldMenu() {
                 side="bottom"
                 onValueChange={(v) => v && w.player.setKey(v)}
               />
-              <button
-                type="button"
-                title="next player"
-                className={cn(
-                  "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
-                  touch && "px-3",
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (npcKeys.length === 0) return;
-                  const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
-                  w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
-                }}
-              >
-                <CaretRightIcon className="size-3" />
-              </button>
+              <Tip content="next player">
+                <button
+                  type="button"
+                  className={cn(
+                    "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
+                    touch && "px-3",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (npcKeys.length === 0) return;
+                    const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                    w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
+                  }}
+                >
+                  <CaretRightIcon className="size-3" />
+                </button>
+              </Tip>
             </div>
 
             <div className={sectionHeaderClass(touch)}>debug</div>
@@ -779,18 +781,19 @@ export function WorldMenu() {
               >
                 log gpu info
               </button>
-              <span
-                className={cn(
-                  "shrink-0 whitespace-nowrap text-xs",
-                  w.view.pixelRatio.used < w.view.pixelRatio.native ? "text-gray-400" : "text-neutral-400",
-                  touch && "text-sm",
-                )}
-                title="pixel ratio drawn at, lowered to fit maxCanvasPixels"
-              >
-                {w.view.pixelRatio.used < w.view.pixelRatio.native
-                  ? `dpr ${w.view.pixelRatio.used} of ${w.view.pixelRatio.native}`
-                  : `dpr ${w.view.pixelRatio.used}`}
-              </span>
+              <Tip content="pixel ratio drawn at, lowered to fit maxCanvasPixels">
+                <span
+                  className={cn(
+                    "shrink-0 whitespace-nowrap text-xs",
+                    w.view.pixelRatio.used < w.view.pixelRatio.native ? "text-gray-400" : "text-neutral-400",
+                    touch && "text-sm",
+                  )}
+                >
+                  {w.view.pixelRatio.used < w.view.pixelRatio.native
+                    ? `dpr ${w.view.pixelRatio.used} of ${w.view.pixelRatio.native}`
+                    : `dpr ${w.view.pixelRatio.used}`}
+                </span>
+              </Tip>
             </div>
 
             {import.meta.env.DEV && (
@@ -821,9 +824,11 @@ export function WorldMenu() {
                 >
                   {w.nav.smallIslands.length === 0 && <div className="text-neutral-400">no navmesh issues</div>}
                   {w.nav.smallIslands.map(({ area, at }) => (
-                    <div key={`${at.x},${at.y}`} title="an npc put here cannot walk out">
-                      navmesh island {area}m² at ({at.x}, {at.y})
-                    </div>
+                    <Tip key={`${at.x},${at.y}`} content="an npc put here cannot walk out">
+                      <div>
+                        navmesh island {area}m² at ({at.x}, {at.y})
+                      </div>
+                    </Tip>
                   ))}
                 </div>
                 <button
@@ -948,49 +953,50 @@ export function WorldMenu() {
             )}
           </MenuShell>
 
-          <button
-            type="button"
-            data-keep-menu-open
-            title={w.disabled ? "resume" : "pause"}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9"
-            onClick={() => {
-              if (state.dragged) return;
-              w.setDisabled();
-            }}
-          >
-            {w.disabled ? (
-              <PlayIcon alt="resume" className="size-5" weight="bold" />
-            ) : (
-              <PauseIcon alt="pause" className="size-5" weight="bold" />
-            )}
-          </button>
+          <Tip content={w.disabled ? "resume" : "pause"} side="right">
+            <button
+              type="button"
+              data-keep-menu-open
+              className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9"
+              onClick={() => {
+                if (state.dragged) return;
+                w.setDisabled();
+              }}
+            >
+              {w.disabled ? (
+                <PlayIcon alt="resume" className="size-5" weight="bold" />
+              ) : (
+                <PauseIcon alt="pause" className="size-5" weight="bold" />
+              )}
+            </button>
+          </Tip>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
               `service/fade-rooms`. A tap swaps `sight` and `sense`, a long press enters `ship`.
               The rooms fade INTO the post pass's backdrop, so asking for either fading mode
               switches that on too */}
-          <div
-            data-keep-menu-open
-            title={`${w.view.fadeRoomsMode} (hold for ship)`}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
-            onPointerDown={state.onFadePointerDown}
-            onPointerUp={state.onFadePointerUp}
-            onPointerLeave={() => window.clearTimeout(state.fadeTimer)}
-            onContextMenu={(e) => e.preventDefault()} // touch's own long press
-          >
-            {w.view.fadeRoomsMode === "sight" ? (
-              <EyeIcon className="size-5 text-neutral-200" alt="sight" weight="bold" />
-            ) : w.view.fadeRoomsMode === "sense" ? (
-              <BrainIcon className="size-5 text-neutral-200" alt="sense" weight="fill" />
-            ) : (
-              <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
-            )}
-          </div>
+          <Tip content={`${w.view.fadeRoomsMode} (hold for ship)`} side="right">
+            <div
+              data-keep-menu-open
+              className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
+              onPointerDown={state.onFadePointerDown}
+              onPointerUp={state.onFadePointerUp}
+              onPointerLeave={() => window.clearTimeout(state.fadeTimer)}
+              onContextMenu={(e) => e.preventDefault()} // touch's own long press
+            >
+              {w.view.fadeRoomsMode === "sight" ? (
+                <EyeIcon className="size-5 text-neutral-200" alt="sight" weight="bold" />
+              ) : w.view.fadeRoomsMode === "sense" ? (
+                <BrainIcon className="size-5 text-neutral-200" alt="sense" weight="fill" />
+              ) : (
+                <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
+              )}
+            </div>
+          </Tip>
 
           {/* game time per real second — see `GameTime.setScale` */}
           <div
             data-keep-menu-open
-            title="time scale"
             className="flex flex-col items-center gap-1 bg-neutral-800 py-1.5 w-9"
             onPointerDown={(e) => e.stopPropagation()}
             onDoubleClick={() => w.gameTime.setScale(1)}
@@ -1008,25 +1014,28 @@ export function WorldMenu() {
                 {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
                 <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
                   <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
-                    <Slider.Thumb className="grid size-5 place-items-center rounded-full bg-white text-neutral-800 outline-none">
-                      <HourglassMediumIcon className="size-3.5" weight="bold" />
-                    </Slider.Thumb>
+                    <Tip content="time scale: double click resets" side="right">
+                      <Slider.Thumb className="grid size-5 place-items-center rounded-full bg-white text-neutral-800 outline-none">
+                        <HourglassMediumIcon className="size-3.5" weight="bold" />
+                      </Slider.Thumb>
+                    </Tip>
                   </Slider.Track>
                 </Slider.Control>
               </Slider.Root>
             )}
             {/* highlighted whilst not 1, as a reminder: a double click sets it back */}
-            <button
-              type="button"
-              title={`${state.timeSliderOpen ? "hide" : "show"} time scale: [ and ] step it, double click for 1`}
-              className={cn(
-                "cursor-pointer rounded px-1 py-1.5 text-[10px] tabular-nums text-neutral-300 hover:text-white",
-                w.gameTime.scale !== 1 && "bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/50",
-              )}
-              onClick={state.toggleTimeSlider}
-            >
-              {w.gameTime.scale.toFixed(2)}
-            </button>
+            <Tip content={`${state.timeSliderOpen ? "hide" : "show"} time scale: [ and ] step it`} side="right">
+              <button
+                type="button"
+                className={cn(
+                  "cursor-pointer rounded px-1 py-1.5 text-[10px] tabular-nums text-neutral-300 hover:text-white",
+                  w.gameTime.scale !== 1 && "bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/50",
+                )}
+                onClick={state.toggleTimeSlider}
+              >
+                {w.gameTime.scale.toFixed(2)}
+              </button>
+            </Tip>
           </div>
         </div>
 
@@ -1290,32 +1299,33 @@ function LightSlider({ touch }: { touch: boolean }) {
         touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
       )}
     >
-      <button
-        type="button"
-        className={cn("cursor-pointer select-none hover:brightness-125", color)}
-        title={`${label} brightness — click for ${lights[other].label}, hold to reset`}
-        // the panel drags off a pointerdown anywhere in it, which a press being held is not
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          held.current = false;
-          timeoutId.current = window.setTimeout(() => {
-            held.current = true;
-            apply(fallback);
-          }, lightResetHoldMs);
-        }}
-        onPointerUp={endPress}
-        onPointerLeave={endPress}
-        onPointerCancel={endPress}
-        onContextMenu={(e) => e.preventDefault()} // touch's own long press
-        onClick={(e) => {
-          e.stopPropagation();
-          if (held.current === true) return;
-          setKey(other);
-          store.patch({ lightKey: other });
-        }}
-      >
-        <WhichIcon className="size-4" weight="bold" />
-      </button>
+      <Tip content={`${label} brightness — click for ${lights[other].label}, hold to reset`}>
+        <button
+          type="button"
+          className={cn("cursor-pointer select-none hover:brightness-125", color)}
+          // the panel drags off a pointerdown anywhere in it, which a press being held is not
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            held.current = false;
+            timeoutId.current = window.setTimeout(() => {
+              held.current = true;
+              apply(fallback);
+            }, lightResetHoldMs);
+          }}
+          onPointerUp={endPress}
+          onPointerLeave={endPress}
+          onPointerCancel={endPress}
+          onContextMenu={(e) => e.preventDefault()} // touch's own long press
+          onClick={(e) => {
+            e.stopPropagation();
+            if (held.current === true) return;
+            setKey(other);
+            store.patch({ lightKey: other });
+          }}
+        >
+          <WhichIcon className="size-4" weight="bold" />
+        </button>
+      </Tip>
       <input
         type="range"
         min={min}
@@ -1365,42 +1375,44 @@ function CameraSliders({ touch }: { touch: boolean }) {
         const preset = getPresetCameraView(name);
         const active = preset.fov === view.fov && Math.abs(preset.nearView - view.nearView) < 0.05;
         return (
-          <button
-            key={name}
-            type="button"
-            title={`${preset.fov}°, near ${preset.nearView.toFixed(1)} m: - and + step through them`}
-            className={cn(chip, active && "bg-white/15 text-white", name === "low" && "ml-auto")}
-            onClick={(e) => {
-              e.stopPropagation();
-              set(preset);
-            }}
-          >
-            {name}
-          </button>
+          <Tip key={name} content={`${preset.fov}°, near ${preset.nearView.toFixed(1)} m: - and + step through them`}>
+            <button
+              type="button"
+              className={cn(chip, active && "bg-white/15 text-white", name === "low" && "ml-auto")}
+              onClick={(e) => {
+                e.stopPropagation();
+                set(preset);
+              }}
+            >
+              {name}
+            </button>
+          </Tip>
         );
       })}
-      <button
-        type="button"
-        title="the device's defaults"
-        className={chip}
-        onClick={(e) => {
-          e.stopPropagation();
-          set(null);
-        }}
-      >
-        <ArrowCounterClockwiseIcon className="size-3.5" />
-      </button>
+      <Tip content="the device's defaults">
+        <button
+          type="button"
+          className={chip}
+          onClick={(e) => {
+            e.stopPropagation();
+            set(null);
+          }}
+        >
+          <ArrowCounterClockwiseIcon className="size-3.5" />
+        </button>
+      </Tip>
       <Popover.Root
         open={slidersOpen}
         onOpenChange={(next, details) => details.reason === "trigger-press" && setSlidersOpen(next)}
       >
-        <Popover.Trigger
-          title="fov, and the floor seen at each zoom stop"
-          className={cn(chip, slidersOpen && "bg-white/15 text-white")}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <SlidersHorizontalIcon className="size-3.5" />
-        </Popover.Trigger>
+        <Tip content="fov, and the floor seen at each zoom stop">
+          <Popover.Trigger
+            className={cn(chip, slidersOpen && "bg-white/15 text-white")}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SlidersHorizontalIcon className="size-3.5" />
+          </Popover.Trigger>
+        </Tip>
         <Popover.Portal container={w.rootEl}>
           <Popover.Positioner className="z-50" side="right" align="start" sideOffset={6}>
             <Popover.Popup
@@ -1409,39 +1421,40 @@ function CameraSliders({ touch }: { touch: boolean }) {
               onPointerDown={(e) => e.stopPropagation()}
             >
               {rows.map(({ key, label, min, max, step, unit }) => (
-                <div
+                <Tip
                   key={key}
-                  className="flex flex-col items-center gap-1"
                   // the floor seen is the slider; the stop it implies, at this fov, is its tooltip
-                  title={
+                  content={
                     key === "fov"
                       ? "vertical field of view"
                       : `${distanceOfView(view[key], view.fov).toFixed(1)} m away`
                   }
                 >
-                  <span>{label}</span>
-                  <Slider.Root
-                    orientation="vertical"
-                    min={key === "farView" ? view.nearView : min}
-                    max={max}
-                    step={step}
-                    value={view[key]}
-                    onValueChange={(value) => set({ ...view, [key]: value as number })}
-                    className={touch ? "h-32" : "h-24"}
-                  >
-                    <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-1.5">
-                      <Slider.Track className="relative h-full w-1 rounded-full bg-white/40">
-                        <Slider.Thumb
-                          className={cn("rounded-full bg-white outline-none", touch ? "size-5" : "size-3")}
-                        />
-                      </Slider.Track>
-                    </Slider.Control>
-                  </Slider.Root>
-                  <span className="tabular-nums text-neutral-400">
-                    {view[key].toFixed(step < 1 ? 1 : 0)}
-                    {unit}
-                  </span>
-                </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span>{label}</span>
+                    <Slider.Root
+                      orientation="vertical"
+                      min={key === "farView" ? view.nearView : min}
+                      max={max}
+                      step={step}
+                      value={view[key]}
+                      onValueChange={(value) => set({ ...view, [key]: value as number })}
+                      className={touch ? "h-32" : "h-24"}
+                    >
+                      <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-1.5">
+                        <Slider.Track className="relative h-full w-1 rounded-full bg-white/40">
+                          <Slider.Thumb
+                            className={cn("rounded-full bg-white outline-none", touch ? "size-5" : "size-3")}
+                          />
+                        </Slider.Track>
+                      </Slider.Control>
+                    </Slider.Root>
+                    <span className="tabular-nums text-neutral-400">
+                      {view[key].toFixed(step < 1 ? 1 : 0)}
+                      {unit}
+                    </span>
+                  </div>
+                </Tip>
               ))}
             </Popover.Popup>
           </Popover.Positioner>
@@ -1468,28 +1481,29 @@ function _LightsIconButton({
 }) {
   const { touchDevice: touch } = useContext(WorldContext);
   return (
-    <button
-      type="button"
-      title={title}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={cn(
-        "grid place-items-center rounded cursor-pointer size-6",
-        touch && "size-10 bg-neutral-800",
-        danger
-          ? "text-red-300 hover:bg-red-900/40"
-          : active
-            ? "bg-neutral-700 text-white"
-            : "text-neutral-500 hover:bg-neutral-700",
-      )}
-    >
-      <IconCmp
-        className={cn("size-3.5", touch && "size-5", danger && "scale-110")}
-        weight={active ? "fill" : "regular"}
-      />
-    </button>
+    <Tip content={title}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className={cn(
+          "grid place-items-center rounded cursor-pointer size-6",
+          touch && "size-10 bg-neutral-800",
+          danger
+            ? "text-red-300 hover:bg-red-900/40"
+            : active
+              ? "bg-neutral-700 text-white"
+              : "text-neutral-500 hover:bg-neutral-700",
+        )}
+      >
+        <IconCmp
+          className={cn("size-3.5", touch && "size-5", danger && "scale-110")}
+          weight={active ? "fill" : "regular"}
+        />
+      </button>
+    </Tip>
   );
 }
 

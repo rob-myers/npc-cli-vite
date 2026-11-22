@@ -1,7 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { Popover } from "@base-ui/react/popover";
 import { itemIconUrl } from "@npc-cli/media/icon";
-import { cn, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { cn, Tip, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
 import {
   BinocularsIcon,
@@ -246,6 +246,7 @@ export default function WorldHud() {
   /** The bar along the bottom, or a column on either side: by default on the right on touch */
   const layout = state.getLayout();
   const column = layout !== "bar";
+  const tipSide = tipSideOf(layout);
   const outerClass = column ? cn(columnBarClass, layout === "left" ? "left-0" : "right-0") : barClass;
 
   state.y = useMotionValue(state.getSavedY());
@@ -364,88 +365,94 @@ export default function WorldHud() {
 
   /** Debug: how every shot ends, cycled by a press. Over the phaser's slot in a bar, below it in a column, where slots stack tight */
   const forceShot = w.debug?.hudDebugShown.includes("phaser") === true && (
-    <button
-      type="button"
-      tabIndex={-1}
-      title="debug: how every shot ends"
-      className={cn(
-        debugBadgeClass,
-        column ? "pointer-events-auto -mt-2 mb-1 self-center" : "absolute bottom-0.5 left-1/2 -translate-x-1/2",
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        const forceShot = cycle(shotCycle, w.debug.forceShot);
-        w.debug.set({ forceShot });
-        store.patch({ forceShot });
-        state.update();
-        w.view.focus();
-      }}
-    >
-      {w.debug.forceShot}
-    </button>
+    <Tip content="debug: how every shot ends" side={tipSide}>
+      <button
+        type="button"
+        tabIndex={-1}
+        className={cn(
+          debugBadgeClass,
+          column ? "pointer-events-auto -mt-2 mb-1 self-center" : "absolute bottom-0.5 left-1/2 -translate-x-1/2",
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          const forceShot = cycle(shotCycle, w.debug.forceShot);
+          w.debug.set({ forceShot });
+          store.patch({ forceShot });
+          state.update();
+          w.view.focus();
+        }}
+      >
+        {w.debug.forceShot}
+      </button>
+    </Tip>
   );
   const slot = (index: number, opts: SlotOpts, children: React.ReactNode) => {
     menus[index] = opts.menu;
     return (
-      <div
+      <Tip
         key={index}
-        title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
-        className={cn(
-          "group pointer-events-auto relative grid shrink-0 cursor-pointer place-items-center rounded-md",
-          column === false && "touch-pan-x",
-          opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          slotSizeClass(big, column),
-          opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
-          opts.had === false && "*:opacity-25",
-        )}
-        // the canvas keeps the focus: Enter there unpauses, and would press this again too
-        onMouseDown={(e) => e.preventDefault()}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
-        }}
-        // touch has no right-click: a hold opens the menu, and a scroll of the row calls it off
-        onPointerDown={(e) => {
-          state.longPressed = false;
-          if (e.pointerType !== "touch" || !opts.menu?.length) return;
-          const el = e.currentTarget;
-          window.clearTimeout(state.pressTimer);
-          state.pressTimer = window.setTimeout(() => {
-            if (state.dragged === true) return;
-            state.longPressed = true;
-            state.set({ menu: { index, el } });
-          }, longPressMs);
-        }}
-        onPointerUp={() => window.clearTimeout(state.pressTimer)}
-        onPointerCancel={() => window.clearTimeout(state.pressTimer)}
-        onPointerLeave={() => window.clearTimeout(state.pressTimer)}
-        onClick={() => {
-          if (state.longPressed === true || state.dragged === true) return; // the hold was the press, or a drag
-          state.press(index);
-          w.view.focus();
-        }}
+        content={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
+        side={tipSide}
       >
-        {children}
-        {opts.drop !== undefined && (
-          <button
-            type="button"
-            tabIndex={-1}
-            title={`drop ${opts.title}`}
-            className={cn(
-              "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
-              big ? "size-7" : "size-5",
-              opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              state.drop(opts.drop as string);
-              w.view.focus();
-            }}
-          >
-            <XIcon className="size-3" weight="bold" />
-          </button>
-        )}
-      </div>
+        <div
+          className={cn(
+            "group pointer-events-auto relative grid shrink-0 cursor-pointer place-items-center rounded-md",
+            column === false && "touch-pan-x",
+            opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
+            slotSizeClass(big, column),
+            opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
+            opts.had === false && "*:opacity-25",
+          )}
+          // the canvas keeps the focus: Enter there unpauses, and would press this again too
+          onMouseDown={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
+          }}
+          // touch has no right-click: a hold opens the menu, and a scroll of the row calls it off
+          onPointerDown={(e) => {
+            state.longPressed = false;
+            if (e.pointerType !== "touch" || !opts.menu?.length) return;
+            const el = e.currentTarget;
+            window.clearTimeout(state.pressTimer);
+            state.pressTimer = window.setTimeout(() => {
+              if (state.dragged === true) return;
+              state.longPressed = true;
+              state.set({ menu: { index, el } });
+            }, longPressMs);
+          }}
+          onPointerUp={() => window.clearTimeout(state.pressTimer)}
+          onPointerCancel={() => window.clearTimeout(state.pressTimer)}
+          onPointerLeave={() => window.clearTimeout(state.pressTimer)}
+          onClick={() => {
+            if (state.longPressed === true || state.dragged === true) return; // the hold was the press, or a drag
+            state.press(index);
+            w.view.focus();
+          }}
+        >
+          {children}
+          {opts.drop !== undefined && (
+            <Tip content={`drop ${opts.title}`} side={tipSide}>
+              <button
+                type="button"
+                tabIndex={-1}
+                className={cn(
+                  "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
+                  big ? "size-7" : "size-5",
+                  opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  state.drop(opts.drop as string);
+                  w.view.focus();
+                }}
+              >
+                <XIcon className="size-3" weight="bold" />
+              </button>
+            </Tip>
+          )}
+        </div>
+      </Tip>
     );
   };
 
@@ -486,59 +493,62 @@ export default function WorldHud() {
           <AnimatePresence initial={false} mode="popLayout">
             {kept.map(({ label, title, end }) => (
               <motion.div key={label} {...toastMotion} exit={label === "look" ? slowExit : toastMotion.exit}>
-                <div
-                  ref={watchOf[label]}
-                  title={end === undefined ? title : undefined}
-                  // shown by a frame callback, so from `gone` until its first frame says otherwise
-                  className={cn(keptClass, (label === "look" || label === "strafe") && "gone")}
-                >
-                  <div className={keptInnerClass}>
-                    {label === "look" ? (
-                      <>
-                        <span data-look-word />
-                        <span data-look-reach className={`${readoutClass} gone`} />
-                      </>
-                    ) : (
-                      <span data-follow-word={label === "follow" ? "" : undefined}>
-                        {label === "follow" ? "followed" : label}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      title={end === undefined ? undefined : title}
-                      disabled={end === undefined}
-                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
-                      onClick={() => {
-                        end?.();
-                        state.update(); // e.g. the binoculars grey
-                        w.view.focus();
-                      }}
-                    >
-                      <XIcon className="size-3" weight="bold" />
-                    </button>
+                <Tip content={end === undefined ? title : undefined} side="bottom">
+                  <div
+                    ref={watchOf[label]}
+                    // shown by a frame callback, so from `gone` until its first frame says otherwise
+                    className={cn(keptClass, (label === "look" || label === "strafe") && "gone")}
+                  >
+                    <div className={keptInnerClass}>
+                      {label === "look" ? (
+                        <>
+                          <span data-look-word />
+                          <span data-look-reach className={`${readoutClass} gone`} />
+                        </>
+                      ) : (
+                        <span data-follow-word={label === "follow" ? "" : undefined}>
+                          {label === "follow" ? "followed" : label}
+                        </span>
+                      )}
+                      <Tip content={end === undefined ? undefined : title} side="bottom">
+                        <button
+                          type="button"
+                          disabled={end === undefined}
+                          className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 not-disabled:hover:border-red-400/70 not-disabled:hover:text-red-300 disabled:cursor-default disabled:border-neutral-600 disabled:bg-neutral-800 disabled:text-neutral-500"
+                          onClick={() => {
+                            end?.();
+                            state.update(); // e.g. the binoculars grey
+                            w.view.focus();
+                          }}
+                        >
+                          <XIcon className="size-3" weight="bold" />
+                        </button>
+                      </Tip>
+                    </div>
                   </div>
-                </div>
+                </Tip>
               </motion.div>
             ))}
           </AnimatePresence>
-          <motion.button
-            layout
-            type="button"
-            title={muted ? "unmute sound" : "mute sound"}
-            className={cn(
-              "pointer-events-auto flex cursor-pointer items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 hover:text-sky-200",
-              // disconnected, it greys whether muted or not
-              (muted || w.wasReadyFor.size === 0) && "text-neutral-400",
-            )}
-            onClick={() => {
-              soundMute.set(!muted);
-              state.update();
-              w.view.focus();
-            }}
-          >
-            {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
-            <span>{muted ? "muted" : "unmuted"}</span>
-          </motion.button>
+          <Tip content={muted ? "unmute sound" : "mute sound"} side="bottom">
+            <motion.button
+              layout
+              type="button"
+              className={cn(
+                "pointer-events-auto flex cursor-pointer items-center gap-1 rounded bg-neutral-900/90 px-2 py-0.5 hover:text-sky-200",
+                // disconnected, it greys whether muted or not
+                (muted || w.wasReadyFor.size === 0) && "text-neutral-400",
+              )}
+              onClick={() => {
+                soundMute.set(!muted);
+                state.update();
+                w.view.focus();
+              }}
+            >
+              {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
+              <span>{muted ? "muted" : "unmuted"}</span>
+            </motion.button>
+          </Tip>
         </div>
         <AnimatePresence>
           {state.notice !== null && (
@@ -693,6 +703,7 @@ function PlayerButtons({
   children?: React.ReactNode;
 }) {
   const w = useContext(WorldContext);
+  const tipSide = tipSideOf(column ? (w.hud?.getLayout() ?? "bar") : "bar");
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const farLook = w.player?.look.far != null;
@@ -718,46 +729,42 @@ function PlayerButtons({
       {/* a narrow bar scrolls these after the carried items, never what follows, the fire button */}
       <div className={cn("flex min-w-0", column ? "flex-col" : "overflow-x-auto [scrollbar-width:none]")}>
         {/* follow on (white) or off, as `v` */}
-        <div
-          className={buttonClass}
-          title={`follow ${follow ? "on" : "off"}: v`}
-          onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}
-        >
-          <AnimatePresence>
-            {w.view?.lookingAt === true && (
-              // pulses whilst a pan is under way, which a black screen or a paused world would hide
+        <Tip content={`follow ${follow ? "on" : "off"}: v`} side={tipSide}>
+          <div className={buttonClass} onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}>
+            <AnimatePresence>
+              {w.view?.lookingAt === true && (
+                // pulses whilst a pan is under way, which a black screen or a paused world would hide
+                <motion.div
+                  className="pointer-events-none absolute inset-0 bg-white/60"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
+                  transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+                />
+              )}
+            </AnimatePresence>
+            {followFlash > 0 && (
+              // keyed by the count, so each toggle replays the fade
               <motion.div
-                className="pointer-events-none absolute inset-0 bg-white/60"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
-                transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+                key={followFlash}
+                className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
+                initial={{ opacity: 0.55 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
               />
             )}
-          </AnimatePresence>
-          {followFlash > 0 && (
-            // keyed by the count, so each toggle replays the fade
-            <motion.div
-              key={followFlash}
-              className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
-              initial={{ opacity: 0.55 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
-            />
-          )}
-          <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
-        </div>
+            <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
+          </div>
+        </Tip>
         {/* touch has no `wasd`, so no compass: nor Space, so a far look's toggle in its place */}
         {big === false ? (
           <CompassRose />
         ) : (
-          <div
-            className={buttonClass}
-            title={`max look ${farLook ? "on" : "off"}`}
-            onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}
-          >
-            <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
-          </div>
+          <Tip content={`max look ${farLook ? "on" : "off"}`} side={tipSide}>
+            <div className={buttonClass} onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}>
+              <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
+            </div>
+          </Tip>
         )}
         {/* last: right-most in the bar, bottom-most in a column */}
         <PlayerMenu
@@ -777,6 +784,7 @@ function PlayerButtons({
  */
 const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; column: boolean }) {
   const w = useContext(WorldContext);
+  const tipSide = tipSideOf(column ? (w.hud?.getLayout() ?? "bar") : "bar");
   const hint = useStateRef(
     (): FireHintState => ({
       fireId: 0,
@@ -801,50 +809,51 @@ const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; col
         !armed && "invisible opacity-0",
       )}
     >
-      <div
-        role="button"
-        title="fire: m, held to charge"
-        onPointerDown={(e) => {
-          e.stopPropagation(); // not a press on the World, nor a drag of the bar
-          if (!armed) return;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          w.player.startCharge();
-        }}
-        onPointerUp={() => w.player.releaseCharge()}
-        onPointerCancel={() => void w.player.cancelCharge()}
-        className={cn(
-          big
-            ? "grid cursor-pointer touch-none place-items-center rounded-lg bg-black/50 p-1"
-            : cn(playerButtonClass(big), "rounded-md"),
-          charging && "bg-red-950/70 ring-2 ring-red-400 ring-inset",
-        )}
-      >
-        {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
-        <motion.span
-          key={hint.fireId}
-          className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
-          initial={hint.fireId === 0 ? false : { scale: 1.45 }}
-          animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
-          transition={
-            charging
-              ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
-              : { type: "spring", stiffness: 520, damping: 11 }
-          }
-        >
-          {big ? (
-            <FingerprintIcon className="size-12" weight="fill" />
-          ) : (
-            <span
-              className={cn(
-                "grid place-items-center rounded border-[1.5px] border-current font-bold text-sm",
-                playerIconSize(big),
-              )}
-            >
-              M
-            </span>
+      <Tip content="fire: m, held to charge" side={tipSide}>
+        <div
+          role="button"
+          onPointerDown={(e) => {
+            e.stopPropagation(); // not a press on the World, nor a drag of the bar
+            if (!armed) return;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            w.player.startCharge();
+          }}
+          onPointerUp={() => w.player.releaseCharge()}
+          onPointerCancel={() => void w.player.cancelCharge()}
+          className={cn(
+            big
+              ? "grid cursor-pointer touch-none place-items-center rounded-lg bg-black/50 p-1"
+              : cn(playerButtonClass(big), "rounded-md"),
+            charging && "bg-red-950/70 ring-2 ring-red-400 ring-inset",
           )}
-        </motion.span>
-      </div>
+        >
+          {/* pressed, it charges: throbbing until let go. Fired, it recoils */}
+          <motion.span
+            key={hint.fireId}
+            className={cn("block", charging ? "text-red-200 drop-shadow-[0_0_6px_rgb(248_113_113)]" : "text-red-400")}
+            initial={hint.fireId === 0 ? false : { scale: 1.45 }}
+            animate={charging ? { scale: [1, 1.2, 0.95, 1.15, 1] } : { scale: 1 }}
+            transition={
+              charging
+                ? { duration: 0.3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }
+                : { type: "spring", stiffness: 520, damping: 11 }
+            }
+          >
+            {big ? (
+              <FingerprintIcon className="size-12" weight="fill" />
+            ) : (
+              <span
+                className={cn(
+                  "grid place-items-center rounded border-[1.5px] border-current font-bold text-sm",
+                  playerIconSize(big),
+                )}
+              >
+                M
+              </span>
+            )}
+          </motion.span>
+        </div>
+      </Tip>
     </div>
   );
 });
@@ -866,13 +875,14 @@ function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; i
   const [anchor, setAnchor] = useState<null | HTMLDivElement>(null);
   return (
     <>
-      <div
-        className={buttonClass}
-        title="options"
-        onClick={(e) => w.hud?.dragged !== true && setAnchor(anchor === null ? e.currentTarget : null)}
-      >
-        <GearSixIcon className={iconClass} weight="light" />
-      </div>
+      <Tip content="options" side={side}>
+        <div
+          className={buttonClass}
+          onClick={(e) => w.hud?.dragged !== true && setAnchor(anchor === null ? e.currentTarget : null)}
+        >
+          <GearSixIcon className={iconClass} weight="light" />
+        </div>
+      </Tip>
       <Menu.Root
         open={anchor !== null}
         // a press on its own button is left to that button's click, which closes it
@@ -913,6 +923,9 @@ const playerButtonClass = (big: boolean) =>
     big ? "size-10.5" : "size-12.5",
   );
 /** The player's buttons' group, and the fire button's own in a column: a faint border, padded as tall as a slot */
+/** Where a tip opens off the hud, away from its edge: above a bar, inwards from a column */
+const tipSideOf = (layout: string) => (layout === "bar" ? "top" : layout === "left" ? "right" : "left");
+
 const playerGroupClass = (big: boolean, column: boolean) =>
   cn(
     "pointer-events-auto flex self-center rounded-md border border-neutral-400/10",
