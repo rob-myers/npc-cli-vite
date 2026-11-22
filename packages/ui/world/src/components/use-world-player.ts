@@ -30,6 +30,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       strafeLatch: null,
       look: { base: getWorldStore(w.key).read().lookBase, steer: null, far: null },
       lookMarked: true,
+      lookCodes: new Set(),
       cancelLook: () => {},
       doingUntil: 0,
       gaze: false,
@@ -224,11 +225,23 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // held as `r` would be, long enough to come round
         state.cancelLook();
         state.cancelLook = w.e.after(lookHoldMs / 1000, () => {
+          if (state.lookCodes.size > 0) return state.lookByKeys(); // a look key still held
           state.lookAt = null;
           state.persistLook(); // the distance it set
           w.r3f?.invalidate();
         });
         w.r3f?.invalidate();
+      },
+      lookByKeys() {
+        const turns = [...state.lookCodes].map((code) => lookTurnByCode[code] ?? 0);
+        if (turns.length === 0) return;
+        // two held look between their axes. Opposite ones cancel, so the latest wins
+        const sin = turns.reduce((sum, t) => sum + Math.sin(t), 0);
+        const cos = turns.reduce((sum, t) => sum + Math.cos(t), 0);
+        const turn = Math.hypot(sin, cos) < 1e-6 ? turns[turns.length - 1] : Math.atan2(sin, cos);
+        // where the w-key heads, onto the nearest world axis
+        const heading = w.view.syncWasdHeading() ?? w.view.controls.getAzimuthalAngle();
+        state.lookAlong(Math.round(heading / halfPi) * halfPi + turn);
       },
       lookReach() {
         const { base, steer, far } = state.look;
@@ -314,11 +327,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (state.gaze === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleGaze();
           return void w.r3f?.invalidate();
         }
-        const lookTurn = lookTurnByCode[e.code];
-        if (lookTurn !== undefined) {
-          // where the w-key heads, onto the nearest world axis
-          const heading = w.view.syncWasdHeading() ?? w.view.controls.getAzimuthalAngle();
-          return state.lookAlong(Math.round(heading / halfPi) * halfPi + lookTurn);
+        if (lookTurnByCode[e.code] !== undefined) {
+          // last in the set is the latest pressed
+          state.lookCodes.delete(e.code);
+          state.lookCodes.add(e.code);
+          return state.lookByKeys();
         }
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") {
@@ -328,6 +341,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       onKeyUp(e) {
+        if (state.lookCodes.delete(e.code) === true) {
+          // those still held, else the last look, held `lookHoldMs` from letting go
+          if (state.lookCodes.size > 0) state.lookByKeys();
+          else if (state.lookAt?.turn !== undefined) state.lookAlong(state.lookAt.turn);
+        }
         if (e.code === "KeyM") return state.releaseCharge();
         if (e.code === "Space") state.setFarLook(false);
       },
@@ -482,7 +500,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
         const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
         // a key released after focus has gone elsewhere never reaches `onKeyUp`. Space's is WorldView's (`keysDown`)
-        const onBlur = () => (state.cancelCharge(), w.hud?.update());
+        const onBlur = () => (state.cancelCharge(), state.lookCodes.clear(), w.hud?.update());
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
@@ -721,6 +739,10 @@ export type State = {
   stopLooking(): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
+  /** The look keys held (`lookTurnByCode`), latest last, so two at once look diagonally */
+  lookCodes: Set<string>;
+  /** Looks as the held look keys head, renewed whilst any is held */
+  lookByKeys(): void;
   /** Looks along bearing `turn` for `lookHoldMs`, as a tap's look but with no cross. Kept whilst they walk */
   lookAlong(turn: number): void;
   /** Ends the look hold early, a game-time timer */
