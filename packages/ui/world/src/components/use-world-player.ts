@@ -27,7 +27,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       stopAutofire: null,
       lookAt: null,
-      snapFlip: false,
       strafeLatch: null,
       look: { base: getWorldStore(w.key).read().lookBase, steer: null, far: null },
       lookMarked: true,
@@ -81,9 +80,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return;
         }
         if (lookAt?.turn !== undefined) {
-          // a snap turn's bearing, wherever they walk
+          // a look key's bearing, wherever they walk
           const { x, z } = npc.position;
-          tmpHit.set(x - Math.sin(lookAt.turn) * snapTurnMetres, 0, z - Math.cos(lookAt.turn) * snapTurnMetres);
+          tmpHit.set(x - Math.sin(lookAt.turn) * lookAlongMetres, 0, z - Math.cos(lookAt.turn) * lookAlongMetres);
         } else if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
@@ -209,6 +208,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       isScanning() {
         return state.look.far !== null && state.lookAt === null;
       },
+      lookAlong(turn) {
+        const npc = state.get();
+        if (npc === undefined) return;
+        const { x, z } = npc.position;
+        state.lookAtPoint(x - Math.sin(turn) * lookAlongMetres, z - Math.cos(turn) * lookAlongMetres);
+        if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [turn, false];
+      },
       lookAtPoint(x, z) {
         const npc = state.get();
         if (npc === undefined || w.client === true || w.disabled === true) return;
@@ -308,9 +314,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (state.gaze === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleGaze();
           return void w.r3f?.invalidate();
         }
-        // `,` and `.` a step either way, `/` the nearest right angle
-        if (e.code === "Comma" || e.code === "Period" || e.code === "Slash")
-          return state.snapTurn(e.code === "Comma" ? 1 : e.code === "Period" ? -1 : 0);
+        const lookTurn = lookTurnByCode[e.code];
+        if (lookTurn !== undefined) {
+          // where the w-key heads, onto the nearest world axis
+          const heading = w.view.syncWasdHeading() ?? w.view.controls.getAzimuthalAngle();
+          return state.lookAlong(Math.round(heading / halfPi) * halfPi + lookTurn);
+        }
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") {
           if (state.cancelCharge() === false) state.toggleArm(); // charging, it cancels that alone
@@ -516,26 +525,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         return false;
       },
-      snapTurn(dir) {
-        const npc = state.get();
-        if (npc === undefined) return;
-        // quick presses chain on from the step under way
-        const chain = state.lookAt?.turn;
-        const from = chain ?? npc.rotation.y;
-        if (chain === undefined) {
-          // facing the camera, the screen's left is clockwise. Kept for the chain, else it swings back past side-on
-          w.r3f.camera.getWorldDirection(tmpHit);
-          state.snapFlip = Math.sin(from) * tmpHit.x + Math.cos(from) * tmpHit.z > 0;
-        }
-        const sign = state.snapFlip ? -dir : dir;
-        const to =
-          dir === 0
-            ? Math.round(from / snapTurnRad) * snapTurnRad
-            : sign * (Math.floor((sign * from) / snapTurnRad + snapTurnSlop) + 1) * snapTurnRad;
-        const { x, z } = npc.position;
-        state.lookAtPoint(x - Math.sin(to) * snapTurnMetres, z - Math.cos(to) * snapTurnMetres);
-        if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [to, false];
-      },
       startAutofire() {
         const fire = () => {
           if (w.phasers?.isArmed(state.key) !== true || w.phasers.lookOf(state.key).attachment !== "rotator") {
@@ -633,12 +622,11 @@ const lookTapSlopPx = 20;
 const fireTouchDelayMs = 300;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
-/** `,` and `.` turn them to the next multiple of this, `/` to the nearest */
-const snapTurnRad = Math.PI / 2;
-/** A share of a step within which they count as on it, so a press turns them a whole step */
-const snapTurnSlop = 0.05;
-/** Metres off the point a snap turn looks at: any beyond `lookDeadMetres` */
-const snapTurnMetres = 2;
+const halfPi = Math.PI / 2;
+/** `l`, `,`, `.` and `/` look as the w, a, s and d keys head: radians anticlockwise from above */
+const lookTurnByCode: Partial<Record<string, number>> = { KeyL: 0, Comma: halfPi, Period: Math.PI, Slash: -halfPi };
+/** Metres off the point a look key looks at: any beyond `lookDeadMetres` */
+const lookAlongMetres = 2;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
 const doingMaxSecs = 3;
 /** Game seconds gaze mode waits after they are done with what it yielded to */
@@ -704,22 +692,18 @@ export type State = {
   onFireTouch(e: TouchEvent): boolean;
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
-  /** Turns them to the next multiple of 90°: with `dir` `1` their facing swings to the screen's left. `0` the nearest */
-  snapTurn(dir: -1 | 0 | 1): void;
-  /** A snap turn's chain turns clockwise from above for `,`, as they faced the camera at its start */
-  snapFlip: boolean;
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
   syncRun(): void;
   /**
    * The floor point a look is at, for `lookHoldMs` — see `LookMark`.
-   * `turn` is a snap turn's bearing, faced whilst walking, keeping their look's reach
+   * `turn` is a look key's bearing, faced whilst walking, keeping their look's reach
    */
   lookAt:
     | null
     | (Geom.VectJson & {
-        /** Snap turn's bearing */
+        /** A look key's bearing */
         turn?: number;
       });
   /**
@@ -737,6 +721,8 @@ export type State = {
   stopLooking(): void;
   /** Whether `LookMark` shows `lookAt`: not whilst a finger drags it */
   lookMarked: boolean;
+  /** Looks along bearing `turn` for `lookHoldMs`, as a tap's look but with no cross. Kept whilst they walk */
+  lookAlong(turn: number): void;
   /** Ends the look hold early, a game-time timer */
   cancelLook(): void;
   /** A two-finger tap on the canvas is a look where it lands */
