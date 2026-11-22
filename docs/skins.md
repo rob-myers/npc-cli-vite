@@ -140,6 +140,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - A full cap, or one notched along the rim, reads as a box.
   - Gradients give it form, darker toward the ragged edges. Fine short strokes texture it.
   - On the base, hair below the cap becomes skin, with stubble fading toward the neck.
+- A beard is drawn on the head overlay, a darker copy on the base as its shadow, the lips on the base showing through its mouth (`postdoc-1`).
 - Eyes are never too light, and brows never bold black. Mute an eye's white, darken its pupil, and draw the brows in a dark hair colour (`d-2`).
 - Accessories and loose strands on the head overlay, e.g. clips, a knot, stray tufts, read as noise at this size. Remove them.
 - Long hair below the head does not work, on the base or the overlay. Remove it from the body, each texel taking the nearest suit colour on its face (`d-4`).
@@ -151,11 +152,13 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - Small details drawn in texels read as low res, e.g. a stethoscope, a red cross, lapels, buttons or a speckled shirt (`medic-1`, `medic-2`, `medic-4`). Take them out of the embedded image, filling with the cloth beside them, and redraw them in the svg: smooth tones under the form shading, crisp shapes over it.
 - Tattoos drawn in texels read as blotches. Take them out of the embedded image and redraw them as ink: strokes joining neighbouring tattoo texels within a face, dots for lone ones, clipped to the faces (`d-5`).
   - No stroke crosses an elbow or knee, at half a limb's height (texel row 26 for the right arm, 58 for the left). The halves are separate cuboids, so ink across the bend breaks as it bends.
+- Wires and plates drawn in texels read as noise (`robot-3`). Flatten the chassis and plates to one colour each, redraw the wires as round strokes joining their texels within a face (a dark shadow, the wire, a thin shine), and bevel each plate's edges.
 - Light cloth, e.g. a white coat or pale scrubs, takes form shading only, never a noise texture (`medic-{1..5}`). Each face, base and overlay, takes a gradient darker toward its bottom, its sides, back and underside darker than its front. A multiply group draws it, clipped to the cloth texels (opaque, light, not skin-toned).
   - A texture, if wanted, goes over the form shading, faint: fold creases and a fine weave, each a filtered rect clipped to the cloth, at a quarter to a third opacity (`medic-3`).
   - White and pale blue still reading too light takes darker lines, not darker colours (`medic-2`). A multiply group of 1px strokes, unclipped, draws a firm seam where one colour meets another within a face, a lighter line round each face's edges, and a few folds at knees and elbows. One grey reads as dark blue on the blue and as grey on the white.
   - A gamma or scale filter darkening pale cloth turns it another colour, e.g. pale cyan into teal. Avoid it when the colour is the point.
   - Put `mix-blend-mode` on the clipped group itself. A clip isolates the group, so children blending inside it see an empty backdrop, and paint grey.
+- A skin needing only a little form takes one subtle multiply group over every face of its body and limbs, base and overlay, clipped to their opaque texels (`form-body`), and a lighter one over its head (`form-head`), as `ra-{1,2}` and `postdoc-{1,2}`.
 - Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form. Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
   - A pale download reads faded beside d-0 and d-1. Raise its contrast and saturation by a filter on its `<image>` (`#punch`), and darken its suit's multiply, e.g. `#707070` (`d-4`).
