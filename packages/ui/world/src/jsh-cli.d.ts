@@ -305,6 +305,8 @@ declare namespace JshCli {
      * we'll use the first match, else defaultSkinKey.
      */
     as?: string;
+    /** Spawned dead, lying in this clip, else `true` for one by their posture. Off the navmesh too */
+    dead?: boolean | string;
   };
 
   type SpawnManyOpts = {

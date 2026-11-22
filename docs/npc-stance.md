@@ -26,7 +26,8 @@ With it, the feet are held where they were:
    not slant.
 5. **Let go.** Any pose that is not standing eases the hold out. When it ends, the pose's own legs
    and hips are written back. A sit or a lie ends it at once: they are elsewhere by then, and the
-   hips easing back would slide them on the seat.
+   hips easing back would slide them on the seat. So does a corpse lain at once (`restoreDead`): the
+   sink would drag it under the floor.
 
 It is one mechanism. There is no code per gait or per direction: a strafe's sideways spread is held
 the same way as a walk's stride.

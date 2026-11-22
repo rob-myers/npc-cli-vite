@@ -495,6 +495,8 @@ export default function NPCs() {
       },
       rawSpawn(opts) {
         let npc = w.n[opts.npcKey];
+        // a respawn undoes death and hurt at once
+        if (npc?.anim.hurt != null) npc.anim.setHurt(null, undefined, { snap: true });
 
         // a doable's own point, not where it was picked: one on the navmesh keeps their agent
         const closePolyResult =
@@ -604,7 +606,7 @@ export default function NPCs() {
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
-      async spawn({ npcKey, at, as: skinPrefix, angle, facing }) {
+      async spawn({ npcKey, at, as: skinPrefix, angle, facing, dead = false }) {
         // NOT resolved when none is given: `findSkinKey` would give the default, and a respawn re-dress them in it
         const as = skinPrefix === undefined ? undefined : state.findSkinKey(skinPrefix);
         if (typeof npcKey !== "string" || !npcSpawnConfig.keyPattern.test(npcKey)) {
@@ -612,6 +614,9 @@ export default function NPCs() {
         }
         if (!at) {
           throw Error("opts.at must exist");
+        }
+        if (typeof dead === "string" && !(dead in state.clips)) {
+          throw Error(`opts.dead: unknown clip: ${dead}`);
         }
 
         const groundAt = helper.parseGroundPoint(at);
@@ -624,14 +629,16 @@ export default function NPCs() {
           throw Error("occupied");
         }
 
-        const closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
+        let closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
         const gmRoomId = closePolyResult ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
         // off the navmesh, or its nearest point lies across a wall
         if (
           closePolyResult &&
           (!closePolyResult.success || w.findRoomContaining(closePolyResult.position, true)?.grKey !== gmRoomId?.grKey)
         ) {
-          throw Error("not placable");
+          if (dead === false) throw Error("not placable");
+          // a corpse lies where it is put, out of the crowd
+          closePolyResult = { ...closePolyResult, success: false, position: helper.groundPointToTuple(groundAt) };
         }
         if (gmRoomId === null) throw Error("must be in some room");
 
@@ -654,6 +661,7 @@ export default function NPCs() {
             npc.anim.setPose(npc.anim.idleClip.name as AnimationClipKey, { fade: 0 });
           w.view.forceUpdate(0.01);
         }
+        if (dead !== false) npc.anim.restoreDead(dead === true ? undefined : (dead as AnimationClipKey));
 
         if (!playerExisted && w.client === false) {
           w.player.assign(npcKey);

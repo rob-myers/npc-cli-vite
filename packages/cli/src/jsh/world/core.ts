@@ -1670,6 +1670,10 @@ export function skin(
  *
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
+ *
+ * # dead, off the navmesh too: fallen, or by clip
+ * spawn rob at:$( pick 1 ) dead
+ * spawn rob at:$( pick 1 ) dead:die_back
  * ```
  */
 export async function spawn(
@@ -2007,6 +2011,7 @@ const booleanJsOptSomewhere = {
   backstep: true,
   backwards: true,
   cancel: true,
+  dead: true,
   detail: true,
   facing: true,
   far: true,

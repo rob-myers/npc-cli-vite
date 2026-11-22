@@ -1482,11 +1482,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               at: { ...at, meta: decorKey ? w.decor.byKey[decorKey]?.meta : undefined },
               angle,
               as: skinKey,
+              // lying where they fell, as they were left
+              dead: dead !== undefined && dead in w.npc.clips ? dead : false,
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
-            // lying where they fell, as they were left
-            if (dead !== undefined && dead in w.npc.clips) spawned?.anim.restoreDead(dead as AnimationClipKey);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
