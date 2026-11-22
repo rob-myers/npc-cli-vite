@@ -15,7 +15,7 @@ import {
   WarningIcon,
 } from "@phosphor-icons/react";
 import { hasWebMcp } from "../web-mcp";
-import { flattenPanes, splitRoot } from "./pane-service";
+import { flattenPanes, splitTabs } from "./pane-service";
 
 /** `GlobalMenu`'s items. Lazy, so their icons stay out of the page's entry */
 export default function GlobalMenuItems(props: GlobalMenuItemsProps) {
@@ -31,22 +31,32 @@ export default function GlobalMenuItems(props: GlobalMenuItemsProps) {
       <Menu.Separator className={separatorClass} />
 
       {/* a phone has no room for panes side by side */}
-      <div className={cn(itemClass, touchDevice && "hidden", "cursor-default hover:bg-transparent")}>
+      <div
+        className={cn(
+          itemClass,
+          touchDevice && "hidden",
+          !props.canSplit && "text-slate-500",
+          "cursor-default hover:bg-transparent",
+        )}
+        title={props.canSplit ? "move half of a pane's tabs beside it" : "no pane has two tabs"}
+      >
         Split
         <span className="ml-auto flex gap-1">
           <Menu.Item
-            className="p-1 rounded hover:bg-slate-700 cursor-pointer"
+            className="p-1 rounded hover:bg-slate-700 cursor-pointer data-disabled:pointer-events-none"
             aria-label="Split side by side"
             title="Split side by side"
-            onClick={() => splitRoot(false)}
+            disabled={!props.canSplit}
+            onClick={() => splitTabs(false)}
           >
             <SquareHalfIcon className={iconClass} />
           </Menu.Item>
           <Menu.Item
-            className="p-1 rounded hover:bg-slate-700 cursor-pointer"
+            className="p-1 rounded hover:bg-slate-700 cursor-pointer data-disabled:pointer-events-none"
             aria-label="Split top and bottom"
             title="Split top and bottom"
-            onClick={() => splitRoot(true)}
+            disabled={!props.canSplit}
+            onClick={() => splitTabs(true)}
           >
             <SquareHalfBottomIcon className={iconClass} />
           </Menu.Item>
@@ -106,6 +116,8 @@ export default function GlobalMenuItems(props: GlobalMenuItemsProps) {
 }
 
 export interface GlobalMenuItemsProps {
+  /** Some shown pane has two tabs to split between */
+  canSplit: boolean;
   paneCount: number;
   /** Reset was pressed once, so the next press confirms it */
   resetArmed: boolean;

@@ -51,6 +51,8 @@ export const SkipNetUiMetaSchema = z.object({
       { id: "w1", kind: "folder", x: 0, y: 0, w: 20, h: 12, z: 1 },
       { id: "w2", kind: "article", articleKey: "npc-controls", x: 21, y: 0, w: 30, h: 24, z: 2 },
     ]),
+  /** A window to open once shown, asked for from outside e.g. by the app's intro toast */
+  opening: z.custom<SkipNetContent>((x) => typeof x === "object" && x !== null).optional(),
   /** Each code fence's height by its id, once resized by its corner */
   fenceHeights: z.record(z.string(), z.number()).optional(),
 });

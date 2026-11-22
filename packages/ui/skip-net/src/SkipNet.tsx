@@ -116,6 +116,12 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
   }, []);
 
   useEffect(() => {
+    if (meta.opening === undefined) return;
+    state.open(meta.opening);
+    uiStoreApi.setUiMeta(meta.id, (draft) => void delete (draft as SkipNetUiMeta).opening);
+  }, [meta.opening]);
+
+  useEffect(() => {
     /** A backtick over SkipNet toggles Show All, unless typing */
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "`" || !state.hovered || state.narrow || state.meta.windows.length === 0) return;

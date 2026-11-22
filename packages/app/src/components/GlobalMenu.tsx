@@ -9,7 +9,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useStore } from "zustand";
 import { isWebMcpOn, setWebMcpOn } from "../web-mcp";
 import type GlobalMenuItemsType from "./GlobalMenuItems";
-import { countPanes, resetPanes } from "./pane-service";
+import { countPanes, getSplittable, resetPanes } from "./pane-service";
 
 /** Loaded on its first open */
 const AboutModal = lazy(() => import("./AboutModal").then((m) => ({ default: m.AboutModal })));
@@ -18,6 +18,7 @@ export function GlobalMenu() {
   const vpOffset = useVisualViewportOffset();
   const theme = useThemeName();
   const paneCount = useStore(uiStore, (s) => countPanes(s.persistedPanes.root));
+  const canSplit = useStore(uiStore, () => getSplittable() !== null);
 
   const state = useStateRef(() => ({
     /** Its items, loaded on a first hover or press. It opens only once they are, so never empty */
@@ -242,6 +243,7 @@ export function GlobalMenu() {
                 )}
                 {state.Items && (
                   <state.Items
+                    canSplit={canSplit}
                     paneCount={paneCount}
                     resetArmed={state.resetArmed}
                     trackingOff={state.trackingOff}

@@ -1,79 +1,53 @@
-# npc-cli
+# NPC CLI
 
-<img src="docs/screenshots/initial-vid-3.webp" alt="Moving the player and spawning npcs in  Geomorph 301"  />
+<!-- pnpm sync-readme writes this from packages/app/src/components/about.mdx: edit that instead -->
 
-*Moving the player and spawning npcs in [Geomorph 301](https://travellerrpgblog.blogspot.com/2020/07/starship-geomorphs-20.html) using an in-browser shell.*
+This is SCP NPC-CLI.
 
-A pnpm monorepo vite react app hosting tabbed uis:
-- **World** is a 3D world built using three.js WebGPU and react three fiber
-- **Jsh** is a xterm.js shell around JavaScript
-- **MapEdit** is an SVG style editor sub-symbols and maps
-- **Decorator** is for placing dynamic decor.
-- **Manifest** is for the setting's lore: backstories, and the grammars npcs speak from.
+Hey there, I'm Rob Myers [me.robmyers@gmail.com](mailto:me.robmyers@gmail.com) · [rob-myers/npc-cli-vite](https://github.com/rob-myers/npc-cli-vite)
 
-## Quick start
+[![NPC CLI demo](https://img.youtube.com/vi/WIIihWnOQ2E/hqdefault.jpg)](https://www.youtube.com/watch?v=WIIihWnOQ2E)
 
-Needs Node 24 (see `.nvmrc`) and [pnpm](https://pnpm.io/installation).
+## Features
 
-```sh
-pnpm install         # also points git at .githooks/
-pnpm approve-builds  # allow skia-canvas' native build
-pnpm dev             # http://localhost:5173
-```
+- **World**: 3D in three.js WebGPU, on [Starship Geomorphs](https://travellerrpgblog.blogspot.com/2020/07/starship-geomorphs-20.html).
+- **Jsh**: a bash-like JavaScript shell.
+- **Npcs**: walk, open doors, sit, talk and shoot.
+- **SkipNet**: articles with runnable commands.
+- **MapEdit**: an SVG map editor.
+- **Decorator**: places decor live.
+- **Multiplayer** over WebRTC.
+- **Touch** on a phone.
 
-On a phone, `pnpm dev-hotspot` serves on your network: find your address with `ipconfig getifaddr en0` and open `https://<address>:5173`, accepting its self-signed certificate. It is https because a phone only offers WebGPU on a secure origin.
+## Screenshots
 
-Some scripts need extra tools (pngquant, ImageMagick, Go/TinyGo) — see [docs/tooling.md](docs/tooling.md).
+<img src="docs/screenshots/initial-vid-3.webp" alt="Moving the player and spawning npcs in Geomorph 301" />
 
-## Layout
+*Moving the player and spawning npcs in Geomorph 301*
 
-| Package | What it is |
-|---|---|
-| `packages/app` | Vite app entry, and the public assets: sheets, symbols, maps, decor, skins |
-| `packages/ui/world` | The 3D world: camera, npcs, navigation, lighting, floor |
-| `packages/ui/*` | The other UIs: `jsh`, `map-edit`, `decorator`, `manifest`, `tabs`, `jobs`, `skip-net`, … |
-| `packages/cli` | The shell behind Jsh: tty, processes, and the `jsh` world commands |
-| `packages/media` | Static asset keys, symbol metadata, source images e.g. the geomorphs |
-| `packages/util` | Shared geometry (`Mat`, `Vect`, `Rect`), services, TSL helpers |
-| `packages/parse-sh` | Shell parser, Go compiled to WASM |
-| `packages/ui-sdk`, `ui-registry` | How a UI is defined, registered and persisted |
-| `scripts` | Vite plugins, the MapEdit save API, asset generation |
+Built with three.js, React Three Fiber, Navcat, Mvdan/sh, Xterm.js and Vite.
+Maps are made in MapEdit (inspired by Boxy SVG).
 
-## Scripts
+## Notices and licenses
 
-| Command | When |
-|---|---|
-| `pnpm dev` / `pnpm build` / `pnpm preview` | Run, build, or serve the build |
-| `pnpm typecheck` | Type-check every package (`tsgo -b`) |
-| `pnpm check` | Lint and format check (Biome) |
-| `pnpm gen-assets-json` | Rebuild `assets.json` from MapEdit files — runs by itself on save in dev; `--force` recomputes symbol stratification |
-| `pnpm gen-starship-sheets` | Rebuild the obstacle spritesheet after changing obstacles — or the **obstacles** button in the World menu |
-| `pnpm gen-decor-sheets` / `pnpm gen-skin-sheets` | Rebuild the decor or skin spritesheets |
-| `pnpm gen:ui` / `pnpm gen-pkg` | Scaffold a new UI or package |
+### Starship Geomorphs
 
-## Git hooks
+Starship Geomorphs v2.0 is Copyright © 2020 by Pearce Design Studio, LLC and is licensed under a Creative Commons Attribution Non-Commercial 4.0 International License.
 
-Hooks live in `.githooks/`; `pnpm install` enables them via the `prepare` script.
+The Traveller game in all forms is owned by Far Future Enterprises. Copyright 1977-2020 Far Future Enterprises. Traveller is a registered trademark of Far Future Enterprises. Far Future permits web sites and fanzines for this game, provided it contains this notice, that Far Future is notified, and subject to a withdrawal of permission on a 90 days notice. The contents of this page are for personal, non-commercial use only. Any use of Far Future Enterprises's copyrighted material or trademarks anywhere in these documents should not be viewed as a challenge to those copyrights or trademark.
 
-| Hook | What it does |
-|---|---|
-| `pre-commit` | Runs `pnpm gen-starship-sheets` and stages its output |
-| `pre-push` | Runs `pnpm gen-starship-sheets` |
+### PNG Extractions
 
-## Docs
+This work is Copyright © 2020 by Eric B. Smith and is licensed under a Creative Commons Attribution Non-Commercial 4.0 International License.
 
-| Doc | About |
-|---|---|
-| [floor](docs/floor.md) | How the floor is drawn, and `deckConfig` |
-| [starship-sheets](docs/starship-sheets.md) | Obstacle spritesheets, masks, and MapEdit `dup` |
-| [map-edit](docs/map-edit.md) | Where a saved MapEdit file goes |
-| [decorator](docs/decorator.md) | The Decorator panel and runtime decor |
-| [workers](docs/workers.md) | The physics and nav web workers |
-| [web-rtc-worlds](docs/web-rtc-worlds.md) | One World joining another over WebRTC |
-| [navcat-patch](docs/navcat-patch.md) | The patched crowd/navmesh library |
-| [npc-outlines](docs/npc-outlines.md) | The border drawn round npcs |
-| [page-load-perf](docs/page-load-perf.md) | Page load measurements |
-| [screen-slideshows](docs/screen-slideshows.md) | Turning a screen recording into a README slideshow |
-| [tooling](docs/tooling.md) | Optional tools, and which scripts need them |
-| [gotchas](docs/gotchas.md) | Things that have bitten before |
-| [blockbench](docs/blockbench.md) | Modelling npcs in Blockbench |
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
+
+### SCP Foundation
+
+Content relating to the SCP Foundation, including the SCP Foundation logo, is licensed under Creative Commons Sharealike 3.0 and all concepts originate from [scp-wiki.wikidot.com](https://scp-wiki.wikidot.com) and its authors.
+
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+
+### NPC CLI
+
+The code is Copyright © 2025-2026 by Robert S. R. Myers and is licensed under the [MIT License](https://github.com/rob-myers/npc-cli-vite/blob/main/LICENSE). The assets above keep their own licenses.

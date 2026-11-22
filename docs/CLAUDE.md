@@ -109,6 +109,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Perception | `docs/perception.md` | Spot and sight queries (`spotQuery`) are answered on the nav worker, beside the plan ops. `worker.main.ts` sets it up per map with what blocks sight, and tells it of doors as they change. `worker/handle-perception.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spots show`). `sees --debug a b` says and draws why. |
 | Jsh jobs | `docs/jsh-jobs.md` | A tty's jobs show in a panel beside it, toggled by **jobs** at the tty's top right, above its menu, and dragged by its grip button to an edge's centre, which shows its destination rect. A sash resizes it. `jobs.{shown,at,size}` is saved in the Jsh's meta. Only CSS moves the panel, so the tty never remounts. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
+| Development | `docs/development.md` | Quick start, layout, scripts, hooks and the docs list. `README.md` is generated from the About modal's `about.mdx` by `pnpm sync-readme` (and the pre-commit hook), so edit that instead. |
 | Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
 ## Renderer

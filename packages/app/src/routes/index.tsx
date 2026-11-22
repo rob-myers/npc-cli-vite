@@ -19,7 +19,6 @@ import {
   ensureLeafUis,
   findLeafByUiId,
   findPanePosition,
-  initNextId,
   persistPanesToUi,
   revealLeafOf,
   splitPane,
@@ -38,8 +37,6 @@ function Index() {
   const theme = useThemeName();
   const ready = useStore(uiStore, (s) => s.ready);
   const root = useStore(uiStore, (s) => s.persistedPanes.root);
-
-  initNextId(root);
 
   const overrideContextMenuRef = useRef<LayoutApi["overrideContextMenu"] | null>(null);
 

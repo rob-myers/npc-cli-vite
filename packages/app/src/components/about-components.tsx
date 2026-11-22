@@ -1,4 +1,18 @@
 import { Tooltip } from "@base-ui/react/tooltip";
+import { CaretRightIcon } from "@phosphor-icons/react";
+import LiteYouTubeEmbed from "react-lite-youtube-embed";
+import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
+
+/** Each screenshot's url by its repo path, e.g. `docs/screenshots/initial-vid-3.webp`, as the README has it */
+const screenshotUrls = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("../../../../docs/screenshots/*.{webp,png,jpg}", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  ).map(([path, url]) => [path.replace(/^(\.\.\/)+/, ""), url]),
+);
 
 /** Themes `about.mdx` as WorldMenu, in place of the blog's `prose` */
 export const aboutComponents = {
@@ -33,9 +47,38 @@ export const aboutComponents = {
       </Tooltip.Portal>
     </Tooltip.Root>
   ),
+  ul: (props: React.ComponentProps<"ul">) => (
+    <ul {...props} className="flex flex-col gap-1.5 pl-4 list-disc marker:text-neutral-600" />
+  ),
+  /** Open at first, and foldable */
   Notices: ({ children }: { children: React.ReactNode }) => (
-    <div className="flex flex-col gap-2 border-t border-neutral-800 pt-5 text-sm leading-relaxed text-neutral-400">
-      {children}
+    <details open className="group border-t border-neutral-800 pt-4 text-sm leading-relaxed text-neutral-400">
+      <summary className="flex items-center gap-1.5 cursor-pointer list-none text-xs font-medium uppercase tracking-wider text-neutral-400 hover:text-neutral-200">
+        <CaretRightIcon className="size-3 transition-transform group-open:rotate-90" weight="bold" />
+        Notices and licenses
+      </summary>
+      <div className="flex flex-col gap-2 pt-3">{children}</div>
+    </details>
+  ),
+  /** e.g. `<Screenshot src="docs/screenshots/initial-vid-3.webp" caption="…" />`, its `src` from the repo root */
+  Screenshot: ({ src, alt, caption }: { src: string; alt?: string; caption?: string }) => (
+    <figure className="flex flex-col gap-1.5 shrink-0 w-full snap-center">
+      <img
+        src={screenshotUrls[src] ?? src}
+        alt={alt ?? caption ?? ""}
+        loading="lazy"
+        className="w-full rounded border border-neutral-800"
+      />
+      {caption !== undefined && <figcaption className="text-xs text-neutral-500">{caption}</figcaption>}
+    </figure>
+  ),
+  /** Screenshots side by side, scrolled one at a time */
+  Screenshots: ({ children }: { children: React.ReactNode }) => (
+    <div className="shrink-0 flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-thin">{children}</div>
+  ),
+  Video: ({ id, title }: { id: string; title?: string }) => (
+    <div className="shrink-0 overflow-hidden rounded border border-neutral-800">
+      <LiteYouTubeEmbed id={id} title={title ?? "YouTube video"} poster="hqdefault" webp />
     </div>
   ),
 };

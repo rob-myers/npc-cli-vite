@@ -1,6 +1,7 @@
 import { themeApi, themeStore } from "@npc-cli/theme";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { IntroToast } from "../components/IntroToast";
 import { NewVersionToast } from "../components/NewVersionToast";
 // import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
@@ -22,6 +23,7 @@ function RootComponent() {
       <Outlet />
 
       <NewVersionToast />
+      <IntroToast />
 
       {/* ordering fixes weird mount animation bug of WorldMenu */}
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />

@@ -28,6 +28,7 @@
     "react": "catalog:",
     "react-beforeunload": "catalog:",
     "react-dom": "catalog:",
+    "react-lite-youtube-embed": "catalog:",
     "react-reverse-portal": "catalog:",
     "zustand": "catalog:"
   },

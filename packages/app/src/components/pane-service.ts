@@ -9,11 +9,9 @@ export const { countPanes, findPanePosition } = paneTree;
 
 export type PaneNode = GenericPaneNode<{ uiId?: string }>;
 
-let nextId = 1;
-
-export function initNextId(node: PaneNode) {
-  if (node.id >= nextId) nextId = node.id + 1;
-  if (node.type === "split") node.children.forEach(initNextId);
+/** One past the tree's largest pane id. Read from the tree, so no counter can fall behind it */
+function nextIdOf(node: PaneNode): number {
+  return node.type === "leaf" ? node.id + 1 : Math.max(node.id + 1, ...node.children.map(nextIdOf));
 }
 
 function createTabsUi(): string {
@@ -31,22 +29,66 @@ function setRoot(fn: (prev: PaneNode) => PaneNode) {
   });
 }
 
-export function splitRoot(vertical: boolean) {
-  const { persistedPanes } = uiStore.getState();
-  splitPane(persistedPanes.root.id, vertical);
+/** The shown Tabs to split: the focused one if it has two tabs, else the one with most. Null if none has two */
+export function getSplittable(): null | { leafId: number; tabsId: string } {
+  const { persistedPanes, byId } = uiStore.getState();
+  const shown = shownLeaves(persistedPanes.root).flatMap((leaf) =>
+    leaf.uiId && (byId[leaf.uiId]?.meta.items?.length ?? 0) >= 2 ? { leafId: leaf.id, tabsId: leaf.uiId } : [],
+  );
+  const count = (x: { tabsId: string }) => byId[x.tabsId].meta.items?.length ?? 0;
+  const focused = shown.find((x) => x.tabsId === persistedPanes.focusedTabsUiId);
+  return focused ?? shown.reduce<null | (typeof shown)[number]>((a, b) => (a && count(a) >= count(b) ? a : b), null);
+}
+
+/** Moves the later half of a Tabs' tabs into a new pane beside it, roughly undoing `flattenPanes` */
+export function splitTabs(vertical: boolean) {
+  const target = getSplittable();
+  if (target === null) return;
+  const { byId } = uiStore.getState();
+  const items = byId[target.tabsId].meta.items ?? [];
+  const [kept, moved] = [items.slice(0, Math.ceil(items.length / 2)), items.slice(Math.ceil(items.length / 2))];
+  const current = byId[target.tabsId].meta.currentTabId as string | undefined;
+  const uiId = createTabsUi();
+
+  // one update, so no tab is ever shown by two Tabs at once
+  uiStore.setState((draft) => {
+    const leafId = nextIdOf(draft.persistedPanes.root);
+    const from = draft.byId[target.tabsId].meta as { items?: string[]; currentTabId?: string };
+    const to = draft.byId[uiId].meta as { items?: string[]; currentTabId?: string };
+    from.items = kept;
+    from.currentTabId = current !== undefined && kept.includes(current) ? current : kept[0];
+    to.items = moved;
+    to.currentTabId = current !== undefined && moved.includes(current) ? current : moved[0];
+    for (const id of moved) {
+      const ui = draft.byId[id];
+      if (ui) ui.meta.parentId = uiId;
+    }
+    draft.persistedPanes.root = transformNode(draft.persistedPanes.root, target.leafId, (node) => ({
+      type: "split",
+      id: leafId + 1,
+      vertical,
+      children: [node, { type: "leaf", id: leafId, uiId }],
+    }));
+  });
+  persistPanesToUi();
+}
+
+function shownLeaves(node: PaneNode): Extract<PaneNode, { type: "leaf" }>[] {
+  if (node.type === "leaf") return [node];
+  return node.children.filter((c) => !node.hiddenIds?.includes(c.id)).flatMap(shownLeaves);
 }
 
 export function splitPane(targetId: number, vertical: boolean) {
   const uiId = createTabsUi();
-  const leafId = nextId++;
-  setRoot((prev) =>
-    transformNode(prev, targetId, (node) => ({
+  setRoot((prev) => {
+    const leafId = nextIdOf(prev);
+    return transformNode(prev, targetId, (node) => ({
       type: "split",
-      id: nextId++,
+      id: leafId + 1,
       vertical,
       children: [node, { type: "leaf", id: leafId, uiId }],
-    })),
-  );
+    }));
+  });
   persistPanesToUi();
 }
 
@@ -61,8 +103,7 @@ export function closePane(targetId: number) {
   const newRoot = removeNode(persistedPanes.root, targetId);
   if (newRoot === null) {
     const fallbackUiId = createTabsUi();
-    const fallbackId = nextId++;
-    setRoot(() => ({ type: "leaf", id: fallbackId, uiId: fallbackUiId }));
+    setRoot((prev) => ({ type: "leaf", id: nextIdOf(prev), uiId: fallbackUiId }));
   } else {
     setRoot(() => newRoot);
   }
@@ -109,7 +150,7 @@ export function flattenPanes() {
   const focused = persistedPanes.focusedTabsUiId;
   const keepId = focused !== undefined && tabsIds.includes(focused) ? focused : tabsIds[0];
   const items = tabsIds.flatMap((id) => byId[id].meta.items ?? []);
-  const leafId = nextId++;
+  const leafId = nextIdOf(persistedPanes.root);
 
   // one update, so no tab is ever shown by two Tabs at once
   uiStore.setState((draft) => {
