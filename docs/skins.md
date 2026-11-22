@@ -6,7 +6,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 `packages/app/public/skin` is a symlink to `packages/media/src/skin`:
 
-- `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--23aa3d70ee53af87.png`
+- `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--86403319024aa40f.png`
 - `{key}.svg` (optional): an overlay drawn over it at 256px, i.e. the detail
   - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlay-backfaces`)
   - a `<g>` titled `ignore` is dropped when rasterised

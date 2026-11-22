@@ -198,27 +198,27 @@
     },
     "postdoc-2": {
       "key": "postdoc-2",
-      "id": "86403319024aa40f",
-      "filename": "postdoc-2--86403319024aa40f.png",
+      "id": "23aa3d70ee53af87",
+      "filename": "postdoc-2--23aa3d70ee53af87.png",
       "meta": {
         "skinKey": "postdoc-2",
         "prefix": "postdoc",
-        "eyes": {"open": [1, 6, 2, 1], "pupil": [2, 6, 1, 1]}
-      },
-      "url": "https://namemc.com/skin/86403319024aa40f",
-      "svgPath": "skin/postdoc-2.svg"
-    },
-    "ra-0": {
-      "key": "ra-0",
-      "id": "23aa3d70ee53af87",
-      "filename": "ra-0--23aa3d70ee53af87.png",
-      "meta": {
-        "skinKey": "ra-0",
-        "prefix": "ra",
         "firstSeen": "J_az",
         "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
       },
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
+      "svgPath": "skin/postdoc-2.svg"
+    },
+    "ra-0": {
+      "key": "ra-0",
+      "id": "86403319024aa40f",
+      "filename": "ra-0--86403319024aa40f.png",
+      "meta": {
+        "skinKey": "ra-0",
+        "prefix": "ra",
+        "eyes": {"open": [1, 6, 2, 1], "pupil": [2, 6, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/86403319024aa40f",
       "svgPath": "skin/ra-0.svg"
     },
     "ra-1": {
