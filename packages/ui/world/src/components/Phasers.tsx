@@ -1590,7 +1590,7 @@ function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.V
   );
 }
 
-/** Does their gun at full aim meet someone in their room: their body or shoulders, or their arm whilst raised? */
+/** Does their gun at full aim meet someone in their room: their body or shoulders, or their arm whilst raised? Not one lying down, or dead */
 function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: number) {
   const ours = gunLine(npc, arm);
   const [mx, mz] = [(ours[0] + ours[2]) / 2, (ours[1] + ours[3]) / 2];
@@ -1602,6 +1602,7 @@ function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: 
   /** Those in their room, and those near a door they are near: the arm may reach through it */
   const others = w.npc.near.atDoors(npc.key, w.npc.near.inReach(npc.key, 0));
   return others.some((other) => {
+    if (other.anim.dead === true || other.anim.posture === "lie") return false; // lain, or a corpse: below the arm
     const p = other.position;
     if (Math.abs(p.x - mx) > far || Math.abs(p.z - mz) > far) return false;
     const stood = other.anim.posture === "stand";
