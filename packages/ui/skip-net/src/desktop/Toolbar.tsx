@@ -1,7 +1,7 @@
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Menu } from "@base-ui/react/menu";
 import { Menubar } from "@base-ui/react/menubar";
-import { cn, tw } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { FlashlightIcon, SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
@@ -16,35 +16,41 @@ export function Toolbar() {
     <>
       <Menubar className={cn(toolbarClass, state.narrow ? stackedClass : "top-1 right-1")}>
         {!state.narrow && (
+          <Tip content="show all windows (`), Escape ends it" side="bottom">
+            <button
+              type="button"
+              className={cn(barButtonClass, state.showAll && "bg-mac-select text-mac-on-select")}
+              disabled={windows.length === 0}
+              onClick={() => state.toggleShowAll()}
+            >
+              <SquaresFourIcon weight="bold" className="size-4" />
+            </button>
+          </Tip>
+        )}
+        <Tip
+          content="distraction-free: dims all but the front window. Escape, or a press on the desk, ends it"
+          side="bottom"
+        >
           <button
             type="button"
-            title="show all windows (`), Escape ends it"
-            className={cn(barButtonClass, state.showAll && "bg-mac-select text-mac-on-select")}
+            className={cn(barButtonClass, state.distractionFree && "bg-mac-select text-mac-on-select")}
             disabled={windows.length === 0}
-            onClick={() => state.toggleShowAll()}
+            onClick={() => state.toggleDistractionFree()}
           >
-            <SquaresFourIcon weight="bold" className="size-4" />
+            <FlashlightIcon weight="bold" className="size-4" />
           </button>
-        )}
-        <button
-          type="button"
-          title="distraction-free: dims all but the front window. Escape, or a press on the desk, ends it"
-          className={cn(barButtonClass, state.distractionFree && "bg-mac-select text-mac-on-select")}
-          disabled={windows.length === 0}
-          onClick={() => state.toggleDistractionFree()}
-        >
-          <FlashlightIcon weight="bold" className="size-4" />
-        </button>
+        </Tip>
         {/* asks first, in a classic alert box */}
-        <button
-          type="button"
-          title="clear the desktop"
-          className={barButtonClass}
-          disabled={windows.length === 0}
-          onClick={() => state.setClearAsked(true)}
-        >
-          <TrashIcon weight="bold" className="size-4" />
-        </button>
+        <Tip content="clear the desktop" side="bottom">
+          <button
+            type="button"
+            className={barButtonClass}
+            disabled={windows.length === 0}
+            onClick={() => state.setClearAsked(true)}
+          >
+            <TrashIcon weight="bold" className="size-4" />
+          </button>
+        </Tip>
         <BarMenu label="◆" side={state.narrow ? "top" : "bottom"}>
           <Menu.Item className={itemClass} disabled>
             SkipNet · {worldKey}

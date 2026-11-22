@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { isUiOnScreen } from "@npc-cli/ui-sdk/ui.store";
-import { cn, Spinner, tw } from "@npc-cli/util";
+import { cn, Spinner, Tip, tw } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { SkipNetContext } from "./context";
@@ -22,36 +22,36 @@ export function SessionPicker(props: Props) {
     <InTitle>
       {/* a clicked command has been queued, but has yet to lead a process */}
       {runner.spawning.src !== null && (
-        <span className="p-1" title={`running: ${runner.spawning.src}`}>
-          <Spinner className="size-3" />
-        </span>
+        <Tip content={`running: ${runner.spawning.src}`}>
+          <span className="p-1">
+            <Spinner className="size-3" />
+          </span>
+        </Tip>
       )}
       {runner.awaitedWorldKey !== null && (
-        <span className="text-mac-muted truncate" title={`runs once ${runner.awaitedWorldKey} is open`}>
-          awaits {runner.awaitedWorldKey}
-        </span>
+        <Tip content={`runs once ${runner.awaitedWorldKey} is open`}>
+          <span className="text-mac-muted truncate">awaits {runner.awaitedWorldKey}</span>
+        </Tip>
       )}
       {ttyMeta === null ? (
         <span className="text-term-danger">no tty</span>
       ) : (
         <>
-          <Picker
-            value={ttyMeta.sessionKey}
-            options={ttyMetas.map((x) => x.sessionKey)}
-            onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
-            title={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}
-            className={cn(titlePickerClass, !onScreen && offScreenClass)}
-            popupClassName={titlePickerPopupClass}
-          />
+          <Tip content={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}>
+            <Picker
+              value={ttyMeta.sessionKey}
+              options={ttyMetas.map((x) => x.sessionKey)}
+              onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
+              className={cn(titlePickerClass, !onScreen && offScreenClass)}
+              popupClassName={titlePickerPopupClass}
+            />
+          </Tip>
           {!onScreen && (
-            <button
-              type="button"
-              className={offScreenButtonClass}
-              title={`bring ${ttyMeta.sessionKey} on screen`}
-              onClick={() => layoutApi.showUi(ttyMeta.id)}
-            >
-              show
-            </button>
+            <Tip content={`bring ${ttyMeta.sessionKey} on screen`}>
+              <button type="button" className={offScreenButtonClass} onClick={() => layoutApi.showUi(ttyMeta.id)}>
+                show
+              </button>
+            </Tip>
           )}
         </>
       )}

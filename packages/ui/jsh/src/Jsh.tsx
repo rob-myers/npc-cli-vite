@@ -18,7 +18,7 @@ import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, Tip, useStateRef } from "@npc-cli/util";
 import type React from "react";
 import { useContext, useEffect } from "react";
 import { Jobs } from "./Jobs";
@@ -140,17 +140,18 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
           zoom={meta.zoom}
         />
         {/* over the tty's menu, whose trigger stays below `minY` (40px) */}
-        <button
-          type="button"
-          title={jobs.shown ? "hide jobs" : "show jobs"}
-          className={cn(
-            "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer select-none transition-colors",
-            jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
-          )}
-          onClick={() => state.setJobs({ shown: !jobs.shown })}
-        >
-          jobs
-        </button>
+        <Tip content={jobs.shown ? "hide jobs" : "show jobs"}>
+          <button
+            type="button"
+            className={cn(
+              "absolute z-2 top-1 right-0 h-7 px-2 font-mono text-xs underline underline-offset-2 cursor-pointer select-none transition-colors",
+              jobs.shown ? "text-term-accent" : "text-term-muted hover:text-term-foreground",
+            )}
+            onClick={() => state.setJobs({ shown: !jobs.shown })}
+          >
+            jobs
+          </button>
+        </Tip>
       </div>
       {jobs.shown && (
         <>

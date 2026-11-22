@@ -3,6 +3,7 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { type ReactNode, type SyntheticEvent, useRef, useState } from "react";
 import { isTouchDevice } from "../legacy/dom";
 import { cn } from "../service/tailwind-cn";
+import { Tip } from "./Tip";
 
 /** One of `options`, chosen from a base-ui `Select` — as wide as what is chosen, and no wider */
 export function Picker<T extends string>(props: {
@@ -55,18 +56,19 @@ export function Picker<T extends string>(props: {
       disabled={props.disabled}
       onValueChange={(v) => props.onChange(v as T)}
     >
-      <Select.Trigger
-        title={props.title}
-        className={cn(
-          "flex items-center gap-1 w-fit max-w-full min-w-0 px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900",
-          "text-zinc-300 outline-none cursor-pointer hover:bg-zinc-800 focus-visible:border-zinc-600",
-          "data-disabled:opacity-50 data-disabled:cursor-default",
-          props.className,
-        )}
-      >
-        {!props.chevronOnly && <span className="truncate">{label}</span>}
-        <CaretDownIcon className="size-3 shrink-0 text-zinc-500" />
-      </Select.Trigger>
+      <Tip content={props.title}>
+        <Select.Trigger
+          className={cn(
+            "flex items-center gap-1 w-fit max-w-full min-w-0 px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900",
+            "text-zinc-300 outline-none cursor-pointer hover:bg-zinc-800 focus-visible:border-zinc-600",
+            "data-disabled:opacity-50 data-disabled:cursor-default",
+            props.className,
+          )}
+        >
+          {!props.chevronOnly && <span className="truncate">{label}</span>}
+          <CaretDownIcon className="size-3 shrink-0 text-zinc-500" />
+        </Select.Trigger>
+      </Tip>
       <Select.Portal>
         <Select.Positioner className="z-50" sideOffset={4} align="start" alignItemWithTrigger={false}>
           <Select.Popup
@@ -86,21 +88,22 @@ export function Picker<T extends string>(props: {
                 <Select.ItemText className={cn(action && !touchDevice && "mr-3")}>{label}</Select.ItemText>
                 {action && !touchDevice && (
                   // its own presses never reach the option, so it is not chosen
-                  <button
-                    type="button"
-                    title={action.title}
-                    className="-my-0.5 -mr-1.5 ml-auto p-0.5 rounded cursor-pointer opacity-60 hover:opacity-100 hover:bg-black/20"
-                    onPointerDown={stopPropagation}
-                    onPointerUp={stopPropagation}
-                    onMouseUp={stopPropagation}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpen(false);
-                      action.onAction(value);
-                    }}
-                  >
-                    {action.icon(value)}
-                  </button>
+                  <Tip content={action.title}>
+                    <button
+                      type="button"
+                      className="-my-0.5 -mr-1.5 ml-auto p-0.5 rounded cursor-pointer opacity-60 hover:opacity-100 hover:bg-black/20"
+                      onPointerDown={stopPropagation}
+                      onPointerUp={stopPropagation}
+                      onMouseUp={stopPropagation}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(false);
+                        action.onAction(value);
+                      }}
+                    >
+                      {action.icon(value)}
+                    </button>
+                  </Tip>
                 )}
               </Select.Item>
             ))}

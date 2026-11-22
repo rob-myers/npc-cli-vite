@@ -1,4 +1,4 @@
-import { cn, tw } from "@npc-cli/util";
+import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -145,16 +145,17 @@ export function Desktop() {
                   >
                     <span className={showAllTitleClass}>{titleOf(win, state.items)}</span>
                   </div>
-                  <button
-                    type="button"
-                    data-show-all-close
-                    title="close"
-                    className={cn(showAllCloseClass, touchDevice && "opacity-100")}
-                    style={{ transform: `translate(${slot.dx + slot.width - 10}px, ${slot.dy - 10}px)` }}
-                    onClick={() => state.close(win.id)}
-                  >
-                    <XIcon weight="bold" className="size-3" />
-                  </button>
+                  <Tip content="close">
+                    <button
+                      type="button"
+                      data-show-all-close
+                      className={cn(showAllCloseClass, touchDevice && "opacity-100")}
+                      style={{ transform: `translate(${slot.dx + slot.width - 10}px, ${slot.dy - 10}px)` }}
+                      onClick={() => state.close(win.id)}
+                    >
+                      <XIcon weight="bold" className="size-3" />
+                    </button>
+                  </Tip>
                 </>
               )}
             </div>
