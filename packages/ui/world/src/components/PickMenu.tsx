@@ -454,20 +454,19 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
       {/* one wrapping row: where they are, their pose, and what they have, lit if so */}
       <div className="flex max-w-56 flex-wrap items-center gap-1">
         {grKey !== undefined && <Info label="room">{grKey}</Info>}
-        <Tip content="anim">
-          <Picker
-            value={npc.anim.pose}
-            options={Object.keys(npc.clips) as AnimationClipKey[]}
-            className="pointer-events-auto border-white/20 bg-black/60 text-white"
-            popupClassName="font-mono"
-            onChange={(next) => {
-              if (w.n[npcKey] === undefined) return;
-              w.n[npcKey].anim.setHurt(null); // else they go back to it
-              w.n[npcKey].anim.setPose(next);
-              touch();
-            }}
-          />
-        </Tip>
+        <Picker
+          value={npc.anim.pose}
+          options={Object.keys(npc.clips) as AnimationClipKey[]}
+          title="anim"
+          className="pointer-events-auto border-white/20 bg-black/60 text-white"
+          popupClassName="font-mono"
+          onChange={(next) => {
+            if (w.n[npcKey] === undefined) return;
+            w.n[npcKey].anim.setHurt(null); // else they go back to it
+            w.n[npcKey].anim.setPose(next);
+            touch();
+          }}
+        />
         {itemToggle("psi")}
         {npcKey === w.player?.key ? (
           itemToggle("phaser")

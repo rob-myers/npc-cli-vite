@@ -27,6 +27,8 @@ export function GlobalMenu() {
     /** Its vertical offset, dragged and saved */
     y: getInitialY(),
     menuOpen: false,
+    /** Counts opens, so the wait of one since superseded shows nothing */
+    openCount: 0,
     aboutOpen: false,
     /** Once opened, About stays mounted, so it can close as it opens */
     aboutMounted: false,
@@ -121,6 +123,12 @@ export function GlobalMenu() {
         void state.open();
       }
     },
+    onTriggerKeyDown(e: React.KeyboardEvent) {
+      if ((e.key === "Enter" || e.key === " ") && state.menuOpen === false) {
+        e.preventDefault();
+        void state.open();
+      }
+    },
     onWindowBlur() {
       if (state.switching === true) state.close();
     },
@@ -129,6 +137,7 @@ export function GlobalMenu() {
       if (e.code !== "Backquote" || e.ctrlKey === false || e.metaKey === true || e.altKey === true) return;
       e.preventDefault();
       e.stopPropagation(); // not for the World, nor a tty
+      if (e.repeat === true) return; // held, it steps once
       if (state.switching === false) return void state.open(true);
       const n = state.switchTabs.length;
       if (n > 0) state.set({ pick: (state.pick + (e.shiftKey === true ? n - 1 : 1)) % n });
@@ -138,16 +147,12 @@ export function GlobalMenu() {
       const tab = state.switchTabs[state.pick];
       tab === undefined ? state.close() : state.chooseTab(tab.id);
     },
-    onTriggerKeyDown(e: React.KeyboardEvent) {
-      if ((e.key === "Enter" || e.key === " ") && state.menuOpen === false) {
-        e.preventDefault();
-        void state.open();
-      }
-    },
     async open(switching = false) {
       // set at once: Ctrl may be let go before the items load
       Object.assign(state, { pick: 0, switching, switchTabs: getSwitchTabs() });
+      const count = ++state.openCount;
       await Promise.all([state.loadItems(), switching && new Promise((r) => setTimeout(r, switchShowMs))]);
+      if (count !== state.openCount) return; // opened again meanwhile
       if (switching === true && state.switching === false) return; // let go already, and chosen
       state.set({ menuOpen: true, resetArmed: false, returnFocus: true });
     },

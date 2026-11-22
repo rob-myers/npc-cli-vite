@@ -1,6 +1,7 @@
 import type { UiRegistryKey } from "@npc-cli/ui-registry";
 import { getDefaultTabs } from "@npc-cli/ui-registry/default-ui";
 import { uiSchemas } from "@npc-cli/ui-registry/schemas";
+import { paneTree } from "@npc-cli/util";
 import { castDraft, type Draft } from "immer";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -231,8 +232,7 @@ export function isUiOnScreen({ byId, persistedPanes }: UiStoreState, uiId: strin
 const maxFocusedTabs = 8;
 
 function isLeafShown(node: PersistedPaneNode, uiId: string): boolean {
-  if (node.type === "leaf") return node.uiId === uiId;
-  return node.children.some((child) => !node.hiddenIds?.includes(child.id) && isLeafShown(child, uiId));
+  return paneTree.shownLeaves(node).some((leaf) => leaf.uiId === uiId);
 }
 
 /** The layout a first visit gets, with fresh uis — see `resetPanes` for going back to it */
@@ -285,8 +285,7 @@ function withoutUnknownUis(toUi: PersistedPanesLayout["toUi"]): PersistedPanesLa
 /** Older default layouts gave the root and a leaf id `0`, so closing that leaf closed everything */
 function withUniqueIds(root: PersistedPaneNode): PersistedPaneNode {
   const seen = new Set<number>();
-  const maxId = (n: PersistedPaneNode): number => (n.type === "leaf" ? n.id : Math.max(n.id, ...n.children.map(maxId)));
-  let nextId = maxId(root) + 1;
+  let nextId = paneTree.maxPaneId(root) + 1;
   const visit = (node: PersistedPaneNode): PersistedPaneNode => {
     const id = seen.has(node.id) ? nextId++ : node.id;
     seen.add(id);

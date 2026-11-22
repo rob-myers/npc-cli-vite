@@ -37,15 +37,14 @@ export function SessionPicker(props: Props) {
         <span className="text-term-danger">no tty</span>
       ) : (
         <>
-          <Tip content={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}>
-            <Picker
-              value={ttyMeta.sessionKey}
-              options={ttyMetas.map((x) => x.sessionKey)}
-              onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
-              className={cn(titlePickerClass, !onScreen && offScreenClass)}
-              popupClassName={titlePickerPopupClass}
-            />
-          </Tip>
+          <Picker
+            value={ttyMeta.sessionKey}
+            options={ttyMetas.map((x) => x.sessionKey)}
+            onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
+            title={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}
+            className={cn(titlePickerClass, !onScreen && offScreenClass)}
+            popupClassName={titlePickerPopupClass}
+          />
           {!onScreen && (
             <Tip content={`bring ${ttyMeta.sessionKey} on screen`}>
               <button type="button" className={offScreenButtonClass} onClick={() => layoutApi.showUi(ttyMeta.id)}>

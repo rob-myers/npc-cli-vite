@@ -703,7 +703,7 @@ function PlayerButtons({
   children?: React.ReactNode;
 }) {
   const w = useContext(WorldContext);
-  const tipSide = tipSideOf(column ? (w.hud?.getLayout() ?? "bar") : "bar");
+  const tipSide = tipSideOf(w.hud?.getLayout() ?? "bar");
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const farLook = w.player?.look.far != null;
@@ -770,7 +770,6 @@ function PlayerButtons({
         <PlayerMenu
           buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
           iconClass={cn(buttonIcon(true), iconSize)}
-          column={column}
         />
       </div>
       {children}
@@ -784,7 +783,7 @@ function PlayerButtons({
  */
 const FireHint = memo(function FireHint({ armed, column }: { armed: boolean; column: boolean }) {
   const w = useContext(WorldContext);
-  const tipSide = tipSideOf(column ? (w.hud?.getLayout() ?? "bar") : "bar");
+  const tipSide = tipSideOf(w.hud?.getLayout() ?? "bar");
   const hint = useStateRef(
     (): FireHintState => ({
       fireId: 0,
@@ -866,11 +865,11 @@ type FireHintState = {
 };
 
 /** The bar's options, each saved and highlighted whilst on: toggled in place, so the menu stays open */
-function PlayerMenu({ buttonClass, iconClass, column }: { buttonClass: string; iconClass: string; column: boolean }) {
+function PlayerMenu({ buttonClass, iconClass }: { buttonClass: string; iconClass: string }) {
   const w = useContext(WorldContext);
   const saved = getWorldStore(w.key).read();
   const [labels, setLabels] = useState(saved.roomLabelsShown);
-  const side = column === false ? "top" : saved.hudLayout === "left" ? "right" : "left";
+  const side = tipSideOf(w.hud?.getLayout() ?? "bar");
   /** Its button whilst open: opened by a click, so a drag of the bar begun on it opens nothing */
   const [anchor, setAnchor] = useState<null | HTMLDivElement>(null);
   return (
@@ -922,10 +921,10 @@ const playerButtonClass = (big: boolean) =>
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden border border-neutral-400/25 bg-neutral-900/60 hover:ring-1 hover:ring-yellow-200/25",
     big ? "size-10.5" : "size-12.5",
   );
-/** The player's buttons' group, and the fire button's own in a column: a faint border, padded as tall as a slot */
 /** Where a tip opens off the hud, away from its edge: above a bar, inwards from a column */
 const tipSideOf = (layout: string) => (layout === "bar" ? "top" : layout === "left" ? "right" : "left");
 
+/** The player's buttons' group, and the fire button's own in a column: a faint border, padded as tall as a slot */
 const playerGroupClass = (big: boolean, column: boolean) =>
   cn(
     "pointer-events-auto flex self-center rounded-md border border-neutral-400/10",

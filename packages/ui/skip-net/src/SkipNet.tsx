@@ -102,11 +102,11 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
         uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).windows = windows));
         if (windows.length === 0) state.toggleShowAll(false); // nothing left to show
       },
-      toggleShade(id) {
-        state.setWindows(state.meta.windows.map((x) => (x.id === id ? toggleShade(x) : x)));
-      },
       toggleDistractionFree(on = !state.distractionFree) {
         if (on !== state.distractionFree) state.set({ distractionFree: on });
+      },
+      toggleShade(id) {
+        state.setWindows(state.meta.windows.map((x) => (x.id === id ? toggleShade(x) : x)));
       },
       toggleShowAll(on = !state.showAll) {
         if (on !== state.showAll) state.set({ showAll: on });

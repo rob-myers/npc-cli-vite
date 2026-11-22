@@ -39,10 +39,10 @@ export type State = {
   setStackFlex(flexById: Record<string, number>, unfoldId?: string): void;
   setWindow(id: string, patch: Partial<SkipNetWindow>): void;
   setWindows(windows: SkipNetWindow[]): void;
-  /** Rolls it up to its title bar, or back down */
-  toggleShade(id: string): void;
   /** Turns distraction-free on or off, else flips it */
   toggleDistractionFree(on?: boolean): void;
+  /** Rolls it up to its title bar, or back down */
+  toggleShade(id: string): void;
   /** Turns Show All on or off, else flips it */
   toggleShowAll(on?: boolean): void;
 };

@@ -39,6 +39,14 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       isDropAtEnd: false,
       rootEl: null as null | HTMLDivElement,
       tabBarEl: null as null | HTMLDivElement,
+      /** Focus the current tab's content — a tty's input, else a focusable inside it, else the content itself */
+      focusCurrent() {
+        const content = state.rootEl?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
+        if (!content) return;
+        (
+          content.querySelector<HTMLElement>('.xterm-helper-textarea, [tabindex]:not([tabindex="-1"])') ?? content
+        ).focus();
+      },
       onAddNewTab(e: React.MouseEvent<HTMLElement>) {
         e.stopPropagation();
         pause(30); // avoid immediate select context menu item
@@ -65,26 +73,6 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             });
           },
         });
-      },
-      /** Focus the current tab's content — a tty's input, else a focusable inside it, else the content itself */
-      focusCurrent() {
-        const content = state.rootEl?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
-        if (!content) return;
-        (
-          content.querySelector<HTMLElement>('.xterm-helper-textarea, [tabindex]:not([tabindex="-1"])') ?? content
-        ).focus();
-      },
-      /** Native, not React's: a tab's content is portalled in, so React's focus events never reach here */
-      onFocusIn(e: FocusEvent) {
-        if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
-          uiStore.setState((draft) => void (draft.persistedPanes.focusedTabsUiId = meta.id));
-        }
-        const tabId = (e.target as HTMLElement).closest("[data-tab-content]")?.getAttribute("data-tab-content");
-        if (tabId != null) uiStoreApi.noteFocusedTab(tabId);
-      },
-      /** Asked by `uiStoreApi.focusTab`. A tab newly shown is focused by the effect on `currentTabId` */
-      onFocusRequest(tabId: string) {
-        if (tabId === meta.currentTabId) state.focusCurrent();
       },
       onClickTab(tab: UiInstanceMeta) {
         if (tab.id === meta.currentTabId) {
@@ -137,6 +125,18 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           }
         });
         uiStoreApi.removeItem(tab.id);
+      },
+      /** Native, not React's: a tab's content is portalled in, so React's focus events never reach here */
+      onFocusIn(e: FocusEvent) {
+        if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
+          uiStore.setState((draft) => void (draft.persistedPanes.focusedTabsUiId = meta.id));
+        }
+        const tabId = (e.target as HTMLElement).closest("[data-tab-content]")?.getAttribute("data-tab-content");
+        if (tabId != null) uiStoreApi.noteFocusedTab(tabId);
+      },
+      /** Asked by `uiStoreApi.focusTab`. A tab newly shown is focused by the effect on `currentTabId` */
+      onFocusRequest(tabId: string) {
+        if (tabId === meta.currentTabId) state.focusCurrent();
       },
     }),
     { deps: [meta, layoutApi] },

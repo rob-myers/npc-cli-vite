@@ -213,8 +213,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { x, z } = npc.position;
+        const before = state.lookAt;
         state.lookAtPoint(x - Math.sin(turn) * lookAlongMetres, z - Math.cos(turn) * lookAlongMetres);
-        if (state.lookAt !== null) [state.lookAt.turn, state.lookMarked] = [turn, false];
+        // only a look it made: paused, say, the one already up is left be
+        if (state.lookAt !== null && state.lookAt !== before) [state.lookAt.turn, state.lookMarked] = [turn, false];
       },
       lookAtPoint(x, z) {
         const npc = state.get();
