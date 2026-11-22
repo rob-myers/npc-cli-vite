@@ -130,6 +130,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - The top face's upper edge meets the back. The right side's rear is its left edge, and the left side's is its right edge.
   - The base hair under them takes each tuft's blurred shadow just past its tips, and strand lines carrying on from the tufts'.
   - Drawn over a filtered image, they take the same filter (`#punch`), else their browns do not match.
+- Short coily hair is small seeded coils on the head overlay, each a dark clump with a C-shaped curl, ending raggedly above a taper (`d-1`). The base beneath is the hair's colour with fine curls, and below a ragged edge it is skin, with stubble thinning out. It takes `overlay-backfaces=head`.
 - Messy hair mixes the two layers (`d-2`).
   - The overlay takes short curved tufts of random size and mixed tones, each clipped to its face. On top they lie away from the crown, and elsewhere they hang down.
   - The base hair takes streaks along the same flow, clipped to its hair texels, and the tufts' blurred shadows.

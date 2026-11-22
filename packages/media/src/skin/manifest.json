@@ -19,6 +19,7 @@
       "meta": {
         "skinKey": "d-1",
         "prefix": "d",
+        "overlay-backfaces": "head",
         "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
       },
       "url": "https://namemc.com/skin/2a2804c8ff60ef75",
