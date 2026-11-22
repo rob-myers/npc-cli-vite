@@ -108,6 +108,8 @@ export class NpcAnimation {
   strafing = false;
   /** Strafing, the top speed this heading allows walking and running — see `syncStrafe` */
   strafeTop = { walk: strafeSpeed.walk, run: strafeSpeed.run_ahead };
+  /** Strafing, `walkNear` for this heading — see `syncStrafe` */
+  strafeWalkNear: number = npcConfig.dist.walkNear;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
@@ -625,9 +627,9 @@ export class NpcAnimation {
     return runLeast + (run - runLeast) * t;
   }
 
-  /** Whether a wall square ahead has them walk: strafing at once, else within `walkNear` */
+  /** Whether a wall square ahead has them walk: within `walkNear`, strafing its share by heading */
   wallStops() {
-    return this.nearWall === "ahead" && (this.strafe === true || this.wallRoom < npcConfig.dist.walkNear);
+    return this.nearWall === "ahead" && this.wallRoom < (this.strafe ? this.strafeWalkNear : npcConfig.dist.walkNear);
   }
 
   /** As the pose left the arm, before `held` reached with it, unless its clip has written it since */
@@ -1163,11 +1165,12 @@ export class NpcAnimation {
       const heading = headingOf(rotation.y, vx, vz);
       actions.forEach((action, i) => void (action.weight += (gaitWeight(heading, i) - action.weight) * ease));
     }
-    const blend = (byKey: Record<GaitKey, number>, set: readonly GaitKey[] = keys) =>
-      actions.reduce((sum, action, i) => sum + action.weight * byKey[set[i]], 0);
+    const blend = (byKey: Partial<Record<GaitKey, number>>, set: readonly GaitKey[] = keys) =>
+      actions.reduce((sum, action, i) => sum + action.weight * (byKey[set[i]] ?? 0), 0);
     const { strafeTop } = this;
     strafeTop.walk = blend(strafeSpeed, strafeClipKeys);
     strafeTop.run = blend(strafeSpeed, runStrafeClipKeys);
+    this.strafeWalkNear = blend(npcConfig.dist.strafeWalkNear, runStrafeClipKeys);
     // as fast as that way allows, running whilst `fast`
     if (agent !== null && this.strafe === true)
       agent.maxSpeed = this.shuffling ? this.shuffleSpeed() : this.fast === true ? strafeTop.run : blend(strafeSpeed);
