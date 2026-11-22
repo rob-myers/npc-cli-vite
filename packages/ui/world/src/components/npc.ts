@@ -182,6 +182,11 @@ export class Npc {
     return this.skinIndexUniform.value;
   }
 
+  /** The skin they wear, e.g. `medic-0`: `null` if their index has none */
+  get skinKey() {
+    return this.w.npc.getSkinKeyBySkinIndex(this.skinIndex);
+  }
+
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
 
@@ -686,7 +691,7 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
-    setOverlayBackfaces(this, this.w.npc.getSkinMeta(this.w.npc.getSkinKeyBySkinIndex(skinIndex) ?? ""));
+    setOverlayBackfaces(this, this.w.npc.getSkinMeta(this.skinKey ?? ""));
   }
 
   /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */
