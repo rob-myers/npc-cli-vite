@@ -11,14 +11,15 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
   const vbX = (baseSvgSize - vbW) / 2 - root.pan.x / root.zoom;
   const vbY = (baseSvgSize - vbH) / 2 - root.pan.y / root.zoom;
 
-  const resizableNode = useMemo(() => {
+  /** Not memoised: a lock toggles in place, so neither `selectedIds` nor `nodes` changes */
+  const resizableNode = (() => {
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
     const [node] = findNodeById(root.nodes, selectedId);
     if (!node || node.locked) return null;
     if (node.type === "rect" || node.type === "image") return node;
     return null;
-  }, [root.selectedIds, root.nodes]);
+  })();
 
   const multiSelection = useMemo(() => {
     if (root.selectedIds.size <= 1) return null;
