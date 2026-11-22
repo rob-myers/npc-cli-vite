@@ -14,7 +14,14 @@ import {
 import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const.env";
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
+import {
+  cn,
+  ExhaustiveError,
+  Tip,
+  type UseStateRef,
+  useBeforeUnloadOrVisibilityChange,
+  useStateRef,
+} from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
 import { Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -1811,19 +1818,20 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
   return (
     <div ref={state.ref("wrapperEl")} tabIndex={0} className="size-full overflow-hidden outline-none relative">
       {hidden !== null && (
-        <button
-          type="button"
-          title={`show ${hidden}`}
-          className={cn(
-            "absolute z-10 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-10 cursor-pointer",
-            // over the open pane, taking none of its width
-            "border border-slate-700 bg-slate-900/80 text-slate-400 opacity-70 hover:opacity-100 hover:text-slate-100",
-            hidden === "map" ? "left-0 rounded-r" : "right-0 rounded-l",
-          )}
-          onClick={() => setPanes({ hidden: null })}
-        >
-          {hidden === "map" ? <MapTrifoldIcon className="size-3.5" /> : <TreeViewIcon className="size-3.5" />}
-        </button>
+        <Tip content={`show ${hidden}`}>
+          <button
+            type="button"
+            className={cn(
+              "absolute z-10 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-10 cursor-pointer",
+              // over the open pane, taking none of its width
+              "border border-slate-700 bg-slate-900/80 text-slate-400 opacity-70 hover:opacity-100 hover:text-slate-100",
+              hidden === "map" ? "left-0 rounded-r" : "right-0 rounded-l",
+            )}
+            onClick={() => setPanes({ hidden: null })}
+          >
+            {hidden === "map" ? <MapTrifoldIcon className="size-3.5" /> : <TreeViewIcon className="size-3.5" />}
+          </button>
+        </Tip>
       )}
       <Allotment
         ref={allotment}
@@ -2097,43 +2105,45 @@ function SelectedImageNodeUI({ node, state }: { node: ImageMapNode; state: UseSt
         <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none text-white bg-black">
           dx
         </div>
-        <select
-          className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
-          title="dx"
-          value={node.offset.x}
-          onChange={(e) => {
-            node.offset.x = Number(e.target.value) || 0;
-            node.cssTransform = computeNodeCssTransform(node);
-            state.update();
-          }}
-        >
-          {imageOffsetValues.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <Tip content="dx">
+          <select
+            className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
+            value={node.offset.x}
+            onChange={(e) => {
+              node.offset.x = Number(e.target.value) || 0;
+              node.cssTransform = computeNodeCssTransform(node);
+              state.update();
+            }}
+          >
+            {imageOffsetValues.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </Tip>
       </label>
       <label className="flex h-6">
         <div className="flex items-center px-1 border border-white/30 border-r-0 rounded rounded-r-none text-white bg-black">
           dy
         </div>
-        <select
-          className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
-          title="dy"
-          value={node.offset.y}
-          onChange={(e) => {
-            node.offset.y = Number(e.target.value) || 0;
-            node.cssTransform = computeNodeCssTransform(node);
-            state.update();
-          }}
-        >
-          {imageOffsetValues.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <Tip content="dy">
+          <select
+            className="px-1 bg-slate-700 border border-slate-600 text-slate-200 text-xs"
+            value={node.offset.y}
+            onChange={(e) => {
+              node.offset.y = Number(e.target.value) || 0;
+              node.cssTransform = computeNodeCssTransform(node);
+              state.update();
+            }}
+          >
+            {imageOffsetValues.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </Tip>
       </label>
     </div>
   );

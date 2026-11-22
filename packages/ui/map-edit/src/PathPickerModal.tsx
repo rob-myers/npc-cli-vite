@@ -1,5 +1,5 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { cn, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, Tip, useStateRef } from "@npc-cli/util";
 import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import type { MapNode, PathManifest } from "./editor.schema";
@@ -168,38 +168,42 @@ export function PathPickerModal({
                     key={entry.key}
                     className="relative p-2 bg-slate-800 rounded border border-slate-700 hover:border-blue-500"
                   >
-                    <button
-                      type="button"
-                      className="cursor-pointer hover:opacity-80"
-                      onClick={() => handleSelect(entry.key, entry.width, entry.height)}
-                      title={`${entry.key} (${entry.pathCount} path${entry.pathCount > 1 ? "s" : ""})`}
-                      disabled={state.loading !== null}
-                    >
-                      <div className="flex items-center justify-center min-h-16">
-                        {state.loading === entry.key ? (
-                          <Spinner />
-                        ) : (
-                          <img
-                            src={`/path/${entry.filename}?${state.cachedBustingQuery}`}
-                            alt={entry.key}
-                            className="max-h-24 object-contain"
-                          />
-                        )}
-                      </div>
-                      <span className="text-[12px] text-slate-400 truncate w-full text-center block">{entry.key}</span>
-                    </button>
-                    {import.meta.env.DEV && (
+                    <Tip content={`${entry.key} (${entry.pathCount} path${entry.pathCount > 1 ? "s" : ""})`}>
                       <button
                         type="button"
-                        className="absolute top-1 right-1 p-1 rounded bg-slate-700/80 hover:bg-blue-600 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(entry.key);
-                        }}
-                        title="Edit in path editor"
+                        className="cursor-pointer hover:opacity-80"
+                        onClick={() => handleSelect(entry.key, entry.width, entry.height)}
+                        disabled={state.loading !== null}
                       >
-                        <PencilSimpleIcon className="size-3.5 text-white" />
+                        <div className="flex items-center justify-center min-h-16">
+                          {state.loading === entry.key ? (
+                            <Spinner />
+                          ) : (
+                            <img
+                              src={`/path/${entry.filename}?${state.cachedBustingQuery}`}
+                              alt={entry.key}
+                              className="max-h-24 object-contain"
+                            />
+                          )}
+                        </div>
+                        <span className="text-[12px] text-slate-400 truncate w-full text-center block">
+                          {entry.key}
+                        </span>
                       </button>
+                    </Tip>
+                    {import.meta.env.DEV && (
+                      <Tip content="Edit in path editor">
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 p-1 rounded bg-slate-700/80 hover:bg-blue-600 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(entry.key);
+                          }}
+                        >
+                          <PencilSimpleIcon className="size-3.5 text-white" />
+                        </button>
+                      </Tip>
                     )}
                   </div>
                 ))}

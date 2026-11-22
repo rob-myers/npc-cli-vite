@@ -1,7 +1,7 @@
 import { Select } from "@base-ui/react/select";
 import { type StarshipSymbolGroup, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const.env";
-import { cn, type UseStateRef } from "@npc-cli/util";
+import { cn, Tip, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { FileDashedIcon, FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -46,22 +46,23 @@ function DraftBadge({ state }: { state: UseStateRef<State> }) {
   // off the draft ITSELF, never a flag beside it: a flag can say one stands here after it has gone
   if (localStorage.getItem(getFileSpecifierLocalStorageKey(state.currentFile)) === null) return null;
   return (
-    <button
-      type="button"
-      title="showing draft"
-      className={cn(
-        "shrink-0 flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer text-[0.625rem] leading-none",
-        armed === true ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300",
-      )}
-      onClick={() => {
-        if (armed === true) return state.discardDraft();
-        setArmed(true);
-        setTimeout(() => setArmed(false), armedMs); // so it never sits armed
-      }}
-    >
-      <FileDashedIcon className="size-3.5" />
-      {armed === true ? "delete?" : "draft"}
-    </button>
+    <Tip content="showing draft">
+      <button
+        type="button"
+        className={cn(
+          "shrink-0 flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer text-[0.625rem] leading-none",
+          armed === true ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300",
+        )}
+        onClick={() => {
+          if (armed === true) return state.discardDraft();
+          setArmed(true);
+          setTimeout(() => setArmed(false), armedMs); // so it never sits armed
+        }}
+      >
+        <FileDashedIcon className="size-3.5" />
+        {armed === true ? "delete?" : "draft"}
+      </button>
+    </Tip>
   );
 }
 
@@ -144,7 +145,9 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
           state.isDirty && "italic",
         )}
       >
-        <Select.Value className="truncate" title={state.currentFile.key} placeholder="Select file..." />
+        <Tip content={state.currentFile.key}>
+          <Select.Value className="truncate" placeholder="Select file..." />
+        </Tip>
       </Select.Trigger>
 
       <Select.Portal>

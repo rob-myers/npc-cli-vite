@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import type { UseStateRef } from "@npc-cli/util";
+import { Tip, type UseStateRef } from "@npc-cli/util";
 import {
   ArrowCounterClockwiseIcon,
   CaretRightIcon,
@@ -63,33 +63,35 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
                           <div className="flex flex-col gap-2">
                             <label className="flex items-center gap-2 text-xs text-slate-300">
                               <span className="w-12">Width:</span>
-                              <input
-                                type="text"
-                                title="width"
-                                value={state.svgWidth}
-                                onChange={(e) => {
-                                  state.pushHistory();
-                                  state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => e.stopPropagation()}
-                                className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
-                              />
+                              <Tip content="width">
+                                <input
+                                  type="text"
+                                  value={state.svgWidth}
+                                  onChange={(e) => {
+                                    state.pushHistory();
+                                    state.set({ svgWidth: Number(e.currentTarget.value) || 0 });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                                />
+                              </Tip>
                             </label>
                             <label className="flex items-center gap-2 text-xs text-slate-300">
                               <span className="w-12">Height:</span>
-                              <input
-                                type="text"
-                                title="height"
-                                value={state.svgHeight}
-                                onChange={(e) => {
-                                  state.pushHistory();
-                                  state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => e.stopPropagation()}
-                                className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
-                              />
+                              <Tip content="height">
+                                <input
+                                  type="text"
+                                  value={state.svgHeight}
+                                  onChange={(e) => {
+                                    state.pushHistory();
+                                    state.set({ svgHeight: Number(e.currentTarget.value) || 0 });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="w-12 text-center px-1 py-0.5 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded"
+                                />
+                              </Tip>
                             </label>
                           </div>
                         </Menu.Popup>
