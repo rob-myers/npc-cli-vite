@@ -1,8 +1,7 @@
 import { sessionApi, useSession } from "@npc-cli/cli";
-import { getTtyStore } from "@npc-cli/cli/shell/storage";
+import { forgetBootstrapVars } from "@npc-cli/cli/shell/storage";
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { jsStringify, restoreFromPersistedJsStringify } from "@npc-cli/util/legacy/generic";
 import { createStore } from "zustand/vanilla";
 import { queryClientApi } from "./query-client";
 
@@ -244,11 +243,7 @@ function addJshTab(key: string) {
     uiStoreApi.getTabsInstances()[0]?.id;
   if (parentId === undefined) throw Error("no Tabs to add a tty to");
 
-  const store = getTtyStore(key);
-  const vars = restoreFromPersistedJsStringify(store.read().vars ?? "{}");
-  delete vars.PROFILE_KEY; // else a persisted one wins
-  store.patch({ vars: jsStringify(vars, false, true) });
-  store.flush();
+  forgetBootstrapVars(key);
 
   const meta = {
     id: `ui-${crypto.randomUUID()}`,
