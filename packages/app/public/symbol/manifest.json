@@ -863,6 +863,24 @@
       "bounds": {"x": -2, "y": 3, "width": 238.8, "height": 239},
       "type": "symbol",
       "key": "office--089"
+    },
+    "extra--020--table": {
+      "filename": "extra--020--table.json",
+      "thumbnailFilename": "extra--020--table.thumbnail.png",
+      "width": 120,
+      "height": 40,
+      "bounds": {"x": 0, "y": 0, "width": 120, "height": 40},
+      "type": "symbol",
+      "key": "extra--020--table"
+    },
+    "galley-and-mess-halls--006": {
+      "filename": "galley-and-mess-halls--006.json",
+      "thumbnailFilename": "galley-and-mess-halls--006.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 128.6},
+      "type": "symbol",
+      "key": "galley-and-mess-halls--006"
     }
   }
 }

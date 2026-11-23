@@ -1405,6 +1405,49 @@
           "baseRect": {"width": 240, "height": 240},
           "offset": {"x": 3, "y": 2},
           "cssTransform": "matrix(0, -1, 1, 0, 963, 602)"
+        },
+        {
+          "id": "082f3e79-c7c0-44a3-ac3e-2ff5d21570e9",
+          "name": "galley-and-mess-halls--006",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 1200, "f": 0},
+          "type": "symbol",
+          "srcKey": "galley-and-mess-halls--006",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": 2, "y": -2},
+          "cssTransform": "matrix(-1, 0, 0, 1, 1202, -2)"
+        },
+        {
+          "id": "4c16c02b-c8de-4d6a-8f4c-dacf9898d2b6",
+          "name": "extra--020--table y=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 1078.5,
+            "f": 219.5
+          },
+          "type": "symbol",
+          "srcKey": "extra--020--table",
+          "baseRect": {"width": 120, "height": 40},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1078.5, 219.5)"
+        },
+        {
+          "id": "22e69cd6-5548-49ec-9e1b-08a5d2f3af36",
+          "name": "extra--019--table y=0.8",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 375, "f": 240},
+          "type": "symbol",
+          "srcKey": "extra--019--table",
+          "baseRect": {"width": 30, "height": 120},
+          "offset": {"x": -0.7, "y": -0.7},
+          "cssTransform": "matrix(1, 0, 0, 1, 374.3, 239.3)"
         }
       ]
     },
