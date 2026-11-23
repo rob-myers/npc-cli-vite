@@ -1345,6 +1345,54 @@
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": 0.5, "y": 0.5},
           "cssTransform": "matrix(1, 0, 0, 1, 408, 330.1)"
+        },
+        {
+          "id": "e83024dd-6b1a-487a-8b22-80c0226e35c3",
+          "name": "stateroom--035",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 240, "f": 0},
+          "type": "symbol",
+          "srcKey": "stateroom--035",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 238, -2)"
+        },
+        {
+          "id": "28e61892-933a-4eef-b637-bbc6d4e6898b",
+          "name": "stateroom--035",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360, "f": 0},
+          "type": "symbol",
+          "srcKey": "stateroom--035",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 358, -2)"
+        },
+        {
+          "id": "d9015fda-7a1b-4d62-84f5-6881f05374cf",
+          "name": "stateroom--035",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 480, "f": 0},
+          "type": "symbol",
+          "srcKey": "stateroom--035",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 478, -2)"
+        },
+        {
+          "id": "dda6a11a-aa62-4756-bba1-16ebdb5f788f",
+          "name": "stateroom--035",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 720, "f": 0},
+          "type": "symbol",
+          "srcKey": "stateroom--035",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 2, "y": -2},
+          "cssTransform": "matrix(-1, 0, 0, 1, 722, -2)"
         }
       ]
     },

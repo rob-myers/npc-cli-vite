@@ -845,6 +845,15 @@
       "bounds": {"x": -6, "y": -7, "width": 1212, "height": 613},
       "type": "symbol",
       "key": "g-303--passenger-deck"
+    },
+    "stateroom--035": {
+      "filename": "stateroom--035.json",
+      "thumbnailFilename": "stateroom--035.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
+      "type": "symbol",
+      "key": "stateroom--035"
     }
   }
 }
