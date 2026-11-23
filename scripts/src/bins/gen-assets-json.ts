@@ -1,9 +1,9 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * - `symbol` -- symbol key to geometry/metadata
- * - `flattened` -- symbol key to unwound symbols (includes hull symbols)
- * - `layout` -- symbol key to layouts (geomorphs)
+ * - `assets.json` -- maps, and a hash per layout file
+ * - `assets-edit.json` -- symbols, flattened symbols and their stratification
+ * - `layout/{gmKey}.json` -- one layout per geomorph
  *
  * USAGE:
  * ```sh
@@ -21,7 +21,6 @@ import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
-import { defaultWorldTheme } from "@npc-cli/ui__world/const.env";
 import {
   createLayout,
   createMapDefFromSavedFile,
@@ -29,10 +28,11 @@ import {
   parseSymbolFromSavedFile,
 } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { entries, error, hashJson, hashText, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import { perf } from "../service/performance";
+import { assetsPaths, readAssetsRaw } from "../service/read-assets";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
@@ -56,21 +56,19 @@ const changedFiles = (
 perf("total");
 info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles.map((f) => path.basename(f)))}`);
 
-const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
-const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
+const assetsJsonPath = assetsPaths.index;
+const publicDir = path.dirname(assetsJsonPath);
+const hasPrev = [assetsPaths.index, assetsPaths.edit].every((file) => fs.existsSync(file));
+if (!hasPrev) warn("[gen-assets-json] no previous assets: starting afresh");
 // we ignore parse errors as we extend AssetsSchema
-const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
+const assets: AssetsType = AssetsSchema.safeParse(hasPrev ? readAssetsRaw() : null).data ?? {
   map: {},
   symbol: {},
   flattened: {},
   stratifiedSymbolNodes: [],
   layout: {},
-  theme: {},
   hash: { obstacles: 0 },
 };
-
-assets.theme ??= {};
-assets.theme["dark-theme"] ??= defaultWorldTheme;
 
 const changedSymbolKeys = changedFiles.map((f) => path.basename(f, ".json"));
 
@@ -103,15 +101,40 @@ assets.hash = {
 perf("total");
 
 // reparse via z.encode ensures key-ordering
-const nextAssetsRaw = safeJsonCompact(z.encode(AssetsSchema, assets));
+const encoded = z.encode(AssetsSchema, assets);
+const { symbol, flattened, stratifiedSymbolNodes, layout, map, hash } = encoded;
+const layoutRaws = entries(layout).map(([gmKey, l]) => [gmKey, safeJsonCompact(l)] as const);
+const layoutFiles = layoutRaws.map(([gmKey, raw]) => [assetsPaths.layout(gmKey), raw] as const);
+const staleLayoutFiles = fs
+  .globSync(path.join(assetsPaths.layoutDir, "*.json"))
+  .filter((file) => !layoutFiles.some(([f]) => f === file));
+const index = {
+  // by key, so a map renamed and back leaves the index as it was
+  map: Object.fromEntries(entries(map).sort(([a], [b]) => (a < b ? -1 : 1))),
+  hash: { ...hash, layout: Object.fromEntries(layoutRaws.map(([k, raw]) => [k, hashText(raw)])) },
+};
 
-if (prevAssetsRaw === nextAssetsRaw) {
-  info(`${path.basename(import.meta.filename)}: no changes detected`);
-  process.exit(0);
+fs.mkdirSync(assetsPaths.layoutDir, { recursive: true });
+const written = [
+  [assetsJsonPath, safeJsonCompact(index)] as const,
+  [assetsPaths.edit, safeJsonCompact({ symbol, flattened, stratifiedSymbolNodes })] as const,
+  ...layoutFiles,
+].filter(([file, raw]) => writeIfChanged(file, raw));
+staleLayoutFiles.forEach((file) => fs.rmSync(file));
+
+const namesOf = (files: string[]) => files.map((f) => path.relative(publicDir, f)).join(", ");
+const changes = [
+  written.length > 0 && `wrote ${namesOf(written.map(([f]) => f))}`,
+  staleLayoutFiles.length > 0 && `removed ${namesOf(staleLayoutFiles)}`,
+].filter(Boolean);
+info(`${path.basename(import.meta.filename)}: ${changes.join("; ") || "no changes detected"}`);
+
+/** Writes `raw` unless the file already holds it */
+function writeIfChanged(file: string, raw: string) {
+  if (fs.existsSync(file) && fs.readFileSync(file, "utf-8") === raw) return false;
+  writeFileSync(file, raw);
+  return true;
 }
-
-info(`${path.basename(import.meta.filename)}: detected changes`);
-writeFileSync(assetsJsonPath, nextAssetsRaw);
 
 function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType) {
   for (const file of changedFiles) {

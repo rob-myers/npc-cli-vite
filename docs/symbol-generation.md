@@ -27,11 +27,12 @@ for it. Where a save goes is `docs/map-edit.md`; obstacle sheets are `docs/stars
 4. Build the JSON and save it with `pnpm dev` running:
    `POST /api/map-edit/file/symbol/{key}.json`, the body being the file. This validates it, writes it
    compact, draws `{key}.thumbnail.png` and updates `manifest.json`. The dev server then rebuilds
-   `assets.json`.
+   the assets (`assets.json`, `assets-edit.json`, `layout/*.json`).
 5. Read the thumbnail. It draws every node over the faint png, so a misplaced door or chair shows.
-6. Run `pnpm gen-starship-sheets`, AFTER `assets.json` has caught up: run straight after the save, it
+6. Run `pnpm gen-starship-sheets`, AFTER the assets have caught up: run straight after the save, it
    misses the new obstacles.
-7. Check `assets.json` still has all seven top-level keys, `theme` and `hash` last. See Pitfalls.
+7. Check `assets.json` has `map` and `hash`, and `assets-edit.json` has `symbol`, `flattened` and
+   `stratifiedSymbolNodes`. See Pitfalls.
 8. Look for lettering inside the obstacles' sprites in `sheet/symbols.*.png`, e.g. HOLO or COMP. Mask it
    out with a `starship-symbol/mask/{key}.svg` (see `docs/starship-sheets.md`), then re-run step 6.
 
@@ -82,6 +83,9 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   a tag too. A hull symbol's own optional sub-symbols always stay, having no parent to choose.
 - **Windows**: a tiled strip along a wall is a window, not a shelf. Leave that wall out of the room and
   let the parent place `window--005` (120 long) or `window--007` (180 long) over it.
+- **A window of its own needs a lintel.** A `window` node only connects rooms: its tags are not read. The
+  wall above and below comes from an obstacle with the same outline, as `window--001` has:
+  `obstacle window y=1.8 h=0.2 dup={"force-y":0.4,h:0.4}`. A curved one, e.g. `office--089`'s, too.
 - **Label**: `decor point label=office`, a `label` decor at half scale, or `label=medical` on the door.
   A parent's own label names a room over any a sub-symbol brings into it: see `docs/floor.md`.
 - **Sub-symbols**: a `symbol` node, its name carrying the height e.g. `console--051 y=0.5`. Prefer one
@@ -91,6 +95,9 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   `couch-and-chairs--006` a sofa with its end tables. Rotate it about its centre by the node's `transform`.
 - **Obstacles**: a `rect` or a `path`, named e.g. `obstacle table surface y=0.7`, or
   `obstacle y=1 h=0.7 tint=#444 skirtTint=#777` for machinery.
+- **An obstacle's `y` is its top and `h` how far down it reaches.** Give both, or a parent's `y`: one with
+  `h` alone tops out at the floor, so `createLayout` raises it to `y=h` and warns. `medical-bed--006`'s
+  curtains were `h=1.6` alone, and did not show.
 - **Heights add.** A parent's `y` is added to the obstacle's own. So furniture a parent will place by
   height carries none itself: the shops are `obstacle machine tint=#555 skirtTint=#555`, placed `y=0.8`.
 
@@ -115,8 +122,30 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 - **Square the corners.** A rounded stroke leaves a short chamfer at each corner. Replace it with the
   corner where its two neighbours meet, which also keeps the border.
 - **A rect where a rect will do.** A `path` is for a shape that is not one.
+- **Stop at a neighbour's line, not past it.** Where an obstacle meets other art, e.g. a counter against
+  glass, end on the far edge of the shared line and short of what starts beyond it. `office--089`'s
+  counter first ran 0.2 past the glass's inner line, and each cell divider beyond it left a stub on its edge.
+- **A curved edge keeps its chords on the right side.** Chords lie inside their circle. On an edge that
+  must stay outside a line, push each vertex out by the sagitta. On one that must stay inside, leave the
+  vertices on the circle.
 
 A machine with no walls is one polygon round its silhouette: every opaque pixel.
+
+## Curves
+
+A curved room, counter or window, e.g. `office--089`'s, is measured from its arc's centre.
+
+- **Find the centre first.** Try the room's corner: `office--089`'s arc is about `(0, 240)`, radius 239.7.
+- **Read radii along rays from it.** Sample the png every few degrees for dark runs: each is a line at
+  that radius. They give the wall's thickness, the glass band's two lines and the counter's inner line.
+- **Profile the ends finely.** An end is often a nearly radial line, which a ray runs alongside and
+  misses. Step half a degree near each end, and look for where the runs change.
+- **Measure the whole band before cutting it.** `office--089`'s glass ran from 25.9° to 64.1°, not the
+  28° first guessed, so its window and lintel lost an end.
+- **Keep an obstacle off a curved wall.** One poking into a wall is clipped along the room's nearest edge
+  (`docs/walls.md`), a straight line: past a curve, that line runs off across it. 303's mess bar, poking in
+  1 unit, showed as a wedge. End it inside the room, e.g. at the glass's inner edge, not on its line.
+  Check by its corners: none may lie outside its room polygon, bar those in a straight wall.
 
 ## Wall paths
 
@@ -197,12 +226,26 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
   cut from its png at 1 px per unit, so it is blurred.
 - **Fitting is a search.** Draw the child's png through a candidate matrix over the hull png. Score dark
   pixels on both, less those on the child alone. Try it mirrored too, as a turn alone may not fit.
+  - Draw the child's art at its image node's `cssTransform`, not its `transform`: the two differ by
+    `offset`, and the fit comes out that far off the grid.
+  - Furniture may sit at any angle. Try every 5° when the right angles score badly, e.g. `office--089`'s
+    armchairs at 125° and 145°.
+  - The same search places a room's own furniture in a room's png, at 5 px a unit.
+- **Reuse a room that is drawn whole inside another.** `stateroom--035`'s fresher is `fresher--002`
+  (6438 of 6898 dark pixels), placed as a sub-symbol. The parent's own walls then stop short of the
+  child's.
 
 ## A hull symbol's own walls and doors
 
 Whatever the placed rooms do not enclose is drawn in the hull symbol itself. Measure it off the art by
 reading runs of dark pixels along a row or column.
 
+- **The png's origin comes from its hull walls.** Read the outer walls' dark runs and centre them on
+  `0`, `1200` and `600`: g-303's are 8 px thick at x 2–9 and y 3–10, so its image node is at `(-6, -7)`.
+  The earlier project's numbers may then be a unit off: 303's were 1 high.
+- **The hull walls must close into a ring.** The walkable area is the outline of their union, so a gap
+  leaves no navmesh at all. Put a `wall hull _window` rect under every window in a hull wall, as 302 does.
+  303's north wall first had gaps at its six windows: no rooms joined and `spawn` said `not placable`.
 - **Walls** go in a `walls` group as `rect`s named `wall`, as thick as drawn (4 thin, 8 thick), each
   running across its doors.
 - **Doors are appended AFTER the hull doors.** A door's id below the hull-door count is what marks it as
@@ -217,7 +260,39 @@ reading runs of dark pixels along a row or column.
   a space, `label='repair bay'`.
 - **Left for a person**: a door lying along a slanted wall. Whether a rotated door rect works is untested.
 
-The layout in `assets.json` says whether it worked: `layout[key].rooms` goes up as rooms close.
+Its layout, `layout/{key}.json`, says whether it worked: its `rooms` go up as rooms close.
+
+## Worked example: 303
+
+`g-303--passenger-deck` is built in milestones, each ending with a World that loads `303-only`. The
+first holds the hull, its own walls, blocks and doors, and the symbols that exist already. Each later
+one adds a batch of missing symbols. It started from the earlier project's `303--hull.svg` divided by 5,
+and the art decided the final numbers. The diagram shows it as built; `symbol-generation/diagrams.py`
+draws it.
+
+![303 by milestone](symbol-generation/303-milestones.svg)
+
+| milestone | adds | from |
+| --- | --- | --- |
+| M1 | hull walls with `_window` pieces, interior walls, two solid blocks, hull, locked and auto doors, labels; the exec stateroom and its fresher's walls and doors; `stateroom--036` x4, `low-berth--003`, `iris-valves--006` x2 (for `--005`), `window--001` x6, `extra--005--chair` x7 | the hull svg, the art, and our symbols |
+| M2 | `stateroom--035` x4, its fresher a `fresher--002` | its png |
+| M3 | `office--089`, a quarter turn at `(960, 600)`: curved wall, glass with a lintel, counter | its png, measured along rays |
+| M4 | `galley-and-mess-halls--006`, mirrored; the mess bar `extra--020--table`; `extra--019--table` for the common area's | their pngs; the bar's art from its old svg |
+| M5 | `medical-bed--006` (three `medical-bed--005`, two curtains), `console--022` | their pngs |
+| M6 | map `301-303`: 303 mirrored below 301, so their south hull doors meet | `301-302` |
+
+The north strip at `720` to `960` and the locked room had no symbol in the old svg: they are the hull's own.
+The galley differs from the art (36%, the closest of its group): its cubby, door and stove side.
+
+What it taught, besides the rules above:
+- **The art disagrees with the old svg in places.** 720 to 960 is an exec stateroom and its fresher, and
+  the mess stools are round. Draw what the art shows.
+- **A room's art can be smaller than its grid.** `office--089`'s png is 238.8 square, so its own walls
+  sit where the hull art puts its doors, at `7.5` and `232.5`, not on the 60-grid.
+- **A switch may have no room beside its door.** Put each side's switch at whichever end of the door
+  has room, or overlap the door's end a little, then check none lies outside a room.
+- **Add to a saved symbol, not by regenerating it.** Each node's `id` then stays put, which keeps
+  diffs small once it is committed.
 
 ## Removing a symbol
 
@@ -226,23 +301,22 @@ There is no api for it. Replace every instance of it first, e.g. `iris-valves--0
 1. Comment out its key in `symbolByGroup`, saying why, so it is not added back.
 2. Delete `symbol/{key}.json`, `symbol/{key}.thumbnail.png` and `starship-symbol/{key}.png` with plain `rm`.
 3. Drop its entry from `symbol/manifest.json`.
-4. Drop it from `assets.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
+4. Drop it from `assets-edit.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
    `safeJsonCompact`.
 5. Run `pnpm starship-pngs-to-public`, then `pnpm gen-assets-json --changedFiles '[]'` (re-levels and
    re-hashes), then `pnpm gen-starship-sheets`.
 
-Its key is gone from the schema once step 1 is done. So any mention of it left in `assets.json` fails to
+Its key is gone from the schema once step 1 is done. So any mention of it left in `assets-edit.json` fails to
 parse, and `gen-assets-json` then starts from empty (see Pitfalls).
 
 ## Pitfalls
 
-- **`assets.json` can be cut short.** `safeJsonCompact` once dropped everything past 100,000 values,
-  which lost `theme`, `hash` and part of the last layout once enough symbols existed. The cap is lifted
+- **An assets file can be cut short.** `safeJsonCompact` once dropped everything past 100,000 values,
+  which lost `theme`, `hash` and part of the last layout from the single `assets.json` of the time. The cap is lifted
   (`maxValues: Infinity`), but a dev server started before such a fix keeps the old code: restart it.
-- **A broken `assets.json` does not heal.** An incremental rebuild that cannot parse the file starts
-  from empty, keeping only the changed files. Run `pnpm gen-assets-json --force`.
-- **A rebuild from empty loses the themes**, which live only in `assets.json`. Restore `theme` from
-  `git show HEAD:packages/app/public/assets.json`, then rebuild once more.
+- **A broken assets file does not heal.** An incremental rebuild that cannot parse `assets.json`,
+  `assets-edit.json` or a layout starts from empty, keeping only the changed files. Run
+  `pnpm gen-assets-json --force`. Themes are safe: they live in `theme.json`, which it never writes.
 - **A parent used to lag one save behind a child.** The symbols' dependency levels were only worked out
   when a symbol was CREATED, so a parent given a new sub-symbol stayed on its old level and was
   flattened before it. `gen-assets-json` now works the levels out on every run.

@@ -31,7 +31,7 @@ Drawing each rect: clip to the polygon, `drawImage` just `srcRect` from the symb
 sheet is then inverted (alpha kept) and squeezed with `pngquant`.
 
 **Mask SVGs** (`starship-symbol/mask/{symbolKey}.svg`, drawn in Boxy SVG) must keep the symbol's original
-image size (no scaling down), with offsets matching the symbol in `assets.json` — e.g. `bridge--042` has a
+image size (no scaling down), with offsets matching the symbol in `assets-edit.json` — e.g. `bridge--042` has a
 large one. Transformed rects/polys are not supported: convert to a shape if needed, then Transform > Reduce.
 
 - **Coordinates** are symbol units times 5. The `viewBox` is the symbol's `width`/`height` times 5, and
@@ -63,7 +63,7 @@ mismatch — which once wiped the skins and made every npc vanish.
 
 - `pnpm gen-starship-sheets`, or the **obstacles** button in WorldMenu's dev scripts (POSTs
   `/api/gen-starship-sheets`, then invalidates `["sheets"]` and `["obstacle-images"]`).
-- It reads `public/assets.json`, so let the automatic `gen-assets-json` (on MapEdit save) finish first.
+- It reads `public/assets-edit.json`, so let the automatic `gen-assets-json` (on MapEdit save) finish first.
 
 Until then the layout is ahead of the sheet, and entries are keyed by **index**:
 

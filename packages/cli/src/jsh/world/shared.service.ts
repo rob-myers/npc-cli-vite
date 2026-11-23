@@ -31,3 +31,11 @@ export function sharedMapSlot<T extends object>(key: string, init: () => T) {
       (sharedFolder.event as undefined | Record<string, Handler>)?.[key]?.(e, w),
   };
 }
+
+/** Moves `/shared/map/{from}` to `/shared/map/{to}`, e.g. on renaming a map */
+export function renameSharedMap(from: string, to: string) {
+  const map = sharedFolder.map as undefined | Record<string, unknown>;
+  if (map?.[from] === undefined) return;
+  map[to] = map[from];
+  delete map[from];
+}

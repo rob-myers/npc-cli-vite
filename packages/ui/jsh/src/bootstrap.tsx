@@ -1,11 +1,10 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import * as profiles from "@npc-cli/cli/jsh/profiles";
-import { getTtyStore } from "@npc-cli/cli/shell/storage";
+import { forgetBootstrapVars } from "@npc-cli/cli/shell/storage";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { CreateForm, CreateFormKey, CreateFormRow, useStateRef } from "@npc-cli/util";
-import { jsStringify, restoreFromPersistedJsStringify, warn } from "@npc-cli/util/legacy/generic";
 import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -30,7 +29,7 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
       return taken ? `${state.sessionKey} already exists` : null;
     },
     onClickCreate() {
-      state.prepareExtantPersistedSession(state.sessionKey);
+      forgetBootstrapVars(state.sessionKey);
 
       props.addInstance({
         sessionKey: state.sessionKey as `tty-${number}`,
@@ -43,18 +42,6 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
         },
         title: state.sessionKey,
       } satisfies Partial<JshUiMeta>);
-    },
-    prepareExtantPersistedSession(sessionKey: string) {
-      const store = getTtyStore(sessionKey);
-      try {
-        const persistedSessionHome = restoreFromPersistedJsStringify(store.read().vars ?? "{}");
-        // 🔔 Remove PROFILE_KEY from persisted session, so we can overwrite it.
-        delete persistedSessionHome.PROFILE_KEY;
-        store.patch({ vars: jsStringify(persistedSessionHome, false, true) });
-        store.flush(); // the session is created before the debounce would fire
-      } catch {
-        warn(`Failed to mutate persisted session ${sessionKey}`);
-      }
     },
   }));
 

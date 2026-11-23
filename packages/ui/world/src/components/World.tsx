@@ -1,11 +1,12 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { isPlaygroundMapKey, isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
+import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, keys } from "@npc-cli/util/legacy/generic";
 import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +14,16 @@ import debounce from "debounce";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { OverrideProperties } from "type-fest";
-import { AssetsSchema, type AssetsType, getSheetUrl, SheetsSchema, type SheetsType } from "../assets.schema";
+import {
+  AssetsEditSchema,
+  AssetsIndexSchema,
+  GeomorphLayoutSchema,
+  getSheetUrl,
+  SheetsSchema,
+  type SheetsType,
+  ThemesSchema,
+  type WorldAssets,
+} from "../assets.schema";
 import { skinSliceDims } from "../const.both";
 import {
   assetsJsonChangedEvent,
@@ -35,9 +45,10 @@ import { createLayoutInstance } from "../service/geomorph";
 import { GmGraph } from "../service/gm-graph";
 import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
+import { mapRenameError, retireMapFile, saveMapFileAs } from "../service/map-rename";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
-import { flushWorldStores, getSiteStore, getWorldStore } from "../service/storage";
+import { flushWorldStores, getSiteStore, getWorldStore, renameWorldMapStores } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import { spotsGeneratingEvent } from "../spot.schema";
@@ -169,6 +180,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: emptyTiledNavmeshResponse,
       // gltf is pending from the outset, else the first map could settle without npcs
       pending: { gltf: true },
+      nextMapKey: null,
       settledMapKey: null,
       wasReadyFor: new Set(),
       r3f: null as any,
@@ -210,6 +222,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       helper,
 
+      async changeMap(mapKey) {
+        if (mapKey === state.mapKey) return;
+        if (state.isMapChanging()) throw Error("map change in progress");
+        if (state.assets?.map[mapKey] === undefined) throw Error(`no such map: ${mapKey}`);
+        state.nextMapKey = mapKey;
+        try {
+          await state.net?.leave(); // a manual map switch ends any mirror session first
+          await state.floor?.fadeOut(mapKey);
+          state.e.onChangeMap(); // persist + remove whilst the old map still exists
+          uiStoreApi.setUiMeta(meta.id, (draft) => void (draft.mapKey = mapKey));
+        } finally {
+          state.nextMapKey = null;
+        }
+      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -263,13 +289,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
-      isPlaygroundMap() {
+      isPlaygroundMap(assets = state.assets) {
         if (isPlaygroundMapKey(state.mapKey)) return true;
-        const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
+        const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
         return mapDef.gms.some(({ gmKey }) => isPlaygroundSymbolKey(gmKey));
       },
       isMapChanging() {
-        return state.settledMapKey !== state.mapKey;
+        return state.nextMapKey !== null || state.settledMapKey !== state.mapKey;
       },
       isReady(connectionKey) {
         const ready = !!state.assets && state.nav !== emptyTiledNavmeshResponse;
@@ -314,6 +340,19 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // only the menu's slider and the bar's notice show it: not the whole World
         state.menu.update?.();
         state.hud?.update?.();
+      },
+      async renameMap(from, to) {
+        if (import.meta.env.DEV !== true) throw Error("renaming a map is DEV only");
+        const invalid = mapRenameError(state.assets?.map ?? {}, from, to);
+        if (invalid !== null) throw Error(invalid);
+        // its live state would be saved under the old key
+        const onIt = uiStoreApi.getAllUis().find((ui) => isWorldUiMeta(ui.meta) && ui.meta.mapKey === from);
+        if (onIt !== undefined) throw Error(`${onIt.meta.title} is on ${from}`);
+
+        await saveMapFileAs(from, to);
+        renameWorldMapStores(from, to);
+        state.events.next({ key: "map-renamed", from, to });
+        await retireMapFile(from, to);
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -473,11 +512,27 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.decor.ready = false;
 
       state.setNextPending({ assets: true });
-      state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
-
-      if (state.isPlaygroundMap()) {
-        await recomputeAssetsViaDrafts(state.assets);
+      const [index, theme] = await Promise.all([
+        fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsIndexSchema),
+        fetchParsed(`/theme.json${getDevCacheBustQueryParam()}`, ThemesSchema),
+      ]);
+      const assets: WorldAssets = { ...index, layout: {}, theme };
+      const playground = state.isPlaygroundMap(assets);
+      // a playground's drafts may reach any geomorph
+      const gmKeys = playground
+        ? keys(index.hash.layout)
+        : (index.map[state.mapKey] ?? emptyMapDef).gms.map(({ gmKey }) => gmKey);
+      await Promise.all(
+        [...new Set(gmKeys)].map(async (gmKey) => {
+          const hash = index.hash.layout[gmKey];
+          if (hash === undefined) return;
+          assets.layout[gmKey] = await fetchParsed(`/layout/${gmKey}.json?h=${hash}`, GeomorphLayoutSchema);
+        }),
+      );
+      if (playground) {
+        await recomputeAssetsViaDrafts(assets, await fetchParsed(`/assets-edit.json`, AssetsEditSchema));
       }
+      state.assets = assets;
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
 
@@ -630,7 +685,7 @@ export type State = {
   threeReady: boolean;
   touchDevice: boolean;
 
-  assets: AssetsType;
+  assets: WorldAssets;
   gms: Geomorph.LayoutInstance[];
   gmsData: DerivedGmsData;
   gmGraph: GmGraph;
@@ -714,11 +769,15 @@ export type State = {
     resolve: null | (() => void);
   };
 
+  /** The map `changeMap` is fading out towards, until the World's meta names it */
+  nextMapKey: null | string;
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
   /** The connectionKeys `isReady` has said yes to */
   wasReadyFor: Set<string>;
 
+  /** Fade out, persist and load `mapKey`. Throws whilst a map change is under way, or for an unknown map */
+  changeMap(mapKey: string): Promise<void>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   foldTo(amount: number, ms?: number): Promise<void>;
@@ -727,7 +786,7 @@ export type State = {
   /** Either playground map or mentions a playground hull-symbol */
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;
-  isPlaygroundMap(): boolean;
+  isPlaygroundMap(assets?: WorldAssets): boolean;
   /** Provide connectionKey to dismiss "disconnected" toast */
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
@@ -736,6 +795,8 @@ export type State = {
   onTick(): void;
   /** The clock's scale changed: saved, and shown by the menu's slider and the bar */
   onTimeScale(timeScale: number): void;
+  /** DEV only. Renames map `from` to `to`: its file, graphs and saved state. Refused whilst a World is on it */
+  renameMap(from: string, to: string): Promise<void>;
   setupDevAssetsSync(): () => void;
   setupDraftAssetsSync(): () => void;
   setDisabled(nextDisabled?: boolean): void;

@@ -1,40 +1,13 @@
 {
   "byKey": {
-    "empty-map": {
-      "filename": "empty-map.json",
-      "thumbnailFilename": "empty-map.thumbnail.png",
-      "width": 1200,
-      "height": 600,
-      "bounds": {"x": 0, "y": 0, "width": 1200, "height": 600},
-      "type": "map",
-      "key": "empty-map"
-    },
-    "301-101-301": {
-      "filename": "301-101-301.json",
-      "thumbnailFilename": "301-101-301.thumbnail.png",
-      "width": 1200,
+    "101+edges": {
+      "filename": "101+edges.json",
+      "thumbnailFilename": "101+edges.thumbnail.png",
+      "width": 2400,
       "height": 2400,
-      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2444},
+      "bounds": {"x": -62, "y": -22, "width": 2524, "height": 2444},
       "type": "map",
-      "key": "301-101-301"
-    },
-    "301-only": {
-      "filename": "301-only.json",
-      "thumbnailFilename": "301-only.thumbnail.png",
-      "width": 1200,
-      "height": 600,
-      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 622},
-      "type": "map",
-      "key": "301-only"
-    },
-    "301-302": {
-      "filename": "301-302.json",
-      "thumbnailFilename": "301-302.thumbnail.png",
-      "width": 1200,
-      "height": 1200,
-      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 1284},
-      "type": "map",
-      "key": "301-302"
+      "key": "101+edges"
     },
     "101-only": {
       "filename": "101-only.json",
@@ -45,6 +18,51 @@
       "type": "map",
       "key": "101-only"
     },
+    "102-only": {
+      "filename": "102-only.json",
+      "thumbnailFilename": "102-only.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1205.5, "height": 1205.5},
+      "type": "map",
+      "key": "102-only"
+    },
+    "301-101-301": {
+      "filename": "301-101-301.json",
+      "thumbnailFilename": "301-101-301.thumbnail.png",
+      "width": 1200,
+      "height": 2400,
+      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2444},
+      "type": "map",
+      "key": "301-101-301"
+    },
+    "301-302": {
+      "filename": "301-302.json",
+      "thumbnailFilename": "301-302.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 1284},
+      "type": "map",
+      "key": "301-302"
+    },
+    "301-303": {
+      "filename": "301-303.json",
+      "thumbnailFilename": "301-303.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -6, "y": -22, "width": 1206, "height": 1229},
+      "type": "map",
+      "key": "301-303"
+    },
+    "301-only": {
+      "filename": "301-only.json",
+      "thumbnailFilename": "301-only.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 622},
+      "type": "map",
+      "key": "301-only"
+    },
     "301-playground": {
       "filename": "301-playground.json",
       "thumbnailFilename": "301-playground.thumbnail.png",
@@ -54,23 +72,23 @@
       "type": "map",
       "key": "301-playground"
     },
-    "101+edges": {
-      "filename": "101+edges.json",
-      "thumbnailFilename": "101+edges.thumbnail.png",
-      "width": 2400,
-      "height": 2400,
-      "bounds": {"x": -62, "y": -22, "width": 2524, "height": 2444},
-      "type": "map",
-      "key": "101+edges"
-    },
-    "102-only": {
-      "filename": "102-only.json",
-      "thumbnailFilename": "102-only.thumbnail.png",
+    "303-only": {
+      "filename": "303-only.json",
+      "thumbnailFilename": "303-only.thumbnail.png",
       "width": 1200,
-      "height": 1200,
-      "bounds": {"x": -5.5, "y": -5.5, "width": 1205.5, "height": 1205.5},
+      "height": 600,
+      "bounds": {"x": -6, "y": -7, "width": 1206, "height": 607},
       "type": "map",
-      "key": "102-only"
+      "key": "303-only"
+    },
+    "empty-map": {
+      "filename": "empty-map.json",
+      "thumbnailFilename": "empty-map.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": 0, "y": 0, "width": 1200, "height": 600},
+      "type": "map",
+      "key": "empty-map"
     },
     "nine-gms": {
       "filename": "nine-gms.json",

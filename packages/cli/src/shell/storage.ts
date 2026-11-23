@@ -1,4 +1,5 @@
 import type { LocalStore } from "@npc-cli/util/local-store";
+import { jsStringify, restoreFromPersistedJsStringify, warn } from "@npc-cli/util/legacy/generic";
 import { createLocalStore, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 
 /**
@@ -38,6 +39,20 @@ const ttyStores = {} as Record<string, LocalStore<TtyState>>;
 
 export function getTtyStore(sessionKey: string) {
   return (ttyStores[sessionKey] ??= createLocalStore(`${ttyPrefix}${sessionKey}`, defaultTtyState));
+}
+
+/** Drops a session's saved `PROFILE_KEY` and `WORLD_KEY`, else they win over a new tab's `env` */
+export function forgetBootstrapVars(sessionKey: string) {
+  const store = getTtyStore(sessionKey);
+  try {
+    const vars = restoreFromPersistedJsStringify(store.read().vars ?? "{}");
+    delete vars.PROFILE_KEY;
+    delete vars.WORLD_KEY;
+    store.patch({ vars: jsStringify(vars, false, true) });
+    store.flush(); // the session is made before the debounce fires
+  } catch {
+    warn(`forgetBootstrapVars: failed for ${sessionKey}`);
+  }
 }
 
 let sharedStore: undefined | LocalStore<SharedState>;

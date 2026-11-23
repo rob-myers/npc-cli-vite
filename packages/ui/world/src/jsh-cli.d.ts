@@ -48,6 +48,12 @@ declare namespace JshCli {
         key: "map-changing";
       }
     | {
+        /** A map's key changed (DEV), so per-map state follows it — see `w.renameMap` */
+        key: "map-renamed";
+        from: string;
+        to: string;
+      }
+    | {
         /** The map's pending keys have stopped changing i.e. it is ready */
         key: "map-settled";
       }

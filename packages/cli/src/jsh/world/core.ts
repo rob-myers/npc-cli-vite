@@ -1,6 +1,7 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, npcConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
+import { mapGroupsOf } from "@npc-cli/ui__world/geomorph";
 import { Task } from "@npc-cli/util";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
@@ -405,6 +406,52 @@ export function label(
   npc.labelStyle.speaking = opts.speaking ?? false;
   npc.drawLabel();
   w.view.forceUpdate();
+}
+
+/**
+ * Change the World's map, returning once it has settled. With no key, lists the maps, the current one marked.
+ * ```sh
+ * level
+ * level 301-303
+ * ```
+ */
+export async function* level({ api, args, w }: JshCli.RunArg) {
+  // else it waits out its own map change, which pauses world commands
+  api.setPausable("world", false);
+  const [mapKey] = args;
+  if (mapKey === undefined) {
+    const keys = mapGroupsOf(w.assets.map).flatMap((group) => group.keys);
+    const keyWidth = Math.max(...keys.map((key) => key.length));
+    for (const key of keys) {
+      const { White, Grey, GreyDark, Reset } = api.ansi;
+      const shade = key === w.mapKey ? White : Grey;
+      const mark = key === w.mapKey ? "*" : " ";
+      yield `${shade}${mark} ${key.padEnd(keyWidth)} ${GreyDark}with ${shade}${describeMap(w, key)}${Reset}`;
+    }
+    return;
+  }
+
+  const task = new Task();
+  const handlers = api.handleStatus({ cleanup: () => task.cancel() });
+  try {
+    await task.run(async () => {
+      await task.wait(w.changeMap(mapKey));
+      await task.until(() => w.settledMapKey === mapKey);
+    });
+  } finally {
+    handlers.dispose();
+  }
+  if (task.isCancelled === true) throw api.getKillError();
+}
+
+/** A map's geomorphs by number, e.g. `301 x2, 101` */
+function describeMap(w: JshCli.RunArg["w"], mapKey: string) {
+  const counts = new Map<string, number>();
+  for (const { gmKey } of w.assets.map[mapKey]?.gms ?? []) counts.set(gmKey, (counts.get(gmKey) ?? 0) + 1);
+  if (counts.size === 0) return "no geomorphs";
+  return [...counts]
+    .map(([gmKey, n]) => `${gmKey.replace(/^g-(\d+).*/, "$1")}${n > 1 ? ` x${n}` : ""}`)
+    .join(", ");
 }
 
 /**

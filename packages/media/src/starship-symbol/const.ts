@@ -18,6 +18,7 @@ export const symbolByGroup = {
     "extra--010--machine": true,
     "extra--018--table": true,
     "extra--019--table": true,
+    "extra--020--table": true,
     "extra--021--shower": true,
     //
     "extra--022--fresher": true,

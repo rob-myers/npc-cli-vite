@@ -3,14 +3,14 @@ import path from "node:path";
 import type { Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
-const ASSETS_JSON_PATH = path.join(PROJECT_ROOT, "packages/app/public/assets.json");
+const LAYOUT_DIR = path.join(PROJECT_ROOT, "packages/app/public/layout");
 const GEN_SPOTS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-spots.ts");
 /** Their code: edited, every geomorph's spots are made again */
 const SPOT_SOURCES = ["spots.ts", "spot-sight.ts", "seg-grid.ts"].map((name) =>
   path.join(PROJECT_ROOT, "packages/ui/world/src/service", name),
 );
 
-/** Remakes `public/spot/*.json` in a child process once `assets.json` or their code changes — see `docs/spots.md` */
+/** Remakes `public/spot/*.json` in a child process once a `layout/*.json` or their code changes — see `docs/spots.md` */
 export function spotsPlugin(): Plugin {
   return {
     name: "spots",
@@ -39,7 +39,7 @@ export function spotsPlugin(): Plugin {
       };
 
       const onFileChange = (filePath: string) => {
-        if (filePath !== ASSETS_JSON_PATH && !SPOT_SOURCES.includes(filePath)) return;
+        if (path.dirname(filePath) !== LAYOUT_DIR && !SPOT_SOURCES.includes(filePath)) return;
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => run(server), 200);
       };

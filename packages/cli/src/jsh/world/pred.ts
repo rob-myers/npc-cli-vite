@@ -1,5 +1,5 @@
 import { defaultNpcLabelColor } from "@npc-cli/ui__world/const.npc";
-import { sharedMapSlot } from "./shared.service";
+import { renameSharedMap, sharedMapSlot } from "./shared.service";
 import type { SidestepRule } from "./sidestep-debug";
 
 /**
@@ -35,6 +35,8 @@ const pred = sharedMapSlot<Predicates>("pred", () => ({
 }));
 
 pred.setHandler(function onWorldEvent(e, w) {
+  // another map's, so even mid map change
+  if (e.key === "map-renamed") return renameSharedMap(e.from, e.to);
   if (w.isMapChanging() === true) return;
 
   const p = pred.get();

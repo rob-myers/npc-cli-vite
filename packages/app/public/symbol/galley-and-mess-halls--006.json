@@ -1,0 +1,249 @@
+{
+  "filename": "galley-and-mess-halls--006.json",
+  "width": 240,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "68670241-8ba1-4755-a065-cd9d5095091e",
+      "name": "galley-and-mess-halls--006",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "galley-and-mess-halls--006",
+      "baseRect": {"width": 244, "height": 128.6},
+      "offset": {"x": -2, "y": -2},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "fe8196d9-89fd-48e0-b9bf-4c26d3eed562",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "7df8fbf4-e42c-40be-b57b-2ab32724dad7",
+          "name": "obstacle surface y=0.8",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 58.4 -1.6 L 241.6 -1.6 L 241.6 121.4 L 177.2 121.4 L 177.2 126.6 L 59 126.6 L 59 101 L 179 101 L 179 95 L 213 95 L 213 24.6 L 58.4 24.6 Z",
+          "baseRect": {"width": 240, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "f1e5e44e-357f-470d-a58e-ec64bed845df",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "03bbff0e-9e90-43fb-ac1e-eef5198187a9",
+          "name": "decor point label=galley",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 110,
+            "f": 56.25
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 110, 56.25)"
+        },
+        {
+          "id": "71ec3dd7-111b-4fe6-a616-fb0e1031acb5",
+          "name": "decor point label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 20,
+            "f": 10.25
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 10.25)"
+        },
+        {
+          "id": "99b9c9d4-81f3-47ae-856c-f0fd048472fa",
+          "name": "door slide=[1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": 26},
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.5, 26)"
+        },
+        {
+          "id": "17de261c-d4c9-4ea6-9162-ce9cfaeeb076",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 54.5, "f": 28},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, -1, 54.5, 28)"
+        },
+        {
+          "id": "9e4f4d8c-ede4-4df4-902d-628e4d962e39",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 54.5, "f": 32},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 54.5, 32)"
+        },
+        {
+          "id": "3523bb66-6304-448b-aa54-4b67c664e360",
+          "name": "door slide=[1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": 116},
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.5, 116)"
+        },
+        {
+          "id": "0ead48e2-ead3-4461-bdb5-dfa414271d7d",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 54.5, "f": 118},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, -1, 54.5, 118)"
+        },
+        {
+          "id": "2632116a-34a6-4407-bac1-8c6b92652211",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 54.5, "f": 122},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 54.5, 122)"
+        }
+      ]
+    },
+    {
+      "id": "f4b9e92d-9ba2-4546-b505-515d3b6bedf6",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "c202c1d6-ea5b-435d-af8d-93dac202fdf5",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 244, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "dee7afca-7bc1-4f38-aef4-0af82f9c5484",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 124},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "e242bbaa-7fa0-4f4b-817f-c38e068c9635",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 238, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 124},
+          "cssTransform": "matrix(1, 0, 0, 1, 238, -2)"
+        },
+        {
+          "id": "c50c6a8f-3d02-4889-888e-eb1e86920151",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 62, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+        },
+        {
+          "id": "c3d02bdf-ed67-4d90-a9d1-f8cbd1afeec0",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, 118)"
+        },
+        {
+          "id": "c0ba9527-c1ee-4cd0-9f28-82bc0d2fdbbd",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 34},
+          "cssTransform": "matrix(1, 0, 0, 1, 58, -2)"
+        },
+        {
+          "id": "a40831f0-1146-484f-809f-05777870dce4",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 28},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 28)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 244, "height": 128.6},
+  "type": "symbol",
+  "key": "galley-and-mess-halls--006"
+}

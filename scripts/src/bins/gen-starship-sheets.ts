@@ -15,17 +15,15 @@
  * ```
  *
  * dependencies
- * - `public/assets.json`
+ * - `public/assets.json`, `public/assets-edit.json`, `public/layout/*.json`
  * - `public/starship-symbol/*.png`
  * - `pngquant` command to reduce PNG size
  */
 
 import fs, { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import assetsEncoded from "@npc-cli/app/public/assets.json" with { type: "json" };
 import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import {
-  AssetsSchema,
   emptySheets,
   getObstacleSheetKey,
   SheetsSchema,
@@ -39,13 +37,13 @@ import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { Canvas, type Image, loadImage } from "skia-canvas";
-import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
+import { readAssets } from "../service/read-assets.ts";
 import { packRectangles } from "../service/rects-packer.ts";
 import { collectMasks } from "../service/svg-masks.ts";
 
-const assets = z.parse(AssetsSchema, assetsEncoded);
+const assets = readAssets();
 const packedPadding = 8;
 /** Less than half of `packedPadding`, so neighbours never meet */
 const bleedPx = 2;

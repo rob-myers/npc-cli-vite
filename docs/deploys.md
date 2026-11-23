@@ -57,7 +57,7 @@ node -e "require('fs').writeFileSync('packages/app/dist/version.json', JSON.stri
 ## Caching
 
 `/assets/*` is hashed, so `immutable` for a year. Everything else in `public/` (`assets.json`,
-`sheets.json`, `sheet/*`, ...) is unhashed, so `max-age=0, must-revalidate`: a 304 when unchanged,
+`theme.json`, `layout/*`, `sheets.json`, `sheet/*`, ...) is unhashed, so `max-age=0, must-revalidate`: a 304 when unchanged,
 but never new code paired with old data. `sheets.json` and `sheet/*` are keyed by index, so a
 stale pair gives wrong uvs rather than an error.
 

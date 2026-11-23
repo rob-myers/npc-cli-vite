@@ -17,6 +17,7 @@ const WATCH_SKIN_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-
 const WATCH_CURRENT_GLTF_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-current-gltf.ts");
 const ICON_DIR = path.join(PROJECT_ROOT, "packages/media/src/icon");
 const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
+const THEME_JSON_PATH = path.join(PUBLIC_DIR, "theme.json");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
 
@@ -54,7 +55,7 @@ export function watchAssetsPlugin(): Plugin {
 
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");
       const mapGlob = path.join(PUBLIC_DIR, "map/*.json");
-      server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE, ASSETS_JSON_PATH]);
+      server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE, ASSETS_JSON_PATH, THEME_JSON_PATH]);
 
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let running = false;
@@ -100,20 +101,20 @@ export function watchAssetsPlugin(): Plugin {
         }
       };
 
-      /** A hand edit of assets.json, e.g. a theme value: the browser is only told of our own writes otherwise */
+      /** A hand edit of assets.json or theme.json: the browser is only told of our own writes otherwise */
       let handEditTimer: ReturnType<typeof setTimeout> | null = null;
-      const onAssetsJsonChange = () => {
+      const onAssetsJsonChange = (filePath: string) => {
         if (running || Date.now() - themeSavedAt < selfWriteGraceMs) return; // ours: already announced, or the page's own
         if (handEditTimer) clearTimeout(handEditTimer);
         handEditTimer = setTimeout(() => {
           if (running) return;
-          console.log("[watch-assets] assets.json edited by hand");
+          console.log(`[watch-assets] ${path.basename(filePath)} edited by hand`);
           server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
         }, 100);
       };
 
       const onFileChange = (filePath: string) => {
-        if (filePath === ASSETS_JSON_PATH) return onAssetsJsonChange();
+        if (filePath === ASSETS_JSON_PATH || filePath === THEME_JSON_PATH) return onAssetsJsonChange(filePath);
         if (!isWatchedFile(filePath)) return;
         if (isAssetInputFile(filePath)) changed.set(filePath, Date.now());
         if (debounceTimer) clearTimeout(debounceTimer);
@@ -247,11 +248,10 @@ async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, them
     res.writeHead(400).end();
     return;
   }
-  const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
-  assets.theme ??= {};
-  assets.theme[decodeURIComponent(themeKey)] = parsed.data;
+  const themes = fs.existsSync(THEME_JSON_PATH) ? JSON.parse(fs.readFileSync(THEME_JSON_PATH, "utf-8")) : {};
+  themes[decodeURIComponent(themeKey)] = parsed.data;
   themeSavedAt = Date.now();
-  fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
+  fs.writeFileSync(THEME_JSON_PATH, safeJsonCompact(themes));
   res.writeHead(200).end();
 }
 
