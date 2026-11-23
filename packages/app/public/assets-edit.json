@@ -18788,7 +18788,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 0
           }
@@ -18799,7 +18800,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 1
           }
@@ -65026,7 +65028,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 0,
             "transform": [1, 0, 0, 1, 0.0875, 0.2525]
@@ -65045,7 +65048,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 1,
             "transform": [1, 0, 0, 1, 0.0875, 0.2525]
@@ -67252,7 +67256,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 0
           }
@@ -67263,7 +67268,8 @@
           "meta": {
             "obstacle": true,
             "curtain": true,
-            "h": 1.6,
+            "y": 1.2,
+            "h": 1.2,
             "symKey": "medical-bed--006",
             "origObstacleId": 1
           }

@@ -265,6 +265,11 @@ export function createLayout(
     // can set heightAsDimension to be heightOffFloor
     if (o.meta["max-h"] === true) meta.h = heightOffFloor;
     if (typeof o.meta.windowId === "number") meta.windowId = o.meta.windowId;
+    // an obstacle never reaches below the floor: its top `y` is at least its depth `h`
+    if (typeof meta.h === "number" && heightOffFloor < meta.h) {
+      warn(`${gmKey}: ${symbolKey} obstacle ${origObstacleId} has y=${heightOffFloor} < h=${meta.h}: raised to h`);
+      heightOffFloor = meta.h;
+    }
 
     return {
       symbolKey,

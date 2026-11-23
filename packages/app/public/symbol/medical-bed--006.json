@@ -74,7 +74,7 @@
       "children": [
         {
           "id": "638ee93c-1197-4e30-823a-8da9f838d2b0",
-          "name": "obstacle curtain h=1.6",
+          "name": "obstacle curtain y=1.2 h=1.2",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 62.8},
@@ -84,7 +84,7 @@
         },
         {
           "id": "89ae5bf7-0cf9-40e8-9577-5657b6a0aef3",
-          "name": "obstacle curtain h=1.6",
+          "name": "obstacle curtain y=1.2 h=1.2",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 151.8},
