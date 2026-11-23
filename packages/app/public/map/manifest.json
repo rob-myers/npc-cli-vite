@@ -80,6 +80,15 @@
       "bounds": {"x": -62, "y": -22, "width": 2524, "height": 4844},
       "type": "map",
       "key": "nine-gms"
+    },
+    "303-only": {
+      "filename": "303-only.json",
+      "thumbnailFilename": "303-only.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -6, "y": -7, "width": 1206, "height": 607},
+      "type": "map",
+      "key": "303-only"
     }
   }
 }

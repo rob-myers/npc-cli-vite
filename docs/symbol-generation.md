@@ -220,6 +220,25 @@ reading runs of dark pixels along a row or column.
 
 Its layout, `layout/{key}.json`, says whether it worked: its `rooms` go up as rooms close.
 
+## Worked example: 303
+
+`g-303--passenger-deck` is built in milestones, each ending with a World that loads `303-only`. The
+first holds the hull, its own walls, blocks and doors, and the symbols that exist already. Each later
+one adds a batch of missing symbols. The diagram is the earlier project's `303--hull.svg` divided by 5;
+the art decides the final numbers. `symbol-generation/diagrams.py` draws it.
+
+![303 by milestone](symbol-generation/303-milestones.svg)
+
+| milestone | adds | from |
+| --- | --- | --- |
+| M1 | hull walls, interior walls, two solid blocks, hull, locked and auto doors, labels; `stateroom--036` x4, `low-berth--003`, `iris-valves--006` x2 (for `--005`), `window--001` x6, `extra--005--chair` x7 | the hull svg, and our symbols |
+| M2 | `stateroom--035` x4 | its png and `stateroom--035--2x3.svg` |
+| M3 | `office--089`, a quarter turn about its centre | its png and `office--089--4x4.svg` |
+| M4 | `galley-and-mess-halls--006`, mirrored; tables `extra--017` and `extra--020` | their pngs, the tables' art from their old svgs |
+| M5 | `medical-bed--006`, `console--022` | their pngs and old svgs |
+
+The north strip at `720` to `960` and the locked room have no symbol in the old svg: fit them from the art.
+
 ## Removing a symbol
 
 There is no api for it. Replace every instance of it first, e.g. `iris-valves--005` by `iris-valves--006`.

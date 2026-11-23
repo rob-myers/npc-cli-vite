@@ -836,6 +836,15 @@
       "bounds": {"x": 0, "y": 0, "width": 20.8, "height": 17.6},
       "type": "symbol",
       "key": "extra--024--fresher"
+    },
+    "g-303--passenger-deck": {
+      "filename": "g-303--passenger-deck.json",
+      "thumbnailFilename": "g-303--passenger-deck.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -6, "y": -7, "width": 1212, "height": 613},
+      "type": "symbol",
+      "key": "g-303--passenger-deck"
     }
   }
 }
