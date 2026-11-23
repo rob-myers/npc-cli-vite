@@ -33,6 +33,7 @@ import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import { perf } from "../service/performance";
+import { assetsPaths } from "../service/read-assets";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
@@ -56,7 +57,8 @@ const changedFiles = (
 perf("total");
 info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles.map((f) => path.basename(f)))}`);
 
-const assetsJsonPath = path.resolve("packages/app/public", "assets.json");
+const assetsJsonPath = assetsPaths.index;
+const publicDir = path.dirname(assetsJsonPath);
 const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
 // we ignore parse errors as we extend AssetsSchema
 const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
@@ -103,15 +105,34 @@ assets.hash = {
 perf("total");
 
 // reparse via z.encode ensures key-ordering
-const nextAssetsRaw = safeJsonCompact(z.encode(AssetsSchema, assets));
+const encoded = z.encode(AssetsSchema, assets);
+const { symbol, flattened, stratifiedSymbolNodes, layout } = encoded;
+const layoutFiles = entries(layout).map(([gmKey, l]) => [assetsPaths.layout(gmKey), l] as const);
+const staleLayoutFiles = fs
+  .globSync(path.join(assetsPaths.layoutDir, "*.json"))
+  .filter((file) => !layoutFiles.some(([f]) => f === file));
 
-if (prevAssetsRaw === nextAssetsRaw) {
-  info(`${path.basename(import.meta.filename)}: no changes detected`);
-  process.exit(0);
+fs.mkdirSync(assetsPaths.layoutDir, { recursive: true });
+const written = [
+  [assetsJsonPath, encoded] as const,
+  [assetsPaths.edit, { symbol, flattened, stratifiedSymbolNodes }] as const,
+  ...layoutFiles,
+].filter(([file, json]) => writeIfChanged(file, safeJsonCompact(json)));
+staleLayoutFiles.forEach((file) => fs.rmSync(file));
+
+const namesOf = (files: string[]) => files.map((f) => path.relative(publicDir, f)).join(", ");
+const changes = [
+  written.length > 0 && `wrote ${namesOf(written.map(([f]) => f))}`,
+  staleLayoutFiles.length > 0 && `removed ${namesOf(staleLayoutFiles)}`,
+].filter(Boolean);
+info(`${path.basename(import.meta.filename)}: ${changes.join("; ") || "no changes detected"}`);
+
+/** Writes `raw` unless the file already holds it */
+function writeIfChanged(file: string, raw: string) {
+  if (fs.existsSync(file) && fs.readFileSync(file, "utf-8") === raw) return false;
+  writeFileSync(file, raw);
+  return true;
 }
-
-info(`${path.basename(import.meta.filename)}: detected changes`);
-writeFileSync(assetsJsonPath, nextAssetsRaw);
 
 function updateChangedSymbolsAndMaps(changedFiles: string[], assets: AssetsType) {
   for (const file of changedFiles) {

@@ -267,6 +267,11 @@ export const AssetsSchema = z.object({
 export type AssetsType = z.infer<typeof AssetsSchema>;
 export type AssetsEncodedType = z.input<typeof AssetsSchema>;
 
+/** `assets.json`: what every World reads besides its layouts */
+export const AssetsIndexSchema = AssetsSchema.pick({ map: true, theme: true, hash: true });
+/** `assets-edit.json`: what re-flattening a draft needs */
+export const AssetsEditSchema = AssetsSchema.pick({ symbol: true, flattened: true, stratifiedSymbolNodes: true });
+
 export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
   gmId: z.number(),
   transform: AffineTransformSchema,
