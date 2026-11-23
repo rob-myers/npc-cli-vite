@@ -17957,6 +17957,34 @@
           "height": 3,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 9.375, "f": 6},
           "meta": {"extra--019--table": true, "y": 0.8}
+        },
+        {
+          "symbolKey": "medical-bed--006",
+          "width": 2.25,
+          "height": 5.47,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 0.0875,
+            "f": 0.2525
+          },
+          "meta": {"medical-bed--006": true}
+        },
+        {
+          "symbolKey": "console--022",
+          "width": 1.5,
+          "height": 3,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 5.975,
+            "f": 4.4875
+          },
+          "meta": {"console--022": true}
         }
       ]
     },
@@ -18744,6 +18772,143 @@
       "addableWalls": [],
       "hullWalls": [],
       "symbols": []
+    },
+    "medical-bed--006": {
+      "key": "medical-bed--006",
+      "isHull": false,
+      "width": 2.25,
+      "height": 5.47,
+      "bounds": {"x": 0, "y": 0, "width": 2.25, "height": 5.47},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.25, 1.57], [2.25, 1.855], [0, 1.855], [0, 1.57]]],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.25, 3.795], [2.25, 4.08], [0, 4.08], [0, 3.795]]],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 1
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": [],
+      "hullWalls": [],
+      "symbols": [
+        {
+          "symbolKey": "medical-bed--005",
+          "width": 1.91,
+          "height": 1.01,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 0.1825,
+            "f": -0.005
+          },
+          "meta": {"medical-bed--005": true, "y": 0.5}
+        },
+        {
+          "symbolKey": "medical-bed--005",
+          "width": 1.91,
+          "height": 1.01,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 0.1825,
+            "f": 2.2325
+          },
+          "meta": {"medical-bed--005": true, "y": 0.5}
+        },
+        {
+          "symbolKey": "medical-bed--005",
+          "width": 1.91,
+          "height": 1.01,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 0.1825,
+            "f": 4.4575
+          },
+          "meta": {"medical-bed--005": true, "y": 0.5}
+        }
+      ]
+    },
+    "console--022": {
+      "key": "console--022",
+      "isHull": false,
+      "width": 1.5,
+      "height": 3,
+      "bounds": {"x": -0.0175, "y": -0.0175, "width": 1.535, "height": 3.035},
+      "decor": [],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [-0.0175, -0.0175],
+              [0.7675, -0.0175],
+              [0.7675, 0.9325],
+              [0.7125, 1.0825],
+              [0.6525, 1.2325],
+              [0.6225, 1.3825],
+              [0.6125, 1.4825],
+              [0.6175, 1.5825],
+              [0.6425, 1.7325],
+              [0.6975, 1.8825],
+              [0.7675, 2.0325],
+              [0.7675, 3.0175],
+              [-0.0175, 3.0175]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": 0.6,
+            "symKey": "console--022",
+            "origObstacleId": 0
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": [],
+      "hullWalls": [],
+      "symbols": [
+        {
+          "symbolKey": "console--051",
+          "width": 0.75,
+          "height": 0.75,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.795, "f": 1.125},
+          "meta": {"console--051": true, "y": 0.4}
+        }
+      ]
     }
   },
   "flattened": {
@@ -62668,6 +62833,74 @@
             "transform": [-1, 0, 0, 1, 28.6375, 3.05],
             "doorId": 37
           }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.545, 0.6725], [0.545, 0.8225], [0.395, 0.8225], [0.395, 0.6725]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.395, 0.6725],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 80,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.545, 2.91], [0.545, 3.06], [0.395, 3.06], [0.395, 2.91]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.395, 2.9099999999999997],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 81,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.545, 5.135], [0.545, 5.285], [0.395, 5.285], [0.395, 5.135]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.395, 5.135],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 82,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[4.83, 3.0625], [4.83, 2.9125], [4.98, 2.9125], [4.98, 3.0625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, -1, 4.83, 3.0625],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 84,
+            "y": 0.41000000000000003
+          }
         }
       ],
       "doors": [
@@ -64779,6 +65012,155 @@
             "y": 0.8,
             "transform": [1, 0, 0, 1, 9.375, 6]
           }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [2.3375, 1.8225],
+              [2.3375, 2.1075],
+              [0.0875, 2.1075],
+              [0.0875, 1.8225]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 0,
+            "transform": [1, 0, 0, 1, 0.0875, 0.2525]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [2.3375, 4.0475],
+              [2.3375, 4.3325],
+              [0.0875, 4.3325],
+              [0.0875, 4.0475]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 1,
+            "transform": [1, 0, 0, 1, 0.0875, 0.2525]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.27, 0.4975],
+              [0.715, 0.2475],
+              [2.18, 0.5025],
+              [2.18, 1.0025],
+              [0.73, 1.2575],
+              [0.27, 0.9975]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.27, 0.2475]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.27, 2.735],
+              [0.715, 2.485],
+              [2.18, 2.74],
+              [2.18, 3.24],
+              [0.73, 3.495],
+              [0.27, 3.235]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.27, 2.485]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.27, 4.96],
+              [0.715, 4.71],
+              [2.18, 4.965],
+              [2.18, 5.465],
+              [0.73, 5.72],
+              [0.27, 5.46]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.27, 4.71]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [5.9925, 4.505],
+              [5.2075, 4.505],
+              [5.2075, 3.555],
+              [5.2625, 3.405],
+              [5.3225, 3.255],
+              [5.3525, 3.105],
+              [5.3625, 3.005],
+              [5.3575, 2.905],
+              [5.3325, 2.755],
+              [5.2775, 2.605],
+              [5.2075, 2.455],
+              [5.2075, 1.47],
+              [5.9925, 1.47]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": 0.6,
+            "symKey": "console--022",
+            "origObstacleId": 0,
+            "transform": [-1, 0, 0, -1, 5.975, 4.4875]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[4.455, 3.375], [4.455, 2.6], [5.1425, 2.6], [5.1425, 3.375]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "h": 0.3,
+            "inset": 0.05,
+            "symKey": "console--051",
+            "origObstacleId": 0,
+            "y": 0.4,
+            "transform": [-1, 0, 0, -1, 5.18, 3.3625]
+          }
         }
       ],
       "unsorted": [
@@ -66792,6 +67174,250 @@
       "windows": [],
       "removableDoors": [],
       "addableWalls": []
+    },
+    "medical-bed--006": {
+      "key": "medical-bed--006",
+      "isHull": false,
+      "width": 2.25,
+      "height": 5.47,
+      "bounds": {"x": 0, "y": 0, "width": 2.25, "height": 5.47},
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.4575, 0.42], [0.4575, 0.57], [0.3075, 0.57], [0.3075, 0.42]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.3075, 0.42],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 2,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.4575, 2.6575],
+              [0.4575, 2.8075],
+              [0.3075, 2.8075],
+              [0.3075, 2.6575]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.3075, 2.6574999999999998],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 3,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.4575, 4.8825],
+              [0.4575, 5.0325],
+              [0.3075, 5.0325],
+              [0.3075, 4.8825]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, 1, 0.3075, 4.882499999999999],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 4,
+            "y": 0.51
+          }
+        }
+      ],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.25, 1.57], [2.25, 1.855], [0, 1.855], [0, 1.57]]],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [[[2.25, 3.795], [2.25, 4.08], [0, 4.08], [0, 3.795]]],
+          "meta": {
+            "obstacle": true,
+            "curtain": true,
+            "h": 1.6,
+            "symKey": "medical-bed--006",
+            "origObstacleId": 1
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.1825, 0.245],
+              [0.6275, -0.005],
+              [2.0925, 0.25],
+              [2.0925, 0.75],
+              [0.6425, 1.005],
+              [0.1825, 0.745]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.1825, -0.005]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.1825, 2.4825],
+              [0.6275, 2.2325],
+              [2.0925, 2.4875],
+              [2.0925, 2.9875],
+              [0.6425, 3.2425],
+              [0.1825, 2.9825]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.1825, 2.2325]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [0.1825, 4.7075],
+              [0.6275, 4.4575],
+              [2.0925, 4.7125],
+              [2.0925, 5.2125],
+              [0.6425, 5.4675],
+              [0.1825, 5.2075]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "bed": true,
+            "h": 0.3,
+            "symKey": "medical-bed--005",
+            "origObstacleId": 0,
+            "y": 0.5,
+            "transform": [1, 0, 0, 1, 0.1825, 4.4575]
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": []
+    },
+    "console--022": {
+      "key": "console--022",
+      "isHull": false,
+      "width": 1.5,
+      "height": 3,
+      "bounds": {"x": -0.0175, "y": -0.0175, "width": 1.535, "height": 3.035},
+      "decor": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.145, 1.425], [1.145, 1.575], [0.995, 1.575], [0.995, 1.425]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [-1, 0, 0, 1, 1.145, 1.425],
+            "direction": {"x": -1, "y": 0},
+            "obstacleId": 1,
+            "y": 0.41000000000000003
+          }
+        }
+      ],
+      "doors": [],
+      "obstacles": [
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [-0.0175, -0.0175],
+              [0.7675, -0.0175],
+              [0.7675, 0.9325],
+              [0.7125, 1.0825],
+              [0.6525, 1.2325],
+              [0.6225, 1.3825],
+              [0.6125, 1.4825],
+              [0.6175, 1.5825],
+              [0.6425, 1.7325],
+              [0.6975, 1.8825],
+              [0.7675, 2.0325],
+              [0.7675, 3.0175],
+              [-0.0175, 3.0175]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": 0.6,
+            "symKey": "console--022",
+            "origObstacleId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.52, 1.1125], [1.52, 1.8875], [0.8325, 1.8875], [0.8325, 1.1125]]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "h": 0.3,
+            "inset": 0.05,
+            "symKey": "console--051",
+            "origObstacleId": 0,
+            "y": 0.4,
+            "transform": [1, 0, 0, 1, 0.795, 1.125]
+          }
+        }
+      ],
+      "unsorted": [],
+      "walls": [],
+      "windows": [],
+      "removableDoors": [],
+      "addableWalls": []
     }
   },
   "stratifiedSymbolNodes": [
@@ -66877,7 +67503,9 @@
       {"id": "lab--018"},
       {"id": "lab--012"},
       {"id": "lab--023"},
-      {"id": "office--074"}
+      {"id": "office--074"},
+      {"id": "medical-bed--006"},
+      {"id": "console--022"}
     ],
     [
       {"id": "bridge--042"},

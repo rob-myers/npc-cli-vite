@@ -1,0 +1,101 @@
+{
+  "filename": "medical-bed--006.json",
+  "width": 90,
+  "height": 218.8,
+  "nodes": [
+    {
+      "id": "b5694555-9979-4b2d-b8be-da34f9924def",
+      "name": "medical-bed--006",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "medical-bed--006",
+      "baseRect": {"width": 90, "height": 218.8},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "3853a2c4-6b86-45e1-9ca2-2a54e96a9733",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "db862625-3ac3-44b7-a810-dddfed455f04",
+          "name": "medical-bed--005 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.3, "f": -0.2},
+          "type": "symbol",
+          "srcKey": "medical-bed--005",
+          "baseRect": {"width": 76.4, "height": 40.4},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.3, -0.2)"
+        },
+        {
+          "id": "6eb7c3b0-7c34-4087-8568-f6be3f292b66",
+          "name": "medical-bed--005 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.3, "f": 89.3},
+          "type": "symbol",
+          "srcKey": "medical-bed--005",
+          "baseRect": {"width": 76.4, "height": 40.4},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.3, 89.3)"
+        },
+        {
+          "id": "b85b07ad-254b-4b5c-990c-187881721e77",
+          "name": "medical-bed--005 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.3, "f": 178.3},
+          "type": "symbol",
+          "srcKey": "medical-bed--005",
+          "baseRect": {"width": 76.4, "height": 40.4},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.3, 178.3)"
+        }
+      ]
+    },
+    {
+      "id": "720925d9-73c4-4bca-9f94-7518d7484b66",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "638ee93c-1197-4e30-823a-8da9f838d2b0",
+          "name": "obstacle curtain h=1.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 62.8},
+          "type": "rect",
+          "baseRect": {"width": 90, "height": 11.4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 62.8)"
+        },
+        {
+          "id": "89ae5bf7-0cf9-40e8-9577-5657b6a0aef3",
+          "name": "obstacle curtain h=1.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 151.8},
+          "type": "rect",
+          "baseRect": {"width": 90, "height": 11.4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 151.8)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 90, "height": 218.8},
+  "type": "symbol",
+  "key": "medical-bed--006"
+}

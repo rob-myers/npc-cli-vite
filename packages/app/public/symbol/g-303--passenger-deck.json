@@ -1448,6 +1448,30 @@
           "baseRect": {"width": 30, "height": 120},
           "offset": {"x": -0.7, "y": -0.7},
           "cssTransform": "matrix(1, 0, 0, 1, 374.3, 239.3)"
+        },
+        {
+          "id": "c738030d-fe71-4a49-8617-c5ec7c41a07a",
+          "name": "medical-bed--006",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.5, "f": 10.1},
+          "type": "symbol",
+          "srcKey": "medical-bed--006",
+          "baseRect": {"width": 90, "height": 218.8},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 3.5, 10.1)"
+        },
+        {
+          "id": "aadcdf2e-4d5f-468e-abbd-79f6ad6643c2",
+          "name": "console--022",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 239, "f": 179.5},
+          "type": "symbol",
+          "srcKey": "console--022",
+          "baseRect": {"width": 60, "height": 120},
+          "offset": {"x": 0.7, "y": 0.7},
+          "cssTransform": "matrix(-1, 0, 0, -1, 239.7, 180.2)"
         }
       ]
     },

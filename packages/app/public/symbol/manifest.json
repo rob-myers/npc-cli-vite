@@ -881,6 +881,24 @@
       "bounds": {"x": -2, "y": -2, "width": 244, "height": 128.6},
       "type": "symbol",
       "key": "galley-and-mess-halls--006"
+    },
+    "medical-bed--006": {
+      "filename": "medical-bed--006.json",
+      "thumbnailFilename": "medical-bed--006.thumbnail.png",
+      "width": 90,
+      "height": 218.8,
+      "bounds": {"x": 0, "y": 0, "width": 90, "height": 218.8},
+      "type": "symbol",
+      "key": "medical-bed--006"
+    },
+    "console--022": {
+      "filename": "console--022.json",
+      "thumbnailFilename": "console--022.thumbnail.png",
+      "width": 60,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--022"
     }
   }
 }
