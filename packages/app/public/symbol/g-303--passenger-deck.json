@@ -963,23 +963,16 @@
         },
         {
           "id": "735ab206-034e-40ac-b69f-61d2ac214eec",
-          "name": "decor point label='common area'",
+          "name": "decor point label=common",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 0.5,
-            "b": 0,
-            "c": 0,
-            "d": 0.5,
-            "e": 590,
-            "f": 206.25
-          },
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 590, "f": 260},
           "type": "image",
           "srcType": "decor",
           "srcKey": "label",
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 590, 206.25)"
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 590, 260)"
         },
         {
           "id": "044e14dd-b34f-4d92-b2cb-4d2dcf4de9fe",
