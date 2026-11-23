@@ -391,7 +391,7 @@ export const phaserConfig = {
   grip: 0.29,
   fadeSecs: 0.3,
   /** Sat, the gun shrinks into the hand over the last of the arm's way down, as this much of its blend */
-  stowBlend: 0.25,
+  handBlend: 0.25,
   /** Seconds the arm takes to swing most of the way onto a new point, sat or lain — see `glideArmAt` */
   armGlideSecs: 0.15,
   /** Radians off where it is headed the arm counts as aimed, though it eases on — see `glideArmAt` */
@@ -428,8 +428,8 @@ export const phaserConfig = {
   wallDrawInSecs: 0.11,
   /** An arm put at rest at once, e.g. on a respawn */
   snapSecs: 0.01,
-  /** Seconds the arm takes to come down, stowed lain */
-  stowSecs: 0.8,
+  /** Seconds the arm takes to come down, rested lain */
+  lainLowerSecs: 0.8,
   /** Seconds back out to the aim, once clear */
   drawOutSecs: 0.2,
   /** Seconds between raycasts at most, and only once they, their target or a door has changed */

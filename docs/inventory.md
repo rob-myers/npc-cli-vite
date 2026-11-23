@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else lowers it (`w.phasers.disarm`), the gun still in hand. `w.phasers.stow(key)` puts it away: lowered, the gun fades from the hand until drawn again. Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -267,7 +267,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 | stood | found by `armMeetsNpc`, below | `phaser_aim_avoid`, over `drawInSecs` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
 | lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
-| lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
+| lain otherwise | found by `armMeetsNpc` | rested: still raised, the arm comes down over `lainLowerSecs` with the gun in hand, until clear |
 
 - `armMeetsNpc` looks through their room (`w.npc.near.inReach(key, 0)`), not the crowd's neighbours: those reach only
   `collisionQueryRange` (0.7m), short of the gun's tip.

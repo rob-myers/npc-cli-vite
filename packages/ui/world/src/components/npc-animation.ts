@@ -824,8 +824,8 @@ export class NpcAnimation {
   }
 
   /**
-   * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood, it draws their right arm in whilst free,
-   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side. `room` is how far off the wall is
+   * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood with a gun in hand, it draws their right arm
+   * in as `phaser_aim_avoid` whilst free, e.g. not raised nor reaching. `room` is how far off the wall is
    */
   setNearWall(next: false | "ahead" | "beside", room = Infinity) {
     this.nearWall = next;
@@ -838,7 +838,8 @@ export class NpcAnimation {
       this.w.e.after(this.armInUntil - now, () => this.nearWall === false && this.setNearWall(false));
       return;
     }
-    const want = next !== false && this.posture === "stand";
+    /** Without a gun in hand the arm swings on: held still, it reads as carrying one */
+    const want = next !== false && this.posture === "stand" && this.w.phasers?.holds(this.npc.key) === true;
     // let go, or taken over e.g. raised: no longer ours
     if (this.upper.target === 0 || this.upper.key !== this.armIn) this.armIn = null;
     if (want === (this.armIn !== null)) return;
@@ -846,7 +847,7 @@ export class NpcAnimation {
       this.setUpper(null, { byWall: false }); // no wall near by now: at rest by one, `startIdle` keeps it in
       this.armIn = null;
     } else if (this.upper.target === 0) {
-      this.armIn = this.w.phasers?.holds(this.npc.key) === true ? "phaser_aim_avoid" : "idle";
+      this.armIn = "phaser_aim_avoid";
       // the player's folds at the elbow first, else the gun swings out into the wall
       this.setUpper(this.armIn, { byWall: false, fold: this.w.player?.is(this.npc.key) === true });
     }

@@ -449,9 +449,7 @@ function describeMap(w: JshCli.RunArg["w"], mapKey: string) {
   const counts = new Map<string, number>();
   for (const { gmKey } of w.assets.map[mapKey]?.gms ?? []) counts.set(gmKey, (counts.get(gmKey) ?? 0) + 1);
   if (counts.size === 0) return "no geomorphs";
-  return [...counts]
-    .map(([gmKey, n]) => `${gmKey.replace(/^g-(\d+).*/, "$1")}${n > 1 ? ` x${n}` : ""}`)
-    .join(", ");
+  return [...counts].map(([gmKey, n]) => `${gmKey.replace(/^g-(\d+).*/, "$1")}${n > 1 ? ` x${n}` : ""}`).join(", ");
 }
 
 /**
@@ -1073,6 +1071,7 @@ export async function* pick(ct: JshCli.RunArg) {
  * `--target` targets whoever its line crosses, as the player's raised phaser does, until `--fire` or `--cancel`.
  * `at` targets, aiming at another's `part` (default chest): `--held` keeps aiming until killed. It pauses with the World.
  * `tilt` is a detent: -1 down, 0 level, 1 up. `--laser` shows a laser dot, as the player's does, and `laser:false` stops it.
+ * `--lower` keeps the gun in hand. `--stow` puts it away, until raised again.
  * See `docs/engagements.md`
  * ```sh
  * phaser rob
@@ -1080,6 +1079,7 @@ export async function* pick(ct: JshCli.RunArg) {
  * phaser rob shoot:npc-0 part:hips
  * phaser rob --raise
  * phaser rob --lower
+ * phaser rob --stow
  * phaser rob --target tilt:-1
  * phaser kate at:rob part:leftarm
  * phaser kate at:rob part:head --held &
@@ -1102,6 +1102,7 @@ export async function phaser(
       npc: "npcKey",
       "--raise": "raise",
       "--lower": "lower",
+      "--stow": "stow",
       "--target": "target",
       "--fire": "fire",
       "--cancel": "cancel",
@@ -1116,6 +1117,7 @@ export async function phaser(
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { key } = w.npc.get(opts.npcKey);
   if (opts.lower === true) return void w.phasers.disarm(key); // which needs no phaser
+  if (opts.stow === true) return void w.phasers.stow(key);
   if (opts.cancel === true) return void w.npcFocus.cancel(key);
   if (opts.laser !== undefined) return void w.npcFocus.setLaser(key, opts.laser !== false && opts.laser !== "false");
   if (w.e.hasItem(key, "phaser") === false) throw Error(`${key} carries no phaser: give ${key} item:phaser`);
@@ -1198,6 +1200,7 @@ type PhaserOpts = {
   part?: string;
   raise?: boolean;
   lower?: boolean;
+  stow?: boolean;
   target?: boolean;
   fire?: boolean;
   cancel?: boolean;

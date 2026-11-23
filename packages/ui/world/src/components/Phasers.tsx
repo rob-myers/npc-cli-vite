@@ -114,6 +114,7 @@ export default function Phasers() {
       landed: [],
       arms: new Map(),
       looks: new Map(),
+      stowed: new Set(),
       decide: null,
       pale: false,
       tickedSecs: w.gameTime.now(),
@@ -158,6 +159,7 @@ export default function Phasers() {
         const at = opts.at ?? null;
         if (at !== null && at !== npcKey && state.isDrawnIn(npcKey)) return; // no shot leaves `phaser_aim_avoid`
         const arm = state.ensure(npcKey);
+        state.stowed.delete(npcKey); // drawn again
         arm.target =
           at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null, local: opts.local ?? null };
         if (arm.target !== null) state.takeCharge(arm); // fired
@@ -409,7 +411,11 @@ export default function Phasers() {
         w.r3f?.invalidate();
       },
       holds(npcKey) {
-        return w.e.hasItem(npcKey, "phaser") === true && w.npc.npcToDoable[npcKey] == null;
+        return (
+          w.e.hasItem(npcKey, "phaser") === true &&
+          w.npc.npcToDoable[npcKey] == null &&
+          state.stowed.has(npcKey) === false
+        );
       },
 
       isArmed(npcKey) {
@@ -429,6 +435,14 @@ export default function Phasers() {
         if (arm === undefined || arm.steady === on) return;
         arm.steady = on;
         w.r3f?.invalidate();
+      },
+      stow(...npcKeys) {
+        for (const npcKey of npcKeys) {
+          state.stowed.add(npcKey);
+          const anim = w.n?.[npcKey]?.anim;
+          anim?.setNearWall(anim.nearWall, anim.wallRoom); // an arm a wall drew in lets go
+        }
+        state.disarm(...npcKeys); // its `sync` fades the gun, even if already lowered
       },
       isCooling(npcKey) {
         const cool = state.arms.get(npcKey)?.cool;
@@ -1010,12 +1024,12 @@ export default function Phasers() {
         const { armed, beam } = arm;
         // in hand whilst they carry it and stand, raised or lowered — or still armed, having just lost it
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
-        // gone at once between the two halves of a teleport, and as they sit or lie, unless raised: stowed lain, it stays in hand
+        // gone at once between the two halves of a teleport, and as they sit or lie, unless raised: rested lain, it stays in hand
         const seated = w.npc.npcToDoable[npc.key] != null && armed === false;
         if (leaving(npc)) beam.gun.target = beam.gun.presence = 0;
         else if (seated) {
           // lowered sat, it shrinks into the hand only as the arm comes back down
-          const lowering = isPhaserPose(anim.upper.key) ? anim.upper.blend / phaserConfig.stowBlend : 0;
+          const lowering = isPhaserPose(anim.upper.key) ? anim.upper.blend / phaserConfig.handBlend : 0;
           beam.gun.target = lowering > 0 ? 1 : 0;
           beam.gun.presence = Math.min(beam.gun.presence, lowering);
         } else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
@@ -1141,13 +1155,13 @@ export default function Phasers() {
         const { armed } = arm;
         const lain = anim.posture === "lie";
         // the pose, over their right arm — only ours, never another's e.g. a reach
-        /** Lain, stowed instead of drawn in: unless the arm is on top, free to draw in */
-        const stowed = avoid && lain && lieAim[anim.pose]?.drawIn !== true;
+        /** Lain, rested instead of drawn in: unless the arm is on top, free to draw in */
+        const rested = avoid && lain && lieAim[anim.pose]?.drawIn !== true;
         /** Crouched and not raised, the gun is held up out of the way */
         const tucked = armed === false && anim.crouched && state.holds(npc.key);
         const goal = tucked
           ? phaserConfig.avoid
-          : armed === false || stowed
+          : armed === false || rested
             ? null
             : avoid
               ? phaserConfig.avoid
@@ -1165,10 +1179,10 @@ export default function Phasers() {
         const waiting = armed === true && goal === phaserConfig.pose && shown === null && arm.casting === true;
         const pose = waiting ? null : via ? byAvoid(goal, shown, settled) : goal;
         if (pose === null) {
-          // raised still, lain, it is stowed slowly. Lowered stood still, by `sitArmVia`, its arc kept in. Not an arm `setNearWall` drew in
+          // raised still, lain, it is rested slowly. Lowered stood still, by `sitArmVia`, its arc kept in. Not an arm `setNearWall` drew in
           if (isPhaserPose(shown) && shown !== anim.armIn)
             anim.setUpper(null, {
-              fadeSecs: armed ? phaserConfig.stowSecs : undefined,
+              fadeSecs: armed ? phaserConfig.lainLowerSecs : undefined,
               byWall: arm.armHit || (armed === false && anim.moving === false), // walking, its swing would take the hand out
             });
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
@@ -1414,6 +1428,8 @@ export type State = PhaserUniforms & {
   outcomeFor(npc: Npc, on: Npc, ray: ShotRay): JshCli.ShotOutcome;
   /** Over a pale deck, where beams are laid over it rather than added: see `syncTheme` */
   pale: boolean;
+  /** By npcKey: who put theirs away, so `holds` is false until `arm` draws it */
+  stowed: Set<string>;
   tickedSecs: number;
 
   /** Their aim whilst armed: from the muzzle at full aim, on the ground, and its bearing. See `service/aim-target` */
@@ -1448,7 +1464,7 @@ export type State = PhaserUniforms & {
   /** Where a shot at no one along each one's aim would end now, and the rooms it passes through, in one worker request */
   /** `null` where it cannot be cast */
   endsAlong(npcKeys: string[]): Promise<(null | AlongEnd)[]>;
-  /** Their pose, stance and aim are let go of, and the gun and beam fade */
+  /** Lowers it: their pose, stance and aim are let go of, and the beam fades. The gun stays in hand: see `stow` */
   disarm(...npcKeys: string[]): void;
   /** Writes their gun as instance `i`, and up to `room` of their beam's segments from instance `j`, to `dst` if any. The segments written, else `-1` with no forearm to hold it */
   draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number, j: number, room: number): number;
@@ -1466,7 +1482,7 @@ export type State = PhaserUniforms & {
   glowOf(arm: ArmEntry, now: number): number;
   /** Gives them an entry if they hold one and have none: told by events, not looked for each tick */
   hold(npcKey: string): void;
-  /** Carries one and stands, so has it in hand — raised or not */
+  /** Carries one, stands and has not stowed it, so has it in hand — raised or not */
   holds(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
   isCharging(npcKey: string): boolean;
@@ -1474,9 +1490,11 @@ export type State = PhaserUniforms & {
   isSteadied(npcKey: string): boolean;
   /** Aims in earnest, or not: see `isSteadied` */
   steady(npcKey: string, on: boolean): void;
+  /** Puts it away: lowered, and the gun fades from their hand until drawn again by `arm` */
+  stow(...npcKeys: string[]): void;
   /** Draining after a cancelled charge: none charges until it ends */
   isCooling(npcKey: string): boolean;
-  /** Armed, and drawn in: `phaser_aim_avoid`, or lain, stowed */
+  /** Armed, and drawn in: `phaser_aim_avoid`, or lain, rested */
   isDrawnIn(npcKey: string): boolean;
   /** Armed, and the arm all the way up */
   isRaised(npcKey: string): boolean;
