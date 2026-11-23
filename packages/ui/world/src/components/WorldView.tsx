@@ -1033,8 +1033,8 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
-        const key = wasdOfArrow[e.key] ?? e.key.toLowerCase();
-        if (key !== e.key.toLowerCase()) e.preventDefault(); // an arrow scrolls nothing
+        const key = e.key.toLowerCase();
+        if (e.key.startsWith("Arrow")) e.preventDefault(); // an arrow scrolls nothing
         const presetStep = cameraPresetStepByKey[e.key];
         // a move key pressed afresh whilst another is held takes the heading again, from the view as it is now
         if (wasdKeys.includes(key) && e.repeat === false && state.keysDown.has(key) === false) state.wasdHeading = null;
@@ -1064,8 +1064,7 @@ export function WorldView(props: React.PropsWithChildren) {
         }
       },
       onKeyUp(e) {
-        const key = wasdOfArrow[e.key] ?? e.key.toLowerCase();
-        state.keysDown.delete(key);
+        state.keysDown.delete(e.key.toLowerCase());
         if (state.wasdHeading !== null) w.r3f?.invalidate(); // a frame, for the compass to drop a held heading
       },
       onPointerDown(e) {
@@ -2480,8 +2479,6 @@ const halfPi = Math.PI / 2;
 const compassSnapRad = Math.PI / 9;
 const compassSkewStep = Math.PI / 36;
 const wasdKeys = ["w", "a", "s", "d"];
-/** The arrow keys, read as the move keys they mirror */
-const wasdOfArrow: Partial<Record<string, string>> = { ArrowUp: "w", ArrowLeft: "a", ArrowDown: "s", ArrowRight: "d" };
 /** `alignWasdAzimuth`'s turn of the view to within snapping of an axis */
 const wasdAlign = {
   /** Within this of the last ask, the keys count as steering someone. Generous, as a slow time scale spaces the asks out */

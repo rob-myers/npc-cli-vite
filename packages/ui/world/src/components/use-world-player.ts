@@ -636,15 +636,20 @@ const tmpLook = { x: 0, y: 0 };
 const lookTapMs = 300;
 /** A second press of the same move key within this is a double tap, which runs */
 const doubleTapMs = 300;
-const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
+const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
 /** On touch, a second finger this long after the first charges a raised phaser, rather than pinching */
 const fireTouchDelayMs = 300;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
 const halfPi = Math.PI / 2;
-/** `l`, `,`, `.` and `/` look as the w, a, s and d keys head: radians anticlockwise from above */
-const lookTurnByCode: Partial<Record<string, number>> = { KeyL: 0, Comma: halfPi, Period: Math.PI, Slash: -halfPi };
+/** The arrow keys look as the w, s, a and d keys head: radians anticlockwise from above */
+const lookTurnByCode: Partial<Record<string, number>> = {
+  ArrowUp: 0,
+  ArrowDown: Math.PI,
+  ArrowLeft: halfPi,
+  ArrowRight: -halfPi,
+};
 /** Metres off the point a look key looks at: any beyond `lookDeadMetres` */
 const lookAlongMetres = 2;
 /** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */

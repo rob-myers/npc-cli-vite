@@ -118,7 +118,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 ## Player input
 
-- **Walking.** The w, a, s and d keys head as seen, snapped onto a world axis within 20°. The arrow keys are the same keys (`wasdOfArrow`). See WASD heading in `docs/camera.md`.
+- **Walking.** The w, a, s and d keys head as seen, snapped onto a world axis within 20°. See WASD heading in `docs/camera.md`.
   - The heading is kept whilst a move key is held. A fresh press of another takes it again from the view.
   - Whilst `wasd_delta` runs, a held key turns the view to within 20° of the nearest axis, and the w-key snaps onto it there. So where the w-key heads depends on the view alone.
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.
@@ -138,7 +138,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
     - It gives way whilst they handle an item, turn of their own accord or fade onto a seat (from `npc-pre-do`, not off one), and `gazeYieldSecs` after. Its hud-toast greys meanwhile.
   - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
   - Sat, they look over a shoulder at most: a look more than `sitLookMaxRad` (120°) off their facing is ignored.
-  - `l`, `,`, `.` and `/` look as the w, a, s and d keys head, onto the nearest world axis (`lookTurnByCode`, `w.player.lookAlong`). Two held look diagonally between them (`w.player.lookCodes`). A look lasts whilst its key is held, then `lookHoldMs`, with no cross and their look's reach kept. Raised, the body faces it exactly, not the muzzle's line.
+  - The arrow keys look as the w, a, s and d keys head, onto the nearest world axis (`lookTurnByCode`, `w.player.lookAlong`). Two held look diagonally between them (`w.player.lookCodes`). A look lasts whilst its key is held, then `lookHoldMs`, with no cross and their look's reach kept. Raised, the body faces it exactly, not the muzzle's line.
   - Space held with the phaser lowered looks as far as sight goes along their facing (`setFarLook`), extending their frontier, recast as they turn or walk. Raised, the same look runs along the muzzle's line. It overrides any look whilst held. In gaze mode, or whilst `r` is held, it casts along the pointer instead, and gaze mode stays on. The bar says "focal max" ("gaze max"). Letting go of Space ends it, giving the look back.
   - A look caps their frontier at its distance (`w.player.look`). A tap or right-click sets it until another, or the hud-toast's x. It starts at 1.5m (`lookBase`, kept per World). `r` held a while, or gaze mode, steers it only whilst on. See Following the player in `docs/camera.md`.
 
