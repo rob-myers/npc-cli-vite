@@ -27,6 +27,7 @@ import { jsonParser } from "@npc-cli/util/json-parser";
 import { hashJson, hashText, info } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
+import { readLayoutsRaw } from "../service/read-assets";
 import { createSightPool } from "../service/sight-pool";
 
 const opts = parseArgs({
@@ -45,8 +46,8 @@ const codeHash = hashText(
     .join("\n"),
 );
 
-const raw = JSON.parse(fs.readFileSync(path.resolve(publicDir, "assets.json"), "utf-8"));
-const assets = AssetsSchema.parse(raw);
+const raw = readLayoutsRaw();
+const assets = { layout: AssetsSchema.shape.layout.parse(raw) };
 fs.mkdirSync(spotDir, { recursive: true });
 
 /** Geomorphs whose layout or spot code changed, unless forced */
@@ -54,7 +55,7 @@ const todo = Object.values(assets.layout).flatMap((layout) => {
   if (layout === undefined || (onlyGmKeys !== undefined && !onlyGmKeys.includes(layout.key))) return [];
   if (isPlaygroundSymbolKey(layout.key)) return []; // edited at runtime: spots do not follow
   const file = path.resolve(spotDir, `${layout.key}.json`);
-  const layoutHash = hashJson([raw.layout[layout.key], codeHash], false);
+  const layoutHash = hashJson([raw[layout.key], codeHash], false);
   const prev = fs.existsSync(file)
     ? SpotsFileSchema.safeParse(JSON.parse(fs.readFileSync(file, "utf-8"))).data
     : undefined;

@@ -33,7 +33,7 @@ import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import { perf } from "../service/performance";
-import { assetsPaths } from "../service/read-assets";
+import { assetsPaths, readAssetsRaw } from "../service/read-assets";
 
 const opts = parseArgs({
   args: process.argv.slice(2),
@@ -59,9 +59,10 @@ info(`[gen-assets-json]`, `changedFiles: ${safeJsonCompact(changedFiles.map((f) 
 
 const assetsJsonPath = assetsPaths.index;
 const publicDir = path.dirname(assetsJsonPath);
-const prevAssetsRaw = await fs.promises.readFile(assetsJsonPath, "utf-8").catch(warn);
+const hasPrev = [assetsPaths.index, assetsPaths.edit].every((file) => fs.existsSync(file));
+if (!hasPrev) warn("[gen-assets-json] no previous assets: starting afresh");
 // we ignore parse errors as we extend AssetsSchema
-const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw).data ?? {
+const assets: AssetsType = AssetsSchema.safeParse(hasPrev ? readAssetsRaw() : null).data ?? {
   map: {},
   symbol: {},
   flattened: {},

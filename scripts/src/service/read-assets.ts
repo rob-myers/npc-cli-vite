@@ -17,12 +17,17 @@ export const assetsPaths = {
 export function readAssetsRaw(): AssetsEncodedType {
   const { map, theme, hash } = readJson(assetsPaths.index);
   const { symbol, flattened, stratifiedSymbolNodes } = readJson(assetsPaths.edit);
-  const layout = Object.fromEntries(
+  const layout = readLayoutsRaw();
+  return { symbol, map, flattened, stratifiedSymbolNodes, layout, theme, hash };
+}
+
+/** Every `layout/{gmKey}.json`, still encoded */
+export function readLayoutsRaw(): AssetsEncodedType["layout"] {
+  return Object.fromEntries(
     fs
       .globSync(path.join(assetsPaths.layoutDir, "*.json"))
       .map((file) => [path.basename(file, ".json"), readJson(file)]),
   );
-  return { symbol, map, flattened, stratifiedSymbolNodes, layout, theme, hash };
 }
 
 export function readAssets(): AssetsType {
