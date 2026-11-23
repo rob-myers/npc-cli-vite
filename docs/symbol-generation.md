@@ -255,7 +255,9 @@ reading runs of dark pixels along a row or column.
 - **A solid block** e.g. a fuel tank is a `path` named `wall no-fill broad` round its outline, with a
   `poly ceil fill=#5551 stroke=#333 strokeWidth=4` on top. The ceiling is a PARALLEL inset of that
   outline: move each edge in by the same distance and intersect neighbours. Insetting by eye leaves the
-  diagonals closer than the rest, and the line reads uneven.
+  diagonals closer than the rest, and the line reads uneven. At a sharp tip, an edge the inset turns
+  back on itself is dropped, and its neighbours intersected instead. Else the ceiling crosses itself.
+  Its top edge lies flush with any wall it meets: a 1 sgu step folds the room's floor wiring.
 - **Labels** are `decor point label=…`, one per room that has none from a placed symbol; quote one with
   a space, `label='repair bay'`.
 - **Left for a person**: a door lying along a slanted wall. Whether a rotated door rect works is untested.
