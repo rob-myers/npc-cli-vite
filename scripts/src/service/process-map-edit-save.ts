@@ -268,7 +268,8 @@ async function ensureManifests(type: "symbol" | "map", opts: ProcessFileOpts) {
   }
 
   const prevManifestRaw = safeJsonCompact(prevManifest);
-  const nextManifest = { byKey };
+  // by key, so a file renamed and back leaves the manifest as it was
+  const nextManifest = { byKey: Object.fromEntries(Object.entries(byKey).sort(([a], [b]) => (a < b ? -1 : 1))) };
   const nextManifestRaw = safeJsonCompact(z.decode(schema.manifest, nextManifest));
 
   if (prevManifestRaw === nextManifestRaw) {

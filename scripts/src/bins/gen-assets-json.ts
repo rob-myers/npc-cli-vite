@@ -108,7 +108,11 @@ const layoutFiles = layoutRaws.map(([gmKey, raw]) => [assetsPaths.layout(gmKey),
 const staleLayoutFiles = fs
   .globSync(path.join(assetsPaths.layoutDir, "*.json"))
   .filter((file) => !layoutFiles.some(([f]) => f === file));
-const index = { map, hash: { ...hash, layout: Object.fromEntries(layoutRaws.map(([k, raw]) => [k, hashText(raw)])) } };
+const index = {
+  // by key, so a map renamed and back leaves the index as it was
+  map: Object.fromEntries(entries(map).sort(([a], [b]) => (a < b ? -1 : 1))),
+  hash: { ...hash, layout: Object.fromEntries(layoutRaws.map(([k, raw]) => [k, hashText(raw)])) },
+};
 
 fs.mkdirSync(assetsPaths.layoutDir, { recursive: true });
 const written = [

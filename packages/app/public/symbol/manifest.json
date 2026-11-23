@@ -1,32 +1,5 @@
 {
   "byKey": {
-    "stateroom--012": {
-      "filename": "stateroom--012.json",
-      "thumbnailFilename": "stateroom--012.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
-      "type": "symbol",
-      "key": "stateroom--012"
-    },
-    "stateroom--019": {
-      "filename": "stateroom--019.json",
-      "thumbnailFilename": "stateroom--019.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
-      "type": "symbol",
-      "key": "stateroom--019"
-    },
-    "console--051": {
-      "filename": "console--051.json",
-      "thumbnailFilename": "console--051.thumbnail.png",
-      "width": 30,
-      "height": 30,
-      "bounds": {"x": 1.3, "y": -0.5, "width": 27.4, "height": 31},
-      "type": "symbol",
-      "key": "console--051"
-    },
     "bed--003": {
       "filename": "bed--003.json",
       "thumbnailFilename": "bed--003.thumbnail.png",
@@ -35,96 +8,6 @@
       "bounds": {"x": -0.7, "y": -0.7, "width": 100.4, "height": 61.4},
       "type": "symbol",
       "key": "bed--003"
-    },
-    "extra--004--desk": {
-      "filename": "extra--004--desk.json",
-      "thumbnailFilename": "extra--004--desk.thumbnail.png",
-      "width": 30,
-      "height": 60,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4},
-      "type": "symbol",
-      "key": "extra--004--desk"
-    },
-    "console--033": {
-      "filename": "console--033.json",
-      "thumbnailFilename": "console--033.thumbnail.png",
-      "width": 30,
-      "height": 30,
-      "bounds": {"x": 1.6, "y": -1.1, "width": 26.8, "height": 32.2},
-      "type": "symbol",
-      "key": "console--033"
-    },
-    "extra--003--chair": {
-      "filename": "extra--003--chair.json",
-      "thumbnailFilename": "extra--003--chair.thumbnail.png",
-      "width": 20,
-      "height": 20,
-      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
-      "type": "symbol",
-      "key": "extra--003--chair"
-    },
-    "g-301--bridge": {
-      "filename": "g-301--bridge.json",
-      "thumbnailFilename": "g-301--bridge.thumbnail.png",
-      "width": 1200,
-      "height": 600,
-      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
-      "type": "symbol",
-      "key": "g-301--bridge"
-    },
-    "stateroom--014": {
-      "filename": "stateroom--014.json",
-      "thumbnailFilename": "stateroom--014.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 124, "height": 126.8},
-      "type": "symbol",
-      "key": "stateroom--014"
-    },
-    "stateroom--036": {
-      "filename": "stateroom--036.json",
-      "thumbnailFilename": "stateroom--036.thumbnail.png",
-      "width": 120,
-      "height": 240,
-      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
-      "type": "symbol",
-      "key": "stateroom--036"
-    },
-    "console--019": {
-      "filename": "console--019.json",
-      "thumbnailFilename": "console--019.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
-      "type": "symbol",
-      "key": "console--019"
-    },
-    "bridge--042": {
-      "filename": "bridge--042.json",
-      "thumbnailFilename": "bridge--042.thumbnail.png",
-      "width": 480,
-      "height": 540,
-      "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
-      "type": "symbol",
-      "key": "bridge--042"
-    },
-    "office--001": {
-      "filename": "office--001.json",
-      "thumbnailFilename": "office--001.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
-      "type": "symbol",
-      "key": "office--001"
-    },
-    "g-101--multipurpose": {
-      "filename": "g-101--multipurpose.json",
-      "thumbnailFilename": "g-101--multipurpose.thumbnail.png",
-      "width": 1200,
-      "height": 1200,
-      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
-      "type": "symbol",
-      "key": "g-101--multipurpose"
     },
     "bed--004": {
       "filename": "bed--004.json",
@@ -144,6 +27,60 @@
       "type": "symbol",
       "key": "bed--005"
     },
+    "bridge--042": {
+      "filename": "bridge--042.json",
+      "thumbnailFilename": "bridge--042.thumbnail.png",
+      "width": 480,
+      "height": 540,
+      "bounds": {"x": -4.5, "y": -13, "width": 489.2, "height": 558},
+      "type": "symbol",
+      "key": "bridge--042"
+    },
+    "console--010": {
+      "filename": "console--010.json",
+      "thumbnailFilename": "console--010.thumbnail.png",
+      "width": 73.4,
+      "height": 121.4,
+      "bounds": {"x": 0, "y": 0, "width": 73.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--010"
+    },
+    "console--011": {
+      "filename": "console--011.json",
+      "thumbnailFilename": "console--011.thumbnail.png",
+      "width": 75,
+      "height": 120,
+      "bounds": {"x": 0, "y": -0.5, "width": 73.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--011"
+    },
+    "console--018": {
+      "filename": "console--018.json",
+      "thumbnailFilename": "console--018.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 61.4},
+      "type": "symbol",
+      "key": "console--018"
+    },
+    "console--019": {
+      "filename": "console--019.json",
+      "thumbnailFilename": "console--019.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--019"
+    },
+    "console--022": {
+      "filename": "console--022.json",
+      "thumbnailFilename": "console--022.thumbnail.png",
+      "width": 60,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--022"
+    },
     "console--031": {
       "filename": "console--031.json",
       "thumbnailFilename": "console--031.thumbnail.png",
@@ -153,41 +90,131 @@
       "type": "symbol",
       "key": "console--031"
     },
-    "misc-stellar-cartography--023": {
-      "filename": "misc-stellar-cartography--023.json",
-      "thumbnailFilename": "misc-stellar-cartography--023.thumbnail.png",
+    "console--033": {
+      "filename": "console--033.json",
+      "thumbnailFilename": "console--033.thumbnail.png",
+      "width": 30,
+      "height": 30,
+      "bounds": {"x": 1.6, "y": -1.1, "width": 26.8, "height": 32.2},
+      "type": "symbol",
+      "key": "console--033"
+    },
+    "console--051": {
+      "filename": "console--051.json",
+      "thumbnailFilename": "console--051.thumbnail.png",
+      "width": 30,
+      "height": 30,
+      "bounds": {"x": 1.3, "y": -0.5, "width": 27.4, "height": 31},
+      "type": "symbol",
+      "key": "console--051"
+    },
+    "couch-and-chairs--006": {
+      "filename": "couch-and-chairs--006.json",
+      "thumbnailFilename": "couch-and-chairs--006.thumbnail.png",
+      "width": 30,
+      "height": 120,
+      "bounds": {"x": 1.3, "y": 2.5, "width": 27.4, "height": 115},
+      "type": "symbol",
+      "key": "couch-and-chairs--006"
+    },
+    "couch-and-chairs--007": {
+      "filename": "couch-and-chairs--007.json",
+      "thumbnailFilename": "couch-and-chairs--007.thumbnail.png",
+      "width": 30,
+      "height": 80,
+      "bounds": {"x": -2, "y": -2, "width": 33.8, "height": 83.4},
+      "type": "symbol",
+      "key": "couch-and-chairs--007"
+    },
+    "counter--006": {
+      "filename": "counter--006.json",
+      "thumbnailFilename": "counter--006.thumbnail.png",
+      "width": 120,
+      "height": 24,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 25.4},
+      "type": "symbol",
+      "key": "counter--006"
+    },
+    "counter--010": {
+      "filename": "counter--010.json",
+      "thumbnailFilename": "counter--010.thumbnail.png",
+      "width": 20,
+      "height": 18,
+      "bounds": {"x": 0, "y": -0.3, "width": 20.2, "height": 18.6},
+      "type": "symbol",
+      "key": "counter--010"
+    },
+    "empty-room--006": {
+      "filename": "empty-room--006.json",
+      "thumbnailFilename": "empty-room--006.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "empty-room--006"
+    },
+    "empty-room--013": {
+      "filename": "empty-room--013.json",
+      "thumbnailFilename": "empty-room--013.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -4, "width": 124, "height": 186.6},
+      "type": "symbol",
+      "key": "empty-room--013"
+    },
+    "empty-room--019": {
+      "filename": "empty-room--019.json",
+      "thumbnailFilename": "empty-room--019.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 244},
+      "type": "symbol",
+      "key": "empty-room--019"
+    },
+    "empty-room--020": {
+      "filename": "empty-room--020.json",
+      "thumbnailFilename": "empty-room--020.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 246.6},
+      "type": "symbol",
+      "key": "empty-room--020"
+    },
+    "empty-room--039": {
+      "filename": "empty-room--039.json",
+      "thumbnailFilename": "empty-room--039.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -5, "y": -2, "width": 186.8, "height": 244},
+      "type": "symbol",
+      "key": "empty-room--039"
+    },
+    "empty-room--060": {
+      "filename": "empty-room--060.json",
+      "thumbnailFilename": "empty-room--060.thumbnail.png",
       "width": 240,
       "height": 240,
-      "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 244},
       "type": "symbol",
-      "key": "misc-stellar-cartography--023"
+      "key": "empty-room--060"
     },
-    "window--007": {
-      "filename": "window--007.json",
-      "thumbnailFilename": "window--007.thumbnail.png",
-      "width": 180,
-      "height": 12,
-      "bounds": {"x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4},
+    "engineering--045": {
+      "filename": "engineering--045.json",
+      "thumbnailFilename": "engineering--045.thumbnail.png",
+      "width": 360,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 364, "height": 246.6},
       "type": "symbol",
-      "key": "window--007"
+      "key": "engineering--045"
     },
-    "table--004": {
-      "filename": "table--004.json",
-      "thumbnailFilename": "table--004.thumbnail.png",
-      "width": 60,
-      "height": 120,
-      "bounds": {"x": -2, "y": -12, "width": 68.8, "height": 144.8},
+    "engineering--047": {
+      "filename": "engineering--047.json",
+      "thumbnailFilename": "engineering--047.thumbnail.png",
+      "width": 240,
+      "height": 420,
+      "bounds": {"x": -4.7, "y": -2, "width": 246.8, "height": 424},
       "type": "symbol",
-      "key": "table--004"
-    },
-    "extra--005--chair": {
-      "filename": "extra--005--chair.json",
-      "thumbnailFilename": "extra--005--chair.thumbnail.png",
-      "width": 20,
-      "height": 20,
-      "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
-      "type": "symbol",
-      "key": "extra--005--chair"
+      "key": "engineering--047"
     },
     "extra--001--fresher": {
       "filename": "extra--001--fresher.json",
@@ -207,248 +234,32 @@
       "type": "symbol",
       "key": "extra--002--fresher"
     },
-    "extra--021--shower": {
-      "filename": "extra--021--shower.json",
-      "thumbnailFilename": "extra--021--shower.thumbnail.png",
-      "width": 36,
-      "height": 58,
-      "bounds": {"x": 0, "y": 0, "width": 36.2, "height": 58.8},
-      "type": "symbol",
-      "key": "extra--021--shower"
-    },
-    "fuel--010": {
-      "filename": "fuel--010.json",
-      "thumbnailFilename": "fuel--010.thumbnail.png",
-      "width": 240,
-      "height": 120,
-      "bounds": {"x": -3.8, "y": -3.9, "width": 247.6, "height": 127.8},
-      "type": "symbol",
-      "key": "fuel--010"
-    },
-    "stateroom--020": {
-      "filename": "stateroom--020.json",
-      "thumbnailFilename": "stateroom--020.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
-      "type": "symbol",
-      "key": "stateroom--020"
-    },
-    "g-302--xboat-repair-bay": {
-      "filename": "g-302--xboat-repair-bay.json",
-      "thumbnailFilename": "g-302--xboat-repair-bay.thumbnail.png",
-      "width": 1200,
-      "height": 600,
-      "bounds": {"x": -4, "y": -62, "width": 1212, "height": 667},
-      "type": "symbol",
-      "key": "g-302--xboat-repair-bay"
-    },
-    "couch-and-chairs--006": {
-      "filename": "couch-and-chairs--006.json",
-      "thumbnailFilename": "couch-and-chairs--006.thumbnail.png",
-      "width": 30,
-      "height": 120,
-      "bounds": {"x": 1.3, "y": 2.5, "width": 27.4, "height": 115},
-      "type": "symbol",
-      "key": "couch-and-chairs--006"
-    },
-    "g-301--playground": {
-      "filename": "g-301--playground.json",
-      "thumbnailFilename": "g-301--playground.thumbnail.png",
-      "width": 1200,
-      "height": 600,
-      "bounds": {"x": -6, "y": -22, "width": 1212, "height": 628},
-      "type": "symbol",
-      "key": "g-301--playground"
-    },
-    "iris-valves--006": {
-      "filename": "iris-valves--006.json",
-      "thumbnailFilename": "iris-valves--006.thumbnail.png",
-      "width": 44,
-      "height": 44,
-      "bounds": {"x": 0, "y": 0, "width": 44.2, "height": 44},
-      "type": "symbol",
-      "key": "iris-valves--006"
-    },
-    "machinery--158": {
-      "filename": "machinery--158.json",
-      "thumbnailFilename": "machinery--158.thumbnail.png",
-      "width": 112,
-      "height": 220,
-      "bounds": {"x": 2, "y": 0, "width": 112, "height": 220},
-      "type": "symbol",
-      "key": "machinery--158"
-    },
-    "office--026": {
-      "filename": "office--026.json",
-      "thumbnailFilename": "office--026.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
-      "type": "symbol",
-      "key": "office--026"
-    },
-    "console--011": {
-      "filename": "console--011.json",
-      "thumbnailFilename": "console--011.thumbnail.png",
-      "width": 75,
-      "height": 120,
-      "bounds": {"x": 0, "y": -0.5, "width": 73.4, "height": 121.4},
-      "type": "symbol",
-      "key": "console--011"
-    },
-    "extra--019--table": {
-      "filename": "extra--019--table.json",
-      "thumbnailFilename": "extra--019--table.thumbnail.png",
-      "width": 30,
-      "height": 120,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 121.4},
-      "type": "symbol",
-      "key": "extra--019--table"
-    },
-    "window--001": {
-      "filename": "window--001.json",
-      "thumbnailFilename": "window--001.thumbnail.png",
-      "width": 60,
-      "height": 12,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 13.4},
-      "type": "symbol",
-      "key": "window--001"
-    },
-    "extra--010--machine": {
-      "filename": "extra--010--machine.json",
-      "thumbnailFilename": "extra--010--machine.thumbnail.png",
-      "width": 100,
-      "height": 40,
-      "bounds": {"x": 0, "y": 0, "width": 100, "height": 40},
-      "type": "symbol",
-      "key": "extra--010--machine"
-    },
-    "stateroom--018": {
-      "filename": "stateroom--018.json",
-      "thumbnailFilename": "stateroom--018.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
-      "type": "symbol",
-      "key": "stateroom--018"
-    },
-    "fresher--020": {
-      "filename": "fresher--020.json",
-      "thumbnailFilename": "fresher--020.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.8, "height": 124},
-      "type": "symbol",
-      "key": "fresher--020"
-    },
-    "extra--007--desk": {
-      "filename": "extra--007--desk.json",
-      "thumbnailFilename": "extra--007--desk.thumbnail.png",
-      "width": 40,
-      "height": 24,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 41.4, "height": 25.4},
-      "type": "symbol",
-      "key": "extra--007--desk"
-    },
-    "counter--010": {
-      "filename": "counter--010.json",
-      "thumbnailFilename": "counter--010.thumbnail.png",
+    "extra--003--chair": {
+      "filename": "extra--003--chair.json",
+      "thumbnailFilename": "extra--003--chair.thumbnail.png",
       "width": 20,
-      "height": 18,
-      "bounds": {"x": 0, "y": -0.3, "width": 20.2, "height": 18.6},
+      "height": 20,
+      "bounds": {"x": 0.3, "y": -0.3, "width": 19.4, "height": 20.6},
       "type": "symbol",
-      "key": "counter--010"
+      "key": "extra--003--chair"
     },
-    "counter--006": {
-      "filename": "counter--006.json",
-      "thumbnailFilename": "counter--006.thumbnail.png",
-      "width": 120,
-      "height": 24,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 25.4},
-      "type": "symbol",
-      "key": "counter--006"
-    },
-    "window--005": {
-      "filename": "window--005.json",
-      "thumbnailFilename": "window--005.thumbnail.png",
-      "width": 120,
-      "height": 12,
-      "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},
-      "type": "symbol",
-      "key": "window--005"
-    },
-    "fresher--002": {
-      "filename": "fresher--002.json",
-      "thumbnailFilename": "fresher--002.thumbnail.png",
-      "width": 60,
+    "extra--004--desk": {
+      "filename": "extra--004--desk.json",
+      "thumbnailFilename": "extra--004--desk.thumbnail.png",
+      "width": 30,
       "height": 60,
-      "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
+      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 61.4},
       "type": "symbol",
-      "key": "fresher--002"
+      "key": "extra--004--desk"
     },
-    "extra--022--fresher": {
-      "filename": "extra--022--fresher.json",
-      "thumbnailFilename": "extra--022--fresher.thumbnail.png",
+    "extra--005--chair": {
+      "filename": "extra--005--chair.json",
+      "thumbnailFilename": "extra--005--chair.thumbnail.png",
       "width": 20,
-      "height": 36,
-      "bounds": {"x": -0.5, "y": 0, "width": 21.2, "height": 35.6},
+      "height": 20,
+      "bounds": {"x": 0.5, "y": 0.5, "width": 19, "height": 19},
       "type": "symbol",
-      "key": "extra--022--fresher"
-    },
-    "couch-and-chairs--007": {
-      "filename": "couch-and-chairs--007.json",
-      "thumbnailFilename": "couch-and-chairs--007.thumbnail.png",
-      "width": 30,
-      "height": 80,
-      "bounds": {"x": -2, "y": -2, "width": 33.8, "height": 83.4},
-      "type": "symbol",
-      "key": "couch-and-chairs--007"
-    },
-    "extra--018--table": {
-      "filename": "extra--018--table.json",
-      "thumbnailFilename": "extra--018--table.thumbnail.png",
-      "width": 19,
-      "height": 19,
-      "bounds": {"x": 0, "y": 0, "width": 19, "height": 19},
-      "type": "symbol",
-      "key": "extra--018--table"
-    },
-    "table--009": {
-      "filename": "table--009.json",
-      "thumbnailFilename": "table--009.thumbnail.png",
-      "width": 50,
-      "height": 50,
-      "bounds": {"x": -0.5, "y": -0.5, "width": 51, "height": 50.8},
-      "type": "symbol",
-      "key": "table--009"
-    },
-    "empty-room--013": {
-      "filename": "empty-room--013.json",
-      "thumbnailFilename": "empty-room--013.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -4, "width": 124, "height": 186.6},
-      "type": "symbol",
-      "key": "empty-room--013"
-    },
-    "empty-room--039": {
-      "filename": "empty-room--039.json",
-      "thumbnailFilename": "empty-room--039.thumbnail.png",
-      "width": 180,
-      "height": 240,
-      "bounds": {"x": -5, "y": -2, "width": 186.8, "height": 244},
-      "type": "symbol",
-      "key": "empty-room--039"
-    },
-    "fresher--025": {
-      "filename": "fresher--025.json",
-      "thumbnailFilename": "fresher--025.thumbnail.png",
-      "width": 180,
-      "height": 120,
-      "bounds": {"x": -4, "y": -2, "width": 186.6, "height": 124},
-      "type": "symbol",
-      "key": "fresher--025"
+      "key": "extra--005--chair"
     },
     "extra--006--desk": {
       "filename": "extra--006--desk.json",
@@ -459,365 +270,68 @@
       "type": "symbol",
       "key": "extra--006--desk"
     },
-    "medical--007": {
-      "filename": "medical--007.json",
-      "thumbnailFilename": "medical--007.thumbnail.png",
-      "width": 180,
-      "height": 120,
-      "bounds": {"x": -2, "y": -4, "width": 184, "height": 126.6},
+    "extra--007--desk": {
+      "filename": "extra--007--desk.json",
+      "thumbnailFilename": "extra--007--desk.thumbnail.png",
+      "width": 40,
+      "height": 24,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 41.4, "height": 25.4},
       "type": "symbol",
-      "key": "medical--007"
+      "key": "extra--007--desk"
     },
-    "machinery--155": {
-      "filename": "machinery--155.json",
-      "thumbnailFilename": "machinery--155.thumbnail.png",
-      "width": 104,
-      "height": 220,
-      "bounds": {"x": 0, "y": 0, "width": 104, "height": 220},
-      "type": "symbol",
-      "key": "machinery--155"
-    },
-    "machinery--156": {
-      "filename": "machinery--156.json",
-      "thumbnailFilename": "machinery--156.thumbnail.png",
-      "width": 112,
-      "height": 220,
-      "bounds": {"x": 0, "y": 0, "width": 112, "height": 220},
-      "type": "symbol",
-      "key": "machinery--156"
-    },
-    "machinery--357": {
-      "filename": "machinery--357.json",
-      "thumbnailFilename": "machinery--357.thumbnail.png",
-      "width": 240,
-      "height": 120,
-      "bounds": {"x": -2, "y": -14.6, "width": 244, "height": 136.6},
-      "type": "symbol",
-      "key": "machinery--357"
-    },
-    "office--020": {
-      "filename": "office--020.json",
-      "thumbnailFilename": "office--020.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
-      "type": "symbol",
-      "key": "office--020"
-    },
-    "office--061": {
-      "filename": "office--061.json",
-      "thumbnailFilename": "office--061.thumbnail.png",
-      "width": 180,
-      "height": 240,
-      "bounds": {"x": -4.8, "y": -2, "width": 186.8, "height": 244},
-      "type": "symbol",
-      "key": "office--061"
-    },
-    "medical--008": {
-      "filename": "medical--008.json",
-      "thumbnailFilename": "medical--008.thumbnail.png",
-      "width": 180,
-      "height": 120,
-      "bounds": {"x": -2, "y": -4.6, "width": 184, "height": 126.6},
-      "type": "symbol",
-      "key": "medical--008"
-    },
-    "office--023": {
-      "filename": "office--023.json",
-      "thumbnailFilename": "office--023.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
-      "type": "symbol",
-      "key": "office--023"
-    },
-    "shop--027": {
-      "filename": "shop--027.json",
-      "thumbnailFilename": "shop--027.thumbnail.png",
-      "width": 97.4,
-      "height": 25.6,
-      "bounds": {"x": 0, "y": 0, "width": 97.4, "height": 25.6},
-      "type": "symbol",
-      "key": "shop--027"
-    },
-    "shop--031": {
-      "filename": "shop--031.json",
-      "thumbnailFilename": "shop--031.thumbnail.png",
-      "width": 53.6,
-      "height": 29.2,
-      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
-      "type": "symbol",
-      "key": "shop--031"
-    },
-    "shop--035": {
-      "filename": "shop--035.json",
-      "thumbnailFilename": "shop--035.thumbnail.png",
-      "width": 53.6,
-      "height": 29.2,
-      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
-      "type": "symbol",
-      "key": "shop--035"
-    },
-    "shop--037": {
-      "filename": "shop--037.json",
-      "thumbnailFilename": "shop--037.thumbnail.png",
-      "width": 53.6,
-      "height": 29.2,
-      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
-      "type": "symbol",
-      "key": "shop--037"
-    },
-    "shop--028": {
-      "filename": "shop--028.json",
-      "thumbnailFilename": "shop--028.thumbnail.png",
-      "width": 97,
-      "height": 46.8,
-      "bounds": {"x": 0, "y": 0, "width": 97, "height": 46.8},
-      "type": "symbol",
-      "key": "shop--028"
-    },
-    "shop--033": {
-      "filename": "shop--033.json",
-      "thumbnailFilename": "shop--033.thumbnail.png",
-      "width": 101.2,
-      "height": 38.8,
-      "bounds": {"x": 0, "y": 0, "width": 101.2, "height": 38.8},
-      "type": "symbol",
-      "key": "shop--033"
-    },
-    "empty-room--006": {
-      "filename": "empty-room--006.json",
-      "thumbnailFilename": "empty-room--006.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
-      "type": "symbol",
-      "key": "empty-room--006"
-    },
-    "empty-room--020": {
-      "filename": "empty-room--020.json",
-      "thumbnailFilename": "empty-room--020.thumbnail.png",
-      "width": 120,
-      "height": 240,
-      "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 246.6},
-      "type": "symbol",
-      "key": "empty-room--020"
-    },
-    "ships-locker--011": {
-      "filename": "ships-locker--011.json",
-      "thumbnailFilename": "ships-locker--011.thumbnail.png",
-      "width": 120,
-      "height": 60,
-      "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 66.8},
-      "type": "symbol",
-      "key": "ships-locker--011"
-    },
-    "office--006": {
-      "filename": "office--006.json",
-      "thumbnailFilename": "office--006.thumbnail.png",
-      "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
-      "type": "symbol",
-      "key": "office--006"
-    },
-    "lounge--015": {
-      "filename": "lounge--015.json",
-      "thumbnailFilename": "lounge--015.thumbnail.png",
-      "width": 240,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
-      "type": "symbol",
-      "key": "lounge--015"
-    },
-    "low-berth--003": {
-      "filename": "low-berth--003.json",
-      "thumbnailFilename": "low-berth--003.thumbnail.png",
-      "width": 61.4,
-      "height": 71.2,
-      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 71.2},
-      "type": "symbol",
-      "key": "low-berth--003"
-    },
-    "medical-bed--005": {
-      "filename": "medical-bed--005.json",
-      "thumbnailFilename": "medical-bed--005.thumbnail.png",
-      "width": 76.4,
-      "height": 40.4,
-      "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
-      "type": "symbol",
-      "key": "medical-bed--005"
-    },
-    "console--010": {
-      "filename": "console--010.json",
-      "thumbnailFilename": "console--010.thumbnail.png",
-      "width": 73.4,
-      "height": 121.4,
-      "bounds": {"x": 0, "y": 0, "width": 73.4, "height": 121.4},
-      "type": "symbol",
-      "key": "console--010"
-    },
-    "machinery--091": {
-      "filename": "machinery--091.json",
-      "thumbnailFilename": "machinery--091.thumbnail.png",
+    "extra--010--machine": {
+      "filename": "extra--010--machine.json",
+      "thumbnailFilename": "extra--010--machine.thumbnail.png",
       "width": 100,
-      "height": 111.8,
-      "bounds": {"x": 0, "y": 0, "width": 100, "height": 111.8},
+      "height": 40,
+      "bounds": {"x": 0, "y": 0, "width": 100, "height": 40},
       "type": "symbol",
-      "key": "machinery--091"
+      "key": "extra--010--machine"
     },
-    "g-102--research-deck": {
-      "filename": "g-102--research-deck.json",
-      "thumbnailFilename": "g-102--research-deck.thumbnail.png",
-      "width": 1200,
-      "height": 1200,
-      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+    "extra--018--table": {
+      "filename": "extra--018--table.json",
+      "thumbnailFilename": "extra--018--table.thumbnail.png",
+      "width": 19,
+      "height": 19,
+      "bounds": {"x": 0, "y": 0, "width": 19, "height": 19},
       "type": "symbol",
-      "key": "g-102--research-deck"
+      "key": "extra--018--table"
     },
-    "ships-locker--003": {
-      "filename": "ships-locker--003.json",
-      "thumbnailFilename": "ships-locker--003.thumbnail.png",
-      "width": 60,
-      "height": 60,
-      "bounds": {"x": -2, "y": -4.7, "width": 64, "height": 66.8},
-      "type": "symbol",
-      "key": "ships-locker--003"
-    },
-    "ships-locker--007": {
-      "filename": "ships-locker--007.json",
-      "thumbnailFilename": "ships-locker--007.thumbnail.png",
-      "width": 120,
-      "height": 60,
-      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 66.8},
-      "type": "symbol",
-      "key": "ships-locker--007"
-    },
-    "ships-locker--020": {
-      "filename": "ships-locker--020.json",
-      "thumbnailFilename": "ships-locker--020.thumbnail.png",
-      "width": 120,
+    "extra--019--table": {
+      "filename": "extra--019--table.json",
+      "thumbnailFilename": "extra--019--table.thumbnail.png",
+      "width": 30,
       "height": 120,
-      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 126.8},
+      "bounds": {"x": -0.7, "y": -0.7, "width": 31.4, "height": 121.4},
       "type": "symbol",
-      "key": "ships-locker--020"
+      "key": "extra--019--table"
     },
-    "console--018": {
-      "filename": "console--018.json",
-      "thumbnailFilename": "console--018.thumbnail.png",
-      "width": 60,
-      "height": 60,
-      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 61.4},
-      "type": "symbol",
-      "key": "console--018"
-    },
-    "office--004": {
-      "filename": "office--004.json",
-      "thumbnailFilename": "office--004.thumbnail.png",
+    "extra--020--table": {
+      "filename": "extra--020--table.json",
+      "thumbnailFilename": "extra--020--table.thumbnail.png",
       "width": 120,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "height": 40,
+      "bounds": {"x": 0, "y": 0, "width": 120, "height": 40},
       "type": "symbol",
-      "key": "office--004"
+      "key": "extra--020--table"
     },
-    "fresher--036": {
-      "filename": "fresher--036.json",
-      "thumbnailFilename": "fresher--036.thumbnail.png",
-      "width": 240,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 244, "height": 126.6},
+    "extra--021--shower": {
+      "filename": "extra--021--shower.json",
+      "thumbnailFilename": "extra--021--shower.thumbnail.png",
+      "width": 36,
+      "height": 58,
+      "bounds": {"x": 0, "y": 0, "width": 36.2, "height": 58.8},
       "type": "symbol",
-      "key": "fresher--036"
+      "key": "extra--021--shower"
     },
-    "lounge--017": {
-      "filename": "lounge--017.json",
-      "thumbnailFilename": "lounge--017.thumbnail.png",
-      "width": 240,
-      "height": 120,
-      "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
+    "extra--022--fresher": {
+      "filename": "extra--022--fresher.json",
+      "thumbnailFilename": "extra--022--fresher.thumbnail.png",
+      "width": 20,
+      "height": 36,
+      "bounds": {"x": -0.5, "y": 0, "width": 21.2, "height": 35.6},
       "type": "symbol",
-      "key": "lounge--017"
-    },
-    "empty-room--019": {
-      "filename": "empty-room--019.json",
-      "thumbnailFilename": "empty-room--019.thumbnail.png",
-      "width": 120,
-      "height": 240,
-      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 244},
-      "type": "symbol",
-      "key": "empty-room--019"
-    },
-    "empty-room--060": {
-      "filename": "empty-room--060.json",
-      "thumbnailFilename": "empty-room--060.thumbnail.png",
-      "width": 240,
-      "height": 240,
-      "bounds": {"x": -2, "y": -2, "width": 244, "height": 244},
-      "type": "symbol",
-      "key": "empty-room--060"
-    },
-    "misc-stellar-cartography--020": {
-      "filename": "misc-stellar-cartography--020.json",
-      "thumbnailFilename": "misc-stellar-cartography--020.thumbnail.png",
-      "width": 600,
-      "height": 600,
-      "bounds": {"x": -2, "y": -2, "width": 604, "height": 604},
-      "type": "symbol",
-      "key": "misc-stellar-cartography--020"
-    },
-    "engineering--047": {
-      "filename": "engineering--047.json",
-      "thumbnailFilename": "engineering--047.thumbnail.png",
-      "width": 240,
-      "height": 420,
-      "bounds": {"x": -4.7, "y": -2, "width": 246.8, "height": 424},
-      "type": "symbol",
-      "key": "engineering--047"
-    },
-    "lab--018": {
-      "filename": "lab--018.json",
-      "thumbnailFilename": "lab--018.thumbnail.png",
-      "width": 240,
-      "height": 240,
-      "bounds": {"x": -2, "y": -6.5, "width": 244, "height": 248.6},
-      "type": "symbol",
-      "key": "lab--018"
-    },
-    "lab--012": {
-      "filename": "lab--012.json",
-      "thumbnailFilename": "lab--012.thumbnail.png",
-      "width": 240,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 184},
-      "type": "symbol",
-      "key": "lab--012"
-    },
-    "lab--023": {
-      "filename": "lab--023.json",
-      "thumbnailFilename": "lab--023.thumbnail.png",
-      "width": 240,
-      "height": 240,
-      "bounds": {"x": -2, "y": -4.5, "width": 244, "height": 246.6},
-      "type": "symbol",
-      "key": "lab--023"
-    },
-    "engineering--045": {
-      "filename": "engineering--045.json",
-      "thumbnailFilename": "engineering--045.thumbnail.png",
-      "width": 360,
-      "height": 240,
-      "bounds": {"x": -2, "y": -2, "width": 364, "height": 246.6},
-      "type": "symbol",
-      "key": "engineering--045"
-    },
-    "office--074": {
-      "filename": "office--074.json",
-      "thumbnailFilename": "office--074.thumbnail.png",
-      "width": 240,
-      "height": 240,
-      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 244},
-      "type": "symbol",
-      "key": "office--074"
+      "key": "extra--022--fresher"
     },
     "extra--023--machine": {
       "filename": "extra--023--machine.json",
@@ -837,6 +351,96 @@
       "type": "symbol",
       "key": "extra--024--fresher"
     },
+    "fresher--002": {
+      "filename": "fresher--002.json",
+      "thumbnailFilename": "fresher--002.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": -2, "y": -2, "width": 64, "height": 66.8},
+      "type": "symbol",
+      "key": "fresher--002"
+    },
+    "fresher--020": {
+      "filename": "fresher--020.json",
+      "thumbnailFilename": "fresher--020.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.8, "height": 124},
+      "type": "symbol",
+      "key": "fresher--020"
+    },
+    "fresher--025": {
+      "filename": "fresher--025.json",
+      "thumbnailFilename": "fresher--025.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -4, "y": -2, "width": 186.6, "height": 124},
+      "type": "symbol",
+      "key": "fresher--025"
+    },
+    "fresher--036": {
+      "filename": "fresher--036.json",
+      "thumbnailFilename": "fresher--036.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 126.6},
+      "type": "symbol",
+      "key": "fresher--036"
+    },
+    "fuel--010": {
+      "filename": "fuel--010.json",
+      "thumbnailFilename": "fuel--010.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -3.8, "y": -3.9, "width": 247.6, "height": 127.8},
+      "type": "symbol",
+      "key": "fuel--010"
+    },
+    "g-101--multipurpose": {
+      "filename": "g-101--multipurpose.json",
+      "thumbnailFilename": "g-101--multipurpose.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+      "type": "symbol",
+      "key": "g-101--multipurpose"
+    },
+    "g-102--research-deck": {
+      "filename": "g-102--research-deck.json",
+      "thumbnailFilename": "g-102--research-deck.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+      "type": "symbol",
+      "key": "g-102--research-deck"
+    },
+    "g-301--bridge": {
+      "filename": "g-301--bridge.json",
+      "thumbnailFilename": "g-301--bridge.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -5.5, "y": -22, "width": 1212, "height": 628},
+      "type": "symbol",
+      "key": "g-301--bridge"
+    },
+    "g-301--playground": {
+      "filename": "g-301--playground.json",
+      "thumbnailFilename": "g-301--playground.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -6, "y": -22, "width": 1212, "height": 628},
+      "type": "symbol",
+      "key": "g-301--playground"
+    },
+    "g-302--xboat-repair-bay": {
+      "filename": "g-302--xboat-repair-bay.json",
+      "thumbnailFilename": "g-302--xboat-repair-bay.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -4, "y": -62, "width": 1212, "height": 667},
+      "type": "symbol",
+      "key": "g-302--xboat-repair-bay"
+    },
     "g-303--passenger-deck": {
       "filename": "g-303--passenger-deck.json",
       "thumbnailFilename": "g-303--passenger-deck.thumbnail.png",
@@ -845,33 +449,6 @@
       "bounds": {"x": -6, "y": -7, "width": 1212, "height": 613},
       "type": "symbol",
       "key": "g-303--passenger-deck"
-    },
-    "stateroom--035": {
-      "filename": "stateroom--035.json",
-      "thumbnailFilename": "stateroom--035.thumbnail.png",
-      "width": 120,
-      "height": 180,
-      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
-      "type": "symbol",
-      "key": "stateroom--035"
-    },
-    "office--089": {
-      "filename": "office--089.json",
-      "thumbnailFilename": "office--089.thumbnail.png",
-      "width": 240,
-      "height": 240,
-      "bounds": {"x": -2, "y": 3, "width": 238.8, "height": 239},
-      "type": "symbol",
-      "key": "office--089"
-    },
-    "extra--020--table": {
-      "filename": "extra--020--table.json",
-      "thumbnailFilename": "extra--020--table.thumbnail.png",
-      "width": 120,
-      "height": 40,
-      "bounds": {"x": 0, "y": 0, "width": 120, "height": 40},
-      "type": "symbol",
-      "key": "extra--020--table"
     },
     "galley-and-mess-halls--006": {
       "filename": "galley-and-mess-halls--006.json",
@@ -882,6 +459,141 @@
       "type": "symbol",
       "key": "galley-and-mess-halls--006"
     },
+    "iris-valves--006": {
+      "filename": "iris-valves--006.json",
+      "thumbnailFilename": "iris-valves--006.thumbnail.png",
+      "width": 44,
+      "height": 44,
+      "bounds": {"x": 0, "y": 0, "width": 44.2, "height": 44},
+      "type": "symbol",
+      "key": "iris-valves--006"
+    },
+    "lab--012": {
+      "filename": "lab--012.json",
+      "thumbnailFilename": "lab--012.thumbnail.png",
+      "width": 240,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 184},
+      "type": "symbol",
+      "key": "lab--012"
+    },
+    "lab--018": {
+      "filename": "lab--018.json",
+      "thumbnailFilename": "lab--018.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -6.5, "width": 244, "height": 248.6},
+      "type": "symbol",
+      "key": "lab--018"
+    },
+    "lab--023": {
+      "filename": "lab--023.json",
+      "thumbnailFilename": "lab--023.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -4.5, "width": 244, "height": 246.6},
+      "type": "symbol",
+      "key": "lab--023"
+    },
+    "lounge--015": {
+      "filename": "lounge--015.json",
+      "thumbnailFilename": "lounge--015.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
+      "type": "symbol",
+      "key": "lounge--015"
+    },
+    "lounge--017": {
+      "filename": "lounge--017.json",
+      "thumbnailFilename": "lounge--017.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
+      "type": "symbol",
+      "key": "lounge--017"
+    },
+    "low-berth--003": {
+      "filename": "low-berth--003.json",
+      "thumbnailFilename": "low-berth--003.thumbnail.png",
+      "width": 61.4,
+      "height": 71.2,
+      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 71.2},
+      "type": "symbol",
+      "key": "low-berth--003"
+    },
+    "machinery--091": {
+      "filename": "machinery--091.json",
+      "thumbnailFilename": "machinery--091.thumbnail.png",
+      "width": 100,
+      "height": 111.8,
+      "bounds": {"x": 0, "y": 0, "width": 100, "height": 111.8},
+      "type": "symbol",
+      "key": "machinery--091"
+    },
+    "machinery--155": {
+      "filename": "machinery--155.json",
+      "thumbnailFilename": "machinery--155.thumbnail.png",
+      "width": 104,
+      "height": 220,
+      "bounds": {"x": 0, "y": 0, "width": 104, "height": 220},
+      "type": "symbol",
+      "key": "machinery--155"
+    },
+    "machinery--156": {
+      "filename": "machinery--156.json",
+      "thumbnailFilename": "machinery--156.thumbnail.png",
+      "width": 112,
+      "height": 220,
+      "bounds": {"x": 0, "y": 0, "width": 112, "height": 220},
+      "type": "symbol",
+      "key": "machinery--156"
+    },
+    "machinery--158": {
+      "filename": "machinery--158.json",
+      "thumbnailFilename": "machinery--158.thumbnail.png",
+      "width": 112,
+      "height": 220,
+      "bounds": {"x": 2, "y": 0, "width": 112, "height": 220},
+      "type": "symbol",
+      "key": "machinery--158"
+    },
+    "machinery--357": {
+      "filename": "machinery--357.json",
+      "thumbnailFilename": "machinery--357.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -14.6, "width": 244, "height": 136.6},
+      "type": "symbol",
+      "key": "machinery--357"
+    },
+    "medical--007": {
+      "filename": "medical--007.json",
+      "thumbnailFilename": "medical--007.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4, "width": 184, "height": 126.6},
+      "type": "symbol",
+      "key": "medical--007"
+    },
+    "medical--008": {
+      "filename": "medical--008.json",
+      "thumbnailFilename": "medical--008.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4.6, "width": 184, "height": 126.6},
+      "type": "symbol",
+      "key": "medical--008"
+    },
+    "medical-bed--005": {
+      "filename": "medical-bed--005.json",
+      "thumbnailFilename": "medical-bed--005.thumbnail.png",
+      "width": 76.4,
+      "height": 40.4,
+      "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
+      "type": "symbol",
+      "key": "medical-bed--005"
+    },
     "medical-bed--006": {
       "filename": "medical-bed--006.json",
       "thumbnailFilename": "medical-bed--006.thumbnail.png",
@@ -891,14 +603,302 @@
       "type": "symbol",
       "key": "medical-bed--006"
     },
-    "console--022": {
-      "filename": "console--022.json",
-      "thumbnailFilename": "console--022.thumbnail.png",
+    "misc-stellar-cartography--020": {
+      "filename": "misc-stellar-cartography--020.json",
+      "thumbnailFilename": "misc-stellar-cartography--020.thumbnail.png",
+      "width": 600,
+      "height": 600,
+      "bounds": {"x": -2, "y": -2, "width": 604, "height": 604},
+      "type": "symbol",
+      "key": "misc-stellar-cartography--020"
+    },
+    "misc-stellar-cartography--023": {
+      "filename": "misc-stellar-cartography--023.json",
+      "thumbnailFilename": "misc-stellar-cartography--023.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -1.5, "width": 244, "height": 244},
+      "type": "symbol",
+      "key": "misc-stellar-cartography--023"
+    },
+    "office--001": {
+      "filename": "office--001.json",
+      "thumbnailFilename": "office--001.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "office--001"
+    },
+    "office--004": {
+      "filename": "office--004.json",
+      "thumbnailFilename": "office--004.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "office--004"
+    },
+    "office--006": {
+      "filename": "office--006.json",
+      "thumbnailFilename": "office--006.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "office--006"
+    },
+    "office--020": {
+      "filename": "office--020.json",
+      "thumbnailFilename": "office--020.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "office--020"
+    },
+    "office--023": {
+      "filename": "office--023.json",
+      "thumbnailFilename": "office--023.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
+      "type": "symbol",
+      "key": "office--023"
+    },
+    "office--026": {
+      "filename": "office--026.json",
+      "thumbnailFilename": "office--026.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
+      "type": "symbol",
+      "key": "office--026"
+    },
+    "office--061": {
+      "filename": "office--061.json",
+      "thumbnailFilename": "office--061.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -4.8, "y": -2, "width": 186.8, "height": 244},
+      "type": "symbol",
+      "key": "office--061"
+    },
+    "office--074": {
+      "filename": "office--074.json",
+      "thumbnailFilename": "office--074.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 244},
+      "type": "symbol",
+      "key": "office--074"
+    },
+    "office--089": {
+      "filename": "office--089.json",
+      "thumbnailFilename": "office--089.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": 3, "width": 238.8, "height": 239},
+      "type": "symbol",
+      "key": "office--089"
+    },
+    "ships-locker--003": {
+      "filename": "ships-locker--003.json",
+      "thumbnailFilename": "ships-locker--003.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": -2, "y": -4.7, "width": 64, "height": 66.8},
+      "type": "symbol",
+      "key": "ships-locker--003"
+    },
+    "ships-locker--007": {
+      "filename": "ships-locker--007.json",
+      "thumbnailFilename": "ships-locker--007.thumbnail.png",
+      "width": 120,
+      "height": 60,
+      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 66.8},
+      "type": "symbol",
+      "key": "ships-locker--007"
+    },
+    "ships-locker--011": {
+      "filename": "ships-locker--011.json",
+      "thumbnailFilename": "ships-locker--011.thumbnail.png",
+      "width": 120,
+      "height": 60,
+      "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 66.8},
+      "type": "symbol",
+      "key": "ships-locker--011"
+    },
+    "ships-locker--020": {
+      "filename": "ships-locker--020.json",
+      "thumbnailFilename": "ships-locker--020.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 126.8},
+      "type": "symbol",
+      "key": "ships-locker--020"
+    },
+    "shop--027": {
+      "filename": "shop--027.json",
+      "thumbnailFilename": "shop--027.thumbnail.png",
+      "width": 97.4,
+      "height": 25.6,
+      "bounds": {"x": 0, "y": 0, "width": 97.4, "height": 25.6},
+      "type": "symbol",
+      "key": "shop--027"
+    },
+    "shop--028": {
+      "filename": "shop--028.json",
+      "thumbnailFilename": "shop--028.thumbnail.png",
+      "width": 97,
+      "height": 46.8,
+      "bounds": {"x": 0, "y": 0, "width": 97, "height": 46.8},
+      "type": "symbol",
+      "key": "shop--028"
+    },
+    "shop--031": {
+      "filename": "shop--031.json",
+      "thumbnailFilename": "shop--031.thumbnail.png",
+      "width": 53.6,
+      "height": 29.2,
+      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
+      "type": "symbol",
+      "key": "shop--031"
+    },
+    "shop--033": {
+      "filename": "shop--033.json",
+      "thumbnailFilename": "shop--033.thumbnail.png",
+      "width": 101.2,
+      "height": 38.8,
+      "bounds": {"x": 0, "y": 0, "width": 101.2, "height": 38.8},
+      "type": "symbol",
+      "key": "shop--033"
+    },
+    "shop--035": {
+      "filename": "shop--035.json",
+      "thumbnailFilename": "shop--035.thumbnail.png",
+      "width": 53.6,
+      "height": 29.2,
+      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
+      "type": "symbol",
+      "key": "shop--035"
+    },
+    "shop--037": {
+      "filename": "shop--037.json",
+      "thumbnailFilename": "shop--037.thumbnail.png",
+      "width": 53.6,
+      "height": 29.2,
+      "bounds": {"x": 0, "y": 0, "width": 53.6, "height": 29.2},
+      "type": "symbol",
+      "key": "shop--037"
+    },
+    "stateroom--012": {
+      "filename": "stateroom--012.json",
+      "thumbnailFilename": "stateroom--012.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "stateroom--012"
+    },
+    "stateroom--014": {
+      "filename": "stateroom--014.json",
+      "thumbnailFilename": "stateroom--014.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 126.8},
+      "type": "symbol",
+      "key": "stateroom--014"
+    },
+    "stateroom--018": {
+      "filename": "stateroom--018.json",
+      "thumbnailFilename": "stateroom--018.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "stateroom--018"
+    },
+    "stateroom--019": {
+      "filename": "stateroom--019.json",
+      "thumbnailFilename": "stateroom--019.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "stateroom--019"
+    },
+    "stateroom--020": {
+      "filename": "stateroom--020.json",
+      "thumbnailFilename": "stateroom--020.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "stateroom--020"
+    },
+    "stateroom--035": {
+      "filename": "stateroom--035.json",
+      "thumbnailFilename": "stateroom--035.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
+      "type": "symbol",
+      "key": "stateroom--035"
+    },
+    "stateroom--036": {
+      "filename": "stateroom--036.json",
+      "thumbnailFilename": "stateroom--036.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
+      "type": "symbol",
+      "key": "stateroom--036"
+    },
+    "table--004": {
+      "filename": "table--004.json",
+      "thumbnailFilename": "table--004.thumbnail.png",
       "width": 60,
       "height": 120,
-      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 121.4},
+      "bounds": {"x": -2, "y": -12, "width": 68.8, "height": 144.8},
       "type": "symbol",
-      "key": "console--022"
+      "key": "table--004"
+    },
+    "table--009": {
+      "filename": "table--009.json",
+      "thumbnailFilename": "table--009.thumbnail.png",
+      "width": 50,
+      "height": 50,
+      "bounds": {"x": -0.5, "y": -0.5, "width": 51, "height": 50.8},
+      "type": "symbol",
+      "key": "table--009"
+    },
+    "window--001": {
+      "filename": "window--001.json",
+      "thumbnailFilename": "window--001.thumbnail.png",
+      "width": 60,
+      "height": 12,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--001"
+    },
+    "window--005": {
+      "filename": "window--005.json",
+      "thumbnailFilename": "window--005.thumbnail.png",
+      "width": 120,
+      "height": 12,
+      "bounds": {"x": -0.5, "y": -1, "width": 121.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--005"
+    },
+    "window--007": {
+      "filename": "window--007.json",
+      "thumbnailFilename": "window--007.thumbnail.png",
+      "width": 180,
+      "height": 12,
+      "bounds": {"x": -0.2, "y": -0.7, "width": 181.4, "height": 13.4},
+      "type": "symbol",
+      "key": "window--007"
     }
   }
 }

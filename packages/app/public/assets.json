@@ -1,10 +1,44 @@
 {
   "map": {
+    "101+edges": {
+      "key": "101+edges",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 15, "f": 0}
+        },
+        {
+          "gmKey": "g-101--multipurpose",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 15, "f": 15}
+        },
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 15, "f": 60}
+        },
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 15}
+        },
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 60, "f": 15}
+        }
+      ]
+    },
     "101-only": {
       "key": "101-only",
       "gms": [
         {
           "gmKey": "g-101--multipurpose",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        }
+      ]
+    },
+    "102-only": {
+      "key": "102-only",
+      "gms": [
+        {
+          "gmKey": "g-102--research-deck",
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
         }
       ]
@@ -39,6 +73,19 @@
         }
       ]
     },
+    "301-303": {
+      "key": "301-303",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        },
+        {
+          "gmKey": "g-303--passenger-deck",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 30}
+        }
+      ]
+    },
     "301-only": {
       "key": "301-only",
       "gms": [
@@ -57,41 +104,16 @@
         }
       ]
     },
-    "empty-map": {"key": "empty-map", "gms": []},
-    "101+edges": {
-      "key": "101+edges",
+    "303-only": {
+      "key": "303-only",
       "gms": [
         {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 15, "f": 0}
-        },
-        {
-          "gmKey": "g-101--multipurpose",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 15, "f": 15}
-        },
-        {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 15, "f": 60}
-        },
-        {
-          "gmKey": "g-302--xboat-repair-bay",
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 0, "f": 15}
-        },
-        {
-          "gmKey": "g-302--xboat-repair-bay",
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 60, "f": 15}
-        }
-      ]
-    },
-    "102-only": {
-      "key": "102-only",
-      "gms": [
-        {
-          "gmKey": "g-102--research-deck",
+          "gmKey": "g-303--passenger-deck",
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
         }
       ]
     },
+    "empty-map": {"key": "empty-map", "gms": []},
     "nine-gms": {
       "key": "nine-gms",
       "gms": [
@@ -130,28 +152,6 @@
         {
           "gmKey": "g-302--xboat-repair-bay",
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 60, "f": 75}
-        }
-      ]
-    },
-    "303-only": {
-      "key": "303-only",
-      "gms": [
-        {
-          "gmKey": "g-303--passenger-deck",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
-        }
-      ]
-    },
-    "301-303": {
-      "key": "301-303",
-      "gms": [
-        {
-          "gmKey": "g-301--bridge",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
-        },
-        {
-          "gmKey": "g-303--passenger-deck",
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 30}
         }
       ]
     }
