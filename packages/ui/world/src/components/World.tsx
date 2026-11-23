@@ -13,7 +13,14 @@ import debounce from "debounce";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { OverrideProperties } from "type-fest";
-import { AssetsSchema, type AssetsType, getSheetUrl, SheetsSchema, type SheetsType } from "../assets.schema";
+import {
+  AssetsSchema,
+  type AssetsType,
+  getSheetUrl,
+  SheetsSchema,
+  type SheetsType,
+  ThemesSchema,
+} from "../assets.schema";
 import { skinSliceDims } from "../const.both";
 import {
   assetsJsonChangedEvent,
@@ -473,7 +480,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.decor.ready = false;
 
       state.setNextPending({ assets: true });
-      state.assets = await fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema);
+      const [assets, theme] = await Promise.all([
+        fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema),
+        fetchParsed(`/theme.json${getDevCacheBustQueryParam()}`, ThemesSchema),
+      ]);
+      state.assets = { ...assets, theme };
 
       if (state.isPlaygroundMap()) {
         await recomputeAssetsViaDrafts(state.assets);

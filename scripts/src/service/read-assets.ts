@@ -15,10 +15,10 @@ export const assetsPaths = {
 
 /** The split files reassembled, still encoded. Throws if one is missing. */
 export function readAssetsRaw(): AssetsEncodedType {
-  const { map, theme, hash } = readJson(assetsPaths.index);
+  const { map, hash } = readJson(assetsPaths.index);
   const { symbol, flattened, stratifiedSymbolNodes } = readJson(assetsPaths.edit);
   const layout = readLayoutsRaw();
-  return { symbol, map, flattened, stratifiedSymbolNodes, layout, theme, hash };
+  return { symbol, map, flattened, stratifiedSymbolNodes, layout, hash };
 }
 
 /** Every `layout/{gmKey}.json`, still encoded */

@@ -21,7 +21,6 @@ import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
-import { defaultWorldTheme } from "@npc-cli/ui__world/const.env";
 import {
   createLayout,
   createMapDefFromSavedFile,
@@ -68,12 +67,8 @@ const assets: AssetsType = AssetsSchema.safeParse(hasPrev ? readAssetsRaw() : nu
   flattened: {},
   stratifiedSymbolNodes: [],
   layout: {},
-  theme: {},
   hash: { obstacles: 0 },
 };
-
-assets.theme ??= {};
-assets.theme["dark-theme"] ??= defaultWorldTheme;
 
 const changedSymbolKeys = changedFiles.map((f) => path.basename(f, ".json"));
 

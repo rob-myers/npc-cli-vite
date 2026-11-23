@@ -252,13 +252,17 @@ export const WorldThemeSchema = z.object({
 });
 export type WorldTheme = z.infer<typeof WorldThemeSchema>;
 
+/** `theme.json`: World themes by key, written by the theme editor */
+export const ThemesSchema = z.partialRecord(z.string(), WorldThemeSchema);
+
 export const AssetsSchema = z.object({
   symbol: AssetsSymbolLookupSchema,
   map: z.partialRecord(MapKeySchema, AssetsMapDefSchema),
   flattened: z.partialRecord(StarShipSymbolImageKeySchema, AssetsFlatSymbolSchema),
   stratifiedSymbolNodes: z.array(z.array(SymbolGraphNodeSchema)),
   layout: z.partialRecord(StarShipGeomorphKeySchema, GeomorphLayoutSchema),
-  theme: z.partialRecord(z.string(), WorldThemeSchema),
+  /** Set by the World from `theme.json`. Never in `assets.json`. */
+  theme: ThemesSchema.optional(),
   hash: z.object({
     /** Over all symbols */
     obstacles: z.number(),
@@ -268,7 +272,7 @@ export type AssetsType = z.infer<typeof AssetsSchema>;
 export type AssetsEncodedType = z.input<typeof AssetsSchema>;
 
 /** `assets.json`: what every World reads besides its layouts */
-export const AssetsIndexSchema = AssetsSchema.pick({ map: true, theme: true, hash: true });
+export const AssetsIndexSchema = AssetsSchema.pick({ map: true, hash: true });
 /** `assets-edit.json`: what re-flattening a draft needs */
 export const AssetsEditSchema = AssetsSchema.pick({ symbol: true, flattened: true, stratifiedSymbolNodes: true });
 
