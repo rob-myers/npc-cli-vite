@@ -139,6 +139,10 @@ A curved room, counter or window, e.g. `office--089`'s, is measured from its arc
   misses. Step half a degree near each end, and look for where the runs change.
 - **Measure the whole band before cutting it.** `office--089`'s glass ran from 25.9° to 64.1°, not the
   28° first guessed, so its window and lintel lost an end.
+- **Keep an obstacle off a curved wall.** One poking into a wall is clipped along the room's nearest edge
+  (`docs/walls.md`), a straight line: past a curve, that line runs off across it. 303's mess bar, poking in
+  1 unit, showed as a wedge. End it inside the room, e.g. at the glass's inner edge, not on its line.
+  Check by its corners: none may lie outside its room polygon, bar those in a straight wall.
 
 ## Wall paths
 
@@ -259,20 +263,23 @@ Its layout, `layout/{key}.json`, says whether it worked: its `rooms` go up as ro
 
 `g-303--passenger-deck` is built in milestones, each ending with a World that loads `303-only`. The
 first holds the hull, its own walls, blocks and doors, and the symbols that exist already. Each later
-one adds a batch of missing symbols. The diagram is the earlier project's `303--hull.svg` divided by 5;
-the art decides the final numbers. `symbol-generation/diagrams.py` draws it.
+one adds a batch of missing symbols. It started from the earlier project's `303--hull.svg` divided by 5,
+and the art decided the final numbers. The diagram shows it as built; `symbol-generation/diagrams.py`
+draws it.
 
 ![303 by milestone](symbol-generation/303-milestones.svg)
 
 | milestone | adds | from |
 | --- | --- | --- |
-| M1 | hull walls, interior walls, two solid blocks, hull, locked and auto doors, labels; `stateroom--036` x4, `low-berth--003`, `iris-valves--006` x2 (for `--005`), `window--001` x6, `extra--005--chair` x7 | the hull svg, and our symbols |
-| M2 | `stateroom--035` x4 | its png and `stateroom--035--2x3.svg` |
-| M3 | `office--089`, a quarter turn about its centre | its png and `office--089--4x4.svg` |
-| M4 | `galley-and-mess-halls--006`, mirrored; tables `extra--017` and `extra--020` | their pngs, the tables' art from their old svgs |
-| M5 | `medical-bed--006`, `console--022` | their pngs and old svgs |
+| M1 | hull walls with `_window` pieces, interior walls, two solid blocks, hull, locked and auto doors, labels; the exec stateroom and its fresher's walls and doors; `stateroom--036` x4, `low-berth--003`, `iris-valves--006` x2 (for `--005`), `window--001` x6, `extra--005--chair` x7 | the hull svg, the art, and our symbols |
+| M2 | `stateroom--035` x4, its fresher a `fresher--002` | its png |
+| M3 | `office--089`, a quarter turn at `(960, 600)`: curved wall, glass with a lintel, counter | its png, measured along rays |
+| M4 | `galley-and-mess-halls--006`, mirrored; the mess bar `extra--020--table`; `extra--019--table` for the common area's | their pngs; the bar's art from its old svg |
+| M5 | `medical-bed--006` (three `medical-bed--005`, two curtains), `console--022` | their pngs |
+| M6 | map `301-303`: 303 mirrored below 301, so their south hull doors meet | `301-302` |
 
-The north strip at `720` to `960` and the locked room have no symbol in the old svg: fit them from the art.
+The north strip at `720` to `960` and the locked room had no symbol in the old svg: they are the hull's own.
+The galley differs from the art (36%, the closest of its group): its cubby, door and stove side.
 
 What it taught, besides the rules above:
 - **The art disagrees with the old svg in places.** 720 to 960 is an exec stateroom and its fresher, and

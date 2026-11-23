@@ -1429,13 +1429,13 @@
             "c": 0,
             "d": 1,
             "e": 1078.5,
-            "f": 219.5
+            "f": 217.9
           },
           "type": "symbol",
           "srcKey": "extra--020--table",
           "baseRect": {"width": 120, "height": 40},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 1078.5, 219.5)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1078.5, 217.9)"
         },
         {
           "id": "22e69cd6-5548-49ec-9e1b-08a5d2f3af36",

@@ -60,7 +60,9 @@ draft for that file: leaving one would silently shadow the file it just wrote.
 
 1. `parseRawMapEditFile(body)` — parse and validate; a bad body never reaches the disk;
 2. write the JSON;
-3. `createSavedFileThumbnail` — a skia-canvas render to `<filename>.thumbnail.png` beside it;
+3. `createSavedFileThumbnail` — a skia-canvas render to `<filename>.thumbnail.png` beside it. A map's
+   is each geomorph's walls in white, read from its `layout/{gmKey}.json`, with solid blocks (`broad`)
+   outlined, on transparent, fitted within 1200 px;
 4. `ensureManifests` for `symbol` and `map`, passing the changed file.
 
 `DELETE` on the same route removes the file, and `deleteFile` (DEV only) removes the draft, calls it,

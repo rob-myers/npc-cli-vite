@@ -89,6 +89,15 @@
       "bounds": {"x": -6, "y": -7, "width": 1206, "height": 607},
       "type": "map",
       "key": "303-only"
+    },
+    "301-303": {
+      "filename": "301-303.json",
+      "thumbnailFilename": "301-303.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -6, "y": -22, "width": 1206, "height": 1229},
+      "type": "map",
+      "key": "301-303"
     }
   }
 }

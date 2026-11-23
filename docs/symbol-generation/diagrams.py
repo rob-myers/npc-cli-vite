@@ -48,16 +48,19 @@ def label(x, y, text, colour=TEXT, size=10, anchor="middle"):
 
 
 def p303():
-    """303 from the earlier project's 303--hull.svg divided by 5, coloured by the milestone adding each part"""
+    """303 as built (symbol/g-303--passenger-deck.json), coloured by the milestone adding each part"""
     body = [rect(0, 0, 1200, 600, BOX, EDGE, opacity=1)]
 
     # the hull's own: interior walls, the two solid blocks (M1)
     walls = [
-        [(960, 180), (960, 300), (1000, 300), (1080, 262), (1145, 245), (1200, 241)],
+        [(960, 120), (960, 300), (1000, 300), (1080, 262), (1145, 245), (1200, 241)],
         [(240, 180), (240, 300), (198, 300), (120, 262), (55, 245), (0, 241)],
         [(0, 368), (48, 368), (104, 380), (153, 407), (193, 448), (219, 498), (233, 555), (233, 600)],
         [(300, 300), (300, 361)],
         [(900, 300), (900, 361)],
+        # the exec stateroom and its fresher
+        [(720, 180), (960, 180)],
+        [(780, 0), (780, 120), (720, 120)],
     ]
     for pts in walls:
         body.append(
@@ -71,15 +74,15 @@ def p303():
     for x in (360, 480, 600, 720):
         body.append(rect(x, 360, 120, 240, GREEN, GREEN))
         body.append(label(x + 60, 480, "036"))
-    body.append(rect(180, 0, 60, 60, GREEN, GREEN))
-    body.append(label(210, 30, "berth"))
-    for x, y in [(240, 540), (1140, 240)]:
-        body.append(rect(x, y, 60, 60, GREEN, GREEN))
-        body.append(label(x + 30, y + 30, "iris"))
-    for x in (89.6, 269.6, 389.6, 509.6, 629.6, 869.6):
-        body.append(rect(x, -4.8, 60, 12, GREEN, GREEN, opacity=0.8))
-    for x, y in [(1079, 217), (1112, 208), (1146, 203), (1180, 200), (410, 254), (410, 294), (410, 334)]:
-        body.append(rect(x, y, 15, 15, GREEN, GREEN, opacity=0.8))
+    body.append(rect(168.9, -1.7, 71.2, 61.4, GREEN, GREEN))
+    body.append(label(204.5, 29, "berth"))
+    for x, y in [(316, 547.5), (1147.5, 239)]:
+        body.append(rect(x, y, 44, 44, GREEN, GREEN))
+        body.append(label(x + 22, y + 22, "iris"))
+    for x in (90, 270, 390, 510, 630, 870):
+        body.append(rect(x, -6, 60, 12, GREEN, GREEN, opacity=0.8))
+    for cx, cy in [(1087, 222.6), (1119, 213.5), (1153, 209), (1187.5, 206.7), (417.3, 259.6), (417.3, 299.6), (417.5, 339.6)]:
+        body.append(rect(cx - 9.5, cy - 9.5, 19, 19, GREEN, GREEN, opacity=0.8))
 
     # M2 to M5
     for x in (240, 360, 480, 600):
@@ -90,17 +93,20 @@ def p303():
     body.append(rect(960, 0, 240, 120, PURPLE, PURPLE))
     body.append(label(1080, 60, "galley 006"))
     body.append(rect(375, 240, 30, 120, PURPLE, PURPLE))
-    body.append(rect(1078, 220, 120, 40, PURPLE, PURPLE))
-    body.append(rect(0, 0, 96, 240, RED, RED))
-    body.append(label(48, 120, "bed"))
-    body.append(rect(180, 60, 60, 120, RED, RED))
-    body.append(label(210, 120, "console"))
+    body.append(rect(1078.5, 219.5, 120, 40, PURPLE, PURPLE))
+    body.append(label(1105, 232, "bar"))
+    body.append(rect(3.5, 10.1, 90, 218.8, RED, RED))
+    body.append(label(48.5, 120, "beds"))
+    body.append(rect(179, 59.5, 60, 120, RED, RED))
+    body.append(label(209, 120, "console"))
 
     # labels of the hull's own
     body.append(label(637, 262, "common area", MUTED))
     body.append(label(187, 352, "corridor", MUTED))
     body.append(label(1040, 335, "corridor", MUTED))
-    body.append(label(110, 490, "locked room", MUTED))
+    body.append(label(110, 490, "engineering", MUTED))
+    body.append(label(870, 90, "exec SR", MUTED))
+    body.append(label(750, 60, "FR", MUTED))
 
     # doors: hull (white), locked (red), auto (amber)
     hull = [(-4, 248, 8, 48), (-4, 304, 8, 48), (1196, 248, 8, 48), (1196, 304, 8, 48)]
@@ -111,6 +117,9 @@ def p303():
         body.append(rect(*d, RED, RED, opacity=1))
     for d in [(237.5, 188, 6, 44), (957, 188, 6, 44), (297, 308.5, 6, 44), (897, 309, 6, 44)]:
         body.append(rect(*d, AMBER, AMBER, opacity=1))
+    # plain doors of the hull's own: the exec stateroom's and its fresher's
+    for d in [(787.5, 177, 45, 6), (777, 67.5, 6, 45)]:
+        body.append(rect(*d, MUTED, MUTED, opacity=1))
 
     # legend
     y0 = OY + 600 * S + 26
@@ -118,8 +127,8 @@ def p303():
         (GREEN, "M1 hull, its walls and doors, and what we have"),
         (BLUE, "M2 stateroom--035"),
         (AMBER, "M3 office--089"),
-        (PURPLE, "M4 galley, tables"),
-        (RED, "M5 medical bed, console"),
+        (PURPLE, "M4 galley, mess bar, common-area table"),
+        (RED, "M5 medical beds, console"),
     ]
     for i, (c, t) in enumerate(keys):
         x, y = 24 + (i % 2) * 360, y0 + (i // 2) * 20
@@ -132,10 +141,12 @@ def p303():
     body.append(f'<text x="152" y="{y + 1}" fill="{MUTED}" font-size="12">locked door</text>')
     body.append(f'<rect x="250" y="{y - 9}" width="14" height="5" fill="{AMBER}"/>')
     body.append(f'<text x="272" y="{y + 1}" fill="{MUTED}" font-size="12">auto door</text>')
-    body.append(f'<rect x="360" y="{y - 9}" width="14" height="12" fill="{GREY}"/>')
-    body.append(f'<text x="382" y="{y + 1}" fill="{MUTED}" font-size="12">solid block</text>')
+    body.append(f'<rect x="360" y="{y - 9}" width="14" height="5" fill="{MUTED}"/>')
+    body.append(f'<text x="382" y="{y + 1}" fill="{MUTED}" font-size="12">door</text>')
+    body.append(f'<rect x="440" y="{y - 9}" width="14" height="12" fill="{GREY}"/>')
+    body.append(f'<text x="462" y="{y + 1}" fill="{MUTED}" font-size="12">solid block</text>')
 
-    write("303-milestones", "g-303--passenger-deck, by milestone (the old 303--hull.svg / 5)", int(y + 24), body)
+    write("303-milestones", "g-303--passenger-deck as built, by milestone", int(y + 24), body)
 
 
 p303()

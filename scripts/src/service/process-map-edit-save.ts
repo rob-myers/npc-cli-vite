@@ -15,7 +15,9 @@ import {
   SymbolsManifestSchema,
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { isNodeTransformable, migrateMapEditSavedFile, traverseNodesAsync } from "@npc-cli/ui__map-edit/map-node-api";
+import { worldToSguScale } from "@npc-cli/ui__world/const.env";
 import { Mat, Rect } from "@npc-cli/util/geom";
+import type { GeoJsonPolygon } from "@npc-cli/util/geom.schema";
 import { geomService } from "@npc-cli/util/geom-service";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { deepClone, error, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
@@ -71,13 +73,40 @@ async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
     `${path.basename(filename, ".json")}.thumbnail.png`,
   );
 
-  const scale = 2;
   const integralBounds = Rect.fromJson(bounds).integerOrds();
-  const canvas = new Canvas(integralBounds.width * scale, integralBounds.height * scale);
+  /** A map's thumbnail fits within 1200 px */
+  const scale =
+    savedFile.type === "map" ? Math.min(2, 1200 / Math.max(integralBounds.width, integralBounds.height)) : 2;
+  const canvas = new Canvas(Math.ceil(integralBounds.width * scale), Math.ceil(integralBounds.height * scale));
   const ct = canvas.getContext("2d");
 
   if (savedFile.type === "map") {
-    // currently unsupported i.e. blank
+    // each geomorph's walls in white, from its layout (metres), door gaps and all: no other detail
+    await traverseNodesAsync(nodes, async (node) => {
+      if (node.type !== "symbol" || node.srcKey === null || !isHullSymbolImageKey(node.srcKey)) return;
+      const layoutFile = path.resolve(PROJECT_ROOT, "packages/app/public/layout", `${node.srcKey}.json`);
+      if (!fs.existsSync(layoutFile)) return;
+      const { walls } = JSON.parse(fs.readFileSync(layoutFile, "utf-8")) as { walls: GeoJsonPolygon[] };
+      const { a, b, c, d, e, f } = node.transform;
+      ct.setTransform(scale, 0, 0, scale, 0, 0);
+      ct.translate(-bounds.x, -bounds.y);
+      ct.transform(a, b, c, d, e, f);
+      ct.scale(worldToSguScale, worldToSguScale);
+      const trace = (polys: GeoJsonPolygon[]) => {
+        ct.beginPath();
+        for (const ring of polys.flatMap((x) => x.coordinates)) {
+          ring.forEach(([x, y], i) => (i === 0 ? ct.moveTo(x, y) : ct.lineTo(x, y)));
+          ct.closePath();
+        }
+      };
+      ct.fillStyle = ct.strokeStyle = "#fff";
+      trace(walls.filter((x) => x.meta.broad !== true));
+      ct.fill("evenodd");
+      // a solid block, e.g. a fuel tank, is outlined
+      trace(walls.filter((x) => x.meta.broad === true));
+      ct.lineWidth = 0.1;
+      ct.stroke();
+    });
     return await canvas.toFile(outputThumbnailFilepath);
   }
 

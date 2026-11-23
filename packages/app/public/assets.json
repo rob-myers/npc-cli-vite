@@ -141,17 +141,30 @@
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
         }
       ]
+    },
+    "301-303": {
+      "key": "301-303",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        },
+        {
+          "gmKey": "g-303--passenger-deck",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 30}
+        }
+      ]
     }
   },
   "hash": {
-    "obstacles": -2009154058,
+    "obstacles": 151394157,
     "layout": {
       "g-101--multipurpose": 1376844981,
       "g-102--research-deck": -558553446,
       "g-301--bridge": -1630314190,
       "g-301--playground": -86429936,
       "g-302--xboat-repair-bay": 1602884446,
-      "g-303--passenger-deck": 1521192440
+      "g-303--passenger-deck": 303621217
     }
   }
 }
