@@ -1,6 +1,7 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { isPlaygroundMapKey, isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
+import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
@@ -44,9 +45,10 @@ import { createLayoutInstance } from "../service/geomorph";
 import { GmGraph } from "../service/gm-graph";
 import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
+import { mapRenameError, retireMapFile, saveMapFileAs } from "../service/map-rename";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
-import { flushWorldStores, getSiteStore, getWorldStore } from "../service/storage";
+import { flushWorldStores, getSiteStore, getWorldStore, renameWorldMapStores } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import { spotsGeneratingEvent } from "../spot.schema";
@@ -338,6 +340,19 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // only the menu's slider and the bar's notice show it: not the whole World
         state.menu.update?.();
         state.hud?.update?.();
+      },
+      async renameMap(from, to) {
+        if (import.meta.env.DEV !== true) throw Error("renaming a map is DEV only");
+        const invalid = mapRenameError(state.assets?.map ?? {}, from, to);
+        if (invalid !== null) throw Error(invalid);
+        // its live state would be saved under the old key
+        const onIt = uiStoreApi.getAllUis().find((ui) => isWorldUiMeta(ui.meta) && ui.meta.mapKey === from);
+        if (onIt !== undefined) throw Error(`${onIt.meta.title} is on ${from}`);
+
+        await saveMapFileAs(from, to);
+        renameWorldMapStores(from, to);
+        state.events.next({ key: "map-renamed", from, to });
+        await retireMapFile(from, to);
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -780,6 +795,8 @@ export type State = {
   onTick(): void;
   /** The clock's scale changed: saved, and shown by the menu's slider and the bar */
   onTimeScale(timeScale: number): void;
+  /** DEV only. Renames map `from` to `to`: its file, graphs and saved state. Refused whilst a World is on it */
+  renameMap(from: string, to: string): Promise<void>;
   setupDevAssetsSync(): () => void;
   setupDraftAssetsSync(): () => void;
   setDisabled(nextDisabled?: boolean): void;

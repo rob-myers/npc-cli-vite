@@ -111,3 +111,18 @@ The node **names are the tags**: `wall hull` is what makes a path a hull wall, `
 what makes a rect a hull door. Nothing else marks them. It is registered in `symbolByGroup.playground`
 in `packages/media/src/starship-symbol/const.ts`, where a comment notes that every playground symbol
 is assumed to be a hull symbol.
+
+## Renaming a map (DEV)
+
+The World menu's map picker has a pencil on each map that may be renamed, except the current one. It
+prompts for the new key, and an alert gives any refusal. `w.renameMap(from, to)` does the work:
+
+1. Refuse a bad key or one in use (`mapRenameError`, `service/map-rename.ts`). `defaultMapKey`,
+   `emptyMapKey` and playground maps keep their keys (`isRenamableMap`).
+2. Refuse a map any World is on, this one included. Its live state would be saved under the old key.
+3. Save the file as `to` through the map-edit API.
+4. Move the saved state: every World's `world:{worldKey}:map:{from}` (`renameWorldMapStores`), and jsh's
+   `/shared/map/{from}`, through a `map-renamed` event that `pred.ts` handles.
+5. Point the graphs on `from` at `to`, then delete the old file, its thumbnail and index entries.
+
+It does not carry saved state in other browsers, nor MapEdit's open copy of the file, which needs reloading.

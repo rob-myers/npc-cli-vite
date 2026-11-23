@@ -64,7 +64,8 @@ export async function deleteScenarioEntry(key: string) {
   await request("DELETE", `${scenarioApiPath}/file/${key}`);
 }
 
-async function request(method: string, url: string, body?: unknown) {
+/** A JSON request, throwing the server's error */
+export async function request(method: string, url: string, body?: unknown) {
   const response = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },

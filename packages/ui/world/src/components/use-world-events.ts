@@ -601,6 +601,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         let playerWasSaved = false;
 
         try {
+          // a map with the last one's geomorphs requests no physics, which would rebuild these
+          state.recomputeNpcRoomRelationships();
           // decor first: a restored npc's may be sitting on a chair (decorKey)
           state.restoreDecor();
           w.decor.restored = true;
@@ -896,6 +898,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
             break;
+          case "map-renamed":
           case "spots-overlay":
           case "spot-chosen":
             break;

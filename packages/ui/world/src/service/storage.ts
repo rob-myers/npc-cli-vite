@@ -275,6 +275,23 @@ export function listWorldKeysWithMap(mapKey: string, exceptWorldKey: string): st
     .sort();
 }
 
+/** Moves every world's saved state for map `from` to `to`, e.g. on renaming the map */
+export function renameWorldMapStores(from: string, to: string) {
+  for (const store of Object.values(worldMapStores)) store.flush(); // else one never yet written is missed
+  for (const worldKey of listWorldKeysWithMap(from, "")) {
+    const [fromKey, toKey] = [worldMapKeyOf(worldKey, from), worldMapKeyOf(worldKey, to)];
+    try {
+      const raw = localStorage.getItem(fromKey);
+      if (raw !== null) localStorage.setItem(toKey, raw);
+      localStorage.removeItem(fromKey);
+    } catch {
+      // e.g. storage disabled
+    }
+    delete worldMapStores[fromKey];
+    delete worldMapStores[toKey];
+  }
+}
+
 /**
  * The `world-*` keys this module replaced — a key per setting, and per-map data
  * shared by every instance. Swept once per page load, rather than migrated.
