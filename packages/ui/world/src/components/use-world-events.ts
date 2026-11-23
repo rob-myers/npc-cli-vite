@@ -705,7 +705,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onEditMap() {
         state.recomputeNpcRoomRelationships();
         state.syncLitRooms();
-        // WorldView's own `gmsHash` effect syncs the fade, snapped
+        // synced now, as the room slots just redrawn may renumber rooms
+        w.view.fadeRoomsFx.snapNext = true;
+        w.view.fadeRoomsFx.sync(w);
         state.rejectPendingUnreachable(new Error("map edited"));
       },
       onEnterCollider(e, npc) {
