@@ -23,6 +23,7 @@ import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } fr
 import {
   decorPointDefaultRadius,
   doorConfig,
+  emptyMapKey,
   obstacleOutset,
   precision,
   sguToWorldScale,
@@ -464,6 +465,25 @@ export function createMapDefFromSavedFile(savedFile: MapEditSavedMap): Geomorph.
       },
     })),
   };
+}
+
+/** Map keys in sections: single geomorphs, debug maps, then by number of geomorphs. Each is sorted */
+export function mapGroupsOf(maps: Partial<Record<string, Geomorph.MapDef>>): { label: string; keys: string[] }[] {
+  const keys = Object.keys(maps).sort();
+  const isSingle = (key: string) => key.endsWith("-only");
+  const isDebug = (key: string) => key === emptyMapKey || key.endsWith("-playground");
+  const byCount = new Map<number, string[]>();
+  for (const key of keys.filter((k) => !isSingle(k) && !isDebug(k))) {
+    const count = maps[key]?.gms.length ?? 0;
+    byCount.set(count, [...(byCount.get(count) ?? []), key]);
+  }
+  return [
+    { label: "single", keys: keys.filter(isSingle) },
+    { label: "debug", keys: keys.filter(isDebug) },
+    ...[...byCount.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([count, ks]) => ({ label: `${count} geomorphs`, keys: ks })),
+  ].filter((group) => group.keys.length > 0);
 }
 
 export function decomposeLayoutNav(

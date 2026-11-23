@@ -178,6 +178,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       nav: emptyTiledNavmeshResponse,
       // gltf is pending from the outset, else the first map could settle without npcs
       pending: { gltf: true },
+      nextMapKey: null,
       settledMapKey: null,
       wasReadyFor: new Set(),
       r3f: null as any,
@@ -219,6 +220,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       helper,
 
+      async changeMap(mapKey) {
+        if (mapKey === state.mapKey) return;
+        if (state.isMapChanging()) throw Error("map change in progress");
+        if (state.assets?.map[mapKey] === undefined) throw Error(`no such map: ${mapKey}`);
+        state.nextMapKey = mapKey;
+        try {
+          await state.net?.leave(); // a manual map switch ends any mirror session first
+          await state.floor?.fadeOut(mapKey);
+          state.e.onChangeMap(); // persist + remove whilst the old map still exists
+          uiStoreApi.setUiMeta(meta.id, (draft) => void (draft.mapKey = mapKey));
+        } finally {
+          state.nextMapKey = null;
+        }
+      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -278,7 +293,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         return mapDef.gms.some(({ gmKey }) => isPlaygroundSymbolKey(gmKey));
       },
       isMapChanging() {
-        return state.settledMapKey !== state.mapKey;
+        return state.nextMapKey !== null || state.settledMapKey !== state.mapKey;
       },
       isReady(connectionKey) {
         const ready = !!state.assets && state.nav !== emptyTiledNavmeshResponse;
@@ -739,11 +754,15 @@ export type State = {
     resolve: null | (() => void);
   };
 
+  /** The map `changeMap` is fading out towards, until the World's meta names it */
+  nextMapKey: null | string;
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
   /** The connectionKeys `isReady` has said yes to */
   wasReadyFor: Set<string>;
 
+  /** Fade out, persist and load `mapKey`. Throws whilst a map change is under way, or for an unknown map */
+  changeMap(mapKey: string): Promise<void>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   foldTo(amount: number, ms?: number): Promise<void>;
