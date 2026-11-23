@@ -68,5 +68,5 @@ An obstacle reaches down from its top (`height`) by `meta.h`, else by `sightConf
 
 ## When they are made
 
-- `gen-assets-json` rewrites `assets.json`. The plugin sees that and runs `gen-spots` in a child process, then sends `spotsChangedEvent`, and the Decorator refetches.
+- `gen-assets-json` rewrites a geomorph's `layout/{gmKey}.json`. The plugin sees that and runs `gen-spots` in a child process, then sends `spotsChangedEvent`, and the Decorator refetches.
 - A geomorph is skipped while its `layoutHash` is unchanged. That hash covers its layout and the code in `spots.ts`, so editing it remakes every geomorph.

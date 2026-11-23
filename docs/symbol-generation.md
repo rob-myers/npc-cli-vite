@@ -27,11 +27,12 @@ for it. Where a save goes is `docs/map-edit.md`; obstacle sheets are `docs/stars
 4. Build the JSON and save it with `pnpm dev` running:
    `POST /api/map-edit/file/symbol/{key}.json`, the body being the file. This validates it, writes it
    compact, draws `{key}.thumbnail.png` and updates `manifest.json`. The dev server then rebuilds
-   `assets.json`.
+   the assets (`assets.json`, `assets-edit.json`, `layout/*.json`).
 5. Read the thumbnail. It draws every node over the faint png, so a misplaced door or chair shows.
-6. Run `pnpm gen-starship-sheets`, AFTER `assets.json` has caught up: run straight after the save, it
+6. Run `pnpm gen-starship-sheets`, AFTER the assets have caught up: run straight after the save, it
    misses the new obstacles.
-7. Check `assets.json` still has all seven top-level keys, `theme` and `hash` last. See Pitfalls.
+7. Check `assets.json` has `map` and `hash`, and `assets-edit.json` has `symbol`, `flattened` and
+   `stratifiedSymbolNodes`. See Pitfalls.
 8. Look for lettering inside the obstacles' sprites in `sheet/symbols.*.png`, e.g. HOLO or COMP. Mask it
    out with a `starship-symbol/mask/{key}.svg` (see `docs/starship-sheets.md`), then re-run step 6.
 
@@ -217,7 +218,7 @@ reading runs of dark pixels along a row or column.
   a space, `label='repair bay'`.
 - **Left for a person**: a door lying along a slanted wall. Whether a rotated door rect works is untested.
 
-The layout in `assets.json` says whether it worked: `layout[key].rooms` goes up as rooms close.
+Its layout, `layout/{key}.json`, says whether it worked: its `rooms` go up as rooms close.
 
 ## Removing a symbol
 
@@ -226,23 +227,22 @@ There is no api for it. Replace every instance of it first, e.g. `iris-valves--0
 1. Comment out its key in `symbolByGroup`, saying why, so it is not added back.
 2. Delete `symbol/{key}.json`, `symbol/{key}.thumbnail.png` and `starship-symbol/{key}.png` with plain `rm`.
 3. Drop its entry from `symbol/manifest.json`.
-4. Drop it from `assets.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
+4. Drop it from `assets-edit.json`: `symbol`, `flattened` AND `stratifiedSymbolNodes`. Write with
    `safeJsonCompact`.
 5. Run `pnpm starship-pngs-to-public`, then `pnpm gen-assets-json --changedFiles '[]'` (re-levels and
    re-hashes), then `pnpm gen-starship-sheets`.
 
-Its key is gone from the schema once step 1 is done. So any mention of it left in `assets.json` fails to
+Its key is gone from the schema once step 1 is done. So any mention of it left in `assets-edit.json` fails to
 parse, and `gen-assets-json` then starts from empty (see Pitfalls).
 
 ## Pitfalls
 
-- **`assets.json` can be cut short.** `safeJsonCompact` once dropped everything past 100,000 values,
-  which lost `theme`, `hash` and part of the last layout once enough symbols existed. The cap is lifted
+- **An assets file can be cut short.** `safeJsonCompact` once dropped everything past 100,000 values,
+  which lost `theme`, `hash` and part of the last layout from the single `assets.json` of the time. The cap is lifted
   (`maxValues: Infinity`), but a dev server started before such a fix keeps the old code: restart it.
-- **A broken `assets.json` does not heal.** An incremental rebuild that cannot parse the file starts
-  from empty, keeping only the changed files. Run `pnpm gen-assets-json --force`.
-- **A rebuild from empty loses the themes**, which live only in `assets.json`. Restore `theme` from
-  `git show HEAD:packages/app/public/assets.json`, then rebuild once more.
+- **A broken assets file does not heal.** An incremental rebuild that cannot parse `assets.json`,
+  `assets-edit.json` or a layout starts from empty, keeping only the changed files. Run
+  `pnpm gen-assets-json --force`. Themes are safe: they live in `theme.json`, which it never writes.
 - **A parent used to lag one save behind a child.** The symbols' dependency levels were only worked out
   when a symbol was CREATED, so a parent given a new sub-symbol stayed on its old level and was
   flattened before it. `gen-assets-json` now works the levels out on every run.

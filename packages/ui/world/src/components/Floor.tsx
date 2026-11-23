@@ -21,9 +21,9 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const.env";
+import { MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const.env";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
-import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
+import { isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import {
   deckConfig,
@@ -258,13 +258,6 @@ export default function Floor() {
           step();
         });
       },
-      /** Layout instances for a map we have not loaded yet — enough to draw its hulls */
-      getGmsOf(mapKey) {
-        const mapDef = w.assets.map[mapKey] ?? emptyMapDef;
-        return mapDef.gms.map(({ gmKey, transform }, gmId) =>
-          createLayoutInstance(w.assets.layout[gmKey] as Geomorph.Layout, gmId, transform),
-        );
-      },
       /** Inset by half a hull doorway, to avoid adjacent doorway overlap */
       getHullFloor(layout) {
         return geomService.createInset(layout.hullPoly.map((x) => x.clone().removeHoles())[0], 0.08);
@@ -462,7 +455,6 @@ export type State = {
   drawHulls(gms: Geomorph.LayoutInstance[]): void;
   fadeTo(to: number, ms?: number): Promise<void>;
   fadeOut(nextMapKey: string): Promise<void>;
-  getGmsOf(mapKey: string): Geomorph.LayoutInstance[];
   getHullFloor(layout: Geomorph.Layout): Geom.Poly[];
   /** The hull's own fill, plus the diagonal hatch that used to come from the page behind */
   drawHullFloor(ct: CanvasRenderingContext2D, hullFloor: Geom.Poly[], layout: Geomorph.Layout): void;

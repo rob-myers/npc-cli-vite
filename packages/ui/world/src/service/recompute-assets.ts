@@ -6,7 +6,7 @@
  * However, the core pipeline is pure JS:
  * > parseMapEditSymbol -> stratify -> flattenSymbol -> createLayout
  *
- * This module overlays every localStorage drafts onto the previously fetched "assets.json",
+ * This module overlays every localStorage drafts onto the fetched layouts and "assets-edit.json",
  * re-flattening and re-laying-out each recursively dependent symbol.
  */
 

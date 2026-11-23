@@ -37,7 +37,7 @@ Some scripts need extra tools (pngquant, ImageMagick, Go/TinyGo) — see [toolin
 | `pnpm dev` / `pnpm build` / `pnpm preview` | Run, build, or serve the build |
 | `pnpm typecheck` | Type-check every package (`tsgo -b`) |
 | `pnpm check` | Lint and format check (Biome) |
-| `pnpm gen-assets-json` | Rebuild `assets.json` from MapEdit files — runs by itself on save in dev; `--force` recomputes symbol stratification |
+| `pnpm gen-assets-json` | Rebuild `assets.json` (maps, a hash per layout), `layout/{gmKey}.json` and `assets-edit.json` (symbols, for drafts) from MapEdit files — runs by itself on save in dev; `--force` recomputes symbol stratification. A World fetches the index, then only its map's layouts |
 | `pnpm gen-starship-sheets` | Rebuild the obstacle spritesheet after changing obstacles — or the **obstacles** button in the World menu |
 | `pnpm gen-decor-sheets` / `pnpm gen-skin-sheets` | Rebuild the decor or skin spritesheets |
 | `pnpm gen:ui` / `pnpm gen-pkg` | Scaffold a new UI or package |

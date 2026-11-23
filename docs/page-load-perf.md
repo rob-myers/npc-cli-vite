@@ -67,8 +67,9 @@ created on the thread that also finishes frames).
 
 - **Umami's script is `async`** (`index.html`). As `defer` it ran before the app's module entry,
   in document order, so a slow umami server held up the whole app.
-- **`assets.json` and `sheets.json` are preloaded** (`index.html`). They start during script
-  evaluation, not after the World mounts.
+- **`assets.json`, `theme.json` and `sheets.json` are preloaded** (`index.html`). They start during script
+  evaluation, not after the World mounts. The map's layouts (`layout/{gmKey}.json`) follow the index,
+  one round trip later, in parallel.
 - **`/assets/*` is immutable for a year** (`public/_headers`).
 - **`Tabs` isn't lazy** (`ui/tabs/src/index.ts`). Every pane's header shows on the first render,
   not after a chunk arrives. It is 15 KB.
@@ -90,7 +91,7 @@ created on the thread that also finishes frames).
   doubled the observed LCP.
 - **`preload` of `main.wasm`.** The parser isn't needed until a tty runs a line. The preload only
   took bandwidth.
-- **Skipping zod validation of `assets.json` in production.** It costs 12–24 ms, and its codecs
+- **Skipping zod validation of the assets (then a single `assets.json`) in production.** It costs 12–24 ms, and its codecs
   build `Rect`/`Poly` instances anyway.
 - **Fitting a tty before loading xterm's WebGL renderer, or loading it after the first fit.** The
   first didn't stop the resize, and both use xterm's DOM renderer meanwhile.
