@@ -18,7 +18,7 @@ import { Tty } from "@npc-cli/cli";
 import * as modules from "@npc-cli/cli/jsh/modules";
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Tip, useStateRef } from "@npc-cli/util";
+import { cn, DropRect, dropSideAt, Tip, useStateRef } from "@npc-cli/util";
 import type React from "react";
 import { useContext, useEffect } from "react";
 import { Jobs } from "./Jobs";
@@ -70,7 +70,7 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
         const rect = rootEl.getBoundingClientRect();
         if (drag.kind === "move") {
           if (!state.moving && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < dragStartPx) return;
-          const dropAt = sideAt(rect, e.clientX, e.clientY);
+          const dropAt = dropSideAt(rect, e.clientX, e.clientY);
           if (!state.moving || dropAt !== state.dropAt) state.set({ dropAt, moving: true });
           return;
         }
@@ -176,39 +176,9 @@ export default function Jsh({ meta }: { meta: JshUiMeta }) {
   );
 }
 
-/** Where the jobs would go, once dragged near an edge's centre */
-function DropRect({ at, size }: { at: JobsAt; size: number }) {
-  const pct = `${size * 100}%`;
-  const rectOf: Record<JobsAt, React.CSSProperties> = {
-    top: { inset: 0, bottom: "auto", height: pct },
-    bottom: { inset: 0, top: "auto", height: pct },
-    left: { inset: 0, right: "auto", width: pct },
-    right: { inset: 0, left: "auto", width: pct },
-  };
-  return (
-    <div
-      className="pointer-events-none absolute z-20 outline-2 -outline-offset-4 outline-blue-400 bg-blue-400/20"
-      style={rectOf[at]}
-    />
-  );
-}
-
 /** The jobs are left or right of the tty */
 function acrossOf(at: JobsAt) {
   return at === "left" || at === "right";
-}
-
-/** The side whose edge's centre the point is near, if any */
-function sideAt(rect: DOMRect, x: number, y: number): null | JobsAt {
-  const fx = (x - rect.left) / rect.width;
-  const fy = (y - rect.top) / rect.height;
-  const alongX = Math.abs(fx - 0.5) < zoneAlong / 2;
-  const alongY = Math.abs(fy - 0.5) < zoneAlong / 2;
-  if (alongX && fy < zoneDepth) return "top";
-  if (alongX && fy > 1 - zoneDepth) return "bottom";
-  if (alongY && fx < zoneDepth) return "left";
-  if (alongY && fx > 1 - zoneDepth) return "right";
-  return null;
 }
 
 type JobsAt = JshUiMeta["jobs"]["at"];
@@ -245,9 +215,6 @@ const flexOf: Record<JobsAt, string> = {
   left: "flex-row-reverse",
   right: "flex-row",
 };
-/** An edge's centre, as a share of the Jsh: how far in, and how far along */
-const zoneDepth = 0.2;
-const zoneAlong = 0.5;
 /** Pixels a header moves before it drags */
 const dragStartPx = 6;
 /** The jobs' least size, as their `min-*-24` */

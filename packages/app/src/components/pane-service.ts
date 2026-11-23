@@ -1,10 +1,11 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
 import { getDefaultPanes, uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { type PaneNode as GenericPaneNode, paneTree } from "@npc-cli/util";
+import { type DropSide, type PaneNode as GenericPaneNode, paneTree } from "@npc-cli/util";
 
 export type { PanePosition } from "@npc-cli/util";
 
-const { findNode, maxPaneId, removeNode, shownLeaves, swapChild, toggleParentOrientation, transformNode } = paneTree;
+const { findNode, maxPaneId, removeNode, shownLeaves, splitNode, swapChild, toggleParentOrientation, transformNode } =
+  paneTree;
 export const { countPanes, findPanePosition } = paneTree;
 
 export type PaneNode = GenericPaneNode<{ uiId?: string }>;
@@ -68,18 +69,12 @@ export function splitTabs(vertical: boolean) {
   persistPanesToUi();
 }
 
-export function splitPane(targetId: number, vertical: boolean) {
+/** A new empty Tabs on `side` of `targetId`, by its ui id */
+export function splitPane(targetId: number, side: DropSide) {
   const uiId = createTabsUi();
-  setRoot((prev) => {
-    const leafId = maxPaneId(prev) + 1;
-    return transformNode(prev, targetId, (node) => ({
-      type: "split",
-      id: leafId + 1,
-      vertical,
-      children: [node, { type: "leaf", id: leafId, uiId }],
-    }));
-  });
+  setRoot((prev) => splitNode(prev, targetId, { type: "leaf", id: maxPaneId(prev) + 1, uiId }, side));
   persistPanesToUi();
+  return uiId;
 }
 
 export function closePane(targetId: number) {

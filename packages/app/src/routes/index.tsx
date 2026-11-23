@@ -5,7 +5,7 @@ import { uiRegistry } from "@npc-cli/ui-registry";
 import { flushUisLoaded } from "@npc-cli/ui-sdk/analytics";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
+import { type DropSide, useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
 import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
 import { useEffect, useRef } from "react";
@@ -46,9 +46,9 @@ function Index() {
       overrideContextMenu(...args: Parameters<LayoutApi["overrideContextMenu"]>) {
         overrideContextMenuRef.current?.(...args);
       },
-      splitPane(uiId: string, vertical: boolean) {
+      splitPane(uiId: string, side: DropSide) {
         const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);
-        if (leaf) splitPane(leaf.id, vertical);
+        return leaf ? splitPane(leaf.id, side) : null;
       },
       closePane(uiId: string) {
         const leaf = findLeafByUiId(uiStore.getState().persistedPanes.root, uiId);

@@ -1,5 +1,6 @@
 import type { ThemeName, ThemeState, ThemeStorageKey } from "@npc-cli/theme";
 import type { UiRegistry } from "@npc-cli/ui-registry";
+import type { DropSide } from "@npc-cli/util";
 import { tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
 import { createContext } from "react";
 import type { StorageValue } from "zustand/middleware/persist";
@@ -27,7 +28,8 @@ export type UiContextValue = {
 
 export type LayoutApi = {
   overrideContextMenu(opts: OverrideContextMenuOpts): void;
-  splitPane(uiId: string, vertical: boolean): void;
+  /** A new empty Tabs on `side` of a Tabs' pane, by its id */
+  splitPane(uiId: string, side: DropSide): null | string;
   closePane(uiId: string): void;
   swapPane(uiId: string, direction: -1 | 1): void;
   toggleOrientation(uiId: string): void;
@@ -47,7 +49,7 @@ export function getFallbackLayoutApi(): LayoutApi {
     overrideContextMenu: () => {
       console.warn("overrideContextMenu called before layoutApi was set");
     },
-    splitPane: () => {},
+    splitPane: () => null,
     closePane: () => {},
     swapPane: () => {},
     toggleOrientation: () => {},

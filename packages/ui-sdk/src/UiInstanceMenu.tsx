@@ -8,8 +8,6 @@ import {
   CaretUpIcon,
   DotsThreeOutlineVerticalIcon,
   PlayCircleIcon,
-  SquareHalfBottomIcon,
-  SquareHalfIcon,
   TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -71,20 +69,6 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
       {meta.uiKey === "Tabs" && (
         <div className="flex flex-col border-b border-white/20 py-1">
           <ClosePaneButton disabled={layoutApi.getPaneCount() <= 1} onClose={() => layoutApi.closePane(meta.id)} />
-          <button
-            type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
-            onPointerDown={() => layoutApi.splitPane(meta.id, false)}
-          >
-            <SquareHalfIcon className="size-5" />
-          </button>
-          <button
-            type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
-            onPointerDown={() => layoutApi.splitPane(meta.id, true)}
-          >
-            <SquareHalfBottomIcon className="size-5" />
-          </button>
         </div>
       )}
       {meta.uiKey === "Tabs" && <SwapButtons metaId={meta.id} layoutApi={layoutApi} />}
