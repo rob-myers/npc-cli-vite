@@ -1393,6 +1393,18 @@
           "baseRect": {"width": 120, "height": 180},
           "offset": {"x": 2, "y": -2},
           "cssTransform": "matrix(-1, 0, 0, 1, 722, -2)"
+        },
+        {
+          "id": "d40777a7-0d4f-4a3d-997b-7143321dcdf4",
+          "name": "office--089",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 960, "f": 600},
+          "type": "symbol",
+          "srcKey": "office--089",
+          "baseRect": {"width": 240, "height": 240},
+          "offset": {"x": 3, "y": 2},
+          "cssTransform": "matrix(0, -1, 1, 0, 963, 602)"
         }
       ]
     },

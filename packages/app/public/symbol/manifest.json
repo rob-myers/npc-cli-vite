@@ -854,6 +854,15 @@
       "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
       "type": "symbol",
       "key": "stateroom--035"
+    },
+    "office--089": {
+      "filename": "office--089.json",
+      "thumbnailFilename": "office--089.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": 3, "width": 238.8, "height": 239},
+      "type": "symbol",
+      "key": "office--089"
     }
   }
 }

@@ -83,6 +83,9 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   a tag too. A hull symbol's own optional sub-symbols always stay, having no parent to choose.
 - **Windows**: a tiled strip along a wall is a window, not a shelf. Leave that wall out of the room and
   let the parent place `window--005` (120 long) or `window--007` (180 long) over it.
+- **A window of its own needs a lintel.** A `window` node only connects rooms: its tags are not read. The
+  wall above and below comes from an obstacle with the same outline, as `window--001` has:
+  `obstacle window y=1.8 h=0.2 dup={"force-y":0.4,h:0.4}`. A curved one, e.g. `office--089`'s, too.
 - **Label**: `decor point label=office`, a `label` decor at half scale, or `label=medical` on the door.
   A parent's own label names a room over any a sub-symbol brings into it: see `docs/floor.md`.
 - **Sub-symbols**: a `symbol` node, its name carrying the height e.g. `console--051 y=0.5`. Prefer one
@@ -116,8 +119,26 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 - **Square the corners.** A rounded stroke leaves a short chamfer at each corner. Replace it with the
   corner where its two neighbours meet, which also keeps the border.
 - **A rect where a rect will do.** A `path` is for a shape that is not one.
+- **Stop at a neighbour's line, not past it.** Where an obstacle meets other art, e.g. a counter against
+  glass, end on the far edge of the shared line and short of what starts beyond it. `office--089`'s
+  counter first ran 0.2 past the glass's inner line, and each cell divider beyond it left a stub on its edge.
+- **A curved edge keeps its chords on the right side.** Chords lie inside their circle. On an edge that
+  must stay outside a line, push each vertex out by the sagitta. On one that must stay inside, leave the
+  vertices on the circle.
 
 A machine with no walls is one polygon round its silhouette: every opaque pixel.
+
+## Curves
+
+A curved room, counter or window, e.g. `office--089`'s, is measured from its arc's centre.
+
+- **Find the centre first.** Try the room's corner: `office--089`'s arc is about `(0, 240)`, radius 239.7.
+- **Read radii along rays from it.** Sample the png every few degrees for dark runs: each is a line at
+  that radius. They give the wall's thickness, the glass band's two lines and the counter's inner line.
+- **Profile the ends finely.** An end is often a nearly radial line, which a ray runs alongside and
+  misses. Step half a degree near each end, and look for where the runs change.
+- **Measure the whole band before cutting it.** `office--089`'s glass ran from 25.9° to 64.1°, not the
+  28° first guessed, so its window and lintel lost an end.
 
 ## Wall paths
 
@@ -198,12 +219,26 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
   cut from its png at 1 px per unit, so it is blurred.
 - **Fitting is a search.** Draw the child's png through a candidate matrix over the hull png. Score dark
   pixels on both, less those on the child alone. Try it mirrored too, as a turn alone may not fit.
+  - Draw the child's art at its image node's `cssTransform`, not its `transform`: the two differ by
+    `offset`, and the fit comes out that far off the grid.
+  - Furniture may sit at any angle. Try every 5° when the right angles score badly, e.g. `office--089`'s
+    armchairs at 125° and 145°.
+  - The same search places a room's own furniture in a room's png, at 5 px a unit.
+- **Reuse a room that is drawn whole inside another.** `stateroom--035`'s fresher is `fresher--002`
+  (6438 of 6898 dark pixels), placed as a sub-symbol. The parent's own walls then stop short of the
+  child's.
 
 ## A hull symbol's own walls and doors
 
 Whatever the placed rooms do not enclose is drawn in the hull symbol itself. Measure it off the art by
 reading runs of dark pixels along a row or column.
 
+- **The png's origin comes from its hull walls.** Read the outer walls' dark runs and centre them on
+  `0`, `1200` and `600`: g-303's are 8 px thick at x 2–9 and y 3–10, so its image node is at `(-6, -7)`.
+  The earlier project's numbers may then be a unit off: 303's were 1 high.
+- **The hull walls must close into a ring.** The walkable area is the outline of their union, so a gap
+  leaves no navmesh at all. Put a `wall hull _window` rect under every window in a hull wall, as 302 does.
+  303's north wall first had gaps at its six windows: no rooms joined and `spawn` said `not placable`.
 - **Walls** go in a `walls` group as `rect`s named `wall`, as thick as drawn (4 thin, 8 thick), each
   running across its doors.
 - **Doors are appended AFTER the hull doors.** A door's id below the hull-door count is what marks it as
@@ -238,6 +273,16 @@ the art decides the final numbers. `symbol-generation/diagrams.py` draws it.
 | M5 | `medical-bed--006`, `console--022` | their pngs and old svgs |
 
 The north strip at `720` to `960` and the locked room have no symbol in the old svg: fit them from the art.
+
+What it taught, besides the rules above:
+- **The art disagrees with the old svg in places.** 720 to 960 is an exec stateroom and its fresher, and
+  the mess stools are round. Draw what the art shows.
+- **A room's art can be smaller than its grid.** `office--089`'s png is 238.8 square, so its own walls
+  sit where the hull art puts its doors, at `7.5` and `232.5`, not on the 60-grid.
+- **A switch may have no room beside its door.** Put each side's switch at whichever end of the door
+  has room, or overlap the door's end a little, then check none lies outside a room.
+- **Add to a saved symbol, not by regenerating it.** Each node's `id` then stays put, which keeps
+  diffs small once it is committed.
 
 ## Removing a symbol
 

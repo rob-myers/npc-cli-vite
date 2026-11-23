@@ -144,14 +144,14 @@
     }
   },
   "hash": {
-    "obstacles": -1027337473,
+    "obstacles": 810904580,
     "layout": {
       "g-101--multipurpose": 1376844981,
       "g-102--research-deck": -558553446,
       "g-301--bridge": -1630314190,
       "g-301--playground": -86429936,
       "g-302--xboat-repair-bay": 1602884446,
-      "g-303--passenger-deck": 182650979
+      "g-303--passenger-deck": 2067317273
     }
   }
 }
