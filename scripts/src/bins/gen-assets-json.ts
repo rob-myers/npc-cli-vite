@@ -1,9 +1,9 @@
 #!/usr/bin/env node --import=tsx
 
 /**
- * - `symbol` -- symbol key to geometry/metadata
- * - `flattened` -- symbol key to unwound symbols (includes hull symbols)
- * - `layout` -- symbol key to layouts (geomorphs)
+ * - `assets.json` -- maps, and a hash per layout file
+ * - `assets-edit.json` -- symbols, flattened symbols and their stratification
+ * - `layout/{gmKey}.json` -- one layout per geomorph
  *
  * USAGE:
  * ```sh
@@ -28,7 +28,7 @@ import {
   parseSymbolFromSavedFile,
 } from "@npc-cli/ui__world/geomorph";
 import { jsonParser } from "@npc-cli/util/json-parser";
-import { entries, error, hashJson, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
+import { entries, error, hashJson, hashText, info, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import z from "zod";
 import { PROJECT_ROOT } from "../const";
 import { perf } from "../service/performance";
@@ -102,18 +102,20 @@ perf("total");
 
 // reparse via z.encode ensures key-ordering
 const encoded = z.encode(AssetsSchema, assets);
-const { symbol, flattened, stratifiedSymbolNodes, layout } = encoded;
-const layoutFiles = entries(layout).map(([gmKey, l]) => [assetsPaths.layout(gmKey), l] as const);
+const { symbol, flattened, stratifiedSymbolNodes, layout, map, hash } = encoded;
+const layoutRaws = entries(layout).map(([gmKey, l]) => [gmKey, safeJsonCompact(l)] as const);
+const layoutFiles = layoutRaws.map(([gmKey, raw]) => [assetsPaths.layout(gmKey), raw] as const);
 const staleLayoutFiles = fs
   .globSync(path.join(assetsPaths.layoutDir, "*.json"))
   .filter((file) => !layoutFiles.some(([f]) => f === file));
+const index = { map, hash: { ...hash, layout: Object.fromEntries(layoutRaws.map(([k, raw]) => [k, hashText(raw)])) } };
 
 fs.mkdirSync(assetsPaths.layoutDir, { recursive: true });
 const written = [
-  [assetsJsonPath, encoded] as const,
-  [assetsPaths.edit, { symbol, flattened, stratifiedSymbolNodes }] as const,
+  [assetsJsonPath, safeJsonCompact(index)] as const,
+  [assetsPaths.edit, safeJsonCompact({ symbol, flattened, stratifiedSymbolNodes })] as const,
   ...layoutFiles,
-].filter(([file, json]) => writeIfChanged(file, safeJsonCompact(json)));
+].filter(([file, raw]) => writeIfChanged(file, raw));
 staleLayoutFiles.forEach((file) => fs.rmSync(file));
 
 const namesOf = (files: string[]) => files.map((f) => path.relative(publicDir, f)).join(", ");

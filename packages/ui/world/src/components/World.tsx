@@ -5,7 +5,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson, keys } from "@npc-cli/util/legacy/generic";
 import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -14,12 +14,14 @@ import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import type { OverrideProperties } from "type-fest";
 import {
-  AssetsSchema,
-  type AssetsType,
+  AssetsEditSchema,
+  AssetsIndexSchema,
+  GeomorphLayoutSchema,
   getSheetUrl,
   SheetsSchema,
   type SheetsType,
   ThemesSchema,
+  type WorldAssets,
 } from "../assets.schema";
 import { skinSliceDims } from "../const.both";
 import {
@@ -270,9 +272,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
-      isPlaygroundMap() {
+      isPlaygroundMap(assets = state.assets) {
         if (isPlaygroundMapKey(state.mapKey)) return true;
-        const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
+        const mapDef = assets.map[state.mapKey] ?? emptyMapDef;
         return mapDef.gms.some(({ gmKey }) => isPlaygroundSymbolKey(gmKey));
       },
       isMapChanging() {
@@ -480,15 +482,27 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.decor.ready = false;
 
       state.setNextPending({ assets: true });
-      const [assets, theme] = await Promise.all([
-        fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsSchema),
+      const [index, theme] = await Promise.all([
+        fetchParsed(`/assets.json${getDevCacheBustQueryParam()}`, AssetsIndexSchema),
         fetchParsed(`/theme.json${getDevCacheBustQueryParam()}`, ThemesSchema),
       ]);
-      state.assets = { ...assets, theme };
-
-      if (state.isPlaygroundMap()) {
-        await recomputeAssetsViaDrafts(state.assets);
+      const assets: WorldAssets = { ...index, layout: {}, theme };
+      const playground = state.isPlaygroundMap(assets);
+      // a playground's drafts may reach any geomorph
+      const gmKeys = playground
+        ? keys(index.hash.layout)
+        : (index.map[state.mapKey] ?? emptyMapDef).gms.map(({ gmKey }) => gmKey);
+      await Promise.all(
+        [...new Set(gmKeys)].map(async (gmKey) => {
+          const hash = index.hash.layout[gmKey];
+          if (hash === undefined) return;
+          assets.layout[gmKey] = await fetchParsed(`/layout/${gmKey}.json?h=${hash}`, GeomorphLayoutSchema);
+        }),
+      );
+      if (playground) {
+        await recomputeAssetsViaDrafts(assets, await fetchParsed(`/assets-edit.json`, AssetsEditSchema));
       }
+      state.assets = assets;
 
       const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
 
@@ -641,7 +655,7 @@ export type State = {
   threeReady: boolean;
   touchDevice: boolean;
 
-  assets: AssetsType;
+  assets: WorldAssets;
   gms: Geomorph.LayoutInstance[];
   gmsData: DerivedGmsData;
   gmGraph: GmGraph;
@@ -738,7 +752,7 @@ export type State = {
   /** Either playground map or mentions a playground hull-symbol */
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;
-  isPlaygroundMap(): boolean;
+  isPlaygroundMap(assets?: WorldAssets): boolean;
   /** Provide connectionKey to dismiss "disconnected" toast */
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;

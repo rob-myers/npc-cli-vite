@@ -15,7 +15,7 @@ import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import type { MapEditSavedMap, MapEditSavedSymbol } from "@npc-cli/ui__map-edit/editor.schema";
 import { getLocalStorageDrafts } from "@npc-cli/ui__map-edit/map-node-api";
 import { info, pause } from "@npc-cli/util/legacy/generic";
-import type { AssetsType } from "../assets.schema";
+import type { AssetsEditType, AssetsType, WorldAssets } from "../assets.schema";
 import { createLayout, createMapDefFromSavedFile, flattenSymbols, parseSymbolFromSavedFile } from "./geomorph";
 
 /**
@@ -28,7 +28,9 @@ import { createLayout, createMapDefFromSavedFile, flattenSymbols, parseSymbolFro
  * - Applies all `localStorage` drafts one-per-symbol, only changing ancestral symbols and their layouts.
  * - In practice we'll probably only change hull-symbols
  */
-export async function recomputeAssetsViaDrafts(assets: AssetsType): Promise<void> {
+export async function recomputeAssetsViaDrafts(worldAssets: WorldAssets, edit: AssetsEditType): Promise<void> {
+  /** Shares `worldAssets.map` and `.layout`, so what it sets there reaches the World */
+  const assets: AssetsType = { ...edit, ...worldAssets };
   const drafts = "localStorage" in self ? getLocalStorageDrafts() : [];
 
   const mapEditMapDrafts = drafts.filter((x): x is MapEditSavedMap => x.type === "map");
