@@ -432,6 +432,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return false;
         }
 
+        if (saved.phaser === "stowed") w.phasers?.stowed.add(state.key); // before they spawn, so no gun shows
         try {
           // the usual spawn, so e.g. colliders are triggered
           await w.npc.spawn({
@@ -442,6 +443,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
             as: saved.skinKey,
           });
           w.e.restoreAccess(saved);
+          if (saved.phaser === "armed") w.phasers?.arm(state.key);
           return true;
         } catch (e) {
           error(e); // e.g. no longer placable

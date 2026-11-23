@@ -1133,9 +1133,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               lit: npc.lit === true ? true : undefined,
               access: state.getHeldDoors(npc.key),
               dead: npc.anim.dead === true ? npc.anim.hurt?.key : undefined,
+              phaser: state.phaserStateOf(npc.key),
             })),
           },
         });
+      },
+      phaserStateOf(npcKey) {
+        if (w.phasers === null || state.hasItem(npcKey, "phaser") === false) return undefined;
+        return w.phasers.isArmed(npcKey) ? "armed" : w.phasers.stowed.has(npcKey) ? "stowed" : "disarmed";
       },
       postNpcTick() {
         if (state.timers.size > 0) {
@@ -1478,10 +1483,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit, access, dead } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access, dead, phaser } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
+          if (phaser === "stowed") w.phasers?.stowed.add(key); // before they spawn, so no gun shows
           try {
             // the decor meta re-establishes what they were doing e.g. sitting
             await w.npc.spawn({
@@ -1494,6 +1500,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            if (phaser === "armed") w.phasers?.arm(key);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
@@ -2316,6 +2323,8 @@ export type State = {
   persistDecor(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
   persistNpcs(): void;
+  /** Their phaser as saved, if they carry one */
+  phaserStateOf(npcKey: string): undefined | NonNullable<persisted.PersistedNpc["phaser"]>;
   /** Recreate the runtime decor persisted for `w.mapKey` */
   restoreDecor(saved?: null | Geomorph.DecorDef[]): void;
   /** Make runtime decor of this map's layout items not yet made, remove those it lost, and save */

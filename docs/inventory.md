@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else lowers it (`w.phasers.disarm`), the gun still in hand. `w.phasers.stow(key)` puts it away: lowered, the gun fades from the hand until drawn again. Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else lowers it (`w.phasers.disarm`), the gun still in hand. `w.phasers.stow(key)` puts it away: lowered, the gun fades from the hand until drawn again. Whether it is stowed, lowered or raised is saved with the map (`PersistedNpc.phaser`). Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
