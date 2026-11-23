@@ -42,6 +42,7 @@ import {
 } from "../service/camera-view";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
+import { mapGroupsOf } from "../service/geomorph";
 import { webRtcWorks } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, type HudLayout, listWorldKeysWithMap } from "../service/storage";
@@ -53,7 +54,6 @@ export function WorldMenu() {
   const { uiStoreApi } = useContext(UiContext);
 
   const w = useContext(WorldContext);
-  const mapKeys = Object.keys(w.assets?.map ?? {});
   const npcKeys = Object.keys(w.n ?? {});
   /** Touch gets a full-height panel with larger targets, instead of the resizable popup */
   const touch = w.touchDevice;
@@ -587,15 +587,14 @@ export function WorldMenu() {
               <MenuSelect
                 label={w.mapKey}
                 value={w.mapKey}
-                items={mapKeys.map((key) => ({ key, value: key }))}
+                items={mapGroupsOf(w.assets?.map ?? {}).flatMap(({ label, keys }) =>
+                  keys.map((key) => ({ key, value: key, section: label })),
+                )}
                 side="bottom"
                 onValueChange={async (key) => {
                   if (!key || key === w.mapKey) return;
                   state.set({ menuOpen: false }); // nothing over the transition
-                  await w.net?.leave(); // a manual map switch ends any mirror session first
-                  await w.floor?.fadeOut(key);
-                  w.e.onChangeMap(); // persist + remove whilst the old map still exists
-                  uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                  await w.changeMap(key).catch((e) => console.warn(`map change: ${e.message}`));
                 }}
               />
               {/* reset this map's npcs, lit rooms and locked doors, or take another world's */}
@@ -1768,7 +1767,8 @@ export function MenuSelect<T extends string>({
   /** Shows a down-caret, so it reads as a select rather than a button */
   caret?: boolean;
   className?: string;
-  items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean }[];
+  /** An item's `section` is labelled where it starts, as in `MenuMultiSelect` */
+  items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean; section?: string }[];
   /** Defaults to value */
   label?: string;
   side?: "left" | "right" | "bottom" | "top";
@@ -1812,18 +1812,22 @@ export function MenuSelect<T extends string>({
         >
           <Select.Popup className="min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
-              {items.map((item) => (
-                <Select.Item
-                  key={item.key}
-                  value={item.value}
-                  disabled={item.disabled}
-                  className={cn(
-                    selectItemClassName(touch, item.value === value),
-                    "data-disabled:cursor-default data-disabled:opacity-40",
+              {items.map((item, i) => (
+                <Fragment key={item.key}>
+                  {item.section !== undefined && item.section !== items[i - 1]?.section && (
+                    <div className={sectionLabelClass}>{item.section}</div>
                   )}
-                >
-                  <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
-                </Select.Item>
+                  <Select.Item
+                    value={item.value}
+                    disabled={item.disabled}
+                    className={cn(
+                      selectItemClassName(touch, item.value === value),
+                      "data-disabled:cursor-default data-disabled:opacity-40",
+                    )}
+                  >
+                    <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
+                  </Select.Item>
+                </Fragment>
               ))}
             </Select.List>
           </Select.Popup>
