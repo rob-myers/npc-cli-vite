@@ -174,7 +174,8 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
-export async function demo_spawn_many({ w }: JshCli.RunArg) {
+/** Spawns an npc onto every seat, bed and standing spot, and yields those already taken */
+export async function* demo_spawn_many({ w }: JshCli.RunArg) {
   const pointsWithMeta = [] as WithMeta<JshCli.GroundPoint>[];
   for (const [_gmId, gmRooms] of w.decor.byRoom.entries()) {
     for (const [_roomId, roomDecor] of gmRooms.entries()) {
@@ -193,9 +194,11 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
   const skinKeys = w.npc.skin.entries.map((x) => x.key);
   const skinCount = skinKeys.length;
 
-  await w.e.spawnMany({
+  const failed = await w.e.spawnMany({
     baseKey: "npc",
     ats: pointsWithMeta,
     skins: pointsWithMeta.map(() => skinKeys[Math.floor(skinCount * Math.random())]),
+    verify: true,
   });
+  for (const { npcKey, error } of failed) yield `${npcKey}: ${error}`;
 }

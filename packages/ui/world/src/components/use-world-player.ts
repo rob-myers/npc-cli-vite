@@ -4,8 +4,9 @@ import { error, warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
+import { defaultPlayerKey, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore, getWorldStore } from "../service/storage";
+import { isDoorAreaId, largestNavPolyCentre } from "../worker/nav-util";
 import type { State as WorldState } from "./World";
 
 /**
@@ -522,28 +523,21 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       async spawnSomewhere() {
         // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
-        const labelled = Object.values(w.decor.byKey).flatMap((decor) =>
-          w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta] : [],
+        const labelled = new Set<string>(
+          Object.values(w.decor.byKey).flatMap((decor) =>
+            w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta.grKey] : [],
+          ),
         );
-        // a map may label no room at all e.g. a bare playground hull — then any room will do
-        const rooms =
-          labelled.length > 0 ? labelled : w.gms.flatMap((gm, gmId) => gm.rooms.map((_, roomId) => ({ gmId, roomId })));
-        for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
-          const { gmId, roomId } = rooms[Math.floor(Math.random() * rooms.length)] ?? {};
-          const gm = w.gms[gmId as number];
-          const room = gm?.rooms[roomId as number];
-          if (room === undefined) {
-            break; // no such rooms
-          }
-
-          try {
-            await w.npc.spawn({ npcKey: state.key, at: gm.matrix.transformPoint({ ...room.center }) });
-            return true;
-          } catch (e) {
-            error(e); // e.g. "not placable": try another room
-          }
-        }
-        return false;
+        // off doorways, in a labelled room if any. A map may label none, e.g. a bare playground hull
+        const at = largestNavPolyCentre(
+          w.nav.navMesh,
+          (centre, poly) =>
+            isDoorAreaId(poly.area) === false &&
+            (labelled.size === 0 || labelled.has(w.findRoomContaining(centre)?.grKey ?? "")),
+        );
+        if (at === null || w.npc.spawnCheck(at, state.key).error !== null) return false;
+        await w.npc.spawn({ npcKey: state.key, at });
+        return true;
       },
       startAutofire() {
         const fire = () => {
@@ -820,7 +814,7 @@ export type State = {
   setKey(npcKey: string): void;
   /** Listens on the World's root for the player's keys and taps, returning the cleanup */
   setupDom(): () => void;
-  /** Spawns the player in a random room, preferring `spawnRoomLabels` — `false` if every attempt failed */
+  /** Spawns the player at the largest navmesh poly's centre, in a `spawnRoomLabels` room if any. `false` if not placable */
   spawnSomewhere(): Promise<boolean>;
 };
 

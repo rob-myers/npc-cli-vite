@@ -4,7 +4,7 @@ import { Rect } from "@npc-cli/util/geom/rect";
 import { Vect } from "@npc-cli/util/geom/vect";
 import { geomService } from "@npc-cli/util/geom-service";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
-import type { NavMesh, NavMeshTile } from "navcat";
+import type { NavMesh, NavMeshPoly, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
 
@@ -238,6 +238,35 @@ const agentRadius: NpcDims["agentRadius"] = 0.2;
 const shutDoorKeepOut: NpcDims["shutDoorKeepOut"] = 0.05;
 const doorAreaOutsetAmount = agentRadius + shutDoorKeepOut;
 
+/** A navmesh poly's area, by shoelace, and the mean of its vertices */
+function polyStats(tile: NavMeshTile, poly: NavMeshPoly) {
+  const { vertices: vs } = tile;
+  const ids = poly.vertices;
+  let [twice, sx, sy] = [0, 0, 0];
+  for (let i = 0; i < ids.length; i++) {
+    const [a, b] = [3 * ids[i], 3 * ids[(i + 1) % ids.length]];
+    twice += vs[a] * vs[b + 2] - vs[b] * vs[a + 2];
+    sx += vs[a];
+    sy += vs[a + 2];
+  }
+  return { area: Math.abs(twice) / 2, x: sx / ids.length, y: sy / ids.length };
+}
+
+/** The centre of the largest poly `pass` accepts, else `null` */
+export function largestNavPolyCentre(
+  navMesh: NavMesh,
+  pass: (centre: Geom.VectJson, poly: NavMeshPoly) => boolean,
+): null | Geom.VectJson {
+  let [best, bestArea] = [null as null | Geom.VectJson, 0];
+  for (const tile of Object.values(navMesh.tiles)) {
+    for (const poly of tile.polys) {
+      const { area, x, y } = polyStats(tile, poly);
+      if (area > bestArea && pass({ x, y }, poly)) [best, bestArea] = [{ x, y }, area];
+    }
+  }
+  return best;
+}
+
 /** Square metres under which a navmesh island is reported: an npc put there cannot walk out */
 const smallIslandArea = 2;
 
@@ -256,20 +285,12 @@ export function findSmallIslands(navMesh: NavMesh): WW.NavIsland[] {
     for (let index = stack.pop(); index !== undefined; index = stack.pop()) {
       const node = nodes[index];
       if (area < smallIslandArea) {
-        // shoelace area, and the mean of its vertices weighted by it
-        const { vertices: vs, polys } = tiles[node.tileId];
-        const ids = polys[node.polyIndex].vertices;
-        let [twice, sx, sy] = [0, 0, 0];
-        for (let i = 0; i < ids.length; i++) {
-          const [a, b] = [3 * ids[i], 3 * ids[(i + 1) % ids.length]];
-          twice += vs[a] * vs[b + 2] - vs[b] * vs[a + 2];
-          sx += vs[a];
-          sy += vs[a + 2];
-        }
-        const polyArea = Math.abs(twice) / 2;
-        area += polyArea;
-        cx += (polyArea * sx) / ids.length;
-        cy += (polyArea * sy) / ids.length;
+        // the mean of its vertices, weighted by its area
+        const tile = tiles[node.tileId];
+        const poly = polyStats(tile, tile.polys[node.polyIndex]);
+        area += poly.area;
+        cx += poly.area * poly.x;
+        cy += poly.area * poly.y;
       }
       for (const linkIndex of node.links) {
         const next = links[linkIndex].toNodeIndex;

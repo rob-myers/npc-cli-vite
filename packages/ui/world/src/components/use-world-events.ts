@@ -1584,38 +1584,35 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async spawnMany(opts) {
         const baseKey = opts.baseKey ?? "npc";
         const numPermitted = MAX_NPCS - (w.npc.npcToRoom.size + state.externalNpcs.size);
-        const groundPoints = opts.ats.slice(0, numPermitted).map(helper.parseGroundPoint);
-        const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
-
-        /** Ground point should either be doable or navigable */
-        const doResults = groundPoints.map((p, i) => w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i], p));
-
-        const angles = doResults.map((doResult, i) => {
-          const angleOrPoint = opts.looks?.[i];
-          return w.npc.determineSpawnedAngle({
-            groundPoint: groundPoints[i],
-            meta: doResult?.meta ?? emptyMeta,
-            angle: typeof angleOrPoint === "number" ? angleOrPoint : undefined,
-            facing: helper.isPointAnyFormat(angleOrPoint) ? angleOrPoint : undefined,
-            npc: w.n[npcKeys[i]],
-          });
-        });
-
+        const failed: { npcKey: string; error: string }[] = [];
         // 1st spawn only, no respawning
         const npcs: Npc[] = [];
-        for (const [i, npcKey] of npcKeys.entries()) {
-          const doResult = doResults[i];
-          const groundPoint = doResult?.meta.groundPoint ?? groundPoints[i];
+
+        for (const [i, at] of opts.ats.slice(0, numPermitted).entries()) {
+          const npcKey = opts.keys?.[i] ?? `${baseKey}-${i}`;
+          const check = opts.verify === true ? w.npc.spawnCheck(at, npcKey) : null;
+          if (check?.error) {
+            failed.push({ npcKey, error: check.error });
+            continue;
+          }
+
+          const groundPoint = helper.parseGroundPoint(at);
+          /** Ground point should either be doable or navigable */
+          const doResult = check?.doResult ?? w.npc.findFreeDoMeta(groundPoint.meta ?? emptyMeta, npcKey, groundPoint);
+          const look = opts.looks?.[i];
           npcs.push(
             w.npc.rawSpawn({
               npcKey,
-              groundPoint,
+              groundPoint: doResult.meta.groundPoint ?? groundPoint,
               doResult,
               as: opts.skins?.[i] ?? w.npc.defaultSkinKey,
-              angle: angles[i],
+              angle: typeof look === "number" ? look : undefined,
+              facing: helper.isPointAnyFormat(look) ? look : undefined,
+              closePolyResult: check?.closePolyResult,
             }),
           );
         }
+        const npcKeys = npcs.map((npc) => npc.key);
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
@@ -1630,6 +1627,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         );
 
         w.events.next({ key: "spawned-many", npcKeys });
+        return failed;
       },
       showRays(key, rays) {
         const prev = state.shownRays.get(key);
@@ -2352,7 +2350,8 @@ export type State = {
     opts?: RaycastOpts,
   ): Promise<(null | JshCli.RaycastResult)[]>;
   removeNpcs(...npcKeys: string[]): void;
-  spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
+  /** The npcs skipped, by `opts.verify`, with why */
+  spawnMany(opts: JshCli.SpawnManyOpts): Promise<{ npcKey: string; error: string }[]>;
   /**
    * - When an npc is moving its destination should be inside a room.
    * - When the npc is in a room adjacent to the destination room,

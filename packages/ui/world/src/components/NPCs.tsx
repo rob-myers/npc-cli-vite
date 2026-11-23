@@ -622,24 +622,12 @@ export default function NPCs() {
         const groundAt = helper.parseGroundPoint(at);
 
         // test early to avoid creating unspawnable npc
-        // - throw if doable but occupied
-        // - throw if not doable and not navigable
-        const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey, groundAt);
-        if (doResult.type === "occupied") {
-          throw Error("occupied");
-        }
-
-        let closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
-        const gmRoomId = closePolyResult ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
-        // off the navmesh, or its nearest point lies across a wall
-        if (
-          closePolyResult &&
-          (!closePolyResult.success || w.findRoomContaining(closePolyResult.position, true)?.grKey !== gmRoomId?.grKey)
-        ) {
-          if (dead === false) throw Error("not placable");
+        const { doResult, error, gmRoomId, ...check } = state.spawnCheck(at, npcKey);
+        let { closePolyResult } = check;
+        if (error === "not placable" && dead !== false && closePolyResult !== undefined) {
           // a corpse lies where it is put, out of the crowd
           closePolyResult = { ...closePolyResult, success: false, position: helper.groundPointToTuple(groundAt) };
-        }
+        } else if (error !== null) throw Error(error);
         if (gmRoomId === null) throw Error("must be in some room");
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
@@ -669,6 +657,25 @@ export default function NPCs() {
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
+      },
+      spawnCheck(at, npcKey) {
+        const groundAt = helper.parseGroundPoint(at);
+        const doResult = state.findFreeDoMeta(at.meta ?? {}, npcKey, groundAt);
+        const closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
+        const gmRoomId = closePolyResult ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
+        /** Off the navmesh, or its nearest point lies across a wall */
+        const offMesh =
+          closePolyResult !== undefined &&
+          (!closePolyResult.success || w.findRoomContaining(closePolyResult.position, true)?.grKey !== gmRoomId?.grKey);
+        const error =
+          doResult.type === "occupied"
+            ? "occupied"
+            : offMesh
+              ? "not placable"
+              : gmRoomId
+                ? null
+                : "must be in some room";
+        return { closePolyResult, doResult, error, gmRoomId };
       },
       setAmbient(next, sameRoom) {
         state.ambientNode.value = next;
@@ -1017,6 +1024,7 @@ export type State = {
   }): Npc;
   setBreathTune(partial: Partial<BreathTune>): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
+  spawnCheck(at: MaybeMeta<JshCli.PointAnyFormat>, npcKey: string): JshCli.SpawnCheck;
   /**
    * Shuffle round before walking off, when the first leg is well behind them AND someone stands
    * near: avoidance can hold a walker near-still beside an idle npc, and facing follows velocity
