@@ -32,11 +32,17 @@ takes a wall as full height:
 
 ## Bands
 
+Walls are unlit (`MeshBasicNodeMaterial`) flat colour: the theme's, from a uniform, with no colour per instance.
+
 A wall is darker along its foot and its top, `wallBandHeight` (0.2 m) each, at `wallBandDarken` (2)
 times its opacity. Drawn in the wall's own colour, so walls of one colour blend alike in any order:
 they write no depth, and are not drawn back to front. A band of another colour, or a separate band
 mesh, showed through nearer walls (`WallSkirts`, `WallTrims`, both gone). The lit edge along a wall's
 foot is drawn into the floor instead: `deckConfig.skirt` in `docs/floor.md`.
+
+## Broad walls
+
+A broad wall (`wall no-fill broad`) is a solid block, e.g. a fuel tank. Its sides are hatched (`broadHatch`, `wallHatch` an attribute per wall), fading to black at its foot, so it reads as solid under its lid. The hatch is fixed on screen, not on each face: faces seen through one another, or meeting at a corner, then agree rather than fight.
 
 ## Lintels
 

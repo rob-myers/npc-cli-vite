@@ -806,11 +806,15 @@ export type State = {
 };
 
 extend({
+  MeshBasicNodeMaterial: THREE.MeshBasicNodeMaterial,
   MeshStandardNodeMaterial: THREE.MeshStandardNodeMaterial,
 });
 
 declare module "@react-three/fiber" {
   interface ThreeElements {
+    meshBasicNodeMaterial: ThreeElements["meshBasicMaterial"] & {
+      colorNode?: THREE.MeshBasicNodeMaterial["colorNode"];
+    };
     meshStandardNodeMaterial: ThreeElements["meshStandardMaterial"] & {
       colorNode?: THREE.MeshStandardNodeMaterial["colorNode"];
       normalNode?: THREE.MeshStandardNodeMaterial["normalNode"];
