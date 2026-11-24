@@ -776,7 +776,7 @@ function PlayerButtons({
           {...(big ? farPress : undefined)}
           data-far={farLook || undefined}
         >
-          <CompassRose />
+          <CompassRose ready={w.r3f != null} />
         </div>
         {/* last: right-most in the bar, bottom-most in a column */}
         <PlayerMenu
@@ -962,9 +962,9 @@ const buttonIcon = (on: boolean) =>
 
 /**
  * The compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen.
- * Drawn once. A camera turn redraws it through `w.hud.syncCompass`, never a render
+ * Drawn once, and again once `ready`, i.e. r3f is up. A camera turn redraws it through `w.hud.syncCompass`, never a render
  */
-const CompassRose = memo(function CompassRose() {
+const CompassRose = memo(function CompassRose({ ready }: { ready: boolean }) {
   const w = useContext(WorldContext);
   const { compassPoint = 0, wasdSkew = 0 } = w.view ?? {};
   return (
@@ -984,7 +984,7 @@ const CompassRose = memo(function CompassRose() {
         transform={`rotate(${(wasdSkew * 180) / Math.PI})`}
         className="fill-white"
       />
-      <CompassFov />
+      {ready && <CompassFov />}
     </svg>
   );
 });

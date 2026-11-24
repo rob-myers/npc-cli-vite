@@ -46,6 +46,7 @@ Pnpm monorepo. Key packages:
 
 **World**
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child. Anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
+- `WorldHud` and the other DOM siblings of `<WorldView>` can mount before `w.view` and `w.r3f` exist. Guard them in their effects, as `watchFollow` does. A fresh load shows this, where a hot reload never does.
 - The core components mounted in `<World>` (e.g. `Floor`, `Decor`, `Doors`) avoid `w.e`. Data they need lives with its owner, e.g. a room's label meta in `w.gmsData.byKey[gmKey].roomMeta`. A few still use it, to be moved later.
 - Nearby npcs are found through `w.npc.near` (`use-nearby-npcs.ts`), never by scanning every npc in `w.n` without good reason. A test of one's own, e.g. a ray, runs over what it returns.
   - `inRooms(rooms)` and `inReach(npcKey, doors)` go by room, over `w.npc.roomToNpcs`. That way a wall is never between the two.
