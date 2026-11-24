@@ -95,9 +95,10 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   `couch-and-chairs--006` a sofa with its end tables. Rotate it about its centre by the node's `transform`.
 - **Obstacles**: a `rect` or a `path`, named e.g. `obstacle table surface y=0.7`, or
   `obstacle y=1 h=0.7 tint=#444 skirtTint=#777` for machinery.
-- **An obstacle's `y` is its top and `h` how far down it reaches.** Give both, or a parent's `y`: one with
-  `h` alone tops out at the floor, so `createLayout` raises it to `y=h` and warns. `medical-bed--006`'s
-  curtains were `h=1.6` alone, and did not show.
+- **An obstacle's `y` is its top and `h` how far down it reaches.** One with `h` alone stands on the
+  floor: `createLayout` raises its top to `y=h`, as a parent's `y` would.
+- **A point `on` an obstacle** (`decor point do=sit on`) sits just above its top: the obstacle's height
+  plus 0.01, whatever raised it. A `y` of the point's own wins, e.g. the sinks' `do=stand on y=0`.
 - **Heights add.** A parent's `y` is added to the obstacle's own. So furniture a parent will place by
   height carries none itself: the shops are `obstacle machine tint=#555 skirtTint=#555`, placed `y=0.8`.
 

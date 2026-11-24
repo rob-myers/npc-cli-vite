@@ -266,11 +266,8 @@ export function createLayout(
     // can set heightAsDimension to be heightOffFloor
     if (o.meta["max-h"] === true) meta.h = heightOffFloor;
     if (typeof o.meta.windowId === "number") meta.windowId = o.meta.windowId;
-    // an obstacle never reaches below the floor: its top `y` is at least its depth `h`
-    if (typeof meta.h === "number" && heightOffFloor < meta.h) {
-      warn(`${gmKey}: ${symbolKey} obstacle ${origObstacleId} has y=${heightOffFloor} < h=${meta.h}: raised to h`);
-      heightOffFloor = meta.h;
-    }
+    // an obstacle never reaches below the floor, so one with `h` alone stands on it
+    if (typeof meta.h === "number" && heightOffFloor < meta.h) heightOffFloor = meta.h;
 
     return {
       symbolKey,
@@ -287,6 +284,8 @@ export function createLayout(
     const obstacleId = d.meta.obstacleId;
     if (typeof obstacleId === "number") {
       (obstacles[obstacleId].meta.decorIds ??= []).push(decorId);
+      // just above its obstacle's top, unless it has a `y` of its own
+      if (flat.decor[decorId].meta.y == null) d.meta.y = toPrecision(obstacles[obstacleId].height + 0.01);
     }
   });
 
@@ -954,13 +953,15 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
  * For nested symbols i.e. before decor becomes `Geomorph.Decor`
  */
 export function transformDecorMeta(meta: Meta, mat: Mat, y?: number): Meta {
+  /** Null for decor `on` an obstacle with no `y` of its own: `createLayout` puts it on the obstacle's top */
+  const inherits = meta.on === true && meta.y == null;
   /** if `y=0` place decor "on the ground" otherwise aggregate `y` */
   const nextY = meta.y === 0 ? 0.01 : (parseFloat(String(y)) || 0) + (parseFloat(String(meta.y)) || 0.01);
   const nextH = meta.h;
 
   return {
     ...meta,
-    y: nextY,
+    y: inherits ? null : nextY,
     h: nextH,
     ...(Array.isArray(meta.transform) && {
       transform: tmpMat2
