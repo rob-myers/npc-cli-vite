@@ -29,7 +29,7 @@ export default function LightSweep() {
       w.view.fadeRoomsFx.mode === "sight",
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
-    if (player !== undefined && w.view.cameraMode === "embodied") {
+    if (player !== undefined && w.view.isEmbodied()) {
       /** A far look, aiming too, extends it a little past the first wall. Any other look caps it */
       const { far } = w.player.look;
       // the way their head faces, which is not always their body's

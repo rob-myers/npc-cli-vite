@@ -103,15 +103,10 @@ export function WorldView(props: React.PropsWithChildren) {
       canvas: null as any,
       pausedEl: null,
       warming: false,
-      // touch is always `free`, and never follows: see `docs/camera.md`. "canonical" is an old save's "embodied"
-      cameraMode: w.touchDevice
-        ? "free"
-        : ["embodied", "canonical"].includes(saved.cameraMode as string)
-          ? "embodied"
-          : defaultCameraMode,
+      cameraMode: initialCameraMode(saved.cameraMode, w.touchDevice),
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
-      follow: w.touchDevice === false && ((saved.cameraMode as string) === "follow" || saved.follow === true),
+      follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
       embodiedFrom: 0,
       embodiedDragging: false,
       embodiedPeak: 0,
@@ -172,6 +167,7 @@ export function WorldView(props: React.PropsWithChildren) {
       followMs: 0,
       frontierOffset: { x: 0, z: 0, ...store.read().cameraInitial?.offset },
       frontierHold: false,
+      loosePressed: false,
       keysDown: new Set(),
       lastKeyMs: 0,
       compassPoint: 0,
@@ -443,8 +439,15 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       onCameraStart() {
         state.frontierHold = false; // the view is theirs again
+        state.loosePressed = true; // `loose` waits whilst it is
       },
       onCameraEnd() {
+        state.loosePressed = false;
+        if (state.cameraMode === "loose" && state.follow === true && state.controls !== null) {
+          // no momentum, so the follow starts on release rather than once a coast runs down
+          state.controls.u.panOffset.set(0, 0, 0);
+          state.controls.sphericalDelta.set(0, 0, 0);
+        }
         // a drag released without momentum dispatches no further change: the compass dial needs a
         // frame to see the release at all — see `detentEmbodiedAzimuth`
         w.r3f?.invalidate();
@@ -472,7 +475,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
         if (e.target !== state.canvas) return; // e.g. scrolling a card, or an overlay's before `forwardWheel`
-        if (state.cameraMode !== "embodied") {
+        if (state.isEmbodied() === false) {
           // The controls zoom to the cursor themselves, so we only mark its ground point.
           // Not whilst following, when the zoom is the player's.
           if (e.deltaY >= 0 || state.getFollowGoal(tmpGoal) === true) return;
@@ -597,14 +600,14 @@ export function WorldView(props: React.PropsWithChildren) {
         out.x = player.position.x;
         out.z = player.position.z;
         // held towards the frontier — see `easeFrontier`
-        if (state.cameraMode === "embodied") {
+        if (state.isEmbodied()) {
           out.x += state.frontierOffset.x;
           out.z += state.frontierOffset.z;
         }
         return true;
       },
       getFrontierOffset(out, max, min) {
-        if (state.cameraMode !== "embodied" || state.playerFrontier.ahead(tmpAhead) === false) {
+        if (state.isEmbodied() === false || state.playerFrontier.ahead(tmpAhead) === false) {
           return false;
         }
         let offsetX = tmpAhead.x * frontierConfig.panFrac;
@@ -711,10 +714,12 @@ export function WorldView(props: React.PropsWithChildren) {
 
         // following, the camera needs no pan, so one finger moves where the player looks instead.
         // Paused they can't turn, so one finger turns the view about them
-        controls.touchLook = state.follow === true && w.disabled !== true ? w.player.dragLookTowards : null;
-        controls.touches.ONE = state.follow === true && w.disabled === true ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+        // `loose` keeps one finger's pan, which pauses its follow
+        const panLocked = state.follow === true && state.cameraMode !== "loose";
+        controls.touchLook = panLocked && w.disabled !== true ? w.player.dragLookTowards : null;
+        controls.touches.ONE = panLocked && w.disabled === true ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
 
-        if (state.cameraMode !== "embodied") return;
+        if (state.isEmbodied() === false) return;
 
         // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
         // ends rather than the pan, since speeding up for its last few percent is felt as a jolt
@@ -1135,6 +1140,9 @@ export function WorldView(props: React.PropsWithChildren) {
         // the `Canvas` wrapper, which has the `tabIndex`
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       },
+      isEmbodied(mode = state.cameraMode) {
+        return mode === "embodied" || (mode === "loose" && w.touchDevice === false);
+      },
       isAiming() {
         return w.phasers?.isArmed(w.player.key) === true;
       },
@@ -1344,6 +1352,9 @@ export function WorldView(props: React.PropsWithChildren) {
         if (controls === null || state.lookAtAnimId !== 0) return;
         // the player, or part way to their frontier — none when not following nor holding
         if (state.getFollowGoal(tmpGoal) === false) return;
+        // `loose` waits whilst a press on the view is down
+        const loose = state.cameraMode === "loose" && state.frontierHold === false;
+        if (loose && state.loosePressed) return;
 
         const { target } = controls;
         const dx = tmpGoal.x - target.x;
@@ -1351,7 +1362,8 @@ export function WorldView(props: React.PropsWithChildren) {
         if (Math.hypot(dx, dz) < followUntil) return;
 
         // exponential approach, so it is frame-rate independent and has no end to overshoot
-        const alpha = 1 - Math.exp(-followRate * resumeOf(state.frontierResumeMs, now) * deltaSecs);
+        const rate = loose ? looseFollowRate : followRate;
+        const alpha = 1 - Math.exp(-rate * resumeOf(state.frontierResumeMs, now) * deltaSecs);
         const moveX = dx * alpha;
         const moveZ = dz * alpha;
         target.x += moveX;
@@ -1361,7 +1373,6 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       setFollow(follow) {
-        if (follow === true && w.touchDevice) return; // touch never follows: its button pans to the player instead
         state.frontierHold = false; // superseded either way
         state.follow = follow; // before the look, whose goal is the follow's
         // to the player at once rather than waiting for them to move, though never in a rush
@@ -1379,10 +1390,11 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
-        if (cameraMode === "embodied" && w.touchDevice) return; // touch is always `free`
-        if (cameraMode === "embodied") {
+        if (cameraMode === "embodied" && w.touchDevice) return; // touch's own is `loose`
+        const [was, next] = [state.isEmbodied(), state.isEmbodied(cameraMode)];
+        if (next && was === false) {
           state.embodiedPolar = state.controls?.spherical.phi ?? state.initial.polar;
-        } else if (state.cameraMode === "embodied" && state.controls !== null) {
+        } else if (was && next === false && state.controls !== null) {
           // leaving: give the zoom its own pace back — r3f leaves our direct writes alone, so
           // nothing else would
           state.controls.zoomSettleRate = defaultZoomSettleRate;
@@ -1473,7 +1485,7 @@ export function WorldView(props: React.PropsWithChildren) {
           const theta = turn === 0 ? controls.spherical.theta : fromTheta + turn * alpha;
           const phi = toPhi === undefined ? controls.spherical.phi : fromPhi + (toPhi - fromPhi) * alpha;
           // `embodied` holds its one tilt every frame, so it must move with the pan's
-          if (toPhi !== undefined && state.cameraMode === "embodied") state.embodiedPolar = phi;
+          if (toPhi !== undefined && state.isEmbodied()) state.embodiedPolar = phi;
           tmpLookAtOffset.setFromSphericalCoords(radius, phi, theta);
           controls.object.position.copy(controls.target).add(tmpLookAtOffset);
           w.r3f?.invalidate();
@@ -1509,7 +1521,7 @@ export function WorldView(props: React.PropsWithChildren) {
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
           /** `embodied`'s stops ride the pan — see `easeFrontier` */
-          const fromStops = state.cameraMode === "embodied" ? [controls.maxDistance, controls.minDistance] : null;
+          const fromStops = state.isEmbodied() ? [controls.maxDistance, controls.minDistance] : null;
 
           await new Promise<void>((resolve) => {
             const step = () => {
@@ -1821,11 +1833,11 @@ export function WorldView(props: React.PropsWithChildren) {
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
           // `embodied` pans onto the cursor point instead, which owns `target` — see `zoomPan`
-          zoomToCursor={state.cameraMode === "free" && state.follow === false}
+          zoomToCursor={state.isEmbodied() === false && state.follow === false}
           // a turn goes about the zoom crosshair whilst it shows: what the zoom is heading for
           // stays put. Otherwise, and whilst following, about `target`
           rotateAbout={state.getCrosshairPivot}
-          enablePan={state.follow === false}
+          enablePan={state.follow === false || state.cameraMode === "loose"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -2025,6 +2037,8 @@ export type State = {
   frontierOffset: { x: number; z: number };
   /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
   frontierHold: boolean;
+  /** A press on the view is down: `loose` waits till it lifts */
+  loosePressed: boolean;
   /** The keys held down over the world, lowercased — `wasd_delta` reads them */
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
@@ -2141,6 +2155,8 @@ export type State = {
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
   /** Whether the player's phaser is raised: a turn then keeps to one axis */
+  /** `embodied`, or `loose` on desktop, which is it but for following loosely */
+  isEmbodied(mode?: CameraModeType): boolean;
   isAiming(): boolean;
   /** Whether the paused indicator shows */
   showsPaused(): boolean;
@@ -2298,6 +2314,8 @@ function getPixelRatio(bounds: Geom.RectJson) {
 
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
+/** `loose`'s rate: most of the way in about 3s */
+const looseFollowRate = 1;
 const followUntil = 0.01;
 /** Milliseconds without a follow that count as a pause: the World ticks every frame unpaused */
 const followGapMs = 250;
@@ -2525,3 +2543,10 @@ export type Picked = {
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
 );
+
+/** The mode to start in: the saved one if it may be had here, else the device's default. "canonical" is an old "embodied" */
+function initialCameraMode(saved: unknown, touch: boolean): CameraModeType {
+  const mode = saved === "canonical" ? "embodied" : saved;
+  if (mode === "free" || mode === "loose") return mode;
+  return touch ? "loose" : mode === "embodied" ? "embodied" : defaultCameraMode;
+}

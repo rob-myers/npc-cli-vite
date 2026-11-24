@@ -705,6 +705,11 @@ function PlayerButtons({
   const tipSide = tipSideOf(w.hud?.getLayout() ?? "bar");
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
+  /** A tap toggles follow; held whilst not following, a pan to the player */
+  const followPress = useLongPress(
+    () => w.view.setFollow(!follow),
+    () => follow === false && (w.view.lookAtPlayer(), true),
+  );
   const big = w.touchDevice;
   const buttonClass = cn(
     playerButtonClass(big),
@@ -726,12 +731,9 @@ function PlayerButtons({
     >
       {/* a narrow bar scrolls these after the carried items, never what follows, the fire button */}
       <div className={cn("flex min-w-0", column ? "flex-col" : "overflow-x-auto [scrollbar-width:none]")}>
-        {/* follow on (white) or off, as `v`. Touch never follows: it pans to the player */}
-        <Tip content={big ? "to the player" : `follow ${follow ? "on" : "off"}: v`} side={tipSide}>
-          <div
-            className={buttonClass}
-            onClick={() => w.hud?.dragged !== true && (big ? w.view.lookAtPlayer() : w.view.setFollow(!follow))}
-          >
+        {/* follow on (white) or off, as `v`. Held whilst off, a pan to the player */}
+        <Tip content={`follow ${follow ? "on" : "off"}: v${follow ? "" : ", held: to the player"}`} side={tipSide}>
+          <div className={buttonClass} {...followPress}>
             <AnimatePresence>
               {w.view?.lookingAt === true && (
                 // pulses whilst a pan is under way, which a black screen or a paused world would hide
@@ -754,7 +756,7 @@ function PlayerButtons({
                 transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
               />
             )}
-            <UserFocusIcon className={cn(buttonIcon(big || follow), iconSize)} weight="light" />
+            <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
           </div>
         </Tip>
         <CompassRose big={big} />
@@ -975,6 +977,31 @@ const CompassRose = memo(function CompassRose({ big }: { big: boolean }) {
     </svg>
   );
 });
+
+/** A press's handlers: `onTap` on a click, else `onLong` once held `longPressMs`, which returns whether it took it. Then `onLongEnd` on letting go */
+function useLongPress(onTap: () => void, onLong: () => boolean, onLongEnd?: () => void): Press {
+  const w = useContext(WorldContext);
+  const press = useRef({ timer: 0, long: false, took: false }).current;
+  const release = () => {
+    window.clearTimeout(press.timer);
+    if (press.took) onLongEnd?.();
+    press.took = false;
+  };
+  return {
+    onClick: () => press.long === false && w.hud?.dragged !== true && onTap(),
+    onPointerDown: () => {
+      Object.assign(press, { long: false, took: false });
+      press.timer = window.setTimeout(() => {
+        press.long = true;
+        press.took = w.hud?.dragged !== true && onLong(); // not a drag of the bar
+      }, longPressMs);
+    },
+    onPointerUp: release,
+    onPointerCancel: release,
+  };
+}
+
+type Press = Pick<React.DOMAttributes<Element>, "onClick" | "onPointerDown" | "onPointerUp" | "onPointerCancel">;
 
 /** How many times `value` has changed since mount — `0` until the first, so nothing flashes on load */
 function useChangeCount(value: unknown): number {
@@ -1271,7 +1298,7 @@ const columnSlotHeight = 56;
 const defaultColumnY = 180;
 /** Compass points by `w.view.compassPoint` */
 const compassLetters = ["N", "W", "S", "E"];
-/** How long a touch is held before a slot's menu opens */
+/** How long a press is held to count as long, e.g. before a slot's menu opens, or the follow button pans to the player */
 const longPressMs = 500;
 /** How long the follow button's flash takes to fade, when follow is turned on or off */
 const followFlashMs = 550;

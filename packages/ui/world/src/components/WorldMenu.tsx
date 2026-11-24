@@ -557,18 +557,12 @@ export function WorldMenu() {
                 className={cn("flex items-center gap-1.5 pr-2 py-1", touch && "pr-3 py-2")}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Tip
-                  content={
-                    touch ? "touch never follows the player" : `follow the player: ${w.view.follow ? "on" : "off"}`
-                  }
-                >
-                  <span onClick={() => touch === false && w.view.setFollow(!w.view.follow)}>
+                <Tip content={`follow the player: ${w.view.follow ? "on" : "off"}`}>
+                  <span onClick={() => w.view.setFollow(!w.view.follow)}>
                     <CrosshairSimpleIcon
                       className={cn(
-                        "size-3.5",
-                        touch
-                          ? "opacity-40"
-                          : cn("cursor-pointer", w.view.follow === true ? "text-amber-300" : "hover:text-white"),
+                        "size-3.5 cursor-pointer",
+                        w.view.follow === true ? "text-amber-300" : "hover:text-white",
                       )}
                     />
                   </span>
@@ -1694,7 +1688,7 @@ const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
 
-const cameraModes: CameraModeType[] = ["free", "embodied"];
+const cameraModes: CameraModeType[] = ["free", "embodied", "loose"];
 const debugItems = [
   "context menu",
   "door ui",

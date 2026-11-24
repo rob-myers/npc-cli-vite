@@ -82,7 +82,11 @@ The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writin
 
 **`embodied` restricts what may be steered, by zoom.**
 
-On touch the camera is always `free`: `embodied` is greyed out in the World menu, and a saved one loads as `free`.
+On touch `embodied` is greyed out in the World menu, and a saved one loads as `loose`.
+
+## `loose` mode
+
+**`loose` follows loosely.** Following, the view eases towards the follow's goal slowly (`looseFollowRate`), and a pan, pinch or turn of their own pauses it whilst pressed. Released, its momentum is dropped, so the follow eases on at once. Otherwise it is `embodied` on desktop (`isEmbodied`) and `free` on touch. It is touch's default.
 
 Azimuth:
 - Free at every zoom, and untouched by zooming.
@@ -125,7 +129,7 @@ The HUD:
 
 ## Following the player
 
-Touch never follows (`setFollow` refuses), and the menu's follow switch is greyed out. Its follow button pans to the player instead (`w.view.lookAtPlayer`), so no "followed" hud-toast shows. Nor is there a far look on touch: the compass takes the binoculars' place.
+The follow button toggles following in every mode. Held whilst not following, it pans to the player once (`w.view.lookAtPlayer`).
 
 ![following](camera/camera-follow.svg)
 
