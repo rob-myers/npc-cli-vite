@@ -42,7 +42,13 @@ pred.setHandler(function onWorldEvent(e, w) {
   const p = pred.get();
   switch (e.key) {
     case "picked":
-      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false && isReading(w) === false) {
+      // a left click or tap alone: a right click or long press is the npc's menu
+      if (
+        w.helper.isNpcPickEvent(e) === true &&
+        e.longDown === false &&
+        e.rightDown === false &&
+        isReading(w) === false
+      ) {
         const changed = new Set(onPickNpc(e));
         visualisePredicates(w, [...changed]);
         // their menus' "picked" toggles show it
