@@ -593,6 +593,7 @@ export function WorldMenu() {
               <MenuSelect
                 label={w.mapKey}
                 value={w.mapKey}
+                popupClass="max-h-[min(30rem,70vh)]"
                 items={mapGroupsOf(w.assets?.map ?? {}).flatMap(({ label, keys }) =>
                   keys.map((key) => ({ key, value: key, section: label })),
                 )}
@@ -1790,10 +1791,13 @@ export function MenuSelect<T extends string>({
   open,
   onOpenChange,
   itemAction,
+  popupClass = "max-h-60",
 }: {
   /** Shows a down-caret, so it reads as a select rather than a button */
   caret?: boolean;
   className?: string;
+  /** Its popup's height, e.g. a taller one for a long list */
+  popupClass?: string;
   /** An item's `section` is labelled where it starts, as in `MenuMultiSelect` */
   items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean; section?: string }[];
   /** A button after each item it is `shown` for, doing something besides choosing it */
@@ -1843,7 +1847,12 @@ export function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+          <Select.Popup
+            className={cn(
+              "min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 overflow-auto scrollbar-thin",
+              popupClass,
+            )}
+          >
             <Select.List>
               {items.map((item, i) => (
                 <Fragment key={item.key}>
