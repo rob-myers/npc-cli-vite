@@ -58,6 +58,7 @@ pred.setHandler(function onWorldEvent(e, w) {
     case "set-player": {
       const prev = p.player;
       p.player = e.playerKey;
+      pickPlayerIfNone(p);
       visualisePredicates(
         w,
         [prev, e.playerKey].filter((x) => typeof x === "string"),
@@ -67,6 +68,7 @@ pred.setHandler(function onWorldEvent(e, w) {
     case "map-settled": {
       const next = restorePred(w.mapKey);
       next.player = w.player.key; // we ignored "set-player" during map change
+      pickPlayerIfNone(next);
       visualisePredicates(w);
       break;
     }
@@ -180,6 +182,14 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   }
 
   return changed;
+}
+
+/** Picks the player if no one has been picked, so `lastPicked` starts as them */
+function pickPlayerIfNone(p: Predicates) {
+  if (typeof p.player !== "string" || p.lastPicked !== null || p.picked.size > 0) return;
+  p.everPicked.add(p.player);
+  p.lastPicked = p.player;
+  p.picked = new Set([p.player]);
 }
 
 /** Whether `inventory` takes a press on an npc for psi to read. A raised phaser still picks them */
