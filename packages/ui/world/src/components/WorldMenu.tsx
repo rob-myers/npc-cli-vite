@@ -41,7 +41,7 @@ import {
   getPresetCameraView,
   minNearView,
 } from "../service/camera-view";
-import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal, SkirtsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
 import { mapGroupsOf } from "../service/geomorph";
 import { isRenamableMap } from "../service/map-rename";
@@ -83,6 +83,7 @@ export function WorldMenu() {
       menuHeight: saved.menuHeight,
       resizing: false,
       skinDebugOpen: false,
+      skirtsOpen: false,
       stateSelectOpen: false,
       themeEditorOpen: false,
       themeEditorRef: null as any,
@@ -397,6 +398,9 @@ export function WorldMenu() {
         break;
       case "skins":
         state.set({ skinDebugOpen: true });
+        break;
+      case "skirts":
+        state.set({ skirtsOpen: true });
         break;
       case "colliders":
         w.debug?.showPhysicsColliders();
@@ -1088,6 +1092,11 @@ export function WorldMenu() {
           container={w.rootEl}
         />
       )}
+      <SkirtsModal
+        open={state.skirtsOpen}
+        onOpenChange={(open) => state.set({ skirtsOpen: open })}
+        container={w.rootEl}
+      />
     </>
   );
 }
@@ -1188,7 +1197,7 @@ function MenuShell({
       onOpenChange={(open, { reason, event }) => {
         if (open) {
           state.set({ menuOpen: true });
-        } else if (state.debugHitOpen || state.gmGraphsOpen || state.skinDebugOpen) {
+        } else if (state.debugHitOpen || state.gmGraphsOpen || state.skinDebugOpen || state.skirtsOpen) {
           // a press or escape in a debug modal is for the modal
         } else if (
           reason === "outside-press" &&
@@ -1582,6 +1591,8 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  /** The obstacle skirts modal, from the "skirts" option */
+  skirtsOpen: boolean;
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   /** The fade button's pending long press, else `0` */
@@ -1746,7 +1757,7 @@ const hudDebugPrefix = "hud debug ";
 const hudDebugItems = [{ key: "phaser", value: `${hudDebugPrefix}phaser`, section: "debug" }];
 
 /** Debug options that each open a modal, picked from "modals" */
-const modalItems = ["graphs", "room hit", "skins"].map((value) => ({ key: value, value }));
+const modalItems = ["graphs", "room hit", "skins", "skirts"].map((value) => ({ key: value, value }));
 
 /** A section's label in a multiselect's popup, e.g. the "hud" select's "layout" */
 const sectionLabelClass = tw(

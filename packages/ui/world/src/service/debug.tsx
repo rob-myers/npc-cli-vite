@@ -3,10 +3,11 @@ import { cn, Tip } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { ArrowSquareOutIcon, XIcon } from "@phosphor-icons/react";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { WorldContext } from "../components/world-context";
 import { eyeFrames, skinSliceDims } from "../const.both";
 import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const.env";
+import { renderSkirtPreviews, skirtKinds } from "./skirt-panels";
 import { getWorldStore } from "./storage";
 
 export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };
@@ -400,6 +401,58 @@ function readFaceWithSlice(w: import("../components/World").State, skinIndex: nu
   copy(w.texSkin, slice, slice, false); // the face front is a slice in from the skin's corner
   copy(w.texSkinSlices, (sliceId % perRow) * slice, Math.floor(sliceId / perRow) * slice, true);
   return out;
+}
+
+/** Each kind of obstacle skirt drawn flat, by the World's renderer, as `skirtPanel` draws it there */
+export function SkirtsModal({ open, onOpenChange, container }: DebugModalProps) {
+  const w = useContext(WorldContext);
+  const [canvases, setCanvases] = useState<HTMLCanvasElement[]>([]);
+
+  useEffect(() => {
+    if (open === false || w.r3f == null) return;
+    let live = true;
+    void renderSkirtPreviews(w.r3f.gl).then((next) => live && setCanvases(next));
+    return () => void (live = false);
+  }, [open]);
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal container={container}>
+        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
+        <Dialog.Popup
+          className={cn(
+            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
+            "max-w-4xl w-[90%] max-h-[90%] flex flex-col",
+          )}
+        >
+          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-slate-700">
+            <div className="flex items-baseline gap-2">
+              <Dialog.Title className="text-sm font-semibold text-slate-200">Obstacle skirts</Dialog.Title>
+              <span className="text-xs text-slate-500">{skirtKinds.length} kinds</span>
+            </div>
+            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
+              <XIcon className="size-5 text-slate-400" />
+            </Dialog.Close>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 overflow-y-auto p-4">
+            {skirtKinds.map((kind, i) => (
+              <figure key={kind} className="flex w-72 flex-col gap-1.5 rounded-md border border-slate-700/70 p-2">
+                <figcaption className="flex items-baseline justify-between text-xs">
+                  <span className="font-medium text-slate-200">{kind}</span>
+                  <span className="font-mono text-slate-500">kind {i}</span>
+                </figcaption>
+                <div
+                  className="aspect-[4/3] w-full rounded bg-slate-800 [&>canvas]:size-full"
+                  ref={(el) => void (canvases[i] && el?.replaceChildren(canvases[i]))}
+                />
+              </figure>
+            ))}
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
 }
 
 export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
