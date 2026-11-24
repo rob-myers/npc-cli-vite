@@ -139,13 +139,13 @@
         },
         {
           "id": "6e1da5a3-061d-4945-8d83-eccb01391495",
-          "name": "obstacle plant y=1 h=1",
+          "name": "obstacle plant seed=1 y=0.4 h=0.4 tint=#333 skirtTint=#555",
           "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 54.25 18.78 L 47.48 25.55 L 37.92 25.55 L 31.15 18.78 L 31.15 9.22 L 37.92 2.45 L 47.48 2.45 L 54.25 9.22 Z",
-          "baseRect": {"width": 23.1, "height": 23.1},
+          "d": "M 50.09 17.06 L 45.76 21.39 L 39.64 21.39 L 35.31 17.06 L 35.31 10.94 L 39.64 6.61 L 45.76 6.61 L 50.09 10.94 Z",
+          "baseRect": {"width": 14.78, "height": 14.78},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
