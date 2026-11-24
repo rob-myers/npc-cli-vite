@@ -604,6 +604,77 @@
     - uis-loaded event fires once
     - exit-or-hide event has at least 60s between firing
 
+## By Nov 24th 2026
+
+- ✅ SkipNet refine
+  - ✅ improve SkipLib top menu
+  - ✅ refine code-fence component
+    - ✅ only show comment by default
+    - ✅ can expand to show code
+    - ✅ can specify `@bootable`
+    - ✅ can specify `@default` `@default=mobile` `@default=desktop`
+    - ✅ World pause initially has persisted "autoboot" checkbox which runs defaults
+  - ✅ article pickers should use "pop out" icon on right
+  - ✅ improve sidestep ui
+    - ✅ cleaner ui
+    - ✅ per-npc overrides
+
+- ❌ narrator ui
+- ✅ avoid World hogging resources on load
+
+- ✅ change command `sc` to `graph`
+  - scenarios no longer exist
+- ✅ mobile paused should allow one-finger to rotate camera too
+- ✅ remove numeric shortcuts for sight/sense/ship-mode
+- ✅ can only enter ship-mode via long-press on WorldMenu button
+
+- ✅ improve phaser hit animations
+  - blocked/ghost are fine
+  - collapsed/pacified use npc-clutch along with old clips
+  - killed fall, can be trodden on, saved with map, associated sounds
+
+- ✅ review skins again
+  - ✅ more contrast for mtf-1 and mtf-2 bodies
+  - ✅ add a lot more
+
+- ✅ refine phaser gfx
+  - ✅ phaser itself
+  - ✅ hud/decor icon
+  - ✅ beam
+
+- ✅ `spawn` revives by default
+- ✅ can `spawn` someone dead
+- ✅ saw npc speak near player via window yet conversation partial
+  - ✅ add shield to window--001
+  - ✅ add shield to other windows
+- ✅ rethink keys: , . /
+  - ✅ directional wasd: l , . / overrides existing keys , . /
+- ✅ keyboard shortcut to leave tty and return to world
+  - Escape
+- ✅ keyboard shortcut to change Tab currently focussed
+  - Ctrl + Backtick
+- ✅ helper ui pointing user towards SkipNet video
+  - also update GlobalMenu About modal
+
+- ✅ fix black flash on edit 102
+- ✅ simplify assets.json
+  - assets-edit.json
+  - theme.json
+  - layout/{gmKey}.json
+- ✅ add hull symbol 303
+- ✅ `level` command changes maps
+  - it fails when a map change in progress
+- ✅ can rename non-current map
+
+- ✅ try fix keyboard-copy tty issue
+- ✅ maybe l,./ changes to arrow keys
+- ✅ debug_skins should use spawnMany
+
+- ✅ replace panel split buttons with drag-tab-split
+
+- ✅ fix strange looking off-shoot broad-walls in 303 sight-mode
+  - broad walls have dark hatching which fades from top
+
 ## By Nov 18th 2026
 
 - ✅ JobsLibrary -> Scenarios -> SkipNet

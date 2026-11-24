@@ -1,45 +1,10 @@
 # TODO
 
-- ✅ SkipNet refine
-  - ✅ improve SkipLib top menu
-  - ✅ refine code-fence component
-    - ✅ only show comment by default
-    - ✅ can expand to show code
-    - can expand/collapse all
-    - ✅ can specify `@bootable`
-    - ✅ can specify `@default` `@default=mobile` `@default=desktop`
-    - ✅ World pause initially has persisted "autoboot" checkbox which runs defaults
-  - ✅ article pickers should use "pop out" icon on right
-  - ✅ improve sidestep ui
-    - ✅ cleaner ui
-    - ✅ per-npc overrides
-
-- ❌ narrator ui
-- ✅ avoid World hogging resources on load
-
-- 🚧 change command `sc` to `graph`
-  - scenarios no longer exist
-- ✅ mobile paused should allow one-finger to rotate camera too
-- ✅ remove numeric shortcuts for sight/sense/ship-mode
-- ✅ can only enter ship-mode via long-press on WorldMenu button
+- can expand/collapse all SkipNet code-fences
 
 - 🚧 extend SkipNet articles
   - ✅ support multipart articles
   - 🚧 npc-controls
-
-- review skins again
-  - improve all mtf
-  - improve d-1
-  - try add more
-
-- improve phaser
-  - phaser itself
-  - beam
-  - hud/decor icon
-  - hit animations (blocked/ghost are fine)
-
-- helper ui pointing user towards SkipNet video
-  - also update GlobalMenu About modal
 
 After vid:
 
@@ -48,9 +13,6 @@ After vid:
 - tethered mode
   - double-r to turn off too
   - can tether to other npc
-- directional wasd: l , . /
-  - overrides existing keys , . /
-  - easier approach to phaser
 - crouch strafes by default
 - saw phaser lowered through closed door when nearly entered
 - initial World load slowdown so allotment responsive
@@ -73,7 +35,6 @@ After vid:
 
 ### Cleanliness
 
-- assets.json efficient sub-json
 - fix precision in `assets.json`
 
 - w.npc.npcToRoom -> w.npc.toRoom etc
