@@ -143,6 +143,8 @@ declare namespace Geomorph {
     innerSegs: [Geom.VectJson, Geom.VectJson][];
     /** Gap (open region) is at the door.dst end when true, door.src end when false */
     gapAtHighLambda: boolean;
+    /** Doors that move as one with it: a hull door's twin, or a double door's other half. Opened, held and locked together */
+    partners: Geomorph.GmDoorKey[];
 
     /** Cancels its pending auto-close, a game-time timer */
     cancelClose?: () => void;

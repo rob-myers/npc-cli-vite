@@ -11,7 +11,6 @@ import {
   attribute,
   cameraPosition,
   color,
-  float,
   instanceIndex,
   int,
   mix,
@@ -23,7 +22,6 @@ import {
   transformNormalToView,
   uniform,
   uv,
-  vec2,
   vec3,
   vec4,
 } from "three/tsl";
@@ -32,11 +30,12 @@ import { getObstacleSheetKey, getSheetUrl, type SheetsType } from "../assets.sch
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import * as obstacleClip from "../service/obstacle-clip";
-import { alongFace, panelSeams } from "../service/panel-seams";
+import { alongFace } from "../service/panel-seams";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
+import { skirtKindOf, skirtPanel } from "../service/skirt-panels";
 import { obstacleBottom } from "../service/spot-sight";
-import { bootstrapInstanceColor, deckConfig } from "../service/texture";
+import { bootstrapInstanceColor } from "../service/texture";
 import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
@@ -381,42 +380,24 @@ export default function Obstacles(_props: Props) {
     const skirtNormal = attribute<"vec2">("skirtNormals", "vec2");
     const skirtInfo = attribute<"vec2">("skirtInfo", "vec2");
     const along = alongFace(skirtNormal);
-    /** Darker towards the deck, as a contact shadow */
-    const grounded = mix(
-      float(skirtPanel.floorShade),
-      float(1),
-      positionWorld.y.div(skirtPanel.shadeHeight).clamp(0, 1),
-    );
-    // its rivets hang off the skirt's top
-    const hardPanel = grounded.mul(panelSeams(along, skirtInfo.x.sub(positionWorld.y).sub(deckConfig.rivet.inset)));
-    /**
-     * Upholstery: no seams, and a face that swells from its borders to its middle.
-     * Off the unit quad's own position, not `uv`: one more vertex buffer is one past WebGPU's eight.
-     * `positionGeometry`, as `positionLocal` has the instance's matrix in it
-     */
-    const dome = positionGeometry.x
-      .oneMinus()
-      .mul(positionGeometry.x)
-      .mul(positionGeometry.y.oneMinus())
-      .mul(positionGeometry.y)
-      .mul(16);
-    /** `dome` plumped, by a polynomial where a sine and a root would do the same */
-    const swell = dome.mul(dome.oneMinus().add(1));
-    const softPanel = grounded.mul(mix(float(skirtPanel.softEdgeShade), float(skirtPanel.softMidLight), swell));
-    const isSoft = step(0.5, skirtInfo.y).mul(step(skirtInfo.y, 1.5));
-    const isGlass = step(1.5, skirtInfo.y);
-    /** Frosted glass: opaque and pale, lighter towards its top, mottled at two sizes */
-    const speck = (perMetre: number) => hashCell(vec2(along, positionWorld.y).mul(perMetre).floor());
-    const frost = speck(skirtPanel.glassFinePerMetre).add(speck(skirtPanel.glassCoarsePerMetre)).mul(0.5);
-    const glassPanel = color(skirtPanel.glassTint)
-      .mul(mix(float(skirtPanel.glassLowLight), float(skirtPanel.glassTopLight), positionGeometry.y))
-      .mul(mix(float(1 - skirtPanel.glassGrain), float(1), frost));
-    const panel = mix(vec3(mix(hardPanel, softPanel, isSoft)), glassPanel, isGlass);
+    // `positionGeometry`, as `positionLocal` has the instance's matrix in it
+    const panel = skirtPanel({
+      kind: skirtInfo.y,
+      along,
+      y: positionWorld.y,
+      top: skirtInfo.x,
+      u: positionGeometry.x,
+      v: positionGeometry.y,
+    });
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv).mul(panel).mul(state.skirtBrightnessNode);
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
       // the light sweep ignores obstacles, so a far side would otherwise be as lit as a near one.
-      w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyLightRgba(vec4(baseColor, 1), skirtNormal), skirtFade),
+      w.view.fadeRoomsFx.applyFadeRgba(
+        // asked a little off its face: a tall one occludes the light, and would shade its own near side
+        w.view.playerLight.applyLightRgba(vec4(baseColor, 1), skirtNormal, skirtLightLift),
+        skirtFade,
+      ),
       skirtFade,
       w.view.objectPick,
     );
@@ -564,36 +545,9 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
 const obstaclesSkirtBaseColor = "#555";
+/** Metres off its face a skirt asks the player's light about, clear of its own occluder */
+const skirtLightLift = 0.05;
 
-/** A cell's `0`-`1` hash, with no trig in it (Hoskins' `hash12`) */
-function hashCell(cell: THREE.Node<"vec2">) {
-  const p = cell.xyx.mul(0.1031).fract();
-  const q = p.add(p.dot(p.yzx.add(33.33)));
-  return q.x.add(q.y).mul(q.z).fract() as THREE.Node<"float">;
-}
-
-/** How a skirt is drawn: `0` panelled, `1` upholstered, `2` frosted glass */
-function skirtKindOf(meta: Meta) {
-  if (meta.window === true) return 2;
-  return meta.chair === true || meta.bed === true || meta.sofa === true ? 1 : 0;
-}
-/** A skirt's look by kind, over `panelSeams`, and its shadow towards the deck */
-const skirtPanel = {
-  /** The multiple at the deck, easing to none `shadeHeight` metres up */
-  floorShade: 0.55,
-  shadeHeight: 0.6,
-  /** An upholstered face's multiple at its borders, and at its middle */
-  softEdgeShade: 0.7,
-  softMidLight: 1.3,
-  /** Frosted glass: its colour as a multiple of the base, from its foot to its top */
-  glassTint: "#cfe0f2",
-  glassLowLight: 1.6,
-  glassTopLight: 2.4,
-  /** How far the frosting darkens, and its two sizes of speck to the metre */
-  glassGrain: 0.45,
-  glassFinePerMetre: 140,
-  glassCoarsePerMetre: 35,
-};
 const defaultObstacleTint = "#666";
 
 function loadObstacleImages(sheets: SheetsType, cacheBust: string): Promise<HTMLImageElement[]> {

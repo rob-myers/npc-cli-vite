@@ -29,6 +29,11 @@ export function obstacleBottom(height: number, meta: { h?: unknown }) {
   return height - (typeof meta.h === "number" ? meta.h : Math.min(height, sightConfig.obstacleDepth));
 }
 
+/** Whether an obstacle hides someone stood: `standBlockHeight` tall, and not hung above them, e.g. a lintel */
+export function blocksStood(height: number, meta: { h?: unknown }) {
+  return height >= sightConfig.standBlockHeight && obstacleBottom(height, meta) < sightConfig.standBlockHeight;
+}
+
 /** What blocks sight stood, in `layout`'s coords: walls, doors, and obstacles `standBlockHeight` tall. Not windows */
 export function createSightGrid(layout: SightLayout) {
   const grid = new SegGrid(1);
@@ -75,7 +80,7 @@ function addOccluders(grid: Pick<SegGrid, "add">, layout: SightLayout, matrix?: 
   layout.obstacles.forEach(({ origPoly, transform, height, meta }, obstacleId) => {
     // hung above anyone stood, e.g. a window's lintel: it hides nothing
     if (obstacleBottom(height, meta) >= sightConfig.standBlockHeight) return;
-    const tall = height >= sightConfig.standBlockHeight;
+    const tall = blocksStood(height, meta);
     if (tall === false && (low === false || height < sightConfig.crouchHideHeight)) return;
     for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) {
       if (tall) grid.add(place(seg), "obstacle", base + obstacleId);

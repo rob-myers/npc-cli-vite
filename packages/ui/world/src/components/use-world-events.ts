@@ -18,6 +18,7 @@ import {
   sguToWorldScale,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
+import { bodyOf, type CorpseBody, toBody } from "../service/corpse-body";
 import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { probeWebRtcWhenIdle } from "../service/net-signaling";
@@ -89,21 +90,33 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.timers.add(timer);
         return () => void state.timers.delete(timer);
       },
-      async besideDoable(at, toward, grKey, front = null) {
+      async besideDoable(at, toward, grKey, front = null, body = null) {
         const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
+        const { doableLook } = w.npc.config.dist;
+        /** Their body seen from above, along their side then ahead */
+        const rect = body === null ? null : tmpBox2.setFromPoints(body.hull);
+        /** How far `p` is from their body, else from `at` */
+        const away = (p: Geom.VectJson) =>
+          body === null || rect === null
+            ? Math.hypot(p.x - at.x, p.y - at.y)
+            : rect.distanceToPoint(toBody(p.x - body.x, p.y - body.z, body.ry, tmpVec2));
+        /** Rays reach `doableLook` past their body, e.g. beyond their feet lying down */
+        const reach = doableLook + Math.max(0, ...(body?.hull.map((v) => v.length()) ?? []));
         /** Along each way, the first point in their room */
         const tried: { p: Geom.VectJson; cost: number }[] = [];
         for (let k = 0; k < besideRays; k++) {
           const turn = (2 * Math.PI * Math.min(k, besideRays - k)) / besideRays;
           const angle = ahead + (2 * Math.PI * k) / besideRays;
-          for (let s = besideStep; s <= w.npc.config.dist.doableLook; s += besideStep) {
+          for (let s = besideStep; s <= reach; s += besideStep) {
             const p = state.navNear({ x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
+            const d = p === null ? Infinity : away(p);
             if (
               p !== null &&
+              d <= doableLook &&
               (front === null || inFront(p, at, front)) &&
               w.findRoomContaining(p, true)?.grKey === grKey
             ) {
-              tried.push({ p, cost: s + besideTurnCost * turn });
+              tried.push({ p, cost: d + besideTurnCost * turn });
               break;
             }
           }
@@ -758,11 +771,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-opening": {
             const door = w.d[e.gdKey]; // may be gone: onchange map, or a map edit
-            // clients skip: the server sends both sides of a hull door
-            if (door?.hull === true && w.client === false) {
-              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
-              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
-            }
+            // its partners open with it, e.g. a hull door's twin. Clients skip: the server sends them
+            if (w.client === false)
+              for (const gdKey of door?.partners ?? []) w.e.toggleDoor(gdKey, { open: true, access: true });
             state.inView.byRoom.clear(); // seen through at once
             state.syncFadeRooms();
             break;
@@ -775,10 +786,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];
-            if (door?.hull === true && w.client === false) {
-              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
-              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: false, access: true });
-            }
+            if (w.client === false)
+              for (const gdKey of door?.partners ?? []) w.e.toggleDoor(gdKey, { open: false, access: true });
             break;
           }
           case "removed-npcs": {
@@ -1708,7 +1717,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.agentId !== null) return void w.npc.setNpcDo(npc.key, null); // on the navmesh already: they walk off
         const front = state.frontOf(w.npc.npcToDoable[npc.key]);
         const beside =
-          (await state.besideDoable(npc.point, toward, grKey, front)) ??
+          (await state.besideDoable(npc.point, toward, grKey, front, bodyOf(npc))) ??
           (grKey === undefined ? null : state.closestExitFrom(grKey, npc)); // nowhere in the room: out of its door
         if (beside === null) throw Error("not navigable");
         await npc.fadeSpawn({ at: beside, facing: toward });
@@ -2031,6 +2040,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
 /** Metres between the points `besideDoable` tries, the ways it tries round the doable, and metres a radian off costs */
 const [besideStep, besideRays, besideTurnCost] = [0.1, 16, 0.3] as const;
+const [tmpBox2, tmpVec2] = [new THREE.Box2(), new THREE.Vector2()];
 /** Whether `p` is in front of `of`, which faces `front` */
 const inFront = (p: Geom.VectJson, of: Geom.VectJson, front: Geom.VectJson) =>
   (p.x - of.x) * front.x + (p.y - of.y) * front.y > 0;
@@ -2220,12 +2230,16 @@ export type State = {
   /** Whoever living is where `npc` falls dead steps aside, the player too — see `anim.inTheWay` */
   makeWayFor(npc: Npc): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
-  /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`. One with no wall between first */
+  /**
+   * A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward`.
+   * One with no wall between first. Given `body`, within `doableLook` of any part of it
+   */
   besideDoable(
     at: Geom.VectJson,
     toward: Geom.VectJson,
     grKey?: string,
     front?: null | Geom.VectJson,
+    body?: null | CorpseBody,
   ): Promise<null | Geom.VectJson>;
   /**
    * Whether a fade to `dst` keeps to the front of a `meta.front-only` doable it leaves or takes.

@@ -43,6 +43,15 @@
         }
       ]
     },
+    "103-only": {
+      "key": "103-only",
+      "gms": [
+        {
+          "gmKey": "g-103--cargo-bay-full",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        }
+      ]
+    },
     "301-101-301": {
       "key": "301-101-301",
       "gms": [
@@ -104,6 +113,15 @@
         }
       ]
     },
+    "302-only": {
+      "key": "302-only",
+      "gms": [
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        }
+      ]
+    },
     "303-only": {
       "key": "303-only",
       "gms": [
@@ -157,14 +175,15 @@
     }
   },
   "hash": {
-    "obstacles": 1117688489,
+    "obstacles": 1902188195,
     "layout": {
       "g-101--multipurpose": 1376844981,
       "g-102--research-deck": -558553446,
+      "g-103--cargo-bay-full": 1794459182,
       "g-301--bridge": -1630314190,
       "g-301--playground": -86429936,
-      "g-302--xboat-repair-bay": 1602884446,
-      "g-303--passenger-deck": 958797626
+      "g-302--xboat-repair-bay": -477077282,
+      "g-303--passenger-deck": 585858885
     }
   }
 }

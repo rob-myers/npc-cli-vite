@@ -27,6 +27,15 @@
       "type": "map",
       "key": "102-only"
     },
+    "103-only": {
+      "filename": "103-only.json",
+      "thumbnailFilename": "103-only.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1205.5, "height": 1205.5},
+      "type": "map",
+      "key": "103-only"
+    },
     "301-101-301": {
       "filename": "301-101-301.json",
       "thumbnailFilename": "301-101-301.thumbnail.png",
@@ -71,6 +80,15 @@
       "bounds": {"x": -6, "y": 0, "width": 1206, "height": 600.5391},
       "type": "map",
       "key": "301-playground"
+    },
+    "302-only": {
+      "filename": "302-only.json",
+      "thumbnailFilename": "302-only.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -4, "y": -62, "width": 1204, "height": 662},
+      "type": "map",
+      "key": "302-only"
     },
     "303-only": {
       "filename": "303-only.json",

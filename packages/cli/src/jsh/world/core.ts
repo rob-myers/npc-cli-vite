@@ -334,12 +334,11 @@ async function takeOnPress(w: JshCli.WorldState, npcKey: string, decorKey: strin
   const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + takeSlack;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {
-    const spot = findTakeSpot(w, at, from, reach);
-    const away = Math.hypot(from.x - at.x, from.y - at.y);
-    // close enough already — or sat in reach, and not to be got up for it
-    if (away <= (spot?.d ?? reach) + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
+    // in reach and in its room, so never through a wall
+    if (inReach() === true && w.findRoomContaining(from, true)?.grKey === w.findRoomContaining(at, true)?.grKey) {
       return void w.e.takeItem(npcKey, decorKey);
     }
+    const spot = findTakeSpot(w, at, from, reach);
     // no floor of its room in reach e.g. far up a bed: a "no"
     if (spot === undefined) return void w.n[npcKey]?.anim.shakeHead();
     await walkToTakeSpot(w, npcKey, spot.p, press);

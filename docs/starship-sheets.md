@@ -41,6 +41,23 @@ large one. Transformed rects/polys are not supported: convert to a shape if need
   grown by a few px, in the colour around it: `white` on a table, the machine's own grey (sample the png,
   e.g. `rgb(205,205,205)`). Lettering on the floor needs nothing, as the floor is not drawn from pngs.
 
+## Replacing a symbol's art
+
+A png in `starship-symbol/replace/{symbolKey}.png` is cut for its obstacle tops in place of the symbol's own, e.g. a
+darker top for every `cargo--003` crate. It changes every use of the symbol: to darken ONE placed instance, tint it
+instead (`tint=#777`).
+
+- **Draw it as the source is drawn: white fill, black lines.** The sheet is inverted when built, so a top shows
+  black with white lines. A darkened png comes out LIGHTER: `cargo--003`'s first try, a #3b fill, showed as #c4.
+- **Keep it monochrome.** A linear map of each channel does, e.g. `v' = 1.25 v` takes `cargo--003`'s #cdcdcd fill to
+  white and keeps its black lines.
+- **Keep its size and alignment.** The replacement is read through the same `srcRect`s as the original, in the
+  same pixels.
+- **Keep its source beside it.** `replace/{symbolKey}.svg` is the original image under the filter that makes the png,
+  set to export to it in Boxy SVG (`bx:export`), as `fuel--010.svg` and `cargo--003.svg` are.
+- **Then run `gen-starship-sheets`.** Only the sheet png changes, not `sheets.json`, so a running World keeps the old
+  one until the World menu's **obstacles** button or a reload.
+
 ## `sheets.json` entries
 
 ```ts

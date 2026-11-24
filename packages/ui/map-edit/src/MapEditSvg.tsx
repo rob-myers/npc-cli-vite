@@ -1,3 +1,4 @@
+import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { memo, useEffect, useMemo, useState } from "react";
@@ -111,6 +112,9 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             key={node.id}
             data-node-id={node.id}
             data-locked={node.locked || undefined}
+            data-geomorph={
+              (node.srcType === "symbol" && isHullSymbolImageKey(node.srcKey as StarshipSymbolImageKey)) || undefined
+            }
             // versioned as the picker's thumbnails are: rebuilt decor art keeps its key and url
             href={
               node.srcType === "decor"
@@ -219,9 +223,9 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
   });
 };
 
-/** Whilst Alt is held (`data-pick-locked`), a locked node can be picked, and lights up under the pointer */
+/** Whilst Alt is held (`data-pick-locked`), a locked node can be picked, and lights up under the pointer. Never a geomorph's image */
 const pickLockedCss = cn(
-  "[&[data-pick-locked]_[data-node-id]]:pointer-events-auto",
+  "[&[data-pick-locked]_[data-node-id]:not([data-geomorph])]:pointer-events-auto",
   "[&[data-pick-locked]_[data-locked]:hover]:cursor-pointer",
   "[&[data-pick-locked]_[data-locked]:hover]:opacity-100",
   "[&[data-pick-locked]_[data-locked]:hover]:outline-amber-400",

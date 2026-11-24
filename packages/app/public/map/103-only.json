@@ -1,0 +1,22 @@
+{
+  "filename": "103-only.json",
+  "width": 1200,
+  "height": 1200,
+  "nodes": [
+    {
+      "id": "ed6ed3fe-6845-4dd0-9435-45445af28b4b",
+      "name": "g-103--cargo-bay-full",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "symbol",
+      "srcKey": "g-103--cargo-bay-full",
+      "baseRect": {"width": 1200, "height": 1200},
+      "offset": {"x": -5.5, "y": -5.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -5.5, -5.5)"
+    }
+  ],
+  "bounds": {"x": -5.5, "y": -5.5, "width": 1205.5, "height": 1205.5},
+  "type": "map",
+  "key": "103-only"
+}

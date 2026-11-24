@@ -29,7 +29,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       stopAutofire: null,
       lookAt: null,
       strafeLatch: null,
-      look: { base: getWorldStore(w.key).read().lookBase, steer: null, far: null },
+      look: { base: finiteOrNull(getWorldStore(w.key).read().lookBase), steer: null, far: null },
       lookMarked: true,
       lookCodes: new Set(),
       cancelLook: () => {},
@@ -254,6 +254,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         // paused, the look would run out before they could turn
         if (npc === undefined || w.client === true || w.disabled === true) return;
+        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return; // a NaN look would reach the view
         const rect = w.view.canvas.getBoundingClientRect();
         tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
         w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
@@ -394,7 +395,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.e.persistDecor();
       },
       persistLook() {
-        getWorldStore(w.key).patch({ lookBase: state.look.base });
+        getWorldStore(w.key).patch({ lookBase: finiteOrNull(state.look.base) });
       },
       psi(on) {
         w.e.setPsi(on, state.key);
@@ -825,3 +826,8 @@ export type State = {
 /** Whether a key went to something Space presses, e.g. the paused pill's chevron */
 const isButtonTarget = (e: KeyboardEvent) =>
   e.target instanceof Element && e.target.closest("button, [role=button], a[href], summary") !== null;
+
+/** `n` if a real number, else `null`, e.g. a saved look's reach */
+function finiteOrNull(n: null | number) {
+  return Number.isFinite(n) ? n : null;
+}

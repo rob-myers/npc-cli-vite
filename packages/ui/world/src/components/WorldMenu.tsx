@@ -41,7 +41,7 @@ import {
   getPresetCameraView,
   minNearView,
 } from "../service/camera-view";
-import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal, SkirtsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
 import { mapGroupsOf } from "../service/geomorph";
 import { isRenamableMap } from "../service/map-rename";
@@ -83,6 +83,7 @@ export function WorldMenu() {
       menuHeight: saved.menuHeight,
       resizing: false,
       skinDebugOpen: false,
+      skirtsOpen: false,
       stateSelectOpen: false,
       themeEditorOpen: false,
       themeEditorRef: null as any,
@@ -398,6 +399,9 @@ export function WorldMenu() {
       case "skins":
         state.set({ skinDebugOpen: true });
         break;
+      case "skirts":
+        state.set({ skirtsOpen: true });
+        break;
       case "colliders":
         w.debug?.showPhysicsColliders();
         w.update();
@@ -589,6 +593,7 @@ export function WorldMenu() {
               <MenuSelect
                 label={w.mapKey}
                 value={w.mapKey}
+                popupClass="max-h-[min(30rem,70vh)]"
                 items={mapGroupsOf(w.assets?.map ?? {}).flatMap(({ label, keys }) =>
                   keys.map((key) => ({ key, value: key, section: label })),
                 )}
@@ -1088,6 +1093,11 @@ export function WorldMenu() {
           container={w.rootEl}
         />
       )}
+      <SkirtsModal
+        open={state.skirtsOpen}
+        onOpenChange={(open) => state.set({ skirtsOpen: open })}
+        container={w.rootEl}
+      />
     </>
   );
 }
@@ -1188,7 +1198,7 @@ function MenuShell({
       onOpenChange={(open, { reason, event }) => {
         if (open) {
           state.set({ menuOpen: true });
-        } else if (state.debugHitOpen || state.gmGraphsOpen || state.skinDebugOpen) {
+        } else if (state.debugHitOpen || state.gmGraphsOpen || state.skinDebugOpen || state.skirtsOpen) {
           // a press or escape in a debug modal is for the modal
         } else if (
           reason === "outside-press" &&
@@ -1582,6 +1592,8 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  /** The obstacle skirts modal, from the "skirts" option */
+  skirtsOpen: boolean;
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   /** The fade button's pending long press, else `0` */
@@ -1746,7 +1758,7 @@ const hudDebugPrefix = "hud debug ";
 const hudDebugItems = [{ key: "phaser", value: `${hudDebugPrefix}phaser`, section: "debug" }];
 
 /** Debug options that each open a modal, picked from "modals" */
-const modalItems = ["graphs", "room hit", "skins"].map((value) => ({ key: value, value }));
+const modalItems = ["graphs", "room hit", "skins", "skirts"].map((value) => ({ key: value, value }));
 
 /** A section's label in a multiselect's popup, e.g. the "hud" select's "layout" */
 const sectionLabelClass = tw(
@@ -1779,10 +1791,13 @@ export function MenuSelect<T extends string>({
   open,
   onOpenChange,
   itemAction,
+  popupClass = "max-h-60",
 }: {
   /** Shows a down-caret, so it reads as a select rather than a button */
   caret?: boolean;
   className?: string;
+  /** Its popup's height, e.g. a taller one for a long list */
+  popupClass?: string;
   /** An item's `section` is labelled where it starts, as in `MenuMultiSelect` */
   items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean; section?: string }[];
   /** A button after each item it is `shown` for, doing something besides choosing it */
@@ -1832,7 +1847,12 @@ export function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+          <Select.Popup
+            className={cn(
+              "min-w-(--anchor-width) bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 overflow-auto scrollbar-thin",
+              popupClass,
+            )}
+          >
             <Select.List>
               {items.map((item, i) => (
                 <Fragment key={item.key}>

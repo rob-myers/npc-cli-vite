@@ -71,6 +71,7 @@ import Obstacles from "./Obstacles";
 import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
 import PickMenu from "./PickMenu";
+import Plants from "./Plants";
 import RoomLabels from "./RoomLabels";
 import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
@@ -212,6 +213,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       phasers: null as any,
       npcFocus: null as any,
       pickMenu: null as any,
+      plants: null as any,
       shields: null as any,
       skipNet: null as any,
       spots: null as any,
@@ -616,6 +618,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Walls key="walls" />
               <Doors key="doors" />
               <Obstacles key="obstacles" />
+              <Plants key="plants" />
               <Decor key="decor" />
               <Shields key="shields" />
               <RoomLabels key="room-labels" />
@@ -745,6 +748,7 @@ export type State = {
   phasers: UseStateRef<import("./Phasers").State>;
   npcFocus: UseStateRef<import("./NpcFocus").State>;
   pickMenu: UseStateRef<import("./PickMenu").State>;
+  plants: UseStateRef<import("./Plants").State>;
   shields: UseStateRef<import("./Shields").State>;
   skipNet: UseStateRef<import("./use-world-skip-net").State>;
   /** The spots overlay, mounted by `Debug` */

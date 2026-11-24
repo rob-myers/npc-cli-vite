@@ -85,3 +85,18 @@ see-through (`theme.walls.opacity`), so `Obstacles` clips it at its room's edge,
   each wall), facing into the room. It is plain black (`#000`), not panelled, as the obstacle's inside would be.
 - **Cost.** Two texel fetches and four dot products per pixel, clipped or not. One more skirt instance per wall
   an obstacle is cut at. No draw calls.
+
+## Obstacle skirts
+
+An obstacle's sides are its skirt, drawn by `Obstacles` from `skirtPanel` (`service/skirt-panels.ts`). Its kind comes from its
+obstacle's meta (`skirtKindOf`), an index of `skirtKinds`:
+
+| kind | look | meta |
+| --- | --- | --- |
+| `panelled` | the deck's plate seams carried up it, rivets along its top | any other |
+| `upholstered` | no seams, swelling from its borders to its middle | `chair`, `bed`, `sofa` |
+| `glass` | frosted, pale and speckled | `window` |
+| `cargo` | corrugated, flat rails at its foot and top, posts at its ends | `cargo`, e.g. `cargo--003` |
+
+The debug menu's **modals** select has **skirts**, which draws each kind flat with the World's own renderer
+(`renderSkirtPreviews`). A new kind goes in `skirtKinds`, `skirtKindOf` and `skirtPanel`.

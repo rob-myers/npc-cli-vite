@@ -24,6 +24,7 @@ export const symbolByGroup = {
     "extra--022--fresher": true,
     "extra--023--machine": true,
     "extra--024--fresher": true,
+    "extra--025--plant": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
   playground: {
@@ -86,6 +87,7 @@ export const symbolByGroup = {
   },
 
   "symbol-machinery": {
+    "machinery--077": true,
     "machinery--091": true,
     "machinery--155": true,
     "machinery--156": true,
@@ -114,6 +116,7 @@ export const symbolByGroup = {
     "office--020": true,
     "office--023": true,
     "office--026": true,
+    "office--057": true,
     "office--061": true,
     "office--074": true,
     "office--089": true,
@@ -193,6 +196,7 @@ export const symbolByGroup = {
     "stateroom--020": true,
     "stateroom--035": true,
     "stateroom--036": true,
+    "stateroom--100": true,
   },
 } as const;
 
@@ -226,6 +230,7 @@ const extraSymbols = {
   "extra--022--fresher": true,
   "extra--023--machine": true,
   "extra--024--fresher": true,
+  "extra--025--plant": true,
 } as const;
 
 export const symbolByGroupHash = hashJson(symbolByGroup);

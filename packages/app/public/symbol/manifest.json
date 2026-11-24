@@ -36,6 +36,24 @@
       "type": "symbol",
       "key": "bridge--042"
     },
+    "cargo--002": {
+      "filename": "cargo--002.json",
+      "thumbnailFilename": "cargo--002.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
+      "type": "symbol",
+      "key": "cargo--002"
+    },
+    "cargo--003": {
+      "filename": "cargo--003.json",
+      "thumbnailFilename": "cargo--003.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 241.4},
+      "type": "symbol",
+      "key": "cargo--003"
+    },
     "console--010": {
       "filename": "console--010.json",
       "thumbnailFilename": "console--010.thumbnail.png",
@@ -351,6 +369,15 @@
       "type": "symbol",
       "key": "extra--024--fresher"
     },
+    "extra--025--plant": {
+      "filename": "extra--025--plant.json",
+      "thumbnailFilename": "extra--025--plant.thumbnail.png",
+      "width": 20,
+      "height": 20,
+      "bounds": {"x": 0, "y": 0, "width": 20, "height": 20},
+      "type": "symbol",
+      "key": "extra--025--plant"
+    },
     "fresher--002": {
       "filename": "fresher--002.json",
       "thumbnailFilename": "fresher--002.thumbnail.png",
@@ -413,6 +440,15 @@
       "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
       "type": "symbol",
       "key": "g-102--research-deck"
+    },
+    "g-103--cargo-bay-full": {
+      "filename": "g-103--cargo-bay-full.json",
+      "thumbnailFilename": "g-103--cargo-bay-full.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+      "type": "symbol",
+      "key": "g-103--cargo-bay-full"
     },
     "g-301--bridge": {
       "filename": "g-301--bridge.json",
@@ -521,6 +557,15 @@
       "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 71.2},
       "type": "symbol",
       "key": "low-berth--003"
+    },
+    "machinery--077": {
+      "filename": "machinery--077.json",
+      "thumbnailFilename": "machinery--077.thumbnail.png",
+      "width": 100.2,
+      "height": 102.2,
+      "bounds": {"x": 0, "y": 0, "width": 100.2, "height": 102.2},
+      "type": "symbol",
+      "key": "machinery--077"
     },
     "machinery--091": {
       "filename": "machinery--091.json",
@@ -674,6 +719,15 @@
       "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
       "type": "symbol",
       "key": "office--026"
+    },
+    "office--057": {
+      "filename": "office--057.json",
+      "thumbnailFilename": "office--057.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -6.7, "y": -1.9, "width": 128.8, "height": 248.8},
+      "type": "symbol",
+      "key": "office--057"
     },
     "office--061": {
       "filename": "office--061.json",
@@ -854,6 +908,15 @@
       "bounds": {"x": -2, "y": -2, "width": 124, "height": 246.8},
       "type": "symbol",
       "key": "stateroom--036"
+    },
+    "stateroom--100": {
+      "filename": "stateroom--100.json",
+      "thumbnailFilename": "stateroom--100.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -4.5, "y": -3.9, "width": 191.4, "height": 247.8},
+      "type": "symbol",
+      "key": "stateroom--100"
     },
     "table--004": {
       "filename": "table--004.json",

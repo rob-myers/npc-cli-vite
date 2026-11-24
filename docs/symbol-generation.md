@@ -71,9 +71,11 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
   `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
   So a door on the room's north wall slides `[-1,0]`, south `[1,0]`, west `[0,1]` and east `[0,-1]`.
-  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. Both halves
-  of a double door slide the SAME way, or one points out. A hull door is exempt:
+  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. A hull door is exempt:
   its normal is turned to point outwards, whatever its slide.
+- **A double door's halves slide apart**, away from where they meet, with no gap between them. One half's normal
+  then points out of its room, which is fine. Slid the same way, their inner sides show (g-103's). Meeting so, the two
+  are found as one double door and open together (`partners`, `docs/doors.md`).
 - **Optional doors**: a room is reused where its doors differ, so give it one per side it could have,
   each `door {n|e|s|w} optional`. A parent's `doors=['e','w']` keeps those sides and walls up the rest;
   `doors=[]` keeps none. With no `doors` tag every door stays.
@@ -92,12 +94,13 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   that exists: `console--051` is the armchair, `extra--003--chair` the small chair,
   `extra--010--machine` the COMP unit, `extra--001--fresher` a basin, `extra--002--fresher` a toilet,
   `counter--010` a sink set in a counter, `extra--018--table` a round table and
-  `couch-and-chairs--006` a sofa with its end tables. Rotate it about its centre by the node's `transform`.
+  `couch-and-chairs--006` a sofa with its end tables and `extra--025--plant seed=N` a potted plant (`docs/plants.md`). Rotate it about its centre by the node's `transform`.
 - **Obstacles**: a `rect` or a `path`, named e.g. `obstacle table surface y=0.7`, or
   `obstacle y=1 h=0.7 tint=#444 skirtTint=#777` for machinery.
-- **An obstacle's `y` is its top and `h` how far down it reaches.** Give both, or a parent's `y`: one with
-  `h` alone tops out at the floor, so `createLayout` raises it to `y=h` and warns. `medical-bed--006`'s
-  curtains were `h=1.6` alone, and did not show.
+- **An obstacle's `y` is its top and `h` how far down it reaches.** One with `h` alone stands on the
+  floor: `createLayout` raises its top to `y=h`, as a parent's `y` would.
+- **A point `on` an obstacle** (`decor point do=sit on`) sits just above its top: the obstacle's height
+  plus 0.01, whatever raised it. A `y` of the point's own wins, e.g. the sinks' `do=stand on y=0`.
 - **Heights add.** A parent's `y` is added to the obstacle's own. So furniture a parent will place by
   height carries none itself: the shops are `obstacle machine tint=#555 skirtTint=#555`, placed `y=0.8`.
 
@@ -282,8 +285,9 @@ draws it.
 | M4 | `galley-and-mess-halls--006`, mirrored; the mess bar `extra--020--table`; `extra--019--table` for the common area's | their pngs; the bar's art from its old svg |
 | M5 | `medical-bed--006` (three `medical-bed--005`, two curtains), `console--022` | their pngs |
 | M6 | map `301-303`: 303 mirrored below 301, so their south hull doors meet | `301-302` |
+| M7 | `machinery--077` x2 in engineering; `stateroom--100`, the exec stateroom and its fresher, in place of the hull's own walls and doors | their pngs, found by a fit over every png of the group |
 
-The north strip at `720` to `960` and the locked room had no symbol in the old svg: they are the hull's own.
+The locked room had no symbol in the old svg: it is the hull's own. Nor had the north strip at `720` to `960`, until `stateroom--100` was found to fit it.
 The galley differs from the art (36%, the closest of its group): its cubby, door and stove side.
 
 What it taught, besides the rules above:

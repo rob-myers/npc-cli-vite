@@ -12,13 +12,13 @@ export type CorpseBody = { x: number; z: number; ry: number; hull: THREE.Vector2
 
 /** Puts a corpse's rect sensor round their body as it lies, and gives where it lies */
 export function addCorpseCollider(npc: Npc): null | CorpseBody {
-  const body = corpseBodyOf(npc);
+  const body = bodyOf(npc);
   if (body !== null) postCorpseCollider(npc, body);
   return body;
 }
 
-/** Where `npc`'s corpse lies, fitted round their parts as posed. `null` if none is found */
-function corpseBodyOf(npc: Npc): null | CorpseBody {
+/** Where `npc`'s body lies, fitted round their parts as posed, e.g. a corpse's. `null` if none is found */
+export function bodyOf(npc: Npc): null | CorpseBody {
   const [x, z, ry] = [npc.position.x, npc.position.z, npc.rotation.y];
   const points: THREE.Vector2[] = [];
   let top = 0;

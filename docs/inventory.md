@@ -64,6 +64,9 @@ Rules:
   buttons in an npc's debug bubble, lit whilst they have it.
 - `takeItem(npcKey, decorKey)` takes a runtime decor off the map: one in their own room only, never through a
   wall. With no room for it the bar says "inventory full" (`w.hud.say`), and a click does not walk them over.
+- A click on an item in reach (`takeReach`, plus `takeSlack`) and in their room takes it where they stand
+  (`takeOnPress` in `core.ts`). Else they walk to the nearest floor of its room in reach (`findTakeSpot`), which may
+  be across a table.
 
 ### Where an item goes down
 
