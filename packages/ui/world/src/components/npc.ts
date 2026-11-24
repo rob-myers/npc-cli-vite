@@ -54,7 +54,7 @@ export class Npc {
   queryFilter!: QueryFilter;
   /** As `queryFilter`, but without the exemption for the node they stand on */
   strictQueryFilter!: QueryFilter;
-  /** Passes a doorway only whilst its door is open, e.g. for whether their body would fit lying there */
+  /** Passes a doorway only once its door has slid open, e.g. for whether their body would fit lying there */
   openDoorsFilter!: QueryFilter;
 
   bubbleOffset = new THREE.Vector3(0, 0, 0);
@@ -487,7 +487,8 @@ export class Npc {
       passFilter: (nodeRef, navMesh) => {
         const { area } = getNodeByRef(navMesh, nodeRef);
         if (nodeRef === this.nodeRef || isDoorAreaId(area) === false) return true;
-        return this.w.door.byKey[decodeDoorAreaId(area).gdKey]?.open === true;
+        const door = this.w.door.byKey[decodeDoorAreaId(area).gdKey];
+        return door !== undefined && this.w.door.isOpen(door.gmId, door.doorId);
       },
     };
   }

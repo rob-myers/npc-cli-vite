@@ -26,7 +26,8 @@ Likewise we could have `auto` doors which are not `proximity` i.e. automatically
 ## Opening and shutting
 
 - **An npc coming by** opens it (`onEnterCollider`, and `started-moving` for one already near). An `auto` door opens
-  for anyone. A manual one opens only for an npc whose path crosses it (`npcIntention`).
+  for anyone. A manual one opens only for an npc whose path crosses it (`npcIntention`). One with no path, e.g. just
+  spawned beside it, does not open it.
 - **An opened door tries to shut** after `doorConfig.closeMs` (`tryCloseDoor`). It waits whilst anyone is in the
   doorway, or near it and moving, or near a `proximity` door at all (`canAutoCloseDoor`).
 - **A press** on a door, its switch or its door spot toggles it, whilst **toggle doors** is on in the debug menu (`w.e.onPickDoor`).

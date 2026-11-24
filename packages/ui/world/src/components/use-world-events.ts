@@ -729,12 +729,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const door = w.door.byKey[e.meta.gdKey];
         if (!door) return; // onchange map
 
-        if (e.type === "nearby" || e.type === "inside") {
+        const path = e.type === "nearby" ? npc.getCornersPath() : null;
+        // nearby with no path, e.g. just spawned, only an auto door opens for them
+        if (e.type === "inside" || (e.type === "nearby" && (path !== null || door.auto === true))) {
           state.toggleDoor(e.meta.gdKey, {
             open: true,
             npcKey: e.npcKey,
             // avoid ignoring "inside" sensor when path does not intersect
-            npcIntention: e.type === "nearby" ? (npc.getCornersPath() ?? undefined) : undefined,
+            npcIntention: path ?? undefined,
           });
         }
 
