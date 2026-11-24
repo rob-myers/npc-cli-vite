@@ -116,6 +116,7 @@ export const symbolByGroup = {
     "office--020": true,
     "office--023": true,
     "office--026": true,
+    "office--057": true,
     "office--061": true,
     "office--074": true,
     "office--089": true,

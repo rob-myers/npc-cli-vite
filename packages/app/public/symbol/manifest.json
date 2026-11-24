@@ -36,6 +36,15 @@
       "type": "symbol",
       "key": "bridge--042"
     },
+    "cargo--002": {
+      "filename": "cargo--002.json",
+      "thumbnailFilename": "cargo--002.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
+      "type": "symbol",
+      "key": "cargo--002"
+    },
     "cargo--003": {
       "filename": "cargo--003.json",
       "thumbnailFilename": "cargo--003.thumbnail.png",
@@ -710,6 +719,15 @@
       "bounds": {"x": -6, "y": -2, "width": 131.4, "height": 184},
       "type": "symbol",
       "key": "office--026"
+    },
+    "office--057": {
+      "filename": "office--057.json",
+      "thumbnailFilename": "office--057.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -6.7, "y": -1.9, "width": 128.8, "height": 248.8},
+      "type": "symbol",
+      "key": "office--057"
     },
     "office--061": {
       "filename": "office--061.json",
