@@ -1094,7 +1094,8 @@ const PhaserIcon = memo(function PhaserIcon({
   } = phaserIcons[attachment ?? "none"];
   const beam = `M${from.x} ${from.y} ${to.x} ${to.y}`;
   return (
-    <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
+    // shifted, as the gun's drawing spans x 0 to 52: centred, it lines up with psi and the keys
+    <svg className={iconClass} style={iconStyle("phaser")} viewBox="-6 0 64 64" aria-label="phaser">
       <defs>
         <radialGradient id="hud-phaser-glow">
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
