@@ -72,6 +72,15 @@
       "type": "map",
       "key": "301-playground"
     },
+    "302-only": {
+      "filename": "302-only.json",
+      "thumbnailFilename": "302-only.thumbnail.png",
+      "width": 1200,
+      "height": 600,
+      "bounds": {"x": -4, "y": -62, "width": 1204, "height": 662},
+      "type": "map",
+      "key": "302-only"
+    },
     "303-only": {
       "filename": "303-only.json",
       "thumbnailFilename": "303-only.thumbnail.png",

@@ -90,6 +90,12 @@
       "width": 104,
       "height": 88
     },
+    "extra--025--plant": {
+      "key": "extra--025--plant",
+      "group": "extra",
+      "width": 100,
+      "height": 100
+    },
     "g-301--playground": {
       "key": "g-301--playground",
       "group": "playground",

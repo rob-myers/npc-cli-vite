@@ -105,6 +105,18 @@
           "baseRect": {"width": 36.2, "height": 58.8},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, 1, 179.5, 180.7)"
+        },
+        {
+          "id": "3815a406-2a0d-4db8-9e18-1e7a86f73eac",
+          "name": "extra--025--plant seed=1",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 32.7, "f": 4},
+          "type": "symbol",
+          "srcKey": "extra--025--plant",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 32.7, 4)"
         }
       ]
     },
@@ -136,17 +148,6 @@
           "type": "rect",
           "baseRect": {"width": 23.8, "height": 18.4},
           "cssTransform": "matrix(1, 0, 0, 1, 159.5, 7.3)"
-        },
-        {
-          "id": "6e1da5a3-061d-4945-8d83-eccb01391495",
-          "name": "obstacle plant seed=1 y=0.4 h=0.4 tint=#333 skirtTint=#555",
-          "locked": false,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "type": "path",
-          "d": "M 50.09 17.06 L 45.76 21.39 L 39.64 21.39 L 35.31 17.06 L 35.31 10.94 L 39.64 6.61 L 45.76 6.61 L 50.09 10.94 Z",
-          "baseRect": {"width": 14.78, "height": 14.78},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
         {
           "id": "e4915935-b0ce-412d-84f8-a4e3c953bdbe",

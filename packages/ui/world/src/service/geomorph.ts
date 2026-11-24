@@ -266,6 +266,7 @@ export function createLayout(
     // can set heightAsDimension to be heightOffFloor
     if (o.meta["max-h"] === true) meta.h = heightOffFloor;
     if (typeof o.meta.windowId === "number") meta.windowId = o.meta.windowId;
+    if (typeof o.meta.seed === "number") meta.seed = o.meta.seed;
     // an obstacle never reaches below the floor, so one with `h` alone stands on it
     if (typeof meta.h === "number" && heightOffFloor < meta.h) heightOffFloor = meta.h;
 
@@ -772,6 +773,8 @@ export function instantiateFlatSymbol(
     obstacles: src.obstacles.map((poly) =>
       poly.cleanClone(mat, {
         ...obsMeta,
+        // a plant's look, unless it has its own
+        ...(typeof meta.seed === "number" && poly.meta.seed === undefined && { seed: meta.seed }),
         // aggregate height-off-floor from MapEdit symbols
         ...(typeof meta.y === "number" && {
           y: toPrecision(meta.y + (parseFloat(poly.meta.y) || 0)),

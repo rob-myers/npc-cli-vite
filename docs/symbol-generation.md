@@ -92,7 +92,7 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   that exists: `console--051` is the armchair, `extra--003--chair` the small chair,
   `extra--010--machine` the COMP unit, `extra--001--fresher` a basin, `extra--002--fresher` a toilet,
   `counter--010` a sink set in a counter, `extra--018--table` a round table and
-  `couch-and-chairs--006` a sofa with its end tables. Rotate it about its centre by the node's `transform`.
+  `couch-and-chairs--006` a sofa with its end tables and `extra--025--plant seed=N` a potted plant (`docs/plants.md`). Rotate it about its centre by the node's `transform`.
 - **Obstacles**: a `rect` or a `path`, named e.g. `obstacle table surface y=0.7`, or
   `obstacle y=1 h=0.7 tint=#444 skirtTint=#777` for machinery.
 - **An obstacle's `y` is its top and `h` how far down it reaches.** One with `h` alone stands on the

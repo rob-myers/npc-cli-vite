@@ -351,6 +351,15 @@
       "type": "symbol",
       "key": "extra--024--fresher"
     },
+    "extra--025--plant": {
+      "filename": "extra--025--plant.json",
+      "thumbnailFilename": "extra--025--plant.thumbnail.png",
+      "width": 20,
+      "height": 20,
+      "bounds": {"x": 0, "y": 0, "width": 20, "height": 20},
+      "type": "symbol",
+      "key": "extra--025--plant"
+    },
     "fresher--002": {
       "filename": "fresher--002.json",
       "thumbnailFilename": "fresher--002.thumbnail.png",

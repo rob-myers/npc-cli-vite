@@ -216,9 +216,9 @@
       "rect": {"x": 3474, "y": 3219, "width": 450, "height": 57},
       "sheetId": 0
     },
-    "stateroom--100 5": {
+    "stateroom--100 4": {
       "symbolKey": "stateroom--100",
-      "obstacleId": 5,
+      "obstacleId": 4,
       "rect": {"x": 1256, "y": 763, "width": 367, "height": 427},
       "sheetId": 0
     },
@@ -246,9 +246,9 @@
       "rect": {"x": 3622, "y": 3284, "width": 298, "height": 356},
       "sheetId": 0
     },
-    "stateroom--100 3": {
+    "stateroom--100 2": {
       "symbolKey": "stateroom--100",
-      "obstacleId": 3,
+      "obstacleId": 2,
       "rect": {"x": 3474, "y": 3712, "width": 320, "height": 132},
       "sheetId": 0
     },
@@ -396,9 +396,9 @@
       "rect": {"x": 3935, "y": 1094, "width": 92, "height": 92},
       "sheetId": 0
     },
-    "stateroom--100 2": {
-      "symbolKey": "stateroom--100",
-      "obstacleId": 2,
+    "extra--025--plant 0": {
+      "symbolKey": "extra--025--plant",
+      "obstacleId": 0,
       "rect": {"x": 3124, "y": 2145, "width": 73.9, "height": 73.9},
       "sheetId": 0
     },
@@ -486,9 +486,9 @@
       "rect": {"x": 1948, "y": 1682, "width": 315, "height": 315},
       "sheetId": 1
     },
-    "stateroom--100 4": {
+    "stateroom--100 3": {
       "symbolKey": "stateroom--100",
-      "obstacleId": 4,
+      "obstacleId": 3,
       "rect": {"x": 1440, "y": 2132, "width": 315, "height": 162},
       "sheetId": 1
     },
