@@ -582,10 +582,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
       },
-      toggleFarLook() {
-        state.setFarLook(state.look.far === null);
-        w.hud?.update(); // the button whites
-      },
       togglePsi() {
         if (state.exists() === false) return;
         const on = w.e.isPsiRaised(state.key);
@@ -780,8 +776,6 @@ export type State = {
   cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Touch's Space: starts or ends a far look, and raised, aims too. The binoculars button */
-  toggleFarLook(): void;
   /** Space held: a look as far as sight goes along their facing, which extends their frontier. In gaze mode along the pointer. Raised, it aims too (`steady`), along the muzzle's line */
   setFarLook(on: boolean): void;
   /** The bearing a far look casts along: raised, the muzzle's line, else `bearing` */

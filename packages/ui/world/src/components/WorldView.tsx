@@ -103,11 +103,15 @@ export function WorldView(props: React.PropsWithChildren) {
       canvas: null as any,
       pausedEl: null,
       warming: false,
-      // "canonical" is what a save before the rename calls it
-      cameraMode: ["embodied", "canonical"].includes(saved.cameraMode as string) ? "embodied" : defaultCameraMode,
+      // touch is always `free`, and never follows: see `docs/camera.md`. "canonical" is an old save's "embodied"
+      cameraMode: w.touchDevice
+        ? "free"
+        : ["embodied", "canonical"].includes(saved.cameraMode as string)
+          ? "embodied"
+          : defaultCameraMode,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
-      follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
+      follow: w.touchDevice === false && ((saved.cameraMode as string) === "follow" || saved.follow === true),
       embodiedFrom: 0,
       embodiedDragging: false,
       embodiedPeak: 0,
@@ -1357,6 +1361,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       setFollow(follow) {
+        if (follow === true && w.touchDevice) return; // touch never follows: its button pans to the player instead
         state.frontierHold = false; // superseded either way
         state.follow = follow; // before the look, whose goal is the follow's
         // to the player at once rather than waiting for them to move, though never in a rush
@@ -1374,6 +1379,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
+        if (cameraMode === "embodied" && w.touchDevice) return; // touch is always `free`
         if (cameraMode === "embodied") {
           state.embodiedPolar = state.controls?.spherical.phi ?? state.initial.polar;
         } else if (state.cameraMode === "embodied" && state.controls !== null) {
@@ -1405,7 +1411,11 @@ export function WorldView(props: React.PropsWithChildren) {
         // its own frames, paused or not. Tracked, since they walk whilst it pans. And at the
         // follow's own GOAL — the player offset towards their frontier — rather than at them: else
         // it centres them and the follow then slides off to the goal, which reads as two motions
-        const track = () => (state.getFollowGoal(tmpGoal) === true ? { x: tmpGoal.x, y: tmpGoal.z } : undefined);
+        const track = () => {
+          if (state.getFollowGoal(tmpGoal) === true) return { x: tmpGoal.x, y: tmpGoal.z };
+          const player = w.player?.get(); // not followed, e.g. touch's follow button: at them
+          return player === undefined ? undefined : { x: player.position.x, y: player.position.z };
+        };
         const at = track();
         if (at === undefined) return;
         void state.lookAt(at, { animate: true, height: npcDims.height, track, ...opts });

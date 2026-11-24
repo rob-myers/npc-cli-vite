@@ -4,7 +4,6 @@ import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, Tip, tw, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { soundMute } from "@npc-cli/util/sound-mute";
 import {
-  BinocularsIcon,
   FingerprintIcon,
   GearSixIcon,
   LockIcon,
@@ -706,7 +705,6 @@ function PlayerButtons({
   const tipSide = tipSideOf(w.hud?.getLayout() ?? "bar");
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
-  const farLook = w.player?.look.far != null;
   const big = w.touchDevice;
   const buttonClass = cn(
     playerButtonClass(big),
@@ -728,9 +726,12 @@ function PlayerButtons({
     >
       {/* a narrow bar scrolls these after the carried items, never what follows, the fire button */}
       <div className={cn("flex min-w-0", column ? "flex-col" : "overflow-x-auto [scrollbar-width:none]")}>
-        {/* follow on (white) or off, as `v` */}
-        <Tip content={`follow ${follow ? "on" : "off"}: v`} side={tipSide}>
-          <div className={buttonClass} onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}>
+        {/* follow on (white) or off, as `v`. Touch never follows: it pans to the player */}
+        <Tip content={big ? "to the player" : `follow ${follow ? "on" : "off"}: v`} side={tipSide}>
+          <div
+            className={buttonClass}
+            onClick={() => w.hud?.dragged !== true && (big ? w.view.lookAtPlayer() : w.view.setFollow(!follow))}
+          >
             <AnimatePresence>
               {w.view?.lookingAt === true && (
                 // pulses whilst a pan is under way, which a black screen or a paused world would hide
@@ -753,19 +754,10 @@ function PlayerButtons({
                 transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
               />
             )}
-            <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
+            <UserFocusIcon className={cn(buttonIcon(big || follow), iconSize)} weight="light" />
           </div>
         </Tip>
-        {/* touch has no `wasd`, so no compass: nor Space, so a far look's toggle in its place */}
-        {big === false ? (
-          <CompassRose />
-        ) : (
-          <Tip content={`max look ${farLook ? "on" : "off"}`} side={tipSide}>
-            <div className={buttonClass} onClick={() => w.hud?.dragged !== true && w.player.toggleFarLook()}>
-              <BinocularsIcon className={cn(buttonIcon(farLook), iconSize)} weight="light" />
-            </div>
-          </Tip>
-        )}
+        <CompassRose big={big} />
         {/* last: right-most in the bar, bottom-most in a column */}
         <PlayerMenu
           buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
@@ -919,8 +911,9 @@ function PlayerMenu({ buttonClass, iconClass }: { buttonClass: string; iconClass
 const playerButtonClass = (big: boolean) =>
   cn(
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden border border-neutral-400/25 bg-neutral-900/60 hover:ring-1 hover:ring-yellow-200/25",
-    big ? "size-10.5" : "size-12.5",
+    playerButtonSize(big),
   );
+const playerButtonSize = (big: boolean) => (big ? "size-10.5" : "size-12.5");
 /** Where a tip opens off the hud, away from its edge: above a bar, inwards from a column */
 const tipSideOf = (layout: string) => (layout === "bar" ? "top" : layout === "left" ? "right" : "left");
 
@@ -948,17 +941,20 @@ const buttonIcon = (on: boolean) =>
   cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", on ? "text-white" : "text-neutral-500");
 
 /**
- * Desktop's compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen.
+ * The compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen.
  * Drawn once. A camera turn redraws it through `w.hud.syncCompass`, never a render
  */
-const CompassRose = memo(function CompassRose() {
+const CompassRose = memo(function CompassRose({ big }: { big: boolean }) {
   const w = useContext(WorldContext);
   const { compassPoint = 0, wasdSkew = 0, wasdSnapped = true } = w.view ?? {};
   return (
     <svg
       ref={(el) => void (w.hud.compassEl = el)}
       viewBox="-21 -21 42 42"
-      className="group/compass pointer-events-auto size-12.5 shrink-0 border border-neutral-400/25 bg-neutral-900/60 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]"
+      className={cn(
+        "group/compass pointer-events-auto shrink-0 border border-neutral-400/25 bg-neutral-900/60 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]",
+        playerButtonSize(big),
+      )}
       data-snapped={wasdSnapped || undefined}
     >
       <title>{`w heads ${wasdSnapped ? "" : "near "}${compassLetters[compassPoint]}`}</title>

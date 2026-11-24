@@ -82,6 +82,8 @@ The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writin
 
 **`embodied` restricts what may be steered, by zoom.**
 
+On touch the camera is always `free`: `embodied` is greyed out in the World menu, and a saved one loads as `free`.
+
 Azimuth:
 - Free at every zoom, and untouched by zooming.
 - Where the w, a, s and d keys head is set by the view: see [WASD heading](#wasd-heading).
@@ -123,6 +125,8 @@ The HUD:
 
 ## Following the player
 
+Touch never follows (`setFollow` refuses), and the menu's follow switch is greyed out. Its follow button pans to the player instead (`w.view.lookAtPlayer`), so no "followed" hud-toast shows. Nor is there a far look on touch: the compass takes the binoculars' place.
+
 ![following](camera/camera-follow.svg)
 
 Whilst following, the view frames the player and their frontier: the furthest point ahead that they can see.
@@ -152,7 +156,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
 - **The offset eases with the zoom**, else the view lunges ahead then pulls back, e.g. as the phaser is raised. It is never longer than wanted, so keeps pace as the frontier draws in. Its direction always eases, so a sweep never snaps it round.
 - **The stops sit further out**, as the 30° fov is narrow.
   - `controls.minDistance` eases to the nearest radius that fits the player and their frontier, with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted outer stop. So zoomed in, a follow is as far out as a free look zoomed out.
-  - A far look, aiming too, lets it go `frontierConfig.farOuterScale` past the outer stop, e.g. so the wall fits across a narrow canvas. The red dot, on the way to the wall, fits too. Raised alone, the view keeps the look's own framing. Not on touch, where the zoom is the pinch's alone, except during a far look (the binoculars).
+  - A far look, aiming too, lets it go `frontierConfig.farOuterScale` past the outer stop, e.g. so the wall fits across a narrow canvas. The red dot, on the way to the wall, fits too. Raised alone, the view keeps the look's own framing. Not on touch, where the zoom is the pinch's alone.
   - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
   - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
   - Not following, both ease back to the persisted stops (`holdFrontier` only pans).

@@ -548,7 +548,7 @@ export function WorldMenu() {
                 <MenuSelect
                   label={w.view.cameraMode}
                   value={w.view.cameraMode}
-                  items={cameraModes.map((value) => ({ key: value, value }))}
+                  items={cameraModes.map((value) => ({ key: value, value, disabled: touch && value === "embodied" }))}
                   side="bottom"
                   onValueChange={(mode) => mode !== null && w.view.setCameraMode(mode)}
                 />
@@ -557,12 +557,18 @@ export function WorldMenu() {
                 className={cn("flex items-center gap-1.5 pr-2 py-1", touch && "pr-3 py-2")}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Tip content={`follow the player: ${w.view.follow ? "on" : "off"}`}>
-                  <span onClick={() => w.view.setFollow(!w.view.follow)}>
+                <Tip
+                  content={
+                    touch ? "touch never follows the player" : `follow the player: ${w.view.follow ? "on" : "off"}`
+                  }
+                >
+                  <span onClick={() => touch === false && w.view.setFollow(!w.view.follow)}>
                     <CrosshairSimpleIcon
                       className={cn(
-                        "size-3.5 cursor-pointer",
-                        w.view.follow === true ? "text-amber-300" : "hover:text-white",
+                        "size-3.5",
+                        touch
+                          ? "opacity-40"
+                          : cn("cursor-pointer", w.view.follow === true ? "text-amber-300" : "hover:text-white"),
                       )}
                     />
                   </span>
