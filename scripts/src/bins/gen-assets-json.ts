@@ -100,10 +100,13 @@ assets.hash = {
 
 perf("total");
 
+/** Decimal places a layout keeps: 0.01 mm */
+const layoutDecimals = 5;
+
 // reparse via z.encode ensures key-ordering
 const encoded = z.encode(AssetsSchema, assets);
 const { symbol, flattened, stratifiedSymbolNodes, layout, map, hash } = encoded;
-const layoutRaws = entries(layout).map(([gmKey, l]) => [gmKey, safeJsonCompact(l)] as const);
+const layoutRaws = entries(layout).map(([gmKey, l]) => [gmKey, safeJsonCompact(roundNumbers(l))] as const);
 const layoutFiles = layoutRaws.map(([gmKey, raw]) => [assetsPaths.layout(gmKey), raw] as const);
 const staleLayoutFiles = fs
   .globSync(path.join(assetsPaths.layoutDir, "*.json"))
@@ -128,6 +131,15 @@ const changes = [
   staleLayoutFiles.length > 0 && `removed ${namesOf(staleLayoutFiles)}`,
 ].filter(Boolean);
 info(`${path.basename(import.meta.filename)}: ${changes.join("; ") || "no changes detected"}`);
+
+/** `value` with each non-integer rounded to `layoutDecimals` places, so float noise e.g. `12.649999999999999` never reaches a diff */
+function roundNumbers<T>(value: T): T {
+  if (typeof value === "number") return (Number.isInteger(value) ? value : +value.toFixed(layoutDecimals)) as T;
+  if (Array.isArray(value)) return value.map(roundNumbers) as T;
+  if (value !== null && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, roundNumbers(v)])) as T;
+  return value;
+}
 
 /** Writes `raw` unless the file already holds it */
 function writeIfChanged(file: string, raw: string) {

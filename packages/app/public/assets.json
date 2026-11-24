@@ -177,13 +177,13 @@
   "hash": {
     "obstacles": 1902188195,
     "layout": {
-      "g-101--multipurpose": 1376844981,
-      "g-102--research-deck": -558553446,
-      "g-103--cargo-bay-full": 1794459182,
-      "g-301--bridge": -1630314190,
-      "g-301--playground": -86429936,
-      "g-302--xboat-repair-bay": -477077282,
-      "g-303--passenger-deck": 1347736430
+      "g-101--multipurpose": -1125347498,
+      "g-102--research-deck": 1262862139,
+      "g-103--cargo-bay-full": -1114027347,
+      "g-301--bridge": -1967388700,
+      "g-301--playground": 475032440,
+      "g-302--xboat-repair-bay": 1098963774,
+      "g-303--passenger-deck": -1996124180
     }
   }
 }
