@@ -106,6 +106,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       return fetchParsed(
         `/${file.type}/${file.filename}`,
         z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema),
+        // in dev a file may change on disk, e.g. saved through the api, so revalidate it
+        { cache: import.meta.env.DEV ? "no-cache" : "default" },
       );
     },
   });
