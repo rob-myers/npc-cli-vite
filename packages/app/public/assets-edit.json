@@ -17686,6 +17686,20 @@
           "meta": {"stateroom--036": true}
         },
         {
+          "symbolKey": "couch-and-chairs--006",
+          "width": 0.75,
+          "height": 3,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 17.4825,
+            "f": 9.0125
+          },
+          "meta": {"couch-and-chairs--006": true}
+        },
+        {
           "symbolKey": "low-berth--003",
           "width": 1.535,
           "height": 1.78,
@@ -17943,6 +17957,20 @@
             "f": 5.4475
           },
           "meta": {"extra--020--table": true, "y": 0.7}
+        },
+        {
+          "symbolKey": "table--009",
+          "width": 1.25,
+          "height": 1.25,
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 24.1125,
+            "f": 3.1625
+          },
+          "meta": {"table--009": true}
         },
         {
           "symbolKey": "extra--019--table",
@@ -61696,6 +61724,70 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [
+              [17.1575, 8.225],
+              [17.1575, 8.075],
+              [17.3075, 8.075],
+              [17.3075, 8.225]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "front-only": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, -1, 17.157500000000002, 8.225],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 30,
+            "y": 0.01
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [17.1575, 7.6125],
+              [17.1575, 7.4625],
+              [17.3075, 7.4625],
+              [17.3075, 7.6125]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "front-only": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, -1, 17.157500000000002, 7.612499999999999],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 30,
+            "y": 0.01
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[17.1575, 7], [17.1575, 6.85], [17.3075, 6.85], [17.3075, 7]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "front-only": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, -1, 17.157500000000002, 6.999999999999999],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 30,
+            "y": 0.01
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [[2.25, 0.65], [2.25, -0.6], [3.75, -0.6], [3.75, 0.65]]
           ],
           "meta": {
@@ -61784,7 +61876,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 27.05, 5.49],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 43,
+            "obstacleId": 46,
             "y": 0.31
           }
         },
@@ -61801,7 +61893,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 27.85, 5.2625],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 44,
+            "obstacleId": 47,
             "y": 0.31
           }
         },
@@ -61818,7 +61910,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 28.7, 5.1499999999999995],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 45,
+            "obstacleId": 48,
             "y": 0.31
           }
         },
@@ -61840,7 +61932,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 29.5625, 5.0925],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 46,
+            "obstacleId": 49,
             "y": 0.31
           }
         },
@@ -61862,7 +61954,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.5575, 6.415],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 47,
+            "obstacleId": 50,
             "y": 0.31
           }
         },
@@ -61884,7 +61976,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.5575, 7.415],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 48,
+            "obstacleId": 51,
             "y": 0.31
           }
         },
@@ -61906,7 +61998,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.5625, 8.415000000000001],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 49,
+            "obstacleId": 52,
             "y": 0.31
           }
         },
@@ -62016,7 +62108,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 6.45, 3.8375],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 50,
+            "obstacleId": 53,
             "y": 0.51
           }
         },
@@ -62033,7 +62125,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 6.805, 0.655],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 52,
+            "obstacleId": 55,
             "y": 0.51
           }
         },
@@ -62050,7 +62142,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 6.955, 2.1675],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 53,
+            "obstacleId": 56,
             "y": 0.41000000000000003
           }
         },
@@ -62174,7 +62266,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 9.45, 3.8375],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 55,
+            "obstacleId": 58,
             "y": 0.51
           }
         },
@@ -62191,7 +62283,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.805, 0.655],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 57,
+            "obstacleId": 60,
             "y": 0.51
           }
         },
@@ -62208,7 +62300,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 9.955, 2.1675],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 58,
+            "obstacleId": 61,
             "y": 0.41000000000000003
           }
         },
@@ -62334,7 +62426,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 12.45, 3.8375],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 60,
+            "obstacleId": 63,
             "y": 0.51
           }
         },
@@ -62351,7 +62443,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 12.805, 0.655],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 62,
+            "obstacleId": 65,
             "y": 0.51
           }
         },
@@ -62373,7 +62465,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 12.955, 2.1675],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 63,
+            "obstacleId": 66,
             "y": 0.41000000000000003
           }
         },
@@ -62499,7 +62591,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 17.55, 3.8375],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 65,
+            "obstacleId": 68,
             "y": 0.51
           }
         },
@@ -62516,7 +62608,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 17.195, 0.655],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 67,
+            "obstacleId": 70,
             "y": 0.51
           }
         },
@@ -62538,7 +62630,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 17.045, 2.1675],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 68,
+            "obstacleId": 71,
             "y": 0.41000000000000003
           }
         },
@@ -62675,7 +62767,7 @@
               13.477885
             ],
             "direction": {"x": 0.7071, "y": 0.7071},
-            "obstacleId": 76,
+            "obstacleId": 79,
             "y": 0.41000000000000003
           }
         },
@@ -62704,7 +62796,7 @@
               12.19927
             ],
             "direction": {"x": -0.8192, "y": -0.5736},
-            "obstacleId": 77,
+            "obstacleId": 80,
             "y": 0.41000000000000003
           }
         },
@@ -62726,7 +62818,7 @@
             "img": "arrow",
             "transform": [-0.5736, -0.8192, -0.8192, 0.5736, 27.3095, 11.03905],
             "direction": {"x": -0.5736, "y": -0.8192},
-            "obstacleId": 78,
+            "obstacleId": 81,
             "y": 0.41000000000000003
           }
         },
@@ -62831,6 +62923,119 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [
+              [25.1349, 3.2606],
+              [25.2498, 3.357],
+              [25.1534, 3.4719],
+              [25.0385, 3.3755]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [
+              -0.6428,
+              0.766,
+              0.766,
+              0.6428,
+              25.134925000000003,
+              3.260615
+            ],
+            "direction": {"x": -0.6428, "y": 0.766},
+            "obstacleId": 85,
+            "y": 0.31,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [25.051, 4.212],
+              [25.1659, 4.1156],
+              [25.2623, 4.2305],
+              [25.1474, 4.3269]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [
+              -0.6428,
+              -0.766,
+              0.766,
+              -0.6428,
+              25.147425000000002,
+              4.326885000000001
+            ],
+            "direction": {"x": -0.6428, "y": -0.766},
+            "obstacleId": 86,
+            "y": 0.31,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.4329, 3.3717],
+              [24.318, 3.4681],
+              [24.2216, 3.3533],
+              [24.3365, 3.2568]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [0.6428, 0.766, -0.766, 0.6428, 24.336525, 3.25683],
+            "direction": {"x": 0.6428, "y": 0.766},
+            "obstacleId": 87,
+            "y": 0.31,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.3401, 4.3269],
+              [24.2252, 4.2305],
+              [24.3216, 4.1156],
+              [24.4365, 4.212]
+            ]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [
+              0.6428,
+              -0.766,
+              -0.766,
+              -0.6428,
+              24.340075000000002,
+              4.326885000000001
+            ],
+            "direction": {"x": 0.6428, "y": -0.766},
+            "obstacleId": 88,
+            "y": 0.31,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [[0.545, 0.6725], [0.545, 0.8225], [0.395, 0.8225], [0.395, 0.6725]]
           ],
           "meta": {
@@ -62841,7 +63046,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 0.395, 0.6725],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 84,
+            "obstacleId": 92,
             "y": 0.51
           }
         },
@@ -62858,7 +63063,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 0.395, 2.9099999999999997],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 85,
+            "obstacleId": 93,
             "y": 0.51
           }
         },
@@ -62875,7 +63080,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 0.395, 5.135],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 86,
+            "obstacleId": 94,
             "y": 0.51
           }
         },
@@ -62892,7 +63097,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 4.83, 3.0625],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 88,
+            "obstacleId": 96,
             "y": 0.41000000000000003
           }
         }
@@ -63864,6 +64069,67 @@
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
             "transform": [-1, 0, 0, -1, 21, 15]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [16.8075, 8.9625],
+              [16.8075, 8.6125],
+              [17.395, 8.6125],
+              [17.395, 8.9625]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": -0.1,
+            "h": 0.2,
+            "symKey": "couch-and-chairs--006",
+            "origObstacleId": 0,
+            "transform": [-1, 0, 0, -1, 17.4825, 9.0125]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [16.82, 6.4125],
+              [16.82, 6.0625],
+              [17.395, 6.0625],
+              [17.395, 6.4125]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": -0.1,
+            "h": 0.2,
+            "symKey": "couch-and-chairs--006",
+            "origObstacleId": 1,
+            "transform": [-1, 0, 0, -1, 17.4825, 9.0125]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [16.7575, 8.5625],
+              [16.7575, 6.4625],
+              [17.4575, 6.4625],
+              [17.4575, 8.5625]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "sofa": true,
+            "h": 0.3,
+            "symKey": "couch-and-chairs--006",
+            "origObstacleId": 2,
+            "transform": [-1, 0, 0, -1, 17.4825, 9.0125]
           }
         },
         {
@@ -65044,6 +65310,131 @@
             "origObstacleId": 0,
             "y": 0.7,
             "transform": [1, 0, 0, 1, 26.9625, 5.4475]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.7976, 3.3292],
+              [24.913, 3.3601],
+              [25.0164, 3.4199],
+              [25.1009, 3.5043],
+              [25.1606, 3.6077],
+              [25.1915, 3.7231],
+              [25.1915, 3.8425],
+              [25.1606, 3.9579],
+              [25.1009, 4.0613],
+              [25.0164, 4.1457],
+              [24.913, 4.2055],
+              [24.7976, 4.2364],
+              [24.6782, 4.2364],
+              [24.5628, 4.2055],
+              [24.4594, 4.1457],
+              [24.375, 4.0613],
+              [24.3152, 3.9579],
+              [24.2843, 3.8425],
+              [24.2843, 3.7231],
+              [24.3152, 3.6077],
+              [24.375, 3.5043],
+              [24.4594, 3.4199],
+              [24.5628, 3.3601],
+              [24.6782, 3.3292]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "table": true,
+            "surface": true,
+            "y": 0.6,
+            "h": 0.1,
+            "symKey": "table--009",
+            "origObstacleId": 0,
+            "transform": [1, 0, 0, 1, 24.1125, 3.1625]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [25.1118, 2.9965],
+              [25.5044, 3.3259],
+              [25.183, 3.7089],
+              [24.7904, 3.3795]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.3,
+            "transform": [0.6428, -0.766, 0.766, 0.6428, 24.8, 3.3875]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.8029, 4.208],
+              [25.1955, 3.8786],
+              [25.5169, 4.2616],
+              [25.1243, 4.591]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.3,
+            "transform": [0.6428, 0.766, 0.766, -0.6428, 24.8125, 4.2]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.681, 3.3757],
+              [24.2884, 3.7051],
+              [23.967, 3.3221],
+              [24.3596, 2.9927]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.3,
+            "transform": [-0.6428, -0.766, -0.766, 0.6428, 24.67145, 3.383715]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [24.3632, 4.591],
+              [23.9706, 4.2616],
+              [24.292, 3.8786],
+              [24.6846, 4.208]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.3,
+            "transform": [-0.6428, 0.766, -0.766, -0.6428, 24.675, 4.2]
           }
         },
         {
