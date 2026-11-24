@@ -10,28 +10,49 @@ import { findSkipNet, isIntroSeen, openIntro, setIntroSeen } from "./intro-servi
  */
 export function IntroToast() {
   const state = useStateRef(() => ({
+    /** The last touch dragged it, so its buttons take no tap from it */
+    dragged: false,
+    /** Swiped, where it slides to as it fades: gone once there */
+    leaving: null as null | { x: number; y: number },
     shown: false,
-    /** Where a touch began */
-    swipeFrom: null as null | { x: number; y: number },
+    /** Whilst a touch is down: where it began, and how far it has dragged it, sideways or up */
+    swipe: null as null | { fromX: number; fromY: number; x: number; y: number },
 
     dismiss() {
+      if (state.dragged) return;
       setIntroSeen();
       state.set({ shown: false });
     },
     onPointerDown(e: React.PointerEvent) {
-      state.swipeFrom = e.pointerType === "touch" ? { x: e.clientX, y: e.clientY } : null;
+      if (e.pointerType !== "touch" || state.leaving !== null) return;
+      state.dragged = false;
+      state.set({ swipe: { fromX: e.clientX, fromY: e.clientY, x: 0, y: 0 } });
     },
     onPointerMove(e: React.PointerEvent) {
-      const from = state.swipeFrom;
-      if (from === null || e.pointerType !== "touch") return;
-      // sideways or up, never down into the page. Gone mid-swipe, so no tap follows
-      if (Math.hypot(e.clientX - from.x, Math.min(0, e.clientY - from.y)) > swipeAwayPx) state.set({ shown: false });
+      const { swipe } = state;
+      if (swipe === null) return;
+      // never down, into the page
+      const [x, y] = [e.clientX - swipe.fromX, Math.min(0, e.clientY - swipe.fromY)];
+      state.dragged ||= Math.hypot(x, y) > tapSlopPx;
+      state.set({ swipe: { ...swipe, x, y } });
+    },
+    onPointerUp() {
+      const { swipe } = state;
+      if (swipe === null) return;
+      const dist = Math.hypot(swipe.x, swipe.y);
+      if (dist <= swipeAwayPx) return state.set({ swipe: null }); // springs back
+      // on the way it went, then gone until the next visit: not dismissed
+      state.set({ swipe: null, leaving: { x: (swipe.x / dist) * swipeOffPx, y: (swipe.y / dist) * swipeOffPx } });
     },
     watch() {
+      if (state.dragged) return;
       state.set({ shown: false });
       openIntro();
     },
   }));
+
+  /** Where it is dragged or sliding to: none at rest */
+  const moved = state.leaving ?? state.swipe;
 
   useEffect(() => {
     const forced = new URLSearchParams(location.search).has("intro");
@@ -46,9 +67,23 @@ export function IntroToast() {
         <div
           onPointerDown={state.onPointerDown}
           onPointerMove={state.onPointerMove}
+          onPointerUp={state.onPointerUp}
+          onPointerCancel={state.onPointerUp}
+          onTransitionEnd={() => state.leaving !== null && state.set({ shown: false, leaving: null })}
+          // a drag follows the finger at once, fading to none at `swipeOffPx`; a release springs back or slides off
+          style={
+            moved === null
+              ? undefined
+              : {
+                  translate: `${moved.x}px ${moved.y}px`,
+                  opacity: 1 - Math.min(1, Math.hypot(moved.x, moved.y) / swipeOffPx),
+                  transition: state.swipe ? "none" : undefined,
+                }
+          }
           className={cn(
             "pointer-events-auto flex w-full touch-none items-center gap-3 rounded bg-neutral-900/95 px-3 py-2 text-neutral-100 shadow-lg shadow-black/40 sm:w-auto",
             "transition-[opacity,translate] duration-200 starting:opacity-0 starting:-translate-y-2",
+            state.leaving !== null && "pointer-events-none",
           )}
         >
           <PlayIcon className="size-4 shrink-0 text-amber-300" weight="fill" />
@@ -79,3 +114,7 @@ const showAfterMs = 4000;
 const touchDevice = isTouchDevice();
 /** Pixels a touch travels, sideways or up, to swipe it away */
 const swipeAwayPx = 60;
+/** Pixels a touch may move and still be a tap */
+const tapSlopPx = 10;
+/** Pixels it slides on, swiped */
+const swipeOffPx = 240;
