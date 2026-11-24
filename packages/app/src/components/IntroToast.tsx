@@ -4,18 +4,28 @@ import { PlayIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { findSkipNet, isIntroSeen, openIntro, setIntroSeen } from "./intro-service";
 
-/** Waits for the World to boot first */
-const showAfterMs = 4000;
-const touchDevice = isTouchDevice();
-
-/** Points to SkipNet's demo video until dismissed. Watch hides it until the next visit. `?intro` shows it anyway */
+/**
+ * Points to SkipNet's demo video until dismissed. Watch, or on touch a swipe, hides it until the next visit.
+ * `?intro` shows it anyway
+ */
 export function IntroToast() {
   const state = useStateRef(() => ({
     shown: false,
+    /** Where a touch began */
+    swipeFrom: null as null | { x: number; y: number },
 
     dismiss() {
       setIntroSeen();
       state.set({ shown: false });
+    },
+    onPointerDown(e: React.PointerEvent) {
+      state.swipeFrom = e.pointerType === "touch" ? { x: e.clientX, y: e.clientY } : null;
+    },
+    onPointerMove(e: React.PointerEvent) {
+      const from = state.swipeFrom;
+      if (from === null || e.pointerType !== "touch") return;
+      // sideways or up, never down into the page. Gone mid-swipe, so no tap follows
+      if (Math.hypot(e.clientX - from.x, Math.min(0, e.clientY - from.y)) > swipeAwayPx) state.set({ shown: false });
     },
     watch() {
       state.set({ shown: false });
@@ -34,8 +44,10 @@ export function IntroToast() {
     <div className="pointer-events-none fixed inset-x-2 top-3 z-50 flex justify-center">
       {state.shown && (
         <div
+          onPointerDown={state.onPointerDown}
+          onPointerMove={state.onPointerMove}
           className={cn(
-            "pointer-events-auto flex w-full items-center gap-3 rounded bg-neutral-900/95 px-3 py-2 text-neutral-100 shadow-lg shadow-black/40 sm:w-auto",
+            "pointer-events-auto flex w-full touch-none items-center gap-3 rounded bg-neutral-900/95 px-3 py-2 text-neutral-100 shadow-lg shadow-black/40 sm:w-auto",
             "transition-[opacity,translate] duration-200 starting:opacity-0 starting:-translate-y-2",
           )}
         >
@@ -61,3 +73,9 @@ export function IntroToast() {
     </div>
   );
 }
+
+/** Waits for the World to boot first */
+const showAfterMs = 4000;
+const touchDevice = isTouchDevice();
+/** Pixels a touch travels, sideways or up, to swipe it away */
+const swipeAwayPx = 60;
