@@ -713,7 +713,7 @@ export default function Decor() {
         }
       }
 
-      await pause(100);
+      await pause(); // a yield, so the work stays in short tasks
 
       // 4. write instances
       state.static.gdKeyToDecorKeys = {};
@@ -742,7 +742,7 @@ export default function Decor() {
         batch.inst.computeBoundingSphere();
       }
 
-      await pause(100);
+      await pause();
 
       // 5. build materials
       const uvDataAttr = attribute<"vec4">("uvData", "vec4");

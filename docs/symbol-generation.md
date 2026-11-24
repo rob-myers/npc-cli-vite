@@ -26,9 +26,10 @@ for it. Where a save goes is `docs/map-edit.md`; obstacle sheets are `docs/stars
    `scripts/node_modules`) is enough to flood-fill a region and trace its contour.
 4. Build the JSON and save it with `pnpm dev` running:
    `POST /api/map-edit/file/symbol/{key}.json`, the body being the file. This validates it, writes it
-   compact, draws `{key}.thumbnail.png` and updates `manifest.json`. The dev server then rebuilds
-   the assets (`assets.json`, `assets-edit.json`, `layout/*.json`).
-5. Read the thumbnail. It draws every node over the faint png, so a misplaced door or chair shows.
+   compact and updates `manifest.json`. The dev server then rebuilds the assets (`assets.json`,
+   `assets-edit.json`, `layout/*.json`), and draws `{key}.thumbnail.png` about a second after the save.
+5. Read the thumbnail, a second or two after the save, else it is the old one. It draws every node over
+   the faint png, so a misplaced door or chair shows.
 6. Run `pnpm gen-starship-sheets`, AFTER the assets have caught up: run straight after the save, it
    misses the new obstacles.
 7. Check `assets.json` has `map` and `hash`, and `assets-edit.json` has `symbol`, `flattened` and

@@ -3,7 +3,7 @@ import path from "node:path";
 import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
+import { AssetsSchema, type AssetsType, GeomorphLayoutSchema } from "@npc-cli/ui__world/assets.schema";
 import {
   createLayout,
   createMapDefFromSavedFile,
@@ -18,8 +18,8 @@ import { PROJECT_ROOT } from "../const";
 import { perf } from "./performance";
 import { assetsPaths, readAssetsRaw } from "./read-assets";
 
-/** Each hull's last layout, by gmKey, with a hash of what it was made from — see `layoutInputHash` */
-export type LayoutCache = Map<string, { inputHash: number; layout: ReturnType<typeof createLayout> }>;
+/** Each hull's last layout, by gmKey, with a hash of what it was made from and its file's text — see `layoutInputHash` */
+export type LayoutCache = Map<string, { inputHash: number; layout: ReturnType<typeof createLayout>; raw?: string }>;
 
 /**
  * Writes `assets.json`, `assets-edit.json` and `layout/{gmKey}.json` from `public/symbol` and `public/map`.
@@ -91,9 +91,12 @@ export function genAssetsJson({
   perf("total");
 
   // reparse via z.encode ensures key-ordering. It is plain JSON, so `prettyCompact` alone will do
-  const encoded = z.encode(AssetsSchema, assets);
-  const { symbol, flattened, stratifiedSymbolNodes, layout, map, hash } = encoded;
-  const layoutRaws = entries(layout).map(([gmKey, l]) => [gmKey, prettyCompact(roundNumbers(l))] as const);
+  // layouts are encoded one by one, so a kept one keeps its text
+  const encoded = z.encode(AssetsSchema, { ...assets, layout: {} });
+  const { symbol, flattened, stratifiedSymbolNodes, map, hash } = encoded;
+  const layoutRaws = entries(assets.layout).flatMap(([gmKey, l]) =>
+    l === undefined ? [] : [[gmKey, layoutRawOf(gmKey, l, layoutCache)] as const],
+  );
   const layoutFiles = layoutRaws.map(([gmKey, raw]) => [assetsPaths.layout(gmKey), raw] as const);
   const staleLayoutFiles = fs
     .globSync(path.join(assetsPaths.layoutDir, "*.json"))
@@ -138,6 +141,15 @@ function createLayouts(assets: AssetsType, cache?: LayoutCache) {
     cache?.set(symbolKey, { inputHash, layout });
   }
   return reused;
+}
+
+/** A layout's file text: a kept layout's from the cache, else encoded, rounded and pretty-printed */
+function layoutRawOf(gmKey: string, layout: ReturnType<typeof createLayout>, cache?: LayoutCache) {
+  const cached = cache?.get(gmKey);
+  if (cached?.layout === layout && cached.raw !== undefined) return cached.raw;
+  const raw = prettyCompact(roundNumbers(z.encode(GeomorphLayoutSchema, layout)));
+  if (cached?.layout === layout) cached.raw = raw;
+  return raw;
 }
 
 /** A hash of what `createLayout` reads: the hull's flat symbol, its own symbol, and each inner symbol's obstacles */

@@ -11,7 +11,7 @@ import {
   sguScalePngToSvgFactor,
   symbolByGroupHash,
 } from "@npc-cli/media/starship-symbol";
-import { assetsJsonChangedEvent, mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const.env";
+import { mapEditSymbolSavedEvent, precision } from "@npc-cli/ui__world/const.env";
 import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import {
@@ -1613,8 +1613,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       // resized, say — and the browser would serve the thumbnail it already holds for that URL
       state.set({ decorVersion: state.decorVersion + 1 });
     };
-    const onAssetsChanged = () => {
-      // onchange assets updating localVersion updates thumbnails
+    /** A save's thumbnail is drawn after it: bumping `localVersion` refetches thumbnails */
+    const onThumbnailSaved = () => {
       uiStoreApi.setUiMeta(props.meta.id, (state) => {
         const currentVersion = (state as MapEditUiMeta).localVersion ?? 0;
         (state as MapEditUiMeta).localVersion = currentVersion + 1;
@@ -1623,12 +1623,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
 
     import.meta.hot.on(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
     import.meta.hot.on(devMessageFromServer.decorSheetsRebuilt, onDecorSheetsRebuilt);
-    import.meta.hot.on(assetsJsonChangedEvent, onAssetsChanged);
+    import.meta.hot.on(devMessageFromServer.thumbnailSaved, onThumbnailSaved);
 
     return () => {
       import.meta.hot?.off(devMessageFromServer.recomputedPathManifest, onRecomputedPathManifest);
       import.meta.hot?.off(devMessageFromServer.decorSheetsRebuilt, onDecorSheetsRebuilt);
-      import.meta.hot?.off(assetsJsonChangedEvent, onAssetsChanged);
+      import.meta.hot?.off(devMessageFromServer.thumbnailSaved, onThumbnailSaved);
     };
   }, []); // refresh manifests on dev server signal
 

@@ -51,22 +51,21 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-/** `onWritten` runs once the file is written, before its thumbnail and manifests */
-export async function saveMapEditFile(filePath: string, body: string, onWritten?: () => void) {
+/** Writes a MapEdit file, returning it parsed. Then `updateManifests`, and `createSavedFileThumbnail` */
+export function writeMapEditFile(filePath: string, body: string) {
   const fileToSave = parseRawMapEditFile(body);
   fs.writeFileSync(filePath, safeJsonCompact(fileToSave));
-  onWritten?.();
+  return fileToSave;
+}
 
-  await createSavedFileThumbnail(fileToSave);
-
-  await ensureManifests("symbol", {
-    changedFiles: [fileToSave].filter((x) => x.type === "symbol"),
-  });
-
+/** Brings both manifests up to date with a saved file: only it is read again */
+export async function updateManifests(fileToSave: MapEditSavedFile) {
+  await ensureManifests("symbol", { changedFiles: [fileToSave].filter((x) => x.type === "symbol") });
   await ensureManifests("map", { changedFiles: [fileToSave].filter((x) => x.type === "map") });
 }
 
-async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
+/** Draws a saved file's thumbnail: slow, so the dev server draws it after the World updates */
+export async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
   const isHullSymbol = savedFile.type === "symbol" && isHullSymbolImageKey(savedFile.key);
   const { filename, nodes, bounds } = savedFile;
   const outputThumbnailFilepath = path.resolve(

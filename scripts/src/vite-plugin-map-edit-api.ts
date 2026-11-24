@@ -2,7 +2,11 @@ import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { MapEditFileSpecifierSchema } from "@npc-cli/ui__map-edit/editor.schema";
-import { type ALLOWED_MAP_EDIT_FOLDERS, isSavableFileType } from "@npc-cli/ui__map-edit/map-node-api";
+import {
+  type ALLOWED_MAP_EDIT_FOLDERS,
+  devMessageFromServer,
+  isSavableFileType,
+} from "@npc-cli/ui__map-edit/map-node-api";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { PROJECT_ROOT } from "./const.ts";
 
@@ -123,12 +127,22 @@ async function handleApiMapEditFile(
     let body = "";
     for await (const chunk of req) body += chunk;
 
-    const { saveMapEditFile } = (await server.ssrLoadModule(
+    const { createSavedFileThumbnail, updateManifests, writeMapEditFile } = (await server.ssrLoadModule(
       PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-map-edit-save");
 
-    // announced once written: its own file event comes later, and is then skipped as unchanged
-    await saveMapEditFile(filePath, body, () => server.watcher.emit("change", filePath));
+    const saved = writeMapEditFile(filePath, body);
+    // announced at once: its own file event comes later, and is then skipped as unchanged
+    server.watcher.emit("change", filePath);
+    await updateManifests(saved); // MapEdit refetches them once this responds
+    // its thumbnail later, else it holds up the World's update. MapEdit then refetches it
+    setTimeout(
+      () =>
+        createSavedFileThumbnail(saved)
+          .then(() => server.hot.send({ type: "custom", event: devMessageFromServer.thumbnailSaved }))
+          .catch((err) => console.error(`[map-edit] ${filename} thumbnail failed:`, err)),
+      thumbnailDelayMs,
+    );
 
     res.end(JSON.stringify({ success: true }));
     return true;
@@ -158,3 +172,6 @@ export const MIRRORED_ALLOWED_MAP_EDIT_FOLDERS: typeof ALLOWED_MAP_EDIT_FOLDERS 
 // Type mirroring avoids HMR issue
 type WorldConst = typeof import("@npc-cli/ui__world/const.env");
 const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-json-changed";
+
+/** How long after a save its thumbnail is drawn: once the World has updated */
+const thumbnailDelayMs = 1000;
