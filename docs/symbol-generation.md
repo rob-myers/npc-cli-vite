@@ -283,8 +283,9 @@ draws it.
 | M4 | `galley-and-mess-halls--006`, mirrored; the mess bar `extra--020--table`; `extra--019--table` for the common area's | their pngs; the bar's art from its old svg |
 | M5 | `medical-bed--006` (three `medical-bed--005`, two curtains), `console--022` | their pngs |
 | M6 | map `301-303`: 303 mirrored below 301, so their south hull doors meet | `301-302` |
+| M7 | `machinery--077` x2 in engineering; `stateroom--100`, the exec stateroom and its fresher, in place of the hull's own walls and doors | their pngs, found by a fit over every png of the group |
 
-The north strip at `720` to `960` and the locked room had no symbol in the old svg: they are the hull's own.
+The locked room had no symbol in the old svg: it is the hull's own. Nor had the north strip at `720` to `960`, until `stateroom--100` was found to fit it.
 The galley differs from the art (36%, the closest of its group): its cubby, door and stove side.
 
 What it taught, besides the rules above:

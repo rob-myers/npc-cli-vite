@@ -194,6 +194,7 @@ export const symbolByGroup = {
     "stateroom--020": true,
     "stateroom--035": true,
     "stateroom--036": true,
+    "stateroom--100": true,
   },
 } as const;
 

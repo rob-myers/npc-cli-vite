@@ -671,6 +671,12 @@
       "group": "symbol-stateroom",
       "width": 620,
       "height": 1234
+    },
+    "stateroom--100": {
+      "key": "stateroom--100",
+      "group": "symbol-stateroom",
+      "width": 957,
+      "height": 1239
     }
   }
 }

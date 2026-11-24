@@ -864,6 +864,15 @@
       "type": "symbol",
       "key": "stateroom--036"
     },
+    "stateroom--100": {
+      "filename": "stateroom--100.json",
+      "thumbnailFilename": "stateroom--100.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -4.5, "y": -3.9, "width": 191.4, "height": 247.8},
+      "type": "symbol",
+      "key": "stateroom--100"
+    },
     "table--004": {
       "filename": "table--004.json",
       "thumbnailFilename": "table--004.thumbnail.png",
