@@ -72,6 +72,7 @@ Only a bubble for the player, i.e. to or from them, is kept inside the World's e
 
 `w.speech.utter` sets them going as a line starts, and a line cut off stops them.
 - **Head.** Whilst the words are being said it dips and sways, over whatever pose they are in: stood, sat, lain or aiming (`anim.talk`, `talkConfig`).
+  - It adds to a look already turning the head, e.g. one lain. `tickHead` puts the head back to its pose only if `tickUpper` has not (`headToPose`). Else the look would snap away as they start speaking.
 - **Left arm.** It talks too (`talk_left`), stood or sat, whilst it is free and no wall is near (`anim.canGesture`), and eases out after the last word. Whoever sets the left arm last owns it, so a jsh `pose … as:talk_left` keeps it.
 - **Turning.** They turn to whom they speak to (`w.speech.faceTo`). Stood still, their body turns and stays so, unless a look is under way. Else only their head turns, back once the words are said. The player is not turned, nor one lying.
 - **Over comms.** Said to someone out of earshot, the line goes into a mic: the head moves, but they neither turn nor gesture.

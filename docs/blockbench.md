@@ -44,3 +44,20 @@ Some clips are made at load by mirroring another, so they are in neither the `.b
 - **Editing one.** Edit the clip it mirrors: its mirror follows on the next export. Never make the mirror in Blockbench too, as the made one replaces it.
 - **Not for** clips whose sides differ on purpose, e.g. `strafe_*`, `shuffle_step_*` and `run_strafe_*`, whose lead foot or timing differs. Nor for one holding something in a hand: the item stays in the right hand whilst the arms swap.
 - `gen-clip-keys` writes only the right crouch strafes. Their left ones are mirrored at load.
+
+## The run
+
+`run` is a `0.752` s loop covering `gaitStride.run` (2.23 m) a cycle. Its legs were solved, not keyed by hand, so a planted foot never slides. One model pixel is about `0.053` m in game.
+
+- **Timing.** Each foot is planted `5/24` of a cycle, the right from `12/24` to `17/24`, with `7/24` of flight between. The stride is long through flight, not stance: the legs (10.95 px) cannot sweep further than `8.65` px under the hip.
+- **Legs.** The ankle's path and the foot's angle are the older run's, re-timed. Each key's thigh and shin are solved by two-bone IK against the rig's pivots.
+  - Planted, the knee is set (12°, 56°, 58°, 48°, 36°, 20°) and the root's height follows from it. So the body is lowest just after landing.
+  - In the air, the root follows a ballistic arc `0.78` px high. The ankle keeps its height relative to the hip.
+  - The left leg is the right half a cycle on.
+- **Landing.** The toes rise 12° a key before contact. The heel strikes with them 8° up, and the foot slaps flat by a half-step key 16 ms later (at `0.5/24` and `12.5/24`). The root keeps falling through contact. A key later the head, chest and stomach nod 4°, 2° and 1°.
+- **Arms and torso.** The elbows stay bent 70° to 95°, the shoulders swinging `+35°` to `-28°`. The chest and stomach turn against the hips, so the head barely turns.
+- **Reach.** The arms' box is no larger than the older run's: `x` within ±6.58 px, `z` from -11.1 to 1.4 px. Check it after any edit, as the arms swing on near walls (`CLAUDE.md`, World).
+- **Pace.** Edit the legs and `gaitStride.run` must be re-measured: the planted foot's speed times the clip's length.
+- A foot dips about 0.1 px into the floor for a few ms after landing, where the curves of the root and legs differ.
+
+**Adding a key between keys.** A key made in the UI or by `createKeyframe` snaps to the clip's `snapping` (31.92 fps for `run`, its key spacing), so it replaces a neighbour. Add one off the grid with `animator.addKeyframe(data)` instead.

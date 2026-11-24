@@ -124,7 +124,7 @@ entries (`0.41`) date from `npcScale` `0.7`, so need re-measuring. Change the cl
 `0.752` s. All four hold the arms in a guard, fists before the chest, bobbing a little with the hips. A run
 not strafing is `run`, whose arms swing.
 
-- `run_ahead` is `run` with guard arms. It is the pose whilst run-strafing. Let go, it crossfades to `run`.
+- `run_ahead` is the older `run`, with guard arms. It is the pose whilst run-strafing. Let go, it crossfades to `run`, whose stride is longer (`docs/blockbench.md`, The run).
 
 - `run_strafe_left` is solved the same way, on `run`'s timing: each foot planted `7/24` of a cycle, the
   right lifting at `19/24`, with flight between. Stride `1.0` model units (`0.8` m).

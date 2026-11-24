@@ -767,7 +767,7 @@ export const gaitStride = {
   crouch_half_strafe_right: 0.25,
   crouch_half_backwards: 0.4,
   crouch_half_strafe_left: 0.25,
-  run: 1.72,
+  run: 2.23,
   run_ahead: 1.72,
   run_strafe_right: 0.8,
   run_backwards: 1,
