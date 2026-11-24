@@ -1529,6 +1529,30 @@
           "baseRect": {"width": 60, "height": 60},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(-1, 0, 0, 1, 118, 480)"
+        },
+        {
+          "id": "5cac89f4-34c8-4a33-9a9b-fad24549079d",
+          "name": "machinery--077",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 160.2, "f": 374},
+          "type": "symbol",
+          "srcKey": "machinery--077",
+          "baseRect": {"width": 100.2, "height": 102.2},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 160.2, 374)"
+        },
+        {
+          "id": "3d7515e0-8439-4b63-8de9-57534ecc11f3",
+          "name": "machinery--077",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 226.2, "f": 440},
+          "type": "symbol",
+          "srcKey": "machinery--077",
+          "baseRect": {"width": 100.2, "height": 102.2},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, 1, 226.2, 440)"
         }
       ]
     },

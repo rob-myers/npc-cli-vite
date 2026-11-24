@@ -522,6 +522,15 @@
       "type": "symbol",
       "key": "low-berth--003"
     },
+    "machinery--077": {
+      "filename": "machinery--077.json",
+      "thumbnailFilename": "machinery--077.thumbnail.png",
+      "width": 100.2,
+      "height": 102.2,
+      "bounds": {"x": 0, "y": 0, "width": 100.2, "height": 102.2},
+      "type": "symbol",
+      "key": "machinery--077"
+    },
     "machinery--091": {
       "filename": "machinery--091.json",
       "thumbnailFilename": "machinery--091.thumbnail.png",
