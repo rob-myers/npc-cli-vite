@@ -51,9 +51,11 @@ export function parseRawMapEditFile(rawFileString: string) {
   return jsonParser.pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema)).parse(rawFileString);
 }
 
-export async function saveMapEditFile(filePath: string, body: string) {
+/** `onWritten` runs once the file is written, before its thumbnail and manifests */
+export async function saveMapEditFile(filePath: string, body: string, onWritten?: () => void) {
   const fileToSave = parseRawMapEditFile(body);
   fs.writeFileSync(filePath, safeJsonCompact(fileToSave));
+  onWritten?.();
 
   await createSavedFileThumbnail(fileToSave);
 

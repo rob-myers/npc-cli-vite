@@ -8,6 +8,7 @@ import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
+import type { LayoutCache } from "./service/gen-assets-json.ts";
 import { hashOf, skinSheetHash, withHash } from "./skin-sheet-hash.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
@@ -18,7 +19,7 @@ const WATCH_CURRENT_GLTF_PATH = path.join(PROJECT_ROOT, "scripts/src/service/wat
 const ICON_DIR = path.join(PROJECT_ROOT, "packages/media/src/icon");
 const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
 const THEME_JSON_PATH = path.join(PUBLIC_DIR, "theme.json");
-const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
+const GEN_ASSETS_SERVICE = path.join(PROJECT_ROOT, "scripts/src/service/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
 
 export function watchAssetsPlugin(): Plugin {
@@ -60,6 +61,10 @@ export function watchAssetsPlugin(): Plugin {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let running = false;
       const changed = new Map<string, number>();
+      /** Layouts kept between runs. Empty on each start, and cleared by the assets button or a geomorph code edit */
+      const layoutCache: LayoutCache = new Map();
+      /** Each input file as last run on, so a repeat event is skipped, e.g. the watcher's after a save announced it */
+      const seen = new Map<string, string>();
 
       const isAssetInputFile = (filePath: string) =>
         !filePath.endsWith("manifest.json") &&
@@ -78,16 +83,8 @@ export function watchAssetsPlugin(): Plugin {
         server.hot.send({ type: "custom", event: assetsJsonChangingEvent });
 
         try {
-          // generate assets.json
-          await new Promise<void>((resolve, reject) => {
-            const proc = childProcess.spawn(
-              "node",
-              ["--import=tsx", GEN_ASSETS_BIN, `--changedFiles=${JSON.stringify(changedFiles)}`],
-              { cwd: PROJECT_ROOT, stdio: "inherit" },
-            );
-            proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
-            proc.on("error", reject);
-          });
+          // generate assets.json in-process, sparing a process's startup
+          await genAssetsJson(server, { changedFiles, layoutCache });
           // inform browser
           server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
         } catch (err) {
@@ -105,6 +102,7 @@ export function watchAssetsPlugin(): Plugin {
       let handEditTimer: ReturnType<typeof setTimeout> | null = null;
       const onAssetsJsonChange = (filePath: string) => {
         if (running || Date.now() - themeSavedAt < selfWriteGraceMs) return; // ours: already announced, or the page's own
+        if (filePath === ASSETS_JSON_PATH && readOrNull(filePath) === wroteAssetsJson) return; // ours, written in-process
         if (handEditTimer) clearTimeout(handEditTimer);
         handEditTimer = setTimeout(() => {
           if (running) return;
@@ -116,7 +114,13 @@ export function watchAssetsPlugin(): Plugin {
       const onFileChange = (filePath: string) => {
         if (filePath === ASSETS_JSON_PATH || filePath === THEME_JSON_PATH) return onAssetsJsonChange(filePath);
         if (!isWatchedFile(filePath)) return;
-        if (isAssetInputFile(filePath)) changed.set(filePath, Date.now());
+        if (filePath === GEOMORPH_SERVICE) layoutCache.clear(); // layouts are made by its code
+        if (isAssetInputFile(filePath)) {
+          const content = readOrNull(filePath);
+          if (content !== null && seen.get(filePath) === content) return;
+          if (content !== null) seen.set(filePath, content);
+          changed.set(filePath, Date.now());
+        }
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => runGenAssets(server), 30);
       };
@@ -132,7 +136,7 @@ export function watchAssetsPlugin(): Plugin {
           return handleGenSkinSheets(res);
         }
         if (req.url === "/api/gen-assets-json" && req.method === "POST") {
-          return handleGenAssetsJson(res);
+          return handleGenAssetsJson(server, res, layoutCache);
         }
         const skinSheetMatch = req.url?.match(/^\/api\/(skin|skin-slices)-sheet\/(\d+)$/);
         if (skinSheetMatch && req.method === "POST") {
@@ -219,16 +223,11 @@ async function handleGenStarshipSheets(res: ServerResponse) {
   }
 }
 
-async function handleGenAssetsJson(res: ServerResponse) {
+/** Every symbol and map, every layout made afresh: the WorldMenu's assets button */
+async function handleGenAssetsJson(server: ViteDevServer, res: ServerResponse, layoutCache: LayoutCache) {
   try {
-    await new Promise<void>((resolve, reject) => {
-      const proc = childProcess.spawn("pnpm", ["gen-assets-json"], {
-        cwd: PROJECT_ROOT,
-        stdio: "inherit",
-      });
-      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
-      proc.on("error", reject);
-    });
+    layoutCache.clear();
+    await genAssetsJson(server, { layoutCache });
     res.writeHead(200).end();
   } catch (err) {
     console.error("[gen-assets-json] failed:", err);
@@ -259,3 +258,24 @@ async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, them
 type WorldConst = typeof import("@npc-cli/ui__world/const.env");
 const assetsJsonChangingEvent: WorldConst["assetsJsonChangingEvent"] = "assets-json-changing";
 const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-json-changed";
+
+/** Runs `genAssetsJson` in the dev server's own process, its module reloaded once its code changes */
+async function genAssetsJson(server: ViteDevServer, opts: Parameters<GenAssetsJson>[0]) {
+  const mod = (await server.ssrLoadModule(GEN_ASSETS_SERVICE)) as { genAssetsJson: GenAssetsJson };
+  mod.genAssetsJson(opts);
+  wroteAssetsJson = readOrNull(ASSETS_JSON_PATH);
+}
+
+/** The `assets.json` we last wrote: its own file event is no hand edit */
+let wroteAssetsJson: null | string = null;
+
+type GenAssetsJson = typeof import("./service/gen-assets-json.ts").genAssetsJson;
+
+/** The file's text, else `null` if it cannot be read e.g. removed */
+function readOrNull(filePath: string) {
+  try {
+    return fs.readFileSync(filePath, "utf-8");
+  } catch {
+    return null;
+  }
+}

@@ -7,6 +7,7 @@
   - Write a new file FIRST, then add its import and its use (e.g. a JSX mount) to the importer in ONE write.
   - Then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched. It takes milliseconds; `pnpm typecheck` takes minutes.
   - The running dev server never sees a new `exports` subpath in a `package.json`: only a restart does. Export from a path it already resolves instead, e.g. the package's root.
+  - Nor does it see an edit to a Vite plugin, `scripts/src/vite-plugin-*.ts`: restart `pnpm dev`. A service a plugin loads by `ssrLoadModule` reloads by itself, e.g. `service/gen-assets-json.ts`.
 - **Comments are TERSE and sparing.**
   - One short line, never a paragraph, and only what the code doesn't already say. Prefer none to a restatement.
   - Attach one to the syntax it explains: a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.

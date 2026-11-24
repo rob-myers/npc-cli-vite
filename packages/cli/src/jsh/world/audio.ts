@@ -320,6 +320,12 @@ function syncDoors(w: JshCli.WorldState, hearing: Hearing, now: number) {
   hearing.doorsReadAt = now;
   for (const gdKey of hearing.gdKeys) {
     const door = w.door.byKey[gdKey];
+    if (door === undefined) {
+      // gone, e.g. a map edit removed it
+      hearing.ratios.delete(gdKey);
+      hearing.moving.delete(gdKey);
+      continue;
+    }
     const ratio = w.door.openRatioArray[door.instanceId];
     const was = hearing.ratios.get(gdKey) ?? ratio;
     hearing.ratios.set(gdKey, ratio);

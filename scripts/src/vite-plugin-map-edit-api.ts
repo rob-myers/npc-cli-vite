@@ -127,7 +127,8 @@ async function handleApiMapEditFile(
       PROCESS_SYMBOL_PATH,
     )) as typeof import("./service/process-map-edit-save");
 
-    await saveMapEditFile(filePath, body);
+    // announced once written: its own file event comes later, and is then skipped as unchanged
+    await saveMapEditFile(filePath, body, () => server.watcher.emit("change", filePath));
 
     res.end(JSON.stringify({ success: true }));
     return true;
