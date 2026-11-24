@@ -213,7 +213,9 @@ export default function WorldHud() {
           const target = out ? null : armed ? (w.npcFocus?.reachOf(key) ?? null) : reach;
           const now = performance.now();
           const alpha = 1 - Math.exp((-readoutRate * (now - lastMs)) / 1000);
-          if (target !== null) shown = shown === null ? target : shown + (target - shown) * alpha;
+          // never a NaN: eased, it would stick
+          if (target !== null && Number.isFinite(target))
+            shown = shown === null || !Number.isFinite(shown) ? target : shown + (target - shown) * alpha;
           // raised, the dot comes a moment after: until then the look's number stays, to ease from
           else if (armed === false && out === false) shown = null;
           lastMs = now;
