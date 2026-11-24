@@ -141,8 +141,6 @@ export const inventoryConfig = {
   maxCarried: 6,
 } as const;
 export type ItemKind = (typeof inventoryConfig.kinds)[number];
-/** How many random rooms we'll try when spawning the player */
-export const spawnPlayerAttempts = 10;
 /** Room labels the player may be spawned in, when there is nowhere better */
 export const spawnRoomLabels = ["corridor", "common"];
 

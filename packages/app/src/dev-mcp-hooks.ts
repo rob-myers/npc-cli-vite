@@ -162,14 +162,14 @@ function setBanner(text: null | string) {
   (el.querySelector("[data-title]") as HTMLElement).textContent = text;
 }
 
-/** Centres the banner in the visual viewport, so a pinch zoom, the keyboard or a notch never hides it */
+/** Centres the banner in the visual viewport, so a pinch zoom, the keyboard or a notch never hides it. Below a top World's hud-toasts */
 function placeBanner() {
   const el = document.getElementById(bannerId);
   if (el === null) return;
   const vv = window.visualViewport;
   const [x, y, width] = vv === null ? [0, 0, window.innerWidth] : [vv.offsetLeft, vv.offsetTop, vv.width];
   el.style.left = `${x + width / 2}px`;
-  el.style.top = `calc(${y}px + env(safe-area-inset-top) + 4rem)`;
+  el.style.top = `calc(${y}px + env(safe-area-inset-top) + 8rem)`;
   el.style.maxWidth = `calc(${width}px - 1rem)`;
 }
 

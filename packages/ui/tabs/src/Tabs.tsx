@@ -6,7 +6,7 @@ import type { UiInstanceMeta, UiPackageDef } from "@npc-cli/ui-sdk";
 import { chosenThemeOf, themeOfUi } from "@npc-cli/ui-sdk/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { UiInstanceMenu } from "@npc-cli/ui-sdk/UiInstanceMenu";
-import { BasicPopover, cn, tw, useStateRef } from "@npc-cli/util";
+import { BasicPopover, cn, DropRect, type DropSide, dropSideAt, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import {
@@ -34,6 +34,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 
   const state = useStateRef(
     () => ({
+      contentEl: null as null | HTMLDivElement,
+      /** The side a tab dragged over the content would split this pane on */
+      dropSide: null as null | DropSide,
       isDropTarget: false,
       /** Over the bar yet no tab, so a drop goes last */
       isDropAtEnd: false,
@@ -188,6 +191,31 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   }, [meta.id]);
 
   useEffect(() => {
+    const el = state.contentEl;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      canDrop: ({ source }) => source.data.type === "tab",
+      onDrag: ({ location: { current } }) => {
+        const dropSide = dropSideAt(el.getBoundingClientRect(), current.input.clientX, current.input.clientY);
+        if (dropSide !== state.dropSide) state.set({ dropSide });
+      },
+      onDragLeave: () => state.set({ dropSide: null }),
+      onDrop: ({ source }) => {
+        const targetTabsMetaId = state.dropSide === null ? null : layoutApi.splitPane(meta.id, state.dropSide);
+        state.set({ dropSide: null });
+        if (targetTabsMetaId === null) return;
+        const sourceTabsMetaId = source.data.tabsMetaId as string;
+        const draggedId = source.data.id as string;
+        // its own only tab leaves this pane empty
+        if (moveTab(uiStore, { draggedId, sourceTabsMetaId, targetTabsMetaId }) && sourceTabsMetaId !== meta.id)
+          layoutApi.closePane(sourceTabsMetaId);
+      },
+    });
+  }, [meta.id]);
+
+  useEffect(() => {
     uiStore.setState((draft) => {
       const item = draft.byId?.[meta.currentTabId ?? ""];
       if (item) item.everSeen = true;
@@ -264,7 +292,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
       </div>
 
       <div
-        className="pt-0 px-0 flex-1 size-full overflow-auto"
+        ref={state.ref("contentEl")}
+        className="relative pt-0 px-0 flex-1 size-full overflow-auto"
         onContextMenu={tabs.length === 0 ? state.onContextMenu : undefined}
       >
         {tabs.map((tab) => (
@@ -289,6 +318,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
             )}
           </div>
         ))}
+        {state.dropSide !== null && <DropRect at={state.dropSide} size={0.5} />}
       </div>
     </div>
   );

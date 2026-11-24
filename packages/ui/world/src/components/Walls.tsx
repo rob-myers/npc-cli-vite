@@ -1,14 +1,13 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, mix, positionGeometry, step, uniform } from "three/tsl";
+import { attribute, float, mix, positionGeometry, screenCoordinate, step, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const.env";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
-import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -77,16 +76,17 @@ export default function Walls() {
         if (!ws) return;
         const count = w.gmsData.count.wall + w.gmsData.count.lintel;
         const slots = ensureRoomSlots(state.quad, count);
-        const heights = ensureWallHeights(state.quad, count);
+        const heights = ensureWallAttr(state.quad, "wallHeight", count, wallHeight);
+        const hatches = ensureWallAttr(state.quad, "wallHatch", count, 0);
 
         let instanceId = 0;
-        const color = new THREE.Color(w.getTheme().walls.color);
 
         for (const [gmId, { key: gmKey, transform, determinant, doors }] of w.gms.entries()) {
           for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
             const { seg, meta } = wallSeg;
             state.setSegSlots(slots, instanceId, gmId, wallSeg);
             heights.setX(instanceId, typeof meta.h === "number" ? meta.h : wallHeight);
+            hatches.setX(instanceId, wallSeg.broadWallId === null ? 0 : 1);
             ws.setMatrixAt(
               instanceId,
               state.getWallMat(
@@ -97,8 +97,7 @@ export default function Walls() {
                 typeof meta.y === "number" ? meta.y : undefined,
               ),
             );
-
-            ws.setColorAt(instanceId++, color);
+            instanceId++;
           }
 
           for (const { seg, meta, doorId } of w.gmsData.byKey[gmKey].lintelSegs) {
@@ -108,15 +107,14 @@ export default function Walls() {
             );
             slots.setXY(instanceId, a, b);
             heights.setX(instanceId, meta.h);
-            ws.setMatrixAt(instanceId, state.getWallMat(seg, transform, determinant, meta.h, meta.y));
-            ws.setColorAt(instanceId++, color);
+            hatches.setX(instanceId, 0);
+            ws.setMatrixAt(instanceId++, state.getWallMat(seg, transform, determinant, meta.h, meta.y));
           }
         }
 
-        slots.needsUpdate = heights.needsUpdate = true;
+        slots.needsUpdate = heights.needsUpdate = hatches.needsUpdate = true;
         ws.computeBoundingSphere();
         ws.instanceMatrix.needsUpdate = true;
-        if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
       },
     }),
   );
@@ -130,7 +128,8 @@ export default function Walls() {
   // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
   useMemo(() => {
     ensureRoomSlots(state.quad, wallCount);
-    ensureWallHeights(state.quad, wallCount);
+    ensureWallAttr(state.quad, "wallHeight", wallCount, wallHeight);
+    ensureWallAttr(state.quad, "wallHatch", wallCount, 0);
   }, [wallCount]);
 
   const mat = useMemo(() => {
@@ -154,10 +153,18 @@ export default function Walls() {
     );
     const bandOpacity = mix(float(1), float(wallBandDarken), inBand);
 
+    /** `1` on a broad wall: one hatch on screen, so overlapping faces agree */
+    const hatched = attribute<"float">("wallHatch", "float");
+    const diagonal = screenCoordinate.x.add(screenCoordinate.y).div(broadHatch.pitch).fract();
+    const hatch = hatched.mul(step(diagonal, broadHatch.line / broadHatch.pitch));
+    const hatchColorUniform = uniform(new THREE.Color(broadHatch.color));
+    /** The hatch's colour, fading to black from its top to its foot */
+    const hatchRgb = hatchColorUniform.rgb.mul(positionGeometry.y);
+
     const litOpacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores walls for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      opacityUniform.mul(alphaFade).mul(bandOpacity).min(1), // beauty render
+      mix(opacityUniform.mul(bandOpacity), float(broadHatch.opacity), hatch).mul(alphaFade).min(1), // beauty render
     );
 
     return {
@@ -168,7 +175,7 @@ export default function Walls() {
       // only ever muddied what was behind it — and this runs on every wall fragment in the world
       // out of the pick pass whilst hidden, so a click reaches the floor behind it
       colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.fadeRgb(baseColorUniform.rgb, colorFade),
+        w.view.fadeRoomsFx.fadeRgb(mix(baseColorUniform.rgb, hatchRgb, hatch), colorFade),
         fade,
         w.view.objectPick,
       ),
@@ -190,11 +197,11 @@ export default function Walls() {
     <instancedMesh
       key={mat.uuid}
       name="walls"
-      ref={state.ref("inst", bootstrapInstanceColor)}
+      ref={state.ref("inst")}
       args={[state.quad, undefined, wallCount]}
       renderOrder={4}
     >
-      <meshStandardNodeMaterial
+      <meshBasicNodeMaterial
         key={mat.uuid}
         side={THREE.FrontSide} // 1 draw call
         transparent
@@ -217,12 +224,15 @@ const wallBandHeight = 0.2;
 /** A band's opacity, as a multiple of the wall's */
 const wallBandDarken = 2;
 
-/** Each wall's height, which its bands are measured off */
-function ensureWallHeights(geo: THREE.BufferGeometry, count: number) {
-  const existing = geo.getAttribute("wallHeight") as undefined | THREE.InstancedBufferAttribute;
+/** The hatch on a broad wall: pixels between lines and each line's width, and its look */
+const broadHatch = { pitch: 8, line: 2, color: "#161616", opacity: 0.6 };
+
+/** A float per wall: its `wallHeight`, which its bands are measured off, or `wallHatch`, `1` if hatched */
+function ensureWallAttr(geo: THREE.BufferGeometry, name: string, count: number, fill: number) {
+  const existing = geo.getAttribute(name) as undefined | THREE.InstancedBufferAttribute;
   if (existing !== undefined && existing.count >= count) return existing;
-  const attr = new THREE.InstancedBufferAttribute(new Float32Array(count).fill(wallHeight), 1);
-  geo.setAttribute("wallHeight", attr);
+  const attr = new THREE.InstancedBufferAttribute(new Float32Array(count).fill(fill), 1);
+  geo.setAttribute(name, attr);
   return attr;
 }
 

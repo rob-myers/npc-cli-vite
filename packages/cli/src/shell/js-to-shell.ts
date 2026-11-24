@@ -7,8 +7,6 @@ export function jsFunctionToShellFunction(opts: {
 }) {
   const module = opts.modules[opts.moduleKey] as ModuleMaybeMeta;
 
-  opts.moduleKey === "pred" && console.log({ opts });
-
   return `${opts.fnAliasKey ?? opts.fnKey}() ${
     generatorConstructorNames.includes(opts.fn.constructor.name)
       ? // function* foo { bar }

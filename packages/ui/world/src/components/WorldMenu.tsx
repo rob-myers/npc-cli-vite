@@ -548,7 +548,7 @@ export function WorldMenu() {
                 <MenuSelect
                   label={w.view.cameraMode}
                   value={w.view.cameraMode}
-                  items={cameraModes.map((value) => ({ key: value, value }))}
+                  items={cameraModes.map((value) => ({ key: value, value, disabled: touch && value === "embodied" }))}
                   side="bottom"
                   onValueChange={(mode) => mode !== null && w.view.setCameraMode(mode)}
                 />
@@ -1688,7 +1688,7 @@ const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
 
-const cameraModes: CameraModeType[] = ["free", "embodied"];
+const cameraModes: CameraModeType[] = ["free", "embodied", "loose"];
 const debugItems = [
   "context menu",
   "door ui",

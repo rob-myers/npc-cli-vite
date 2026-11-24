@@ -182,7 +182,7 @@ The Claude Code CLI shows the input inline, and `claude --resume` opens the same
 
 ### "mcp testing"
 
-A banner at the top of the page says "mcp testing" from Claude's first call in a turn until the turn ends
+A banner near the top of the page, below a World's hud-toasts, says "mcp testing" from Claude's first call in a turn until the turn ends
 (`driving` in `dev-mcp-hooks.ts`). It is a plain element on `document.body` (`#dev-mcp-banner`), apart from any World.
 
 - Every call starts it, except `console`, `shot` and a `click` at client coordinates.

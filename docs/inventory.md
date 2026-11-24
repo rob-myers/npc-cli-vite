@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else lowers it (`w.phasers.disarm`), the gun still in hand. `w.phasers.stow(key)` puts it away: lowered, the gun fades from the hand until drawn again. Whether it is stowed, lowered or raised is saved with the map (`PersistedNpc.phaser`). Space held aims, and `m` fires (lowered, Space is a far look), see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to | nothing; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -38,7 +38,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 - **sound**: a hud-toast always over the bar, "muted" or "unmuted" with a speaker icon. A press toggles it. It starts muted, and is kept across visits (`soundMute`, `@npc-cli/util/sound-mute`). See `docs/audio.md`.
 - **disconnected**: a blue hud-toast on its own line above the rest, with a plugs icon and a note "connect a tty or world", shown on a click or tap, until a jsh session first reaches the World (`w.wasReadyFor`, filled by `w.isReady(connectionKey)` as `awaitWorld` asks). Until then no profile has run, so e.g. `sounds` plays nothing.
 - All hud-toasts stay hidden until the World has booted (`w.e.bootedAt`, set by `w.e.setBooted` once the first map is warmed), then fade in together.
-- **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
+- **compass**: the point `w` heads nearest, and a marker on its rim where `w` heads on screen. A grey arc of its circle shows where they look. A far look thickens it, turns it green and shrinks the letter.
 - **options** (`PlayerMenu`, a gear), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
 
 Rules:
@@ -267,7 +267,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 | stood | found by `armMeetsNpc`, below | `phaser_aim_avoid`, over `drawInSecs` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
 | lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
-| lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
+| lain otherwise | found by `armMeetsNpc` | rested: still raised, the arm comes down over `lainLowerSecs` with the gun in hand, until clear |
 
 - `armMeetsNpc` looks through their room (`w.npc.near.inReach(key, 0)`), not the crowd's neighbours: those reach only
   `collisionQueryRange` (0.7m), short of the gun's tip.

@@ -1133,9 +1133,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               lit: npc.lit === true ? true : undefined,
               access: state.getHeldDoors(npc.key),
               dead: npc.anim.dead === true ? npc.anim.hurt?.key : undefined,
+              phaser: state.phaserStateOf(npc.key),
             })),
           },
         });
+      },
+      phaserStateOf(npcKey) {
+        if (w.phasers === null || state.hasItem(npcKey, "phaser") === false) return undefined;
+        return w.phasers.isArmed(npcKey) ? "armed" : w.phasers.stowed.has(npcKey) ? "stowed" : "disarmed";
       },
       postNpcTick() {
         if (state.timers.size > 0) {
@@ -1478,10 +1483,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit, access, dead } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access, dead, phaser } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
+          if (phaser === "stowed") w.phasers?.stowed.add(key); // before they spawn, so no gun shows
           try {
             // the decor meta re-establishes what they were doing e.g. sitting
             await w.npc.spawn({
@@ -1494,6 +1500,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            if (phaser === "armed") w.phasers?.arm(key);
             state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
@@ -1584,38 +1591,35 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async spawnMany(opts) {
         const baseKey = opts.baseKey ?? "npc";
         const numPermitted = MAX_NPCS - (w.npc.npcToRoom.size + state.externalNpcs.size);
-        const groundPoints = opts.ats.slice(0, numPermitted).map(helper.parseGroundPoint);
-        const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
-
-        /** Ground point should either be doable or navigable */
-        const doResults = groundPoints.map((p, i) => w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i], p));
-
-        const angles = doResults.map((doResult, i) => {
-          const angleOrPoint = opts.looks?.[i];
-          return w.npc.determineSpawnedAngle({
-            groundPoint: groundPoints[i],
-            meta: doResult?.meta ?? emptyMeta,
-            angle: typeof angleOrPoint === "number" ? angleOrPoint : undefined,
-            facing: helper.isPointAnyFormat(angleOrPoint) ? angleOrPoint : undefined,
-            npc: w.n[npcKeys[i]],
-          });
-        });
-
+        const failed: { npcKey: string; error: string }[] = [];
         // 1st spawn only, no respawning
         const npcs: Npc[] = [];
-        for (const [i, npcKey] of npcKeys.entries()) {
-          const doResult = doResults[i];
-          const groundPoint = doResult?.meta.groundPoint ?? groundPoints[i];
+
+        for (const [i, at] of opts.ats.slice(0, numPermitted).entries()) {
+          const npcKey = opts.keys?.[i] ?? `${baseKey}-${i}`;
+          const check = opts.verify === true ? w.npc.spawnCheck(at, npcKey) : null;
+          if (check?.error) {
+            failed.push({ npcKey, error: check.error });
+            continue;
+          }
+
+          const groundPoint = helper.parseGroundPoint(at);
+          /** Ground point should either be doable or navigable */
+          const doResult = check?.doResult ?? w.npc.findFreeDoMeta(groundPoint.meta ?? emptyMeta, npcKey, groundPoint);
+          const look = opts.looks?.[i];
           npcs.push(
             w.npc.rawSpawn({
               npcKey,
-              groundPoint,
+              groundPoint: doResult.meta.groundPoint ?? groundPoint,
               doResult,
               as: opts.skins?.[i] ?? w.npc.defaultSkinKey,
-              angle: angles[i],
+              angle: typeof look === "number" ? look : undefined,
+              facing: helper.isPointAnyFormat(look) ? look : undefined,
+              closePolyResult: check?.closePolyResult,
             }),
           );
         }
+        const npcKeys = npcs.map((npc) => npc.key);
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
@@ -1630,6 +1634,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         );
 
         w.events.next({ key: "spawned-many", npcKeys });
+        return failed;
       },
       showRays(key, rays) {
         const prev = state.shownRays.get(key);
@@ -2318,6 +2323,8 @@ export type State = {
   persistDecor(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
   persistNpcs(): void;
+  /** Their phaser as saved, if they carry one */
+  phaserStateOf(npcKey: string): undefined | NonNullable<persisted.PersistedNpc["phaser"]>;
   /** Recreate the runtime decor persisted for `w.mapKey` */
   restoreDecor(saved?: null | Geomorph.DecorDef[]): void;
   /** Make runtime decor of this map's layout items not yet made, remove those it lost, and save */
@@ -2352,7 +2359,8 @@ export type State = {
     opts?: RaycastOpts,
   ): Promise<(null | JshCli.RaycastResult)[]>;
   removeNpcs(...npcKeys: string[]): void;
-  spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
+  /** The npcs skipped, by `opts.verify`, with why */
+  spawnMany(opts: JshCli.SpawnManyOpts): Promise<{ npcKey: string; error: string }[]>;
   /**
    * - When an npc is moving its destination should be inside a room.
    * - When the npc is in a room adjacent to the destination room,

@@ -582,6 +582,10 @@ type RunPoint = {
 function wiringRuns(room: Geom.Poly, doors: Geomorph.Connector[]): RunPoint[][] {
   const { wiring } = deckConfig;
   const runs: RunPoint[][] = [];
+  const push = (run: RunPoint[]) => {
+    const entered = withEntries(run);
+    if (entered !== null) runs.push(entered);
+  };
 
   for (const inset of geomService.createInset(room, wiring.wallOffset)) {
     const ring = roundRing(inset.outline, wiring.bendRadius, wiring.sampleStep);
@@ -628,10 +632,10 @@ function wiringRuns(room: Geom.Poly, doors: Geomorph.Connector[]): RunPoint[][] 
         run.push(pts[i]);
         continue;
       }
-      if (run.length > 1) runs.push(withEntries(run));
+      push(run);
       run = [];
     }
-    if (run.length > 1) runs.push(withEntries(run));
+    push(run);
   }
 
   return runs;
@@ -640,19 +644,18 @@ function wiringRuns(room: Geom.Poly, doors: Geomorph.Connector[]): RunPoint[][] 
 /**
  * A run with each loose end turned into the wall, MEETING IT SQUARE. Sliding the bundle sideways
  * over the last stretch cannot do this — however it is eased, the wire still arrives travelling
- * ALONG the wall — so each end is replaced by a cubic whose tangent at the wall IS the wall's normal
+ * ALONG the wall — so each end is replaced by a cubic whose tangent at the wall IS the wall's normal.
+ * `null` if shorter than `diveLength`
  */
-function withEntries(run: RunPoint[]): RunPoint[] {
+function withEntries(run: RunPoint[]): null | RunPoint[] {
   const { diveLength } = deckConfig.wiring;
-  if (run.length < 3) return run;
-
   const gap = (i: number, j: number) => Math.hypot(run[i].x - run[j].x, run[i].y - run[j].y);
   let total = 0;
   for (let i = 1; i < run.length; i++) total += gap(i, i - 1);
 
+  if (total < diveLength) return null; // all dive, e.g. a scrap round a tip between doorways
   // both ends need room, and some of the run should still read as running ALONG the wall between them
   const reach = Math.min(diveLength, total / 3);
-  if (reach <= 0) return run;
 
   let head = 0;
   for (let s = 0; head + 1 < run.length && s < reach; head++) s += gap(head, head + 1);

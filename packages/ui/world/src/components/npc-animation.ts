@@ -824,8 +824,8 @@ export class NpcAnimation {
   }
 
   /**
-   * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood, it draws their right arm in whilst free,
-   * e.g. not raised nor reaching: a held phaser as `phaser_aim_avoid`, else at their side. `room` is how far off the wall is
+   * A wall close ahead, from `move` on each held step of `wasd_delta --nav`. Stood with a gun in hand, it draws their right arm
+   * in as `phaser_aim_avoid` whilst free, e.g. not raised nor reaching. `room` is how far off the wall is
    */
   setNearWall(next: false | "ahead" | "beside", room = Infinity) {
     this.nearWall = next;
@@ -838,7 +838,8 @@ export class NpcAnimation {
       this.w.e.after(this.armInUntil - now, () => this.nearWall === false && this.setNearWall(false));
       return;
     }
-    const want = next !== false && this.posture === "stand";
+    /** Without a gun in hand the arm swings on: held still, it reads as carrying one */
+    const want = next !== false && this.posture === "stand" && this.w.phasers?.holds(this.npc.key) === true;
     // let go, or taken over e.g. raised: no longer ours
     if (this.upper.target === 0 || this.upper.key !== this.armIn) this.armIn = null;
     if (want === (this.armIn !== null)) return;
@@ -846,8 +847,9 @@ export class NpcAnimation {
       this.setUpper(null, { byWall: false }); // no wall near by now: at rest by one, `startIdle` keeps it in
       this.armIn = null;
     } else if (this.upper.target === 0) {
-      this.armIn = this.w.phasers?.holds(this.npc.key) === true ? "phaser_aim_avoid" : "idle";
-      this.setUpper(this.armIn, { byWall: false }); // not a lowering's, which would slow it
+      this.armIn = "phaser_aim_avoid";
+      // the player's folds at the elbow first, else the gun swings out into the wall
+      this.setUpper(this.armIn, { byWall: false, fold: this.w.player?.is(this.npc.key) === true });
     }
   }
 
@@ -945,6 +947,7 @@ export class NpcAnimation {
    * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
    * `past`: sat at a table (`isUnderTable`), the arm goes up and comes down by way of `sitArmVia`, past its edge.
    * `byWall`: stood, likewise, so the hand keeps in. Kept until given again, a lowering included.
+   * `fold`: by Euler angles (`foldMix`), so the elbow bends before the forearm swings in. Kept until another key, a lowering included.
    * `onHead`: its hand is at their head, and stays there as the head turns — see `tickTurn`
    */
   setUpper(
@@ -957,12 +960,13 @@ export class NpcAnimation {
       past = false,
       onHead = false,
       byWall = undefined as undefined | boolean,
+      fold = false,
     } = {},
   ) {
     const u = this.upperOf(side);
     if (side === "left") this.talking.gesture = false; // whoever sets it last owns it, e.g. a pose
     u.fadeSecs = fadeSecs;
-    if (key !== null) Object.assign(u, { past, onHead });
+    if (key !== null) Object.assign(u, { past, onHead, fold });
     if (byWall !== undefined) u.byWall = byWall;
     if (played === true) Object.assign(u, { time: 0, blend: 1 });
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
@@ -1596,7 +1600,7 @@ export class NpcAnimation {
       if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean);
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       if (via === null) {
-        written.copy(bone.quaternion.slerpQuaternions(base, q, t));
+        written.copy(u.fold ? foldMix(base, q, t, bone.quaternion) : bone.quaternion.slerpQuaternions(base, q, t));
         continue;
       }
       // drawn back, and on to the clip's before it gets there: one move, with no stop.
@@ -1819,6 +1823,14 @@ function splitTwist(q: THREE.Quaternion, swing: THREE.Quaternion, twist: THREE.Q
   swing.copy(q).multiply(tmpUntwist.copy(twist).invert());
 }
 
+/** `from` to `to` by `XZY` Euler angles: the elbow bends, then the forearm swings in, so the hand never swings out */
+function foldMix(from: THREE.Quaternion, to: THREE.Quaternion, t: number, out: THREE.Quaternion) {
+  const [a, b] = [tmpFoldFrom.setFromQuaternion(from, "XZY"), tmpFoldTo.setFromQuaternion(to, "XZY")];
+  const mix = (x: number, y: number) =>
+    x + (THREE.MathUtils.euclideanModulo(y - x + Math.PI, 2 * Math.PI) - Math.PI) * t;
+  return out.setFromEuler(a.set(mix(a.x, b.x), mix(a.y, b.y), mix(a.z, b.z), "XZY"));
+}
+
 /** Writes the pose drawn back from the arm's: its elbow back along the forearm's line, the forearm pointed as before */
 function setSitArmVia([arm, forearm]: UpperBone[], [toArm, toForearm]: THREE.Quaternion[]) {
   const elbow = tmpElbow.copy(forearm.bone.position).applyQuaternion(arm.base);
@@ -1858,6 +1870,8 @@ const newUpper = () => ({
   past: false,
   /** Stood by a wall, likewise */
   byWall: false,
+  /** Blended by `foldMix` rather than a slerp */
+  fold: false,
   /** Its hand is at their head */
   onHead: false,
   /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
@@ -1892,6 +1906,8 @@ const tmpQuat = new THREE.Quaternion();
 const talkAxis = new THREE.Vector3(1, 0, 0);
 /** An arm bone's swing and twist, from and via and to — see `splitTwist` */
 const tmpSwingFrom = new THREE.Quaternion();
+const tmpFoldFrom = new THREE.Euler();
+const tmpFoldTo = new THREE.Euler();
 const tmpTwistFrom = new THREE.Quaternion();
 const tmpSwingTo = new THREE.Quaternion();
 const tmpTwistTo = new THREE.Quaternion();

@@ -228,6 +228,11 @@ export function Tty(props: Props) {
         if (e.type === "keydown") state.onEscape?.();
         return false;
       }
+      if (e.code === "KeyC" && (isMac ? e.metaKey : e.ctrlKey) && xterm.hasSelection()) {
+        // Chrome may fire no `copy`, as xterm's textarea has no selection
+        if (e.type === "keydown") void navigator.clipboard.writeText(xterm.getSelection());
+        return false;
+      }
       if (e.key === "Enter" && (e.shiftKey === true || e.ctrlKey === true)) {
         return false;
       } else {
@@ -318,6 +323,8 @@ export function Tty(props: Props) {
     </div>
   );
 }
+
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
 export interface Props {
   disabled?: boolean;

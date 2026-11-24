@@ -76,7 +76,7 @@ Each loose end is then turned into the wall by `withEntries`, and **meets it squ
 bundle sideways over the last stretch cannot achieve that: however it is eased, the wire still
 arrives travelling ALONG the wall — a cosine ease is worst of all, since its derivative at the end
 is zero. So the last `diveLength` of each run is replaced by a cubic whose tangent at the wall IS
-the wall's normal (`diveTension` sets how hard that turn is pulled square). The conduits keep their
+the wall's normal (`diveTension` sets how hard that turn is pulled square). A run shorter than `diveLength` is dropped: it would be all dive, e.g. a scrap round a broad wall's tip between two doorways' clearances. The conduits keep their
 full offsets round it, so the bundle turns as one ribbon and enters the wall side by side rather
 than gathering to a point. Clamps skip any point with `entry: true` — there is nothing flat there to
 clamp to.

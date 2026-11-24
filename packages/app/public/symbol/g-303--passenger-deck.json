@@ -833,7 +833,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 266 359 L 360 359 L 360 568.1 L 354 545.7 L 336.8 478 L 322 443 L 304.1 410.9 L 286 384 Z",
+          "d": "M 266 358 L 360 358 L 360 568.1 L 354 545.7 L 336.8 478 L 322 443 L 304.1 410.9 L 286 384 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
@@ -844,7 +844,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 286.81 369 L 350 369 L 350 492.12 L 363.68 543.18 L 346.31 474.8 L 331 438.6 L 312.63 405.66 L 294.07 378.08 Z",
+          "d": "M 286.31 368 L 350 368 L 350 489.34 L 346.31 474.8 L 331 438.6 L 312.63 405.66 L 294.12 378.15 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
@@ -855,7 +855,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 914 384 L 895.9 410.9 L 878 443 L 863.2 478 L 846 545.7 L 840 568.1 L 840 359 L 934 359 Z",
+          "d": "M 914 384 L 895.9 410.9 L 878 443 L 863.2 478 L 846 545.7 L 840 568.1 L 840 358 L 934 358 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         },
@@ -866,7 +866,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 905.93 378.08 L 887.37 405.66 L 869 438.6 L 853.69 474.8 L 836.32 543.18 L 850 492.12 L 850 369 L 913.19 369 Z",
+          "d": "M 905.88 378.15 L 887.37 405.66 L 869 438.6 L 853.69 474.8 L 850 489.34 L 850 368 L 913.69 368 Z",
           "baseRect": {"width": 1200, "height": 600},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
@@ -963,23 +963,16 @@
         },
         {
           "id": "735ab206-034e-40ac-b69f-61d2ac214eec",
-          "name": "decor point label='common area'",
+          "name": "decor point label=common",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 0.5,
-            "b": 0,
-            "c": 0,
-            "d": 0.5,
-            "e": 590,
-            "f": 206.25
-          },
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 590, "f": 260},
           "type": "image",
           "srcType": "decor",
           "srcKey": "label",
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 590, 206.25)"
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 590, 260)"
         },
         {
           "id": "044e14dd-b34f-4d92-b2cb-4d2dcf4de9fe",
@@ -1090,7 +1083,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "3e281625-12e3-4048-85df-3f112736abac",
@@ -1315,36 +1308,57 @@
           "name": "extra--005--chair y=0.3",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 407.3, "f": 249.6},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 427.3,
+            "f": 249.6
+          },
           "type": "symbol",
           "srcKey": "extra--005--chair",
           "baseRect": {"width": 20, "height": 20},
-          "offset": {"x": 0.5, "y": 0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 407.8, 250.1)"
+          "offset": {"x": -0.5, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, 1, 426.8, 250.1)"
         },
         {
           "id": "74b4c1d9-4b1f-430c-a6f8-ec07c996b220",
           "name": "extra--005--chair y=0.3",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 407.3, "f": 289.6},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 427.3,
+            "f": 289.6
+          },
           "type": "symbol",
           "srcKey": "extra--005--chair",
           "baseRect": {"width": 20, "height": 20},
-          "offset": {"x": 0.5, "y": 0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 407.8, 290.1)"
+          "offset": {"x": -0.5, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, 1, 426.8, 290.1)"
         },
         {
           "id": "5944b492-6dc4-47b0-8749-608c4a03f4f3",
           "name": "extra--005--chair y=0.3",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 407.5, "f": 329.6},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 427.5,
+            "f": 329.6
+          },
           "type": "symbol",
           "srcKey": "extra--005--chair",
           "baseRect": {"width": 20, "height": 20},
-          "offset": {"x": 0.5, "y": 0.5},
-          "cssTransform": "matrix(1, 0, 0, 1, 408, 330.1)"
+          "offset": {"x": -0.5, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, 1, 427, 330.1)"
         },
         {
           "id": "e83024dd-6b1a-487a-8b22-80c0226e35c3",
@@ -1439,7 +1453,7 @@
         },
         {
           "id": "22e69cd6-5548-49ec-9e1b-08a5d2f3af36",
-          "name": "extra--019--table y=0.8",
+          "name": "extra--019--table y=0.6",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 375, "f": 240},

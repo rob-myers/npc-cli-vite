@@ -327,6 +327,16 @@ declare namespace JshCli {
      */
     looks?: (number | JshCli.PointAnyFormat)[];
     skins?: string[];
+    /** Skip any `w.npc.spawn` would refuse, returning why */
+    verify?: boolean;
+  };
+
+  /** Where a point would spawn them, with the `error` that `w.npc.spawn` would throw */
+  type SpawnCheck = {
+    closePolyResult?: import("navcat").FindNearestPolyResult;
+    doResult: FindDoMetaResult;
+    error: null | "occupied" | "not placable" | "must be in some room";
+    gmRoomId: null | Geomorph.GmRoomId;
   };
 
   /** An item mounted from outside the World, e.g. by jsh, which a SkipNet pane shows */

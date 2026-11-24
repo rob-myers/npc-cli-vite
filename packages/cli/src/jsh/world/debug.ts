@@ -78,7 +78,7 @@ export async function debug_corners(
 
 /**
  * Spawn an npc per skin in a circle about an npc, facing them, each named after its skin sans hyphens.
- * `as` keeps those whose key begins with it. Yields any skin that found no place.
+ * `as` keeps those whose key begins with it. `r` is at least 1. Yields any skin that found no place.
  * ```sh
  * debug_skins rob
  * debug_skins npc:rob r:2 as:mtf
@@ -91,22 +91,19 @@ export async function* debug_skins(
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { x: cx, z: cz } = w.npc.get(opts.npcKey).position;
   const r = opts.r ?? 1.6;
+  if (!(r >= 1)) throw Error("r must be at least 1");
   const keys = w.npc.skin.entries.map((e) => e.key).filter((key) => key.startsWith(opts.as ?? ""));
-
-  for (const [i, as] of keys.entries()) {
-    const angle = (2 * Math.PI * i) / keys.length;
-    let placed = false;
-    // off the navmesh, try nearer, then further
-    for (const dist of [r, 0.75 * r, 0.5 * r, 1.25 * r]) {
-      const at = { x: cx + dist * Math.cos(angle), y: 0, z: cz + dist * Math.sin(angle) };
-      placed = await w.npc.spawn({ npcKey: as.replaceAll("-", ""), at, as, facing: { x: cx, y: 0, z: cz } }).then(
-        () => true,
-        () => false,
-      );
-      if (placed) break;
-    }
-    if (!placed) yield `${as}: not placable`;
-  }
+  const failed = await w.e.spawnMany({
+    ats: keys.map((_, i) => {
+      const angle = (2 * Math.PI * i) / keys.length;
+      return { x: cx + r * Math.cos(angle), y: cz + r * Math.sin(angle) };
+    }),
+    keys: keys.map((as) => as.replaceAll("-", "")),
+    skins: keys,
+    looks: keys.map(() => ({ x: cx, y: cz })),
+    verify: true,
+  });
+  for (const { npcKey, error } of failed) yield `${npcKey}: ${error}`;
 }
 
 /**

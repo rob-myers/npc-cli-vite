@@ -213,6 +213,8 @@ export type PersistedNpc = {
   access?: string[];
   /** Set whilst they were dead: the clip they lie in, e.g. `die_back`, and `at` is where their body lies */
   dead?: string;
+  /** Their phaser, if they carry one: put away (`w.phasers.stow`), lowered (`disarm`) or raised (`arm`) */
+  phaser?: "stowed" | "disarmed" | "armed";
 };
 
 /** How the camera frames the floor: its vertical fov, and the metres of floor seen at each zoom stop */
