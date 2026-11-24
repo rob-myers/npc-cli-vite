@@ -393,7 +393,11 @@ export default function Obstacles(_props: Props) {
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
       // the light sweep ignores obstacles, so a far side would otherwise be as lit as a near one.
-      w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyLightRgba(vec4(baseColor, 1), skirtNormal), skirtFade),
+      w.view.fadeRoomsFx.applyFadeRgba(
+        // asked a little off its face: a tall one occludes the light, and would shade its own near side
+        w.view.playerLight.applyLightRgba(vec4(baseColor, 1), skirtNormal, skirtLightLift),
+        skirtFade,
+      ),
       skirtFade,
       w.view.objectPick,
     );
@@ -541,6 +545,8 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
 const obstaclesSkirtBaseColor = "#555";
+/** Metres off its face a skirt asks the player's light about, clear of its own occluder */
+const skirtLightLift = 0.05;
 
 const defaultObstacleTint = "#666";
 

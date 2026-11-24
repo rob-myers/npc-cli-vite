@@ -18,6 +18,9 @@ Three things light the World: the player's light, room lights, and each npc's ow
 **Occluders**
 - Every wall segment: `gmsData.byKey[gmKey].wallSegs`, transformed to world on map change by `syncWalls`.
 - The **closed** part of each door. It is derived in-shader from the door's `src`/`dst`, `gapAtHighLambda` and live `openRatio`, mirroring `Doors`' own `inGap` test.
+- Each edge of an obstacle that hides someone stood (`blocksStood`, as sight takes it): `standBlockHeight` tall and not hung
+  above them, e.g. a cargo container. A skirt asks the light about a point `skirtLightLift` off its face, else its near
+  side would fall in its own shadow.
 - Windows are excluded on purpose: light passes through glass.
 - Except HULL windows (`meta.hull`). Their centre line `seg` joins the walls, so nothing beyond the hull is lit. A CURVED one (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
 

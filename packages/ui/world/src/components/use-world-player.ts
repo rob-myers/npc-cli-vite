@@ -254,7 +254,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         // paused, the look would run out before they could turn
         if (npc === undefined || w.client === true || w.disabled === true) return;
-        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return; // else a NaN look turns them, and the view, to NaN
+        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return; // a NaN look would reach the view
         const rect = w.view.canvas.getBoundingClientRect();
         tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
         w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
@@ -829,5 +829,5 @@ const isButtonTarget = (e: KeyboardEvent) =>
 
 /** `n` if a real number, else `null`, e.g. a saved look's reach */
 function finiteOrNull(n: null | number) {
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? n : null;
 }

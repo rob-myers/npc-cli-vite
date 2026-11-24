@@ -28,6 +28,7 @@ import { MAX_DOORS } from "../const.env";
 import type DerivedGmsData from "./DerivedGmsData";
 import { MODE_FADE_SECS } from "./fade-rooms";
 import { arrivedAt, morphAt, retarget } from "./morph";
+import { blocksStood } from "./spot-sight";
 
 /**
  * The player's light polygon: what can be seen from where they stand, bounded by the walls and by
@@ -401,8 +402,15 @@ export function createPlayerLight(): PlayerLight {
       // light passes through glass — but not out through the hull, where a window looks onto
       // nothing the light has any business reaching
       const hullWindowSegs = gms.map((gm) => gm.windows.filter((x) => x.meta.hull === true).flatMap(toHullWindowSegs));
+      // and those obstacles that hide someone stood, e.g. a cargo container, as sight takes them
+      const obstacleSegs = gms.map((gm) =>
+        gm.obstacles.flatMap(({ origPoly, transform, height, meta }) =>
+          blocksStood(height, meta) ? origPoly.clone().applyMatrix(new Mat(transform)).lineSegs : [],
+        ),
+      );
       const total = gms.reduce(
-        (sum, gm, gmId) => sum + gmsData.byKey[gm.key].wallSegs.length + hullWindowSegs[gmId].length,
+        (sum, gm, gmId) =>
+          sum + gmsData.byKey[gm.key].wallSegs.length + hullWindowSegs[gmId].length + obstacleSegs[gmId].length,
         0,
       );
       if (sourceWalls.length < total * 4) sourceWalls = new Float32Array(total * 4);
@@ -427,6 +435,7 @@ export function createPlayerLight(): PlayerLight {
         mat.setMatrixValue(gm.transform);
         for (const { seg } of gmsData.byKey[gm.key].wallSegs) push(seg);
         for (const seg of hullWindowSegs[gmId]) push(seg);
+        for (const seg of obstacleSegs[gmId]) push(seg);
       }
 
       sourceCount = count;
