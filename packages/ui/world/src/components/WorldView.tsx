@@ -172,7 +172,6 @@ export function WorldView(props: React.PropsWithChildren) {
       lastKeyMs: 0,
       compassPoint: 0,
       wasdSkew: 0,
-      wasdSnapped: true,
       wasdHeading: null,
       compassSnap: false,
       wasdAlignMs: null,
@@ -599,15 +598,13 @@ export function WorldView(props: React.PropsWithChildren) {
         if (player === undefined) return false;
         out.x = player.position.x;
         out.z = player.position.z;
-        // held towards the frontier — see `easeFrontier`
-        if (state.isEmbodied()) {
-          out.x += state.frontierOffset.x;
-          out.z += state.frontierOffset.z;
-        }
+        // held towards the frontier, eased back to none once it is not framed — see `easeFrontier`
+        out.x += state.frontierOffset.x;
+        out.z += state.frontierOffset.z;
         return true;
       },
       getFrontierOffset(out, max, min) {
-        if (state.isEmbodied() === false || state.playerFrontier.ahead(tmpAhead) === false) {
+        if (state.framesFrontier() === false || state.playerFrontier.ahead(tmpAhead) === false) {
           return false;
         }
         let offsetX = tmpAhead.x * frontierConfig.panFrac;
@@ -673,11 +670,10 @@ export function WorldView(props: React.PropsWithChildren) {
         // where the w-key heads: held whilst a move key is down, else up the screen, snapped near an axis
         const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
         const compassPoint = Math.round(heading / halfPi) & 3;
-        const wasdSnapped = Math.abs(deltaAngle(compassPoint * halfPi, heading)) < 1e-6;
         // in coarse steps, so a turn redraws the compass a few times rather than every frame
         const wasdSkew = Math.round(deltaAngle(heading, spherical.theta) / compassSkewStep) * compassSkewStep;
-        if (compassPoint !== state.compassPoint || wasdSnapped !== state.wasdSnapped || wasdSkew !== state.wasdSkew) {
-          Object.assign(state, { compassPoint, wasdSnapped, wasdSkew });
+        if (compassPoint !== state.compassPoint || wasdSkew !== state.wasdSkew) {
+          Object.assign(state, { compassPoint, wasdSkew });
           w.hud?.syncCompass();
         }
 
@@ -719,7 +715,13 @@ export function WorldView(props: React.PropsWithChildren) {
         controls.touchLook = panLocked && w.disabled !== true ? w.player.dragLookTowards : null;
         controls.touches.ONE = panLocked && w.disabled === true ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
 
-        if (state.isEmbodied() === false) return;
+        if (state.isEmbodied() === false) {
+          // a far look frames the frontier in any mode, and eases back once it ends
+          const { frontierOffset: offset, ctrlOpts } = state;
+          const drawn = controls.maxDistance !== ctrlOpts.maxDistance || controls.minDistance !== ctrlOpts.minDistance;
+          if (state.framesFrontier() || offset.x !== 0 || offset.z !== 0 || drawn) state.easeFrontier();
+          return;
+        }
 
         // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
         // ends rather than the pan, since speeding up for its last few percent is felt as a jolt
@@ -1140,6 +1142,9 @@ export function WorldView(props: React.PropsWithChildren) {
         // the `Canvas` wrapper, which has the `tabIndex`
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       },
+      framesFrontier() {
+        return state.isEmbodied() || w.player?.look.far != null;
+      },
       isEmbodied(mode = state.cameraMode) {
         return mode === "embodied" || (mode === "loose" && w.touchDevice === false);
       },
@@ -1402,6 +1407,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // see `easeFrontier`, which has been easing both stops
           state.controls.maxDistance = state.ctrlOpts.maxDistance;
           state.controls.minDistance = state.ctrlOpts.minDistance;
+          state.frontierOffset.x = state.frontierOffset.z = 0;
           state.zoomPan = null;
           state.zoomCrossFadeMs = 0;
           state.zoomInSlow = false;
@@ -2059,8 +2065,6 @@ export type State = {
   syncWasdHeading(): null | number;
   /** How far the view is turned off where the w-key heads, in radians, in steps of `compassSkewStep`: `0` unless snapped */
   wasdSkew: number;
-  /** Whether the w-key heads along a world axis, `compassPoint`, having snapped onto it */
-  wasdSnapped: boolean;
   /** Whether a turn let go also snaps to a compass point — see `detentEmbodiedAzimuth`. Off: nothing sets it */
   compassSnap: boolean;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
@@ -2154,9 +2158,11 @@ export type State = {
   onCameraEnd(): void;
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
-  /** Whether the player's phaser is raised: a turn then keeps to one axis */
+  /** Whether the view frames the player's frontier: `embodied`, or in any mode a far look */
+  framesFrontier(): boolean;
   /** `embodied`, or `loose` on desktop, which is it but for following loosely */
   isEmbodied(mode?: CameraModeType): boolean;
+  /** Whether the player's phaser is raised: a turn then keeps to one axis */
   isAiming(): boolean;
   /** Whether the paused indicator shows */
   showsPaused(): boolean;

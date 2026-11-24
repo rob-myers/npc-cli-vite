@@ -469,16 +469,19 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       setFarLook(on) {
         w.phasers?.steady(state.key, on && w.phasers.isArmed(state.key));
         const npc = state.get();
+        const was = state.look.far !== null;
         if (on === false || npc === undefined) {
           state.look.far = null;
+          if (was) w.hud?.update(); // the compass's arc thins
           return void w.r3f?.invalidate();
         }
-        if (state.look.far !== null) return;
+        if (was) return;
         // its reach as it is until the cast lands
         const reach = state.lookReach() ?? w.view.playerFrontier.reach ?? 0;
         const bearing = state.farBearing(npc.lookY);
         state.look.far = { reach, bearing, x: npc.position.x, z: npc.position.z, doors: [], out: false };
         state.castFarLook(bearing);
+        w.hud?.update(); // the compass's arc thickens
       },
       setKey(npcKey) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
@@ -581,6 +584,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (w.phasers.isLocked(state.key))
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
+      },
+      toggleFarLook() {
+        state.setFarLook(state.look.far === null);
       },
       togglePsi() {
         if (state.exists() === false) return;
@@ -784,6 +790,8 @@ export type State = {
   castFarLook(bearing: number): Promise<void>;
   /** A far look's cast is under way */
   farCasting: boolean;
+  /** A far look on, else off: touch's compass, which has no Space */
+  toggleFarLook(): void;
   /** Gaze mode on or off: the bar's notice shows it */
   toggleGaze(): void;
   /** Run or walk — their `anim.hurry` — saying so */

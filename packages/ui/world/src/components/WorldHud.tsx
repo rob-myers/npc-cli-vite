@@ -14,6 +14,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import "./world-hud.css";
+import { deltaAngle } from "maath/misc";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
@@ -169,10 +170,9 @@ export default function WorldHud() {
       syncCompass() {
         const { compassEl: el } = state;
         if (el === null || w.view === undefined) return;
-        const { compassPoint, wasdSkew, wasdSnapped } = w.view;
+        const { compassPoint, wasdSkew } = w.view;
         const letter = compassLetters[compassPoint];
-        el.toggleAttribute("data-snapped", wasdSnapped);
-        el.querySelector("title")?.replaceChildren(`w heads ${wasdSnapped ? "" : "near "}${letter}`);
+        el.querySelector("title")?.replaceChildren(`w heads ${letter}`);
         el.querySelector("text")?.replaceChildren(letter);
         el.querySelector("path")?.setAttribute("transform", `rotate(${(wasdSkew * 180) / Math.PI})`);
       },
@@ -705,10 +705,17 @@ function PlayerButtons({
   const tipSide = tipSideOf(w.hud?.getLayout() ?? "bar");
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
+  const farLook = w.player?.look.far != null;
   /** A tap toggles follow; held whilst not following, a pan to the player */
   const followPress = useLongPress(
     () => w.view.setFollow(!follow),
     () => follow === false && (w.view.lookAtPlayer(), true),
+  );
+  /** Touch's compass, following alone: a tap toggles a far look; held whilst there is none, one until let go */
+  const farPress = useLongPress(
+    () => follow && w.player.toggleFarLook(),
+    () => follow && w.player.look.far === null && (w.player.setFarLook(true), true),
+    () => w.player.setFarLook(false),
   );
   const big = w.touchDevice;
   const buttonClass = cn(
@@ -759,7 +766,18 @@ function PlayerButtons({
             <UserFocusIcon className={cn(buttonIcon(follow), iconSize)} weight="light" />
           </div>
         </Tip>
-        <CompassRose big={big} />
+        {/* a frame for the press and `data-far`, so the rose itself is drawn once: see `CompassRose` */}
+        <div
+          className={cn(
+            "group pointer-events-auto relative shrink-0 border border-neutral-400/25 bg-neutral-900/60 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]",
+            big && "cursor-pointer touch-none",
+            playerButtonSize(big),
+          )}
+          {...(big ? farPress : undefined)}
+          data-far={farLook || undefined}
+        >
+          <CompassRose />
+        </div>
         {/* last: right-most in the bar, bottom-most in a column */}
         <PlayerMenu
           buttonClass={cn(buttonClass, column ? "rounded-b-md" : "rounded-r-md")}
@@ -946,37 +964,57 @@ const buttonIcon = (on: boolean) =>
  * The compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen.
  * Drawn once. A camera turn redraws it through `w.hud.syncCompass`, never a render
  */
-const CompassRose = memo(function CompassRose({ big }: { big: boolean }) {
+const CompassRose = memo(function CompassRose() {
   const w = useContext(WorldContext);
-  const { compassPoint = 0, wasdSkew = 0, wasdSnapped = true } = w.view ?? {};
+  const { compassPoint = 0, wasdSkew = 0 } = w.view ?? {};
   return (
-    <svg
-      ref={(el) => void (w.hud.compassEl = el)}
-      viewBox="-21 -21 42 42"
-      className={cn(
-        "group/compass pointer-events-auto shrink-0 border border-neutral-400/25 bg-neutral-900/60 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]",
-        playerButtonSize(big),
-      )}
-      data-snapped={wasdSnapped || undefined}
-    >
-      <title>{`w heads ${wasdSnapped ? "" : "near "}${compassLetters[compassPoint]}`}</title>
+    <svg ref={(el) => void (w.hud.compassEl = el)} viewBox="-21 -21 42 42" className="size-full">
+      <title>{`w heads ${compassLetters[compassPoint]}`}</title>
       <circle r={13} fill="none" strokeWidth={0.8} className="stroke-neutral-500/70" />
       <text
         textAnchor="middle"
         dominantBaseline="central"
-        className="fill-neutral-400 font-sans font-semibold text-[13px] group-data-snapped/compass:fill-white"
+        className="fill-white font-sans font-semibold text-[13px] transition-transform duration-300 group-data-far:scale-70"
       >
         {compassLetters[compassPoint]}
       </text>
-      {/* amber whilst snapped onto the axis, else pale and straight up */}
+      {/* where the w-key heads on screen */}
       <path
         d="M0 -17.5L3.5 -11.5L-3.5 -11.5Z"
         transform={`rotate(${(wasdSkew * 180) / Math.PI})`}
-        className="fill-neutral-200 group-data-snapped/compass:fill-amber-300"
+        className="fill-white"
       />
+      <CompassFov />
     </svg>
   );
 });
+
+/** The player's look over the compass: an arc of its circle, ±45° the way it runs on screen. A far look thickens it and turns it green. Turned per frame, never by a render */
+function CompassFov() {
+  const w = useContext(WorldContext);
+  const ref = useRef<SVGPathElement>(null);
+  useEffect(() => {
+    let shown = "";
+    const place = () => {
+      const [player, theta] = [w.player?.get(), w.view.controls?.spherical.theta];
+      if (player === undefined || theta === undefined) return;
+      const bearing = w.player.look.far?.bearing ?? w.player.farBearing(player.lookY);
+      // as the rose's own marker: up the screen is the way the camera faces
+      const at = `rotate(${((deltaAngle(bearing, theta) * 180) / Math.PI).toFixed(1)})`;
+      if (at !== shown) ref.current?.setAttribute("transform", (shown = at));
+    };
+    place(); // at once: paused, no frame may come to place it
+    return w.e.addFrameCallback(place);
+  }, []);
+  return (
+    <path
+      ref={ref}
+      d="M-9.19 -9.19A13 13 0 0 1 9.19 -9.19"
+      strokeLinecap="round"
+      className="fill-none stroke-neutral-300 [stroke-width:0.8] transition-[stroke,stroke-width] duration-300 group-data-far:stroke-green-400 group-data-far:[stroke-width:2.4]"
+    />
+  );
+}
 
 /** A press's handlers: `onTap` on a click, else `onLong` once held `longPressMs`, which returns whether it took it. Then `onLongEnd` on letting go */
 function useLongPress(onTap: () => void, onLong: () => boolean, onLongEnd?: () => void): Press {

@@ -125,11 +125,11 @@ Whilst a `wasd_delta` runs (`isWasdDriven`: it asked `getWasdDirection` within `
 - A drag or a `lookAt` comes first. Letting go stops the turn where it got to.
 
 The HUD:
-- On desktop the compass names `compassPoint`, the point nearest the w-key's heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where the w-key heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
+- The compass, desktop and touch, names `compassPoint`, the point nearest the w-key's heading (N is -z). A white marker on its rim shows where the w-key heads on screen (`wasdSkew`).
 
 ## Following the player
 
-The follow button toggles following in every mode. Held whilst not following, it pans to the player once (`w.view.lookAtPlayer`).
+The follow button toggles following in every mode. Held whilst not following, it pans to the player once (`w.view.lookAtPlayer`). On touch the compass, following alone, toggles a far look, and held whilst there is none, looks far until let go. Whilst any far look is on, Space's on desktop too, the compass's letter shrinks as if zoomed out, and the grey arc of their look on its circle (`CompassFov`, ±45°) thickens and turns green. A far look frames the frontier in any mode (`framesFrontier`), easing back once it ends.
 
 ![following](camera/camera-follow.svg)
 
@@ -160,7 +160,7 @@ Whilst following, the view frames the player and their frontier: the furthest po
 - **The offset eases with the zoom**, else the view lunges ahead then pulls back, e.g. as the phaser is raised. It is never longer than wanted, so keeps pace as the frontier draws in. Its direction always eases, so a sweep never snaps it round.
 - **The stops sit further out**, as the 30° fov is narrow.
   - `controls.minDistance` eases to the nearest radius that fits the player and their frontier, with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted outer stop. So zoomed in, a follow is as far out as a free look zoomed out.
-  - A far look, aiming too, lets it go `frontierConfig.farOuterScale` past the outer stop, e.g. so the wall fits across a narrow canvas. The red dot, on the way to the wall, fits too. Raised alone, the view keeps the look's own framing. Not on touch, where the zoom is the pinch's alone.
+  - A far look, aiming too, lets it go `frontierConfig.farOuterScale` past the outer stop, e.g. so the wall fits across a narrow canvas. The red dot, on the way to the wall, fits too. Raised alone, the view keeps the look's own framing. Not on touch, where the zoom is the pinch's alone, except during a far look (the compass).
   - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
   - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
   - Not following, both ease back to the persisted stops (`holdFrontier` only pans).
