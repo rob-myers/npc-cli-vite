@@ -448,6 +448,12 @@ export class NpcAnimation {
     return turn === null ? tmpHeadGoal.identity() : tmpHeadGoal.copy(turn);
   }
 
+  /** Puts the head back to its pose, first reading the pose if the mixer has since moved it */
+  headToPose({ bone, base, written }: UpperBone) {
+    if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+    bone.quaternion.copy(base);
+  }
+
   /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
   hitClipFor(part: null | string, outcome?: HitOutcome, dir?: THREE.Vector3): null | AnimationClipKey {
     const region = hitConfig.region[part ?? ""];
@@ -1214,8 +1220,7 @@ export class NpcAnimation {
     this.putBackArm(this.clutch?.side ?? "left", this.clutch);
     undoOverBody(this.overBody);
     this.tickLieLook(delta);
-    this.tickUpper(delta);
-    this.tickHead(delta);
+    this.tickHead(delta, this.tickUpper(delta));
     this.tickTurn(delta);
     this.tickAimArm();
     this.tickSupport(delta);
@@ -1389,19 +1394,16 @@ export class NpcAnimation {
   }
 
   /** Turns the head over its pose: a shake, then talk. Nearly always nothing to do */
-  tickHead(delta: number) {
+  tickHead(delta: number, posed = false) {
     const { entry } = this.upperHead;
     const { talking } = this;
     if ((this.headShake === null && talking.secs === 0 && talking.weight === 0) || entry === null) return;
-    const { bone, base, written } = entry;
-    // with no upper clip, `tickUpper` has not put the head back to its pose
-    if (this.upper.key === null && this.upperLeft.key === null) {
-      if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
-      else base.copy(bone.quaternion);
-    }
+    // only if `tickUpper` has not, else this would undo its look e.g. a lain one
+    if (posed === false) this.headToPose(entry);
+    const { bone } = entry;
     this.turnHeadShake(bone.quaternion, delta);
     this.turnHeadTalk(bone.quaternion, delta);
-    written.copy(bone.quaternion);
+    entry.written.copy(bone.quaternion);
   }
 
   /** Adds a shake's turn of the head to `q`, whilst one is under way */
@@ -1540,9 +1542,13 @@ export class NpcAnimation {
     else this.w.r3f?.invalidate();
   }
 
-  /** Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it */
-  tickUpper(delta: number) {
-    const [l, r] = [this.upperLeft, this.upper];
+  /**
+   * Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it.
+   * Returns whether it put the head back to its pose and wrote it.
+   */
+  tickUpper(delta: number): boolean {
+    const l = this.upperLeft;
+    const r = this.upper;
     this.tickUpperSide("left", delta);
     this.tickUpperSide("right", delta);
     const { entry } = this.upperHead;
@@ -1551,22 +1557,21 @@ export class NpcAnimation {
     const turned = this.headTurn.w !== 1; // still easing back from a look
     const { headAt } = this;
     if (entry === null || (l.key === null && r.key === null && look === null && headAt === null && turned === false))
-      return;
-    const { bone, base, written } = entry;
-    if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
-    bone.quaternion.copy(base);
-    for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
-    for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
-    written.copy(bone.quaternion);
+      return false;
+    this.headToPose(entry);
+    const q = entry.bone.quaternion;
+    if (l.key !== null && l.hasHead === true) q.slerp(l.head, l.eased);
+    if (r.key !== null && r.hasHead === true) q.slerp(r.head, r.eased);
+    if (l.key !== null) q.premultiply(l.level);
+    if (r.key !== null) q.premultiply(r.level);
+    entry.written.copy(q);
     if (r.key !== null && r.aim !== null) this.aimHead(r.aim, (r.aim.head ?? r.aim.weight) * r.eased, delta);
     else if (headAt !== null) this.aimHead(headAt, 1, delta);
     else if (look !== null) this.aimHead(look, look.weight * look.weight * (3 - 2 * look.weight), delta);
     else this.aimHead(null, 0, delta); // back to none
-    for (const u of [l, r]) {
-      if (u.blend !== 0 || u.target !== 0) continue;
-      u.key = null; // the pose's own again
-      u.aim = null;
-    }
+    releaseUpper(l);
+    releaseUpper(r);
+    return true;
   }
 
   tickUpperSide(side: Side, delta: number) {
@@ -1858,6 +1863,13 @@ const newUpperBone = (bone?: THREE.Object3D): null | UpperBone =>
     : { bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN), from: new THREE.Quaternion() };
 
 type Upper = ReturnType<typeof newUpper>;
+
+/** An arm faded out of its clip goes back to the pose's own */
+function releaseUpper(u: Upper) {
+  if (u.blend !== 0 || u.target !== 0) return;
+  u.key = null;
+  u.aim = null;
+}
 const newUpper = () => ({
   key: null as null | AnimationClipKey,
   blend: 0,
