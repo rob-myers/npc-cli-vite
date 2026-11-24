@@ -1517,6 +1517,18 @@
           "baseRect": {"width": 60, "height": 120},
           "offset": {"x": 0.7, "y": 0.7},
           "cssTransform": "matrix(-1, 0, 0, -1, 239.7, 180.2)"
+        },
+        {
+          "id": "0aac5880-ed8b-45c5-acb4-2e077d09be85",
+          "name": "console--018",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 480},
+          "type": "symbol",
+          "srcKey": "console--018",
+          "baseRect": {"width": 60, "height": 60},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, 1, 118, 480)"
         }
       ]
     },
