@@ -71,9 +71,11 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
   `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
   So a door on the room's north wall slides `[-1,0]`, south `[1,0]`, west `[0,1]` and east `[0,-1]`.
-  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. Both halves
-  of a double door slide the SAME way, or one points out. A hull door is exempt:
+  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. A hull door is exempt:
   its normal is turned to point outwards, whatever its slide.
+- **A double door's halves slide apart**, away from where they meet, with no gap between them. One half's normal
+  then points out of its room, which is fine. Slid the same way, their inner sides show (g-103's). Meeting so, the two
+  are found as one double door and open together (`partners`, `docs/doors.md`).
 - **Optional doors**: a room is reused where its doors differ, so give it one per side it could have,
   each `door {n|e|s|w} optional`. A parent's `doors=['e','w']` keeps those sides and walls up the rest;
   `doors=[]` keeps none. With no `doors` tag every door stays.

@@ -16,7 +16,8 @@ Their settings are `doorConfig` in `const.env`. Their sizes are with the walls':
 | `auto` | Opens when an npc touches its "nearby sensor", unless locked. Every unsealed hull door is auto. |
 | `proximity` | Stays open whilst anyone is near. Defaults to `auto`. |
 | `held` | Kept open or shut as it is. See [Holding](#holding). |
-| `hull` | Joins two geomorphs. Its twin on the other side opens and shuts with it. Each geomorph draws a copy, its label facing in. A twinned copy's back is left undrawn (`NO_FACE`), else it fights the twin's front. |
+| `hull` | Joins two geomorphs. Its twin on the other side is its partner (`partners`). Each geomorph draws a copy, its label facing in. A twinned copy's back is left undrawn (`NO_FACE`), else it fights the twin's front. |
+| `partners` | Doors that move as one with it: a hull door's twin, or a double door's other half (`linkPartners`). They open, shut, hold and lock together. A double door is two doors of a geomorph meeting end to end, in line, within `partnerMeetMetres`, with no tag. A gap between two doors keeps them apart, e.g. g-103's locker doors. |
 
 We could have non-`auto` doors which are `proximity` i.e. once manually opened they stay open if an npc is close.
 

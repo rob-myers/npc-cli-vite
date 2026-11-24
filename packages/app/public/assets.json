@@ -43,6 +43,15 @@
         }
       ]
     },
+    "103-only": {
+      "key": "103-only",
+      "gms": [
+        {
+          "gmKey": "g-103--cargo-bay-full",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+        }
+      ]
+    },
     "301-101-301": {
       "key": "301-101-301",
       "gms": [
@@ -166,10 +175,11 @@
     }
   },
   "hash": {
-    "obstacles": 1029597197,
+    "obstacles": -374618381,
     "layout": {
       "g-101--multipurpose": 1376844981,
       "g-102--research-deck": -558553446,
+      "g-103--cargo-bay-full": 650374846,
       "g-301--bridge": -1630314190,
       "g-301--playground": -86429936,
       "g-302--xboat-repair-bay": -477077282,

@@ -36,6 +36,15 @@
       "type": "symbol",
       "key": "bridge--042"
     },
+    "cargo--003": {
+      "filename": "cargo--003.json",
+      "thumbnailFilename": "cargo--003.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 241.4},
+      "type": "symbol",
+      "key": "cargo--003"
+    },
     "console--010": {
       "filename": "console--010.json",
       "thumbnailFilename": "console--010.thumbnail.png",
@@ -422,6 +431,15 @@
       "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
       "type": "symbol",
       "key": "g-102--research-deck"
+    },
+    "g-103--cargo-bay-full": {
+      "filename": "g-103--cargo-bay-full.json",
+      "thumbnailFilename": "g-103--cargo-bay-full.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+      "type": "symbol",
+      "key": "g-103--cargo-bay-full"
     },
     "g-301--bridge": {
       "filename": "g-301--bridge.json",

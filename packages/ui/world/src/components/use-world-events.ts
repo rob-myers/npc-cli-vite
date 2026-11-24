@@ -771,11 +771,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-opening": {
             const door = w.d[e.gdKey]; // may be gone: onchange map, or a map edit
-            // clients skip: the server sends both sides of a hull door
-            if (door?.hull === true && w.client === false) {
-              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
-              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
-            }
+            // its partners open with it, e.g. a hull door's twin. Clients skip: the server sends them
+            if (w.client === false)
+              for (const gdKey of door?.partners ?? []) w.e.toggleDoor(gdKey, { open: true, access: true });
             state.inView.byRoom.clear(); // seen through at once
             state.syncFadeRooms();
             break;
@@ -788,10 +786,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];
-            if (door?.hull === true && w.client === false) {
-              const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
-              adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: false, access: true });
-            }
+            if (w.client === false)
+              for (const gdKey of door?.partners ?? []) w.e.toggleDoor(gdKey, { open: false, access: true });
             break;
           }
           case "removed-npcs": {

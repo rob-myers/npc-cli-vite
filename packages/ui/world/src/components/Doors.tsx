@@ -129,9 +129,11 @@ export default function Doors() {
               ],
 
               gapAtHighLambda: false,
+              partners: [],
             };
           }
         }
+        state.linkPartners();
         // their closes went with the old doors: each shuts in its usual time, unless somebody is in it
         for (const door of Object.values(state.byKey)) {
           if (door.open === true) w.events.next({ key: "try-close-door", gdKey: door.gdKey });
@@ -255,6 +257,26 @@ export default function Doors() {
         const door = state.byKey[gdKey];
         if (door === undefined) return false;
         return door.open === true || state.animTargets.has(state.encodeGmDoorId(door.gmId, door.doorId));
+      },
+      linkPartners() {
+        const doors = Object.values(state.byKey);
+        const meet = (p: Geom.VectJson, q: Geom.VectJson) => Math.hypot(p.x - q.x, p.y - q.y) < partnerMeetMetres;
+        for (const [i, a] of doors.entries()) {
+          if (a.hull === true) {
+            // its twin, the next geomorph's copy
+            const adj = w.gmGraph.getAdjacentRoomCtxt(a.gmId, a.doorId);
+            if (adj !== null) a.partners.push(adj.adjGdKey);
+            continue;
+          }
+          // a double door's other half: in line, and meeting it end to end
+          for (const b of doors.slice(i + 1)) {
+            if (b.hull === true || a.gmId !== b.gmId) continue;
+            if (Math.abs(a.normal.x * b.normal.y - a.normal.y * b.normal.x) > 0.01) continue;
+            if (!(meet(a.src, b.src) || meet(a.src, b.dst) || meet(a.dst, b.src) || meet(a.dst, b.dst))) continue;
+            a.partners.push(b.gdKey);
+            b.partners.push(a.gdKey);
+          }
+        }
       },
       onDoorChanged(instanceId, target) {
         state.openRatioArray[instanceId] = target;
@@ -437,6 +459,7 @@ export default function Doors() {
         state.syncLockTint(door);
         state.persistLocks();
         w.events.next({ key: "door-toggled", gdKey: door.gdKey, what: "held", on: held });
+        for (const gdKey of door.partners) state.setHeld(state.byKey[gdKey], held);
       },
       setFlag(door, flag, next) {
         if (door.sealed === true || door[flag] === next) return;
@@ -446,6 +469,7 @@ export default function Doors() {
           w.events.next({ key: "try-close-door", gdKey: door.gdKey });
         state.persistLocks();
         w.events.next({ key: "door-toggled", gdKey: door.gdKey, what: flag, on: next });
+        for (const gdKey of door.partners) state.setFlag(state.byKey[gdKey], flag, next);
       },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
@@ -554,6 +578,9 @@ export default function Doors() {
           // after the spread, whose map meta may hold its own `locked`
           locked: door.locked,
         });
+        for (const gdKey of door.partners) {
+          state.toggleLock(state.byKey[gdKey], door.locked ? { lock: true } : { unlock: true });
+        }
 
         return true;
       },
@@ -786,6 +813,8 @@ export type State = {
   isSeenThrough: (gdKey: Geomorph.GmDoorKey) => boolean;
   /** Toggles when `open` is `undefined`. */
   forceDoor: (gmId: number, doorId: number, open?: boolean) => void;
+  /** Sets each door's `partners`: a hull door's twin, or a double door's other half */
+  linkPartners: () => void;
   onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
@@ -828,6 +857,8 @@ const doorOpenTarget = 0.98;
 const doorOpenTest = 0.8;
 /** How many floats each instance has in `doorMetaArray` */
 const doorMetaSize = 4;
+/** Metres apart two doors' ends may be and still meet, as a double door's halves */
+const partnerMeetMetres = 0.05;
 /** Offsets within each instance's `doorMetaArray` entry */
 const SLIDE_SIGN = 0;
 /** These are the +z and -z faces, already oriented — see `state.flipped` */
