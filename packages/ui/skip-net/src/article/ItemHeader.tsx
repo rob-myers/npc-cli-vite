@@ -34,7 +34,7 @@ export function ItemHeader({
 }) {
   const { articleKey } = useContext(ArticleContext);
   const faces: { label: string; content: ReactNode }[] = [
-    { label: "item #", content: <span className="text-sm font-bold">{item ?? articleKey}</span> },
+    { label: "item #", content: <span className="text-[13px] font-bold">{item ?? articleKey}</span> },
     {
       label: "tags",
       content: (
@@ -218,9 +218,9 @@ const activationIcons: Record<string, Icon> = {
   pointer: CursorClickIcon,
 };
 
-const faceHeightPx = 44;
+const faceHeightPx = 36;
 /** The narrow blank sides between the faces */
-const bevelHeightPx = 11;
+const bevelHeightPx = 9;
 /** How far each side overlaps the next, so no seam opens between them as it turns */
 const seamPx = 1;
 /** How square on a side must face to show fully, a cosine */
@@ -231,7 +231,7 @@ const restTiltDeg = -14;
 
 /** Room about it for the faces either side, in perspective */
 const stageClass = tw(
-  "not-prose relative mt-3 mb-6 pt-5 pb-7 px-3 pr-14 outline-none [perspective:800px] select-none touch-none focus-visible:ring-1 focus-visible:ring-mac-text/40",
+  "not-prose relative mt-2 mb-5 pt-4 pb-6 px-3 pr-14 outline-none [perspective:800px] select-none touch-none focus-visible:ring-1 focus-visible:ring-mac-text/40",
 );
 /** A narrow blank side, a little darker than the faces */
 const bevelClass = tw(
@@ -242,9 +242,9 @@ const drumClass = tw(
   "relative [transform-style:preserve-3d] will-change-transform transition-transform duration-500 ease-out",
 );
 const faceClass = tw(
-  "absolute inset-x-0 -inset-y-px flex items-center overflow-hidden border border-black bg-[color-mix(in_srgb,var(--color-mac-window),var(--color-mac-text)_7%)] px-3 font-mono text-xs text-mac-text [backface-visibility:hidden]",
+  "absolute inset-x-0 -inset-y-px flex items-center overflow-hidden border border-black bg-[color-mix(in_srgb,var(--color-mac-window),var(--color-mac-text)_7%)] px-3 font-mono text-[11px] text-mac-text [backface-visibility:hidden]",
 );
-const labelClass = tw("w-[4.5rem] shrink-0 text-[9px] font-bold uppercase tracking-[0.2em] text-mac-muted");
+const labelClass = tw("w-16 shrink-0 text-[8px] font-bold uppercase tracking-[0.2em] text-mac-muted");
 /** Fainter the further it faces away, its face staying light */
 const textClass = tw("flex min-w-0 items-center gap-4 transition-opacity duration-500");
 const tagClass = tw("px-1.5 leading-5 border border-mac-text/30");
