@@ -67,6 +67,8 @@ Each file is shown in a frame of its own. Its sections share its key, so one win
   - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
   - `<Video id="…" />` is a YouTube video loaded on click (`article/Video.tsx`, lazy, so its library loads only with it), e.g. `video/demo`.
   - `<SideNote>…</SideNote>` is an info icon in the text, showing the note on hover or press (a base-ui Popover with `openOnHover`, since a Tooltip ignores presses).
+  - `<ItemHeader tags={[…]} activation={[…]} />` heads an item's file: an octagonal drum on its side, a wide face per part (item #, tags, activation, file), narrow blank ones between (`article/ItemHeader.tsx`). Its item number is the article's key unless `item` is given. A drag, its arrows or the arrow keys turn it, snapping to a face. A side fades as it turns edge on.
+  - `<ActivationProcedures>…</ActivationProcedures>` and `<Description>…</Description>` are sections under a label-maker tape heading (`<TapeTitle title="…" />`). `<FileSection title="…">` is one with any title (`article/FileSection.tsx`). Inside each, a blank line follows the opening tag and precedes the closing one, so MDX reads fences.
   - `mdx.d.ts` types these tags in the editor, as the global `MDXProvidedComponents` the MDX extension reads.
 - Adding or renaming a file reloads the page. An edit swaps it in place, with no spinner: `react()` in `vite.config.ts` includes `.mdx`, and `vite-plugin-skip-net-articles` reloads its virtual modules only when their content changes.
 

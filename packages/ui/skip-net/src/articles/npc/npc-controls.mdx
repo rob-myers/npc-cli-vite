@@ -1,6 +1,6 @@
-__item #:__ npc-controls<br/>
-__tags:__ actuation, ui<br/>
-__activation:__ code, keys, pointer
+<ItemHeader tags={["actuation", "ui"]} activation={["code", "keys", "pointer"]} />
+
+<ActivationProcedures>
 
 ```sh title="control player or last picked"
 # pointer moves player
@@ -40,6 +40,10 @@ wasd_delta rob | move rob --strafe --force
 wasd_delta rob | look rob --force
 ```
 
-#### Description:
+</ActivationProcedures>
+
+<Description>
 
 When the NPC is the Player <SideNote>Player ∊ NPC, despite contradiction.</SideNote>
+
+</Description>
