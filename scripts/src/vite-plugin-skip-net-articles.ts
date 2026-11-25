@@ -79,6 +79,25 @@ function readAutorunFences(): { articleKey: string; src: string }[] {
   });
 }
 
+/** A rehype plugin giving each fence's `code` its meta as `metastring`, e.g. `title="Move rob"` */
+export function rehypeFenceMeta() {
+  return (tree: HastNode) => withFenceMeta(tree);
+}
+
+type HastNode = {
+  tagName?: string;
+  data?: { meta?: null | string };
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+};
+
+function withFenceMeta(node: HastNode) {
+  if (node.tagName === "code" && node.data?.meta) {
+    node.properties = { ...node.properties, metastring: node.data.meta };
+  }
+  for (const child of node.children ?? []) withFenceMeta(child);
+}
+
 /** Paths under `ARTICLES_DIR` as `articles.ts` globs them: `{folder}/{key}.mdx` or `{folder}/{key}/{section}.mdx` */
 function readArticleFiles(): string[] {
   return fs

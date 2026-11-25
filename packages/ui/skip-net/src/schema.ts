@@ -57,6 +57,8 @@ export const SkipNetUiMetaSchema = z.object({
     .optional(),
   /** Each code fence's height by its id, once resized by its corner */
   fenceHeights: z.record(z.string(), z.number()).optional(),
+  /** Each code fence's collapsed state by its id, once toggled */
+  fenceCollapsed: z.record(z.string(), z.boolean()).optional(),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;

@@ -5,7 +5,15 @@ import { preludeApi, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon, LightningIcon, PlayIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  CaretUpIcon,
+  CheckIcon,
+  CopyIcon,
+  LightningIcon,
+  PlayIcon,
+} from "@phosphor-icons/react";
 import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { SkipNetContext } from "../context";
 import type { SkipNetUiMeta } from "../schema";
@@ -15,26 +23,47 @@ import { ArticleContext } from "./context";
 export function ShellFence(props: ComponentProps<"pre">) {
   const code = props.children;
   if (
-    isValidElement<{ className?: string; children?: unknown }>(code) &&
+    isValidElement<{ className?: string; children?: unknown; metastring?: string }>(code) &&
     typeof code.props.children === "string" &&
     (code.props.className === undefined || shellClasses.has(code.props.className))
   ) {
-    return <ShellCommands src={code.props.children} />;
+    const meta = code.props.metastring ?? "";
+    return (
+      <ShellCommands
+        src={code.props.children}
+        title={titleRe.exec(meta)?.[1]}
+        collapsedByDefault={!expandedRe.test(meta)}
+      />
+    );
   }
   return <pre {...props} />;
 }
 
+/** Its title bar over its commands */
+const frameClass = tw("not-prose my-3 rounded border border-term-border-subtle bg-term-fence overflow-hidden");
+/** Its title bar, which collapses it */
+const titleBarClass = tw(
+  "flex w-full items-center gap-1.5 px-2 py-1 text-left font-mono text-xs text-term-muted cursor-pointer transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
+);
 /** Capped until its corner is dragged, which sets an inline height. A container, so a narrow one stacks its rows */
 const fenceClass = tw(
-  "@container group/fence not-prose my-3 py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin rounded border border-term-border-subtle bg-term-fence",
+  "@container group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
 );
 /** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
 const moreClass = tw(
   "sticky bottom-0 h-6 -mt-6 flex items-end justify-center pointer-events-none bg-linear-to-t from-term-fence opacity-0 transition-opacity group-data-[more=true]/fence:opacity-100",
 );
 
-/** Its commands, in a box resized by its corner, its height saved */
-function ShellCommands({ src }: { src: string }) {
+/** Its commands, in a box resized by its corner, under a title bar collapsing it. Its height and collapse are saved */
+function ShellCommands({
+  src,
+  title,
+  collapsedByDefault,
+}: {
+  src: string;
+  title?: string;
+  collapsedByDefault: boolean;
+}) {
   const { articleKey } = useContext(ArticleContext);
   const state = useContext(SkipNetContext);
   const { uiStoreApi } = useContext(UiContext);
@@ -87,19 +116,38 @@ function ShellCommands({ src }: { src: string }) {
     };
   }, [commands]);
 
+  const [collapsed, setCollapsed] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+    uiStoreApi.setUiMeta(state.meta.id, (draft) => {
+      const meta = draft as SkipNetUiMeta;
+      meta.fenceCollapsed = { ...meta.fenceCollapsed, [fenceId]: !collapsed };
+    });
+  };
+
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
-    <div
-      ref={boxRef}
-      data-fence-id={fenceId}
-      className={fenceClass}
-      style={savedPx === undefined ? undefined : { height: savedPx }}
-    >
-      {commands.map(({ example, segments }) => (
-        <ShellCommand key={example.id} example={example} segments={segments} />
-      ))}
-      <div className={moreClass}>
-        <CaretDownIcon weight="bold" className="size-3.5 text-term-muted" />
+    <div className={frameClass}>
+      <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
+        {collapsed ? (
+          <CaretRightIcon weight="bold" className="size-3" />
+        ) : (
+          <CaretDownIcon weight="bold" className="size-3" />
+        )}
+        <span className="min-w-0 truncate">{title ?? `${commands.length} commands`}</span>
+      </button>
+      <div
+        ref={boxRef}
+        data-fence-id={fenceId}
+        className={cn(fenceClass, collapsed && "hidden")}
+        style={savedPx === undefined ? undefined : { height: savedPx }}
+      >
+        {commands.map(({ example, segments }) => (
+          <ShellCommand key={example.id} example={example} segments={segments} />
+        ))}
+        <div className={moreClass}>
+          <CaretDownIcon weight="bold" className="size-3.5 text-term-muted" />
+        </div>
       </div>
     </div>
   );
@@ -212,6 +260,10 @@ const narrowRowCss = tw("@max-xs:grid-cols-[auto_1fr] @max-xs:gap-y-1");
 const narrowTextCss = tw("@max-xs:order-1 @max-xs:col-span-2");
 /** How long after a resize its height is saved */
 const saveDelayMs = 300;
+/** A fence's title in its meta, e.g. ```` ```sh title="Move rob" ```` */
+const titleRe = /\btitle="([^"]*)"/;
+/** A fence starting expanded, e.g. ```` ```sh expanded ````. Others start collapsed */
+const expandedRe = /(^|\s)expanded(\s|$)/;
 /** MDX's class for a fence's language, `sh` or the like */
 const shellClasses = new Set(["language-sh", "language-bash"]);
 
