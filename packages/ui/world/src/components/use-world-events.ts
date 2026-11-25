@@ -718,6 +718,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // w.view.forceUpdate();
       },
       onEditMap() {
+        // their rooms predate the edit, which may renumber them: physics reports who stands in a doorway again
+        state.insideDoorways.clear();
         state.recomputeNpcRoomRelationships();
         state.syncLitRooms();
         // synced now, as the room slots just redrawn may renumber rooms
@@ -729,12 +731,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const door = w.door.byKey[e.meta.gdKey];
         if (!door) return; // onchange map
 
-        if (e.type === "nearby" || e.type === "inside") {
+        const path = e.type === "nearby" ? npc.getCornersPath() : null;
+        // nearby with no path, e.g. just spawned, only an auto door opens for them
+        if (e.type === "inside" || (e.type === "nearby" && (path !== null || door.auto === true))) {
           state.toggleDoor(e.meta.gdKey, {
             open: true,
             npcKey: e.npcKey,
             // avoid ignoring "inside" sensor when path does not intersect
-            npcIntention: e.type === "nearby" ? (npc.getCornersPath() ?? undefined) : undefined,
+            npcIntention: path ?? undefined,
           });
         }
 

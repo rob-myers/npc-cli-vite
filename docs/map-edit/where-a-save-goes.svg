@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 372" width="760" height="372" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7a8290"/></marker>
+</defs>
+<style>
+  .when { fill: #262a31; stroke: #3a404a; }
+  .goes { fill: #232831; stroke: #3d5a80; }
+  .none { fill: #2a2326; stroke: #5a3a3e; }
+  .title { fill: #e6e6e6; font-size: 13px; font-weight: 600; }
+  .note { fill: #9aa0a6; font-size: 12px; }
+  .mono { font-family: ui-monospace, monospace; font-size: 11px; }
+</style>
+<rect width="760" height="372" rx="10" fill="#1b1d22"/>
+<text x="20" y="30" fill="#e6e6e6" font-size="15" font-weight="600">Where a save goes: MapEdit's save(fileSpecifier)</text>
+
+<!-- playground -->
+<rect x="20" y="50" width="230" height="66" rx="8" class="when"/>
+<text x="34" y="74" class="title">A playground file</text>
+<text x="34" y="94" class="note">key ends <tspan class="mono">--playground</tspan> (symbol)</text>
+<text x="34" y="108" class="note">or <tspan class="mono">-playground</tspan> (map)</text>
+<line x1="250" y1="83" x2="288" y2="83" stroke="#7a8290" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="290" y="50" width="450" height="66" rx="8" class="goes"/>
+<text x="304" y="74" class="title">A localStorage draft, in DEV or production</text>
+<text x="304" y="94" class="note">toast "draft saved"</text>
+<text x="304" y="108" class="note"><tspan class="mono">mapEditSymbolSavedEvent</tspan>: Worlds recompute their layouts from drafts</text>
+
+<!-- other, DEV -->
+<rect x="20" y="128" width="230" height="66" rx="8" class="when"/>
+<text x="34" y="152" class="title">Any other file, in DEV</text>
+<text x="34" y="172" class="note">a save from the editor</text>
+<line x1="250" y1="161" x2="288" y2="161" stroke="#7a8290" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="290" y="128" width="450" height="66" rx="8" class="goes"/>
+<text x="304" y="152" class="title"><tspan class="mono" font-size="12">POST /api/map-edit/file/:type/:filename</tspan></text>
+<text x="304" y="172" class="note">written to <tspan class="mono">public/{symbol,map}/</tspan>: committed, and all production serves</text>
+<text x="304" y="186" class="note">its stale draft removed. toast "saved to file". Then the World catches up</text>
+
+<!-- other, DEV, dirty exit -->
+<rect x="20" y="206" width="230" height="66" rx="8" class="when"/>
+<text x="34" y="230" class="title">Any other file, DEV, dirty exit</text>
+<text x="34" y="250" class="note"><tspan class="mono">autoSaveDraftOnDirtyExit</tspan></text>
+<line x1="250" y1="239" x2="288" y2="239" stroke="#7a8290" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="290" y="206" width="450" height="66" rx="8" class="goes"/>
+<text x="304" y="230" class="title">A localStorage draft only</text>
+<text x="304" y="250" class="note">no POST: the file is untouched until a real save</text>
+
+<!-- other, PROD -->
+<rect x="20" y="284" width="230" height="66" rx="8" class="when"/>
+<text x="34" y="308" class="title">Any other file, in production</text>
+<text x="34" y="328" class="note"><tspan class="mono">isReadOnly</tspan></text>
+<line x1="250" y1="317" x2="288" y2="317" stroke="#7a8290" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="290" y="284" width="450" height="66" rx="8" class="none"/>
+<text x="304" y="308" class="title">Nothing</text>
+<text x="304" y="328" class="note">the save returns early</text>
+</svg>

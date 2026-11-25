@@ -114,6 +114,8 @@ export const devMessageFromServer = {
   skinSheetsRebuilding: "skin-sheets-rebuilding",
   skinSheetsRebuilt: "skin-sheets-rebuilt",
   skinSvgsChanged: "skin-svgs-changed",
+  /** A saved file's thumbnail, drawn after the save responds */
+  thumbnailSaved: "map-edit:thumbnail-saved",
 } as const;
 
 //#endregion

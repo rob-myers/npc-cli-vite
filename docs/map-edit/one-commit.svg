@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 572" width="760" height="572" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12">
+<style>
+  .rung { fill: #262a31; stroke: #3a404a; }
+  .aside { fill: #22252b; stroke: #3a404a; stroke-dasharray: 4 3; }
+  .num { fill: #5aa0f0; }
+  .numText { fill: #1b1d22; font-size: 13px; font-weight: 700; }
+  .title { fill: #e6e6e6; font-size: 14px; font-weight: 600; }
+  .note { fill: #9aa0a6; font-size: 12px; }
+  .else { fill: #d08a84; font-size: 11.5px; }
+  .mono { font-family: ui-monospace, monospace; font-size: 11px; }
+</style>
+<rect width="760" height="572" rx="10" fill="#1b1d22"/>
+<text x="20" y="28" fill="#e6e6e6" font-size="15" font-weight="600">An edit is applied in one commit: the effects, in tree order</text>
+
+<!-- before -->
+<rect x="20" y="44" width="720" height="52" rx="8" class="aside"/>
+<text x="34" y="65" class="note"><tspan fill="#e6e6e6" font-weight="600">Before, in the World query.</tspan> <tspan class="mono">roomSlots.ensure</tspan> draws the room ids for the CPU, read during render,</text>
+<text x="34" y="83" class="note">and queues them for the GPU. A new map uploads them at once: nothing of it is on screen yet.</text>
+
+<!-- 1 LayoutSync -->
+<rect x="20" y="108" width="720" height="88" rx="8" class="rung"/>
+<circle cx="48" cy="134" r="13" class="num"/><text x="48" y="138" text-anchor="middle" class="numText">1</text>
+<text x="74" y="130" class="title">LayoutSync, placed before the floor</text>
+<text x="74" y="150" class="note"><tspan class="mono">roomSlots.upload()</tspan> sends the queued room ids. Only an edit queues them, so then <tspan class="mono">onEditMap</tspan>:</text>
+<text x="74" y="166" class="note">doorway tracking cleared, npcs put in their rooms, lit rooms and the rooms' fade resynced (snapped)</text>
+<text x="74" y="184" class="else">out of step: a flash of old floor, a black frame, or a dark map</text>
+
+<!-- 2 Floor and ceiling -->
+<rect x="20" y="208" width="720" height="72" rx="8" class="rung"/>
+<circle cx="48" cy="234" r="13" class="num"/><text x="48" y="238" text-anchor="middle" class="numText">2</text>
+<text x="74" y="230" class="title">Floor and ceiling</text>
+<text x="74" y="250" class="note">redraw from the new layout, every geomorph at once on an edit</text>
+<text x="74" y="268" class="else">later: the old floor shows under the new walls</text>
+
+<!-- 3 Walls and obstacles -->
+<rect x="20" y="292" width="720" height="72" rx="8" class="rung"/>
+<circle cx="48" cy="318" r="13" class="num"/><text x="48" y="322" text-anchor="middle" class="numText">3</text>
+<text x="74" y="314" class="title">Walls and obstacles</text>
+<text x="74" y="334" class="note">new instances. Obstacles found their rooms during render, from the CPU room ids</text>
+<text x="74" y="352" class="else">without those room ids: every obstacle never shown, so black tops</text>
+
+<!-- 4 Decor -->
+<rect x="20" y="376" width="720" height="88" rx="8" class="rung"/>
+<circle cx="48" cy="402" r="13" class="num"/><text x="48" y="406" text-anchor="middle" class="numText">4</text>
+<text x="74" y="398" class="title">Decor</text>
+<text x="74" y="418" class="note"><tspan class="mono">rebuildStatic</tspan>, for a new layout of the map it has built (<tspan class="mono">builtMapKey</tspan>): rooms, keys, grid,</text>
+<text x="74" y="434" class="note">instances and switch tints, then raycasts, physics and <tspan class="mono">decor-ready</tspan>. No images needed</text>
+<text x="74" y="452" class="else">left to its query: the removed sub-symbol's switches linger over the empty floor</text>
+
+<!-- after -->
+<rect x="20" y="476" width="720" height="80" rx="8" class="aside"/>
+<text x="34" y="497" class="note"><tspan fill="#e6e6e6" font-weight="600">After, not holding the view.</tspan> The navmesh arrives from its worker, and the floor redraws</text>
+<text x="34" y="515" class="note">its mesh lines. Physics rebuilds, and its reply re-adds decor's colliders. Spots arrive seconds later.</text>
+<text x="34" y="539" class="note">A new map instead: the decor query loads images and materials, then runs <tspan class="mono">rebuildStatic</tspan> itself.</text>
+</svg>

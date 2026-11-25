@@ -50,8 +50,8 @@ A `kill` holds them still once its clip ends (`anim.dead`, `holdStill`).
 
 A fall must fit (`fitDeath`).
 
-- **Clear floor** for `deathConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`: a shut door is a
-  wall).
+- **Clear floor** for `deathConfig.lieLength` along its way (`npc.roomAhead` with `openDoorsFilter`). A door not yet
+  slid open is a wall (`w.door.isOpen`), even whilst opening or paused.
 - **No one in their room in that strip**, `othersWidth` either side, nor any corpse's hull across it (`stripClear`,
   `bodyCrosses`). That is narrower than `lieWidth`, so bodies may overlap a little.
 - **The order tried.** The shot's way first, turned to fall along the shot (`alongShot`) and then by each of

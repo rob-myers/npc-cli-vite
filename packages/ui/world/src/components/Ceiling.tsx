@@ -71,7 +71,7 @@ export default function Ceiling() {
         for (const gmKey of w.seenGmKeys) {
           state.drawGm(gmKey);
           w.texCeil.updateIndex(w.getGmKeyTexId(gmKey));
-          await pause();
+          if (w.settledMapKey !== w.mapKey) await pause(); // an edit draws every geomorph in one frame
         }
         w.setNextPending({ ceiling: false });
       },
