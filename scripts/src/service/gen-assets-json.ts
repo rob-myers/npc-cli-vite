@@ -19,22 +19,24 @@ import { perf } from "./performance";
 import { assetsPaths, readAssetsRaw } from "./read-assets";
 
 /** Each hull's last layout, by gmKey, with a hash of what it was made from and its file's text — see `layoutInputHash` */
-export type LayoutCache = Map<string, { inputHash: number; layout: ReturnType<typeof createLayout>; raw?: string }>;
+type LayoutCache = Map<string, { inputHash: number; layout: ReturnType<typeof createLayout>; raw?: string }>;
 
 /**
  * Writes `assets.json`, `assets-edit.json` and `layout/{gmKey}.json` from `public/symbol` and `public/map`.
- * A `layoutCache` keeps hulls whose inputs are unchanged: only the dev server passes one.
+ * A hull whose inputs are unchanged keeps its layout, whilst this module is loaded — see `layoutCache`.
  */
 export function genAssetsJson({
   changedFiles: inputChangedFiles,
   force = false,
-  layoutCache,
+  fresh = false,
 }: {
   changedFiles?: string[];
   /** Recompute stratification */
   force?: boolean;
-  layoutCache?: LayoutCache;
+  /** Make every layout again, e.g. the WorldMenu's assets button */
+  fresh?: boolean;
 } = {}) {
+  if (fresh) layoutCache.clear();
   const changedFiles = (
     inputChangedFiles ??
     fs.globSync([
@@ -195,3 +197,6 @@ function writeIfChanged(file: string, raw: string) {
 
 /** Decimal places a layout keeps: 0.01 mm */
 const layoutDecimals = 5;
+
+/** Kept whilst this module is: a reload of it, or of anything it imports, starts afresh */
+const layoutCache: LayoutCache = new Map();

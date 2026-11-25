@@ -115,8 +115,10 @@ export function createRoomSlots(): RoomSlots {
     },
 
     upload() {
+      const any = queued.length > 0;
       for (const [gmId, data] of queued) tex.updateIndex(gmId, data);
       queued.length = 0;
+      return any;
     },
 
     roomAt(gmId, local) {
@@ -236,8 +238,8 @@ export type RoomSlots = {
   tex: TexArray;
   /** Draws if the map has changed, at once for `roomAt` and co. The GPU gets it from `upload` */
   ensure(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData, gmsHash: number): void;
-  /** Sends what `ensure` drew to the GPU: with the layers, so no frame shows new rooms over old textures */
-  upload(): void;
+  /** Sends what `ensure` drew to the GPU, with the layers, so no frame shows new rooms over old textures. Whether any */
+  upload(): boolean;
   /**
    * Which roomId covers `localPoint` in the geomorph local coordinates like `gm.rooms` and `wallSegs`,
    * or `null` otherwise. Reads the drawn pixels, so it sees the `roomOutset` below

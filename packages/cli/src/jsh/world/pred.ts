@@ -1,3 +1,4 @@
+import { defaultPlayerKey } from "@npc-cli/ui__world/const.env";
 import { defaultNpcLabelColor } from "@npc-cli/ui__world/const.npc";
 import { renameSharedMap, sharedMapSlot } from "./shared.service";
 import type { SidestepRule } from "./sidestep-debug";
@@ -22,12 +23,12 @@ type Predicates = {
 
 /**
  * `/shared/pred`, kept per map: a map's predicates outlive a visit to another map, whose
- * npcs they would mean nothing to
+ * npcs they would mean nothing to. A first visit starts with the default player picked
  */
 const pred = sharedMapSlot<Predicates>("pred", () => ({
-  everPicked: new Set(),
-  lastPicked: null,
-  picked: new Set(),
+  everPicked: new Set([defaultPlayerKey]),
+  lastPicked: defaultPlayerKey,
+  picked: new Set([defaultPlayerKey]),
   player: null,
   parked: new Map(),
   padded: new Map(),
@@ -58,7 +59,6 @@ pred.setHandler(function onWorldEvent(e, w) {
     case "set-player": {
       const prev = p.player;
       p.player = e.playerKey;
-      pickPlayerIfNone(p);
       visualisePredicates(
         w,
         [prev, e.playerKey].filter((x) => typeof x === "string"),
@@ -68,7 +68,6 @@ pred.setHandler(function onWorldEvent(e, w) {
     case "map-settled": {
       const next = restorePred(w.mapKey);
       next.player = w.player.key; // we ignored "set-player" during map change
-      pickPlayerIfNone(next);
       visualisePredicates(w);
       break;
     }
@@ -182,14 +181,6 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   }
 
   return changed;
-}
-
-/** Picks the player if no one has been picked, so `lastPicked` starts as them */
-function pickPlayerIfNone(p: Predicates) {
-  if (typeof p.player !== "string" || p.lastPicked !== null || p.picked.size > 0) return;
-  p.everPicked.add(p.player);
-  p.lastPicked = p.player;
-  p.picked = new Set([p.player]);
 }
 
 /** Whether `inventory` takes a press on an npc for psi to read. A raised phaser still picks them */

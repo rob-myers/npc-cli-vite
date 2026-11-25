@@ -838,16 +838,12 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
 /** How long the pending keys must stop changing before "map-settled" */
 const settledMs = 500;
 
-/**
- * Applies an edit's room slots and rooms' fade in the same commit as the layers.
- * Else a frame shows the edit half done, e.g. every room hidden.
- */
+/** Applies an edit's room slots and rooms' fade with the layers, so no frame shows it half done */
 function LayoutSync() {
   const w = useContext(WorldContext);
   useEffect(() => {
-    w.view.roomSlots.upload();
-    // a settled map rebuilding is an EDIT: no teardown, so the npcs must be caught up by hand
-    if (w.settledMapKey === w.mapKey) w.e.onEditMap();
+    // queued only by an edit: a new map uploads at once. The npcs are then caught up by hand
+    if (w.view.roomSlots.upload()) w.e.onEditMap();
   }, [w.gmsHash]);
   return null;
 }

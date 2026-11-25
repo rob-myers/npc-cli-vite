@@ -49,6 +49,7 @@ export default function Decor() {
     (): State => ({
       byKey: {},
       buildId: 0,
+      builtMapKey: null,
       byRoom: [],
       grid: {},
       items: {},
@@ -750,6 +751,7 @@ export default function Decor() {
 
       // 3. the layout's decor — see `rebuildStatic`
       state.rebuildStatic();
+      state.builtMapKey = w.mapKey;
 
       // 4. build materials
       const uvDataAttr = attribute<"vec4">("uvData", "vec4");
@@ -866,8 +868,8 @@ export default function Decor() {
   }, [materials]);
 
   useEffect(() => {
-    // an edit of the map on show: with the other layers, its materials kept
-    if (state.ready && w.settledMapKey === w.mapKey) state.rebuildStatic();
+    // a new layout of the map whose decor is built, e.g. an edit: with the other layers, its materials kept
+    if (state.builtMapKey === w.mapKey) state.rebuildStatic();
   }, [w.gmsHash]);
 
   return (
@@ -916,6 +918,8 @@ export type State = {
   byKey: Record<string, Geomorph.Decor>;
   /** Which rebuild is the current one — a superseded run bails rather than claiming `ready` */
   buildId: number;
+  /** The map whose images and materials the query built: a new layout of it rebuilds alone — see `rebuildStatic` */
+  builtMapKey: null | string;
   byRoom: (Geomorph.RoomDecor | undefined)[][];
   grid: Geomorph.DecorGrid;
   /** The map's layout quads with `meta.item`, as defs. `w.e.seedItems` makes each one runtime decor, so it can be taken */
@@ -980,8 +984,9 @@ export type State = {
     },
   ) => Geomorph.Decor[];
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
-  /** Can only remove custom decor */
+  /** Builds the layout's decor, then says it is ready. No images, so an edit runs it alone */
   rebuildStatic(): void;
+  /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
   /** Runtime decor only; `false` when there is none such, or `next` is taken */
   rename(decorKey: string, next: string): boolean;

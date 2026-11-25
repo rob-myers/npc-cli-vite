@@ -8,7 +8,6 @@ import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
-import type { LayoutCache } from "./service/gen-assets-json.ts";
 import { hashOf, skinSheetHash, withHash } from "./skin-sheet-hash.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
@@ -61,10 +60,10 @@ export function watchAssetsPlugin(): Plugin {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let running = false;
       const changed = new Map<string, number>();
-      /** Layouts kept between runs. Empty on each start, and cleared by the assets button or a geomorph code edit */
-      const layoutCache: LayoutCache = new Map();
-      /** Each input file as last run on, so a repeat event is skipped, e.g. the watcher's after a save announced it */
+      /** Each input file as a run last succeeded on, so a repeat event is skipped, e.g. the watcher's after a save's */
       const seen = new Map<string, string>();
+      /** Each input file as sent to a run not yet done: seen once it succeeds, so a failed one can be retried */
+      const sending = new Map<string, string>();
 
       const isAssetInputFile = (filePath: string) =>
         !filePath.endsWith("manifest.json") &&
@@ -81,15 +80,18 @@ export function watchAssetsPlugin(): Plugin {
         const changedFiles = Array.from(changed.keys());
         console.log(`[watch-assets] running gen-assets-json for ${changedFiles.length} file(s)`);
         server.hot.send({ type: "custom", event: assetsJsonChangingEvent });
+        const contents = changedFiles.map((file) => [file, sending.get(file)] as const);
 
         try {
           // generate assets.json in-process, sparing a process's startup
-          await genAssetsJson(server, { changedFiles, layoutCache });
+          await genAssetsJson(server, { changedFiles });
+          for (const [file, content] of contents) if (content !== undefined) seen.set(file, content);
           // inform browser
           server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
         } catch (err) {
           console.error("[watch-assets] gen-assets-json failed:", err);
         }
+        for (const [file, content] of contents) if (sending.get(file) === content) sending.delete(file);
 
         changed.forEach((epochMs, file) => epochMs <= startEpochMs && changed.delete(file));
         running = false;
@@ -114,11 +116,10 @@ export function watchAssetsPlugin(): Plugin {
       const onFileChange = (filePath: string) => {
         if (filePath === ASSETS_JSON_PATH || filePath === THEME_JSON_PATH) return onAssetsJsonChange(filePath);
         if (!isWatchedFile(filePath)) return;
-        if (filePath === GEOMORPH_SERVICE) layoutCache.clear(); // layouts are made by its code
         if (isAssetInputFile(filePath)) {
           const content = readOrNull(filePath);
-          if (content !== null && seen.get(filePath) === content) return;
-          if (content !== null) seen.set(filePath, content);
+          if (content !== null && (seen.get(filePath) === content || sending.get(filePath) === content)) return;
+          if (content !== null) sending.set(filePath, content);
           changed.set(filePath, Date.now());
         }
         if (debounceTimer) clearTimeout(debounceTimer);
@@ -136,7 +137,7 @@ export function watchAssetsPlugin(): Plugin {
           return handleGenSkinSheets(res);
         }
         if (req.url === "/api/gen-assets-json" && req.method === "POST") {
-          return handleGenAssetsJson(server, res, layoutCache);
+          return handleGenAssetsJson(server, res);
         }
         const skinSheetMatch = req.url?.match(/^\/api\/(skin|skin-slices)-sheet\/(\d+)$/);
         if (skinSheetMatch && req.method === "POST") {
@@ -224,10 +225,11 @@ async function handleGenStarshipSheets(res: ServerResponse) {
 }
 
 /** Every symbol and map, every layout made afresh: the WorldMenu's assets button */
-async function handleGenAssetsJson(server: ViteDevServer, res: ServerResponse, layoutCache: LayoutCache) {
+async function handleGenAssetsJson(server: ViteDevServer, res: ServerResponse) {
   try {
-    layoutCache.clear();
-    await genAssetsJson(server, { layoutCache });
+    await genAssetsJson(server, { fresh: true });
+    // every page, not only the one that pressed it: our own write is otherwise never announced
+    server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
     res.writeHead(200).end();
   } catch (err) {
     console.error("[gen-assets-json] failed:", err);
