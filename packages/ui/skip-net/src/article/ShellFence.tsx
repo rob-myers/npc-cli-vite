@@ -33,6 +33,7 @@ export function ShellFence(props: ComponentProps<"pre">) {
         src={code.props.children}
         title={titleRe.exec(meta)?.[1]}
         collapsedByDefault={!expandedRe.test(meta)}
+        flat={flatRe.test(meta)}
       />
     );
   }
@@ -54,15 +55,20 @@ const moreClass = tw(
   "sticky bottom-0 h-6 -mt-6 flex items-end justify-center pointer-events-none bg-linear-to-t from-term-fence opacity-0 transition-opacity group-data-[more=true]/fence:opacity-100",
 );
 
-/** Its commands, in a box resized by its corner, under a title bar collapsing it. Its height and collapse are saved */
+/**
+ * Its commands, in a box resized by its corner, under a title bar collapsing it. Its height and collapse are saved.
+ * A `flat` fence, or one of a single command, has no title bar.
+ */
 function ShellCommands({
   src,
   title,
   collapsedByDefault,
+  flat: flatMeta,
 }: {
   src: string;
   title?: string;
   collapsedByDefault: boolean;
+  flat: boolean;
 }) {
   const { articleKey } = useContext(ArticleContext);
   const state = useContext(SkipNetContext);
@@ -116,7 +122,9 @@ function ShellCommands({
     };
   }, [commands]);
 
-  const [collapsed, setCollapsed] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
+  const flat = flatMeta || commands.length === 1;
+  const [shut, setCollapsed] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
+  const collapsed = !flat && shut;
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
     uiStoreApi.setUiMeta(state.meta.id, (draft) => {
@@ -128,18 +136,20 @@ function ShellCommands({
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
     <div className={frameClass}>
-      <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
-        {collapsed ? (
-          <CaretRightIcon weight="bold" className="size-3" />
-        ) : (
-          <CaretDownIcon weight="bold" className="size-3" />
-        )}
-        <span className="min-w-0 truncate">{title ?? `${commands.length} commands`}</span>
-      </button>
+      {!flat && (
+        <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
+          {collapsed ? (
+            <CaretRightIcon weight="bold" className="size-3" />
+          ) : (
+            <CaretDownIcon weight="bold" className="size-3" />
+          )}
+          <span className="min-w-0 truncate">{title ?? `${commands.length} commands`}</span>
+        </button>
+      )}
       <div
         ref={boxRef}
         data-fence-id={fenceId}
-        className={cn(fenceClass, collapsed && "hidden")}
+        className={cn(fenceClass, flat ? "border-t-0" : collapsed && "hidden")}
         style={savedPx === undefined ? undefined : { height: savedPx }}
       >
         {commands.map(({ example, segments }) => (
@@ -264,6 +274,8 @@ const saveDelayMs = 300;
 const titleRe = /\btitle="([^"]*)"/;
 /** A fence starting expanded, e.g. ```` ```sh expanded ````. Others start collapsed */
 const expandedRe = /(^|\s)expanded(\s|$)/;
+/** A fence with no title bar, e.g. ```` ```sh flat ```` */
+const flatRe = /(^|\s)flat(\s|$)/;
 /** MDX's class for a fence's language, `sh` or the like */
 const shellClasses = new Set(["language-sh", "language-bash"]);
 
