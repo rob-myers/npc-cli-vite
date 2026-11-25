@@ -5,7 +5,7 @@
 
 ```sh
 # pointer moves player
-# @bootable @default
+# @bootable
 pick meta.{floor,do} | move $( playerPath ) --force
 
 # keys move player
@@ -13,10 +13,11 @@ pick meta.{floor,do} | move $( playerPath ) --force
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
 # pointer moves last picked
-# @bootable
+# @bootable @default
 pick meta.{floor,do} | move $( lastPicked ) --force
 
-# pointer moves rob sans 180 turns
+# pointer moves rob
+# close clicks behind rob back him away
 pick meta.{floor,do} | move rob --backstep --force
 
 # keys move rob
