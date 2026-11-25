@@ -12,6 +12,8 @@ export function Tip({ content, children, side = "top" }: { content: ReactNode; c
   return (
     <Tooltip.Root disabled={off}>
       <Tooltip.Trigger
+        // base-ui binds hover to the first element, so a swap to or from the span remounts it
+        key={disabled ? "wrapped" : "bare"}
         delay={tipDelayMs}
         render={disabled ? <span className="inline-flex">{children}</span> : children}
       />

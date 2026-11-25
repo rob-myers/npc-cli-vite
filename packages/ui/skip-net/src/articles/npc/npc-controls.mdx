@@ -1,6 +1,6 @@
 - __Item #:__ npc-controls
 - __Tags:__ ui, actuation
-- __Activation:__ code, keyboard, pointer
+- __Activation:__ code, keys, pointer
 
 
 ```sh
@@ -12,27 +12,27 @@ pick meta.{floor,do} | move $( playerPath ) --force
 # @bootable @default=desktop
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
-# last picked moves
+# pointer moves last picked
 # @bootable
 pick meta.{floor,do} | move $( lastPicked ) --force
 
-# pointer moves named npc
-pick meta.{floor,do} | move npc:rob --backstep --force
+# pointer moves rob sans 180 turns
+pick meta.{floor,do} | move rob --backstep --force
 
-# keys move named npc
-wasd_delta --nav npc:rob | move npc:rob --force
+# keys move rob
+wasd_delta --nav rob | move rob --force
 
-# pointer strafes npc
+# pointer strafes rob
 pick meta.{floor,do} | move rob --strafe --force
 
-# keys strafe npc
-wasd_delta npc:rob | move npc:rob --strafe --force
+# keys strafe rob
+wasd_delta rob | move rob --strafe --force
 
-# long pressed looks
-pick --long | look npc:rob --force
+# rob looks via long pointer
+pick --long | look rob --force
 
-# keys look
-wasd_delta npc:rob | look npc:rob --force
+# rob looks via keys
+wasd_delta rob | look rob --force
 ```
 
 #### Description:
