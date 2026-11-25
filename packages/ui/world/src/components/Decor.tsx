@@ -1,7 +1,7 @@
 import { ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { pause, warn } from "@npc-cli/util/legacy/generic";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 import {
@@ -404,6 +404,125 @@ export default function Decor() {
       queryRect(rect, opts) {
         return queryDecorGridRect(state.grid, rect, opts);
       },
+      /** Builds the layout's decor, then says it is ready: `byKey`, the grid and instances. No images, so an edit runs it alone */
+      rebuildStatic() {
+        // 3. build `state.byKey`, `state.grid`, enrich decor.meta
+        // - for all decor, not only those with an instancedMesh instance
+        // - preserves runtime decor across HMR
+        // - obstacles induce decor rects with `d.meta.gridOutline`
+        state.byKey = { ...state.runtime.byKey };
+        state.items = {};
+        state.clearGridAndRoomLookup();
+        state.addRuntimeDecorAgain();
+
+        const metaPoint = { x: 0, y: 0, meta: {} as Meta };
+
+        for (const [gmId, gm] of w.gms.entries()) {
+          for (const decor of gm.decor) {
+            metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
+            metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
+            metaPoint.meta = decor.meta;
+            const gmRoomId = w.findRoomContaining(metaPoint, true);
+            Object.assign(decor.meta, gmRoomId);
+
+            // rename periods because used as delimiter in CLI
+            decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${`${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_")}`;
+            if (decor.type === "quad" && typeof decor.meta.item === "string") {
+              const { img, y } = decor.meta;
+              state.items[decor.key] = {
+                type: "quad",
+                key: decor.key,
+                img,
+                transform: decor.transform,
+                y3d: y,
+                meta: { ...decor.meta },
+              };
+              continue;
+            }
+            state.byKey[decor.key] = decor;
+            decor.meta.decorKey = decor.key;
+            // add even when gmRoomId null
+            addToDecorGrid(decor, state.grid);
+            state.groupByRoom(decor);
+          }
+
+          // careful with obstacle coordinate systems:
+          // - obstacle.center in geomorph coords (not world yet)
+          // - obstacle.origPoly in geomorph symbol coords (not geomorph yet)
+          for (const [obstacleId, obs] of gm.obstacles.entries()) {
+            // the room is looked up in WORLD coords
+            gm.matrix.transformPoint(tmpVect.copy(obs.center));
+            metaPoint.x = tmpVect.x;
+            metaPoint.y = tmpVect.y;
+            metaPoint.meta = emptyMeta;
+            const gmRoomId = w.findRoomContaining(metaPoint, true);
+
+            Object.assign(obs.meta, gmRoomId); // store in obstacle too
+
+            tmpMat.setMatrixValue(obs.transform).postMultiply(gm.transform);
+            /** Refined outline for decor grid containment testing */
+            const refinedOutline = obs.origPoly.outline.map((p) => tmpMat.transformPoint(p.clone()).precision(2));
+            const bounds = Rect.fromPoints(...refinedOutline).precision(2);
+
+            const d: Geomorph.DecorRect = {
+              type: "rect",
+              key: `g${gmId}r${gmRoomId?.roomId ?? "?"}-${"obstacle"}-${obstacleId}`,
+              meta: {
+                ...(gmRoomId ?? helper.getGmRoomId(gmId, -1)),
+                ...obs.meta,
+                rect: true,
+                refinedOutline,
+                obstacleId,
+                y: obs.height, // aggregated 3D Y
+              },
+              // define decor rect as gridOutline aabb
+              bounds,
+              points: bounds.points.map((p) => p.precision(2)),
+              center: bounds.center.precision(2),
+              angle: 0,
+            };
+
+            state.byKey[d.key] = d;
+            d.meta.decorKey = d.key;
+            // add even when gmRoomId null
+            addToDecorGrid(d, state.grid);
+            state.groupByRoom(d);
+          }
+        }
+
+        // 4. write instances
+        state.static.gdKeyToDecorKeys = {};
+        for (const batch of [state.static, state.staticShapes]) {
+          state.clearBatch(batch);
+          batch.inst.instanceMatrix.array.fill(0);
+        }
+
+        for (const [gmId, gm] of w.gms.entries()) {
+          for (const decor of gm.decor) {
+            if (decor.key in state.items || !state.hasInstance(decor) || !state.pushInstance(decor, false)) {
+              continue;
+            }
+            if (decor.type === "quad" && typeof decor.meta.doorId === "number") {
+              // e.g. a switch, tinted by whether its door is locked
+              const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
+              (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
+              const locked = w.door.byKey[gdKey]?.locked === true;
+              state.tintDecor(locked ? doorConfig.tint.locked : doorConfig.tint.unlocked, decor.key);
+            }
+          }
+        }
+
+        for (const batch of [state.static, state.staticShapes]) {
+          state.flush(batch);
+          batch.inst.computeBoundingSphere();
+        }
+
+        state.ready = true;
+        state.sendToRaycast();
+        if (w.physics.physicsRebuilds > 0) state.syncStaticColliders(); // else its setup's reply does
+        w.door?.syncLockTints();
+        w.events.next({ key: "decor-ready" });
+      },
       remove(...decorKeys) {
         const runtime = state.runtime;
         if (!runtime.inst) return;
@@ -588,16 +707,14 @@ export default function Decor() {
   w.decor = state;
 
   const { data: materials } = useQuery({
-    // 🔔 force recompute decor mutations on run world query
+    // a map's own, or new sheets. An edit rebuilds alone — see `rebuildStatic` below
     queryKey: [
       "decor-setup",
       // the queryFn draws into THIS world's `texDecor` — two worlds on one map must not share
       w.key,
       w.mapKey,
-      w.gmsHash,
       w.texDecor.hash,
       state.lastHmr,
-      w.lastQuery,
       w.view.playerLight.uid,
       w.view.fadeRoomsFx.uid,
     ],
@@ -614,6 +731,8 @@ export default function Decor() {
 
       // 1. load sheet images ⏳
       const images = await w.loadDecorImages();
+      // a run a map change overtook must not claim readiness: its map is gone
+      if (buildId !== state.buildId) return null;
 
       // 2. draw sheets into texture array
       const { ct } = w.texDecor;
@@ -629,122 +748,10 @@ export default function Decor() {
         w.texDecor.updateIndex(sheetId);
       }
 
-      // 3. build `state.byKey`, `state.grid`, enrich decor.meta
-      // - for all decor, not only those with an instancedMesh instance
-      // - preserves runtime decor across HMR
-      // - obstacles induce decor rects with `d.meta.gridOutline`
-      state.byKey = { ...state.runtime.byKey };
-      state.items = {};
-      state.clearGridAndRoomLookup();
-      state.addRuntimeDecorAgain();
+      // 3. the layout's decor — see `rebuildStatic`
+      state.rebuildStatic();
 
-      const metaPoint = { x: 0, y: 0, meta: {} as Meta };
-
-      for (const [gmId, gm] of w.gms.entries()) {
-        for (const decor of gm.decor) {
-          metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
-          metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
-          metaPoint.meta = decor.meta;
-          const gmRoomId = w.findRoomContaining(metaPoint, true);
-          Object.assign(decor.meta, gmRoomId);
-
-          // rename periods because used as delimiter in CLI
-          decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${`${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_")}`;
-          if (decor.type === "quad" && typeof decor.meta.item === "string") {
-            const { img, y } = decor.meta;
-            state.items[decor.key] = {
-              type: "quad",
-              key: decor.key,
-              img,
-              transform: decor.transform,
-              y3d: y,
-              meta: { ...decor.meta },
-            };
-            continue;
-          }
-          state.byKey[decor.key] = decor;
-          decor.meta.decorKey = decor.key;
-          // add even when gmRoomId null
-          addToDecorGrid(decor, state.grid);
-          state.groupByRoom(decor);
-        }
-
-        // careful with obstacle coordinate systems:
-        // - obstacle.center in geomorph coords (not world yet)
-        // - obstacle.origPoly in geomorph symbol coords (not geomorph yet)
-        for (const [obstacleId, obs] of gm.obstacles.entries()) {
-          // the room is looked up in WORLD coords
-          gm.matrix.transformPoint(tmpVect.copy(obs.center));
-          metaPoint.x = tmpVect.x;
-          metaPoint.y = tmpVect.y;
-          metaPoint.meta = emptyMeta;
-          const gmRoomId = w.findRoomContaining(metaPoint, true);
-
-          Object.assign(obs.meta, gmRoomId); // store in obstacle too
-
-          tmpMat.setMatrixValue(obs.transform).postMultiply(gm.transform);
-          /** Refined outline for decor grid containment testing */
-          const refinedOutline = obs.origPoly.outline.map((p) => tmpMat.transformPoint(p.clone()).precision(2));
-          const bounds = Rect.fromPoints(...refinedOutline).precision(2);
-
-          const d: Geomorph.DecorRect = {
-            type: "rect",
-            key: `g${gmId}r${gmRoomId?.roomId ?? "?"}-${"obstacle"}-${obstacleId}`,
-            meta: {
-              ...(gmRoomId ?? helper.getGmRoomId(gmId, -1)),
-              ...obs.meta,
-              rect: true,
-              refinedOutline,
-              obstacleId,
-              y: obs.height, // aggregated 3D Y
-            },
-            // define decor rect as gridOutline aabb
-            bounds,
-            points: bounds.points.map((p) => p.precision(2)),
-            center: bounds.center.precision(2),
-            angle: 0,
-          };
-
-          state.byKey[d.key] = d;
-          d.meta.decorKey = d.key;
-          // add even when gmRoomId null
-          addToDecorGrid(d, state.grid);
-          state.groupByRoom(d);
-        }
-      }
-
-      await pause(); // a yield, so the work stays in short tasks
-
-      // 4. write instances
-      state.static.gdKeyToDecorKeys = {};
-      for (const batch of [state.static, state.staticShapes]) {
-        state.clearBatch(batch);
-        batch.inst.instanceMatrix.array.fill(0);
-      }
-
-      for (const [gmId, gm] of w.gms.entries()) {
-        for (const decor of gm.decor) {
-          if (decor.key in state.items || !state.hasInstance(decor) || !state.pushInstance(decor, false)) {
-            continue;
-          }
-          if (decor.type === "quad" && typeof decor.meta.doorId === "number") {
-            // e.g. a switch, tinted by whether its door is locked
-            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
-            (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
-            const locked = w.door.byKey[gdKey]?.locked === true;
-            state.tintDecor(locked ? doorConfig.tint.locked : doorConfig.tint.unlocked, decor.key);
-          }
-        }
-      }
-
-      for (const batch of [state.static, state.staticShapes]) {
-        state.flush(batch);
-        batch.inst.computeBoundingSphere();
-      }
-
-      await pause();
-
-      // 5. build materials
+      // 4. build materials
       const uvDataAttr = attribute<"vec4">("uvData", "vec4");
       // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
       const flippedUv = vec2(uv().x, uv().y.oneMinus());
@@ -831,15 +838,6 @@ export default function Decor() {
         return material;
       };
 
-      // a run the map change overtook must not claim readiness: its `byKey` predates the new map,
-      // and every dependant redraws off `ready` alone
-      if (buildId !== state.buildId) return null;
-
-      state.ready = true;
-      state.sendToRaycast();
-      if (w.physics.physicsRebuilds > 0) state.syncStaticColliders(); // else its setup's reply does
-      w.door?.syncLockTints();
-      w.events.next({ key: "decor-ready" });
       w.setNextPending({ decor: false });
 
       return {
@@ -849,8 +847,10 @@ export default function Decor() {
         runtimeShapes: createShapeMaterial(OBJECT_PICK_KEY_TO_RED.runtimeDecorShape),
       };
     },
-    enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
-    staleTime: 0,
+    // once the assets are in, not after the navmesh it never reads: so an edit's decor changes with the other layers
+    enabled: !!w.hash && !!w.sheets && !w.pending.assets && w.gms.length > 0,
+    // its key says when to run again: else being enabled after each edit's `assets` refetches it
+    staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
   });
 
@@ -864,6 +864,11 @@ export default function Decor() {
   useEffect(() => {
     state.setupRuntimeInstances();
   }, [materials]);
+
+  useEffect(() => {
+    // an edit of the map on show: with the other layers, its materials kept
+    if (state.ready && w.settledMapKey === w.mapKey) state.rebuildStatic();
+  }, [w.gmsHash]);
 
   return (
     <>
@@ -976,6 +981,7 @@ export type State = {
   ) => Geomorph.Decor[];
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
+  rebuildStatic(): void;
   remove(...decorKeys: string[]): void;
   /** Runtime decor only; `false` when there is none such, or `next` is taken */
   rename(decorKey: string, next: string): boolean;

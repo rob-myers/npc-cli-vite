@@ -718,6 +718,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // w.view.forceUpdate();
       },
       onEditMap() {
+        // their rooms predate the edit, which may renumber them: physics reports who stands in a doorway again
+        state.insideDoorways.clear();
         state.recomputeNpcRoomRelationships();
         state.syncLitRooms();
         // synced now, as the room slots just redrawn may renumber rooms

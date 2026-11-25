@@ -89,7 +89,7 @@ export default function Floor() {
         for (const [texId, gmKey] of w.seenGmKeys.entries()) {
           state.drawGm(gmKey);
           w.texFloor.updateIndex(texId);
-          await pause();
+          if (w.settledMapKey !== w.mapKey) await pause(); // an edit draws every geomorph in one frame
         }
 
         w.setNextPending({ floor: false });
@@ -384,13 +384,9 @@ export default function Floor() {
     // same tick as transforms above, else they disagree
     state.onNewMap();
 
-    // render initially or once decor has gmRoomIds
-    if (!w.decor.ready && w.isReady()) {
-      return;
-    }
-
+    // at once on an edit, so no stale floor shows. Again with the new navmesh, which it draws
     state.drawAll();
-  }, [w.hash, w.themeKey, w.nav, w.gmsData, w.decor.ready]);
+  }, [w.hash, w.themeKey, w.nav, w.gmsData]);
 
   return (
     <instancedMesh

@@ -510,8 +510,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         return null; // ignore 1st stale invoke after HMR
       }
 
-      // decor not ready until Decor query runs
-      state.decor.ready = false;
+      // a new map's decor is not ready until the Decor query runs. An edit's is rebuilt with the layers
+      if (state.settledMapKey !== state.mapKey) state.decor.ready = false;
 
       state.setNextPending({ assets: true });
       const [index, theme] = await Promise.all([
@@ -564,14 +564,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gmsHash = hashJson(state.gms);
 
       state.view.roomSlots.ensure(state.gms, state.gmsData, state.gmsHash);
+      // a new map's goes to the GPU at once. An edit's waits for its layers — see `LayoutSync`
+      if (state.settledMapKey !== state.mapKey) state.view.roomSlots.upload();
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
       state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph, state.gmsData);
-
-      // a settled map rebuilding is an EDIT: no teardown, so the npcs must be caught up by hand
-      if (state.settledMapKey === state.mapKey) {
-        state.e.onEditMap();
-      }
 
       state.setNextPending({ assets: false });
       return null;
@@ -610,6 +607,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <WorldView>
             <ambientLight intensity={ambientLightIntensity} color="#fff" />
 
+            <LayoutSync key="layout-sync" />
             <Floor key="floor" />
 
             {/* folded */}
@@ -709,7 +707,7 @@ export type State = {
   /** Last time the world query succeeded */
   lastQuery: number;
   /**
-   * Ideally `assets` -> `nav` -> `decor` -> `null`.
+   * Ideally `assets`, then `nav` and `decor` side by side, then `null`.
    * However, nav/decor could be triggered by HMR.
    */
   pending: Partial<Record<PendingKey, true>>;
@@ -839,6 +837,20 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
 
 /** How long the pending keys must stop changing before "map-settled" */
 const settledMs = 500;
+
+/**
+ * Applies an edit's room slots and rooms' fade in the same commit as the layers.
+ * Else a frame shows the edit half done, e.g. every room hidden.
+ */
+function LayoutSync() {
+  const w = useContext(WorldContext);
+  useEffect(() => {
+    w.view.roomSlots.upload();
+    // a settled map rebuilding is an EDIT: no teardown, so the npcs must be caught up by hand
+    if (w.settledMapKey === w.mapKey) w.e.onEditMap();
+  }, [w.gmsHash]);
+  return null;
+}
 
 /**
  * Flat, but not so flat that everything lands on the floor plane: at a few thousandths the

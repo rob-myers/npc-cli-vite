@@ -58,6 +58,8 @@ export function createRoomSlots(): RoomSlots {
   const drawn: (undefined | { red: Uint8Array; broad: Uint8Array; bounds: Geom.RectJson })[] = [];
   /** What was last drawn, so repeated calls within one map cost nothing */
   let drawnHash = Number.NaN;
+  /** Layers drawn by `ensure` and not yet sent to the GPU, by gmId */
+  const queued: [number, Uint8Array][] = [];
 
   return {
     tex,
@@ -66,6 +68,7 @@ export function createRoomSlots(): RoomSlots {
       if (gmsHash === drawnHash) return;
       drawnHash = gmsHash;
       drawn.length = 0;
+      queued.length = 0;
 
       const opts = { willReadFrequently: true, width: slotTextureDimension, height: slotTextureDimension } as const;
       const ct = getContext2d("room-slots", opts);
@@ -106,9 +109,14 @@ export function createRoomSlots(): RoomSlots {
           data[i * 4 + 3] = 255;
         }
 
-        tex.updateIndex(gmId, data);
+        queued.push([gmId, data]);
         drawn[gmId] = { red, broad, bounds: gm.bounds };
       }
+    },
+
+    upload() {
+      for (const [gmId, data] of queued) tex.updateIndex(gmId, data);
+      queued.length = 0;
     },
 
     roomAt(gmId, local) {
@@ -226,8 +234,10 @@ const roomOutset = 0.05;
 export type RoomSlots = {
   /** One layer per `gmId`: red carries `roomId + 1`, green a broad wall's `id + 1` */
   tex: TexArray;
-  /** Draws and uploads if the map has changed. */
+  /** Draws if the map has changed, at once for `roomAt` and co. The GPU gets it from `upload` */
   ensure(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData, gmsHash: number): void;
+  /** Sends what `ensure` drew to the GPU: with the layers, so no frame shows new rooms over old textures */
+  upload(): void;
   /**
    * Which roomId covers `localPoint` in the geomorph local coordinates like `gm.rooms` and `wallSegs`,
    * or `null` otherwise. Reads the drawn pixels, so it sees the `roomOutset` below
