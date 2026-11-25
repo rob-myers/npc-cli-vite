@@ -15,7 +15,7 @@ pickGrKey () {
 }
 
 playerKey () {
-  w player.key
+  call '({ w }) => w.player.key ?? null'
 }
 
 playerPath () {
