@@ -2,7 +2,6 @@ import { lazy } from "react";
 import type { ArticleComponents } from "../articles";
 import { ActivationProcedures, Description, FileSection, TapeTitle } from "./FileSection";
 import { Item } from "./Item";
-import { ItemHeader } from "./ItemHeader";
 import { ShellFence } from "./ShellFence";
 import { SideNote } from "./SideNote";
 
@@ -12,7 +11,6 @@ export const articleComponents = {
   Description,
   FileSection,
   Item,
-  ItemHeader,
   pre: ShellFence,
   SideNote,
   TapeTitle,
