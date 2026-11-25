@@ -125,9 +125,13 @@ function getSession(sessionKey: string): undefined | Session {
   return sessionApi.getSession(sessionKey);
 }
 
-/** Does an unkilled process lead `src`, as given rather than as the shell re-prints it? Paused counts */
+/**
+ * Does an unkilled process lead `src`, as given rather than as the shell re-prints it? Paused counts.
+ * The shell, pid `0`, keeps the last line typed, so counts only until its prompt is back.
+ */
 export function isRunning(session: Session, src: string) {
-  return liveProcesses(session).some((p) => p.key === p.pgid && p.origSrc === src);
+  const busy = !session.ttyShell.isInteractive();
+  return liveProcesses(session).some((p) => p.key === p.pgid && p.origSrc === src && (p.key !== 0 || busy));
 }
 
 /** Polls `test` until it holds, else gives up after `giveUpMs` */
