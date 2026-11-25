@@ -44,9 +44,9 @@ function jitterOf(text: string) {
 }
 
 const headingClass = tw("not-prose flex items-center gap-3 mb-2");
-/** A plain strip, light grey in a light theme, near black in a dark one */
+/** A plain strip, light grey in a light theme, near black in a dark one. It hangs left by its padding, so its letters align with the text below */
 const tapeClass = tw(
-  "shrink-0 px-3 py-0.5 bg-[#dedede] text-blue-800 dark:bg-[#151515] dark:text-blue-300 font-mono text-[13px] tracking-[0.4em]",
+  "shrink-0 -ml-3 px-3 py-0.5 bg-[#dedede] text-blue-800 dark:bg-[#151515] dark:text-blue-300 font-sans text-[13px] tracking-[0.18em]",
 );
 const ruleClass = tw("h-px min-w-6 flex-1 bg-[color-mix(in_srgb,var(--color-mac-text)_35%,var(--color-mac-window))]");
 const bodyClass = tw("*:first:mt-0 *:last:mb-0");
