@@ -868,9 +868,9 @@ export default function Decor() {
   }, [materials]);
 
   useEffect(() => {
-    // a new layout of the map whose decor is built, e.g. an edit: with the other layers, its materials kept
+    // fresh `w.gms` of the built map, e.g. an edit or a World refetch, need their decor keyed and roomed again
     if (state.builtMapKey === w.mapKey) state.rebuildStatic();
-  }, [w.gmsHash]);
+  }, [w.gms]);
 
   return (
     <>
