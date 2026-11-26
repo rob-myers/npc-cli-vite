@@ -9,6 +9,7 @@ import {
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
+import { tokenCss, tokenizeShell } from "@npc-cli/cli/shell/sh-tokens";
 import { cn, ExhaustiveError, Tip, tw, useStateRef } from "@npc-cli/util";
 import { error, throttle } from "@npc-cli/util/legacy/generic";
 import {
@@ -24,7 +25,7 @@ import {
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 /**
  * Visual reinterpretation of shell CLI `jobs`, for one tty's session.
@@ -362,8 +363,10 @@ export function Jobs(props: Props) {
                         <Tip
                           content={
                             // hoverable, so its copy can be pressed
-                            <span className="flex items-start gap-2">
-                              <code className={tipCodeCss}>{p.src}</code>
+                            <span className={tipBodyCss}>
+                              <code className={tipCodeCss}>
+                                <Highlighted src={p.src} />
+                              </code>
                               <CopyButton
                                 copied={state.copiedSrc === p.src}
                                 className={tipCopyCss}
@@ -478,6 +481,16 @@ function JobTags(props: {
 }
 
 /** Each tag bar `always`, with its distinct values over the job: `pick | move` is `WORLD_PAUSABLE` both ways */
+/** `src` coloured by its shell tokens, as SkipNet's fences colour it */
+function Highlighted({ src }: { src: string }) {
+  const tokens = useMemo(() => tokenizeShell(src), [src]);
+  return tokens.map(({ start, end, kind }) => (
+    <span key={start} className={tokenCss[kind]}>
+      {src.slice(start, end)}
+    </span>
+  ));
+}
+
 /** A copy button, a tick once copied */
 function CopyButton(props: { copied: boolean; className: string; onClick(): void }) {
   return (
@@ -625,9 +638,11 @@ function processMetaToProcessLeader({ key: pid, src, origSrc, status, ptags }: P
   };
 }
 
-/** A job's command in its tooltip, as inline code */
+/** A job's command tooltip, at most so wide. Dark whatever the page, as the tooltip is */
+const tipBodyCss = tw("theme-dark flex max-w-[min(22rem,80vw)] items-start gap-2");
+/** A job's command in its tooltip, as highlighted inline code */
 const tipCodeCss = tw(
-  "min-w-0 whitespace-pre-wrap break-all rounded-sm bg-neutral-900 px-1 py-0.5 font-mono text-[11px] text-neutral-100",
+  "min-w-0 whitespace-pre-wrap wrap-break-word rounded-sm bg-neutral-900 p-1.5 font-mono text-[13px] leading-snug text-sh-text",
 );
 /** The copy button in a job's command tooltip */
 const tipCopyCss = tw(
