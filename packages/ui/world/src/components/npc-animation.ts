@@ -607,7 +607,7 @@ export class NpcAnimation {
 
   /** Lain, look towards `at` as a phaser aims: rolled to the pose that reaches it, the head lifting to it, and held there */
   lookLain(at: Geom.VectJson) {
-    if (this.posture !== "lie") return;
+    if (this.posture !== "lie" || this.dead === true) return; // a corpse never rolls to look
     const pose = this.lieAimPoseFor(at);
     if (pose !== null && this.isRolling() === false) this.rollOnto(pose); // a roll cut short by the next jerks them
     this.lieLook.on = true;
@@ -1631,6 +1631,7 @@ export class NpcAnimation {
 
   /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
   turnTo(at: null | number | Geom.VectJson) {
+    if (this.dead === true) return; // a corpse's head stays put
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
     this.turn.want = off;
     const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
