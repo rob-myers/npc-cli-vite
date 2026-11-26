@@ -9,7 +9,7 @@ import {
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
-import { cn, ExhaustiveError, Tip, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Tip, tw, useStateRef } from "@npc-cli/util";
 import { error, throttle } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
@@ -359,7 +359,19 @@ export function Jobs(props: Props) {
 
                       {/* `data-more` whilst the source scrolls on below, which the fade shows */}
                       <div className="group relative grow basis-40 min-w-0 flex">
-                        <Tip content={p.src}>
+                        <Tip
+                          content={
+                            // hoverable, so its copy can be pressed
+                            <span className="flex items-start gap-2">
+                              <code className={tipCodeCss}>{p.src}</code>
+                              <CopyButton
+                                copied={state.copiedSrc === p.src}
+                                className={tipCopyCss}
+                                onClick={() => state.copySrc(p.src)}
+                              />
+                            </span>
+                          }
+                        >
                           <div
                             data-uid={p.uid}
                             onClick={state.toggleExpanded}
@@ -425,16 +437,11 @@ function JobTags(props: {
         <Popover.Positioner className="z-50" side="bottom" align="start" sideOffset={4}>
           <Popover.Popup className={cn(popupCss, "max-w-64 flex flex-wrap gap-1 p-2")}>
             <Tip content="copy">
-              <div
+              <CopyButton
+                copied={props.copied}
                 className={cn(ptagCss, "flex items-center cursor-pointer hover:bg-term-hover-strong text-term-muted")}
                 onClick={() => props.onCopy(src)}
-              >
-                {props.copied ? (
-                  <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
-                ) : (
-                  <CopyIcon alt="copy" className="size-3.5" />
-                )}
-              </div>
+              />
             </Tip>
             <div
               className={cn(
@@ -471,6 +478,20 @@ function JobTags(props: {
 }
 
 /** Each tag bar `always`, with its distinct values over the job: `pick | move` is `WORLD_PAUSABLE` both ways */
+/** A copy button, a tick once copied */
+function CopyButton(props: { copied: boolean; className: string; onClick(): void }) {
+  return (
+    <button
+      type="button"
+      aria-label={props.copied ? "copied" : "copy"}
+      className={props.className}
+      onClick={props.onClick}
+    >
+      {props.copied ? <CheckIcon className="size-3.5 text-term-ok" /> : <CopyIcon className="size-3.5" />}
+    </button>
+  );
+}
+
 function getJobPtags(session: undefined | Session, pgid: number) {
   const ptags: Record<string, Set<string>> = {};
   for (const p of Object.values(session?.process ?? {})) {
@@ -603,3 +624,12 @@ function processMetaToProcessLeader({ key: pid, src, origSrc, status, ptags }: P
     startedAt: Date.now(),
   };
 }
+
+/** A job's command in its tooltip, as inline code */
+const tipCodeCss = tw(
+  "min-w-0 whitespace-pre-wrap break-all rounded-sm bg-neutral-900 px-1 py-0.5 font-mono text-[11px] text-neutral-100",
+);
+/** The copy button in a job's command tooltip */
+const tipCopyCss = tw(
+  "shrink-0 grid size-5 place-items-center rounded-sm text-neutral-400 cursor-pointer hover:text-neutral-100 hover:bg-neutral-700",
+);
