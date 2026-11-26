@@ -14,7 +14,16 @@ import {
   LightningIcon,
   PlayIcon,
 } from "@phosphor-icons/react";
-import { type ComponentProps, isValidElement, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  isValidElement,
+  type PointerEvent as ReactPointerEvent,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { SkipNetContext } from "../context";
 import type { SkipNetUiMeta } from "../schema";
 import { ArticleContext } from "./context";
@@ -41,18 +50,24 @@ export function ShellFence(props: ComponentProps<"pre">) {
 }
 
 /** Its title bar over its commands */
-const frameClass = tw("not-prose my-3 rounded border border-term-border-subtle bg-term-fence overflow-hidden");
+const frameClass = tw("relative not-prose my-3 rounded border border-term-border-subtle bg-term-fence overflow-hidden");
+/** Its foot, which a drag resizes it by, as a desktop window's edge */
+const edgeClass = tw("absolute inset-x-0 bottom-0 z-1 h-1.5 cursor-ns-resize");
 /** Its title bar, which collapses it */
 const titleBarClass = tw(
   "flex w-full items-center gap-1.5 px-2 py-1 text-left font-mono text-xs text-term-muted cursor-pointer transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
 );
-/** Capped until its corner is dragged, which sets an inline height. A container, so a narrow one stacks its rows */
+/** Capped until its corner is dragged, which sets an inline height */
 const fenceClass = tw(
-  "@container group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
+  "group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
+);
+/** The caret at its foot whilst more is below, which a drag resizes it by too */
+const caretClass = tw(
+  "size-3 text-term-faint hover:text-term-muted group-data-[more=true]/fence:pointer-events-auto group-data-[more=true]/fence:cursor-ns-resize",
 );
 /** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
 const moreClass = tw(
-  "sticky bottom-0 h-6 -mt-6 flex items-end justify-center pointer-events-none bg-linear-to-t from-term-fence opacity-0 transition-opacity group-data-[more=true]/fence:opacity-100",
+  "sticky bottom-0 h-4 -mt-4 flex items-end justify-center pointer-events-none bg-linear-to-t from-term-fence/60 opacity-0 transition-opacity group-data-[more=true]/fence:opacity-100",
 );
 
 /**
@@ -86,8 +101,13 @@ function ShellCommands({
     const el = boxRef.current;
     if (el === null) return;
     let timeoutId = 0;
-    // only a drag of its corner sets its height inline
-    const observer = new ResizeObserver(() => {
+    /** Whether more is below, shown by a fade at its foot */
+    const syncMore = () => {
+      el.dataset.more = String(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+    };
+    /** Saves its height, set inline by a drag of its corner, foot or caret */
+    const onResize = () => {
+      syncMore();
       const px = Math.round(Number.parseFloat(el.style.height));
       if (Number.isNaN(px) || px === state.meta.fenceHeights?.[fenceId]) return;
       window.clearTimeout(timeoutId);
@@ -97,36 +117,24 @@ function ShellCommands({
           meta.fenceHeights = { ...meta.fenceHeights, [fenceId]: px };
         });
       }, saveDelayMs);
-    });
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      window.clearTimeout(timeoutId);
-    };
-  }, [fenceId]);
-
-  useEffect(() => {
-    const el = boxRef.current;
-    if (el === null) return;
-    const sync = () => {
-      el.dataset.more = String(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
     };
     /** Its commands too, as one expanding changes what is below without resizing the box */
-    const observer = new ResizeObserver(sync);
+    const observer = new ResizeObserver(onResize);
     observer.observe(el);
     for (const child of el.children) observer.observe(child);
-    el.addEventListener("scroll", sync, { passive: true });
+    el.addEventListener("scroll", syncMore, { passive: true });
     return () => {
       observer.disconnect();
-      el.removeEventListener("scroll", sync);
+      el.removeEventListener("scroll", syncMore);
+      window.clearTimeout(timeoutId);
     };
   }, [commands]);
 
   const flat = flatMeta || commands.length === 1;
-  const [shut, setCollapsed] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
+  const [shut, setShut] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
   const collapsed = !flat && shut;
   const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
+    setShut(!collapsed);
     uiStoreApi.setUiMeta(state.meta.id, (draft) => {
       const meta = draft as SkipNetUiMeta;
       meta.fenceCollapsed = { ...meta.fenceCollapsed, [fenceId]: !collapsed };
@@ -135,7 +143,8 @@ function ShellCommands({
 
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
-    <div className={frameClass}>
+    <div className={frameClass} onPointerDown={(e) => boxRef.current && resizeFrom(e, boxRef.current)}>
+      {!collapsed && <span data-resize className={edgeClass} />}
       {!flat && (
         <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
           {collapsed ? (
@@ -156,7 +165,7 @@ function ShellCommands({
           <ShellCommand key={example.id} example={example} segments={segments} />
         ))}
         <div className={moreClass}>
-          <CaretDownIcon weight="bold" className="size-3.5 text-term-muted" />
+          <CaretDownIcon data-resize weight="bold" className={caretClass} />
         </div>
       </div>
     </div>
@@ -189,14 +198,13 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
         example.blankBefore > 0 && "mt-0.5",
         // run, comment, then copy and expand. Expanded, its command goes under the comment
         "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
-        narrowRowCss,
       )}
     >
       <Tip content={sessionKey === null ? "no tty to run in" : "run"}>
         <button
           type="button"
           disabled={sessionKey === null}
-          className={cn(runButtonCss, "@max-xs:order-3")}
+          className={runButtonCss}
           onClick={() => run(example.id, src)}
         >
           <PlayIcon weight="fill" className={runIconCss} />
@@ -204,15 +212,22 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
       </Tip>
       {commented ? (
         <code
-          className={cn(codeCss, tokenCss.comment, narrowTextCss, "min-w-0 cursor-pointer translate-y-px")} // its glyphs sit high
+          // one line, truncated, until expanded. Its glyphs sit high
+          className={cn(
+            codeCss,
+            tokenCss.comment,
+            "min-w-0 cursor-pointer translate-y-px",
+            !expanded && "truncate whitespace-nowrap",
+          )}
+          title={expanded ? undefined : example.commentLines.join("\n")}
           onClick={toggle}
         >
           {example.commentLines.join("\n")}
         </code>
       ) : (
-        <div className={cn(narrowTextCss, "min-w-0")}>{command}</div>
+        <div className="min-w-0">{command}</div>
       )}
-      <span className="flex items-center gap-0.5 @max-xs:order-4 @max-xs:justify-self-end">
+      <span className="flex items-center gap-0.5">
         {example.bootable && <AutorunToggle example={example} />}
         <Tip content="copy">
           <button type="button" className={iconButtonCss} onClick={() => copy(src)}>
@@ -231,9 +246,7 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
           </Tip>
         )}
       </span>
-      {commented && expanded && (
-        <div className="col-start-2 col-span-2 mt-0.5 @max-xs:order-2 @max-xs:col-start-1">{command}</div>
-      )}
+      {commented && expanded && <div className="col-start-2 col-span-2 mt-0.5">{command}</div>}
     </div>
   );
 }
@@ -264,10 +277,22 @@ function AutorunToggle({ example }: { example: Example }) {
 }
 
 const touchDevice = isTouchDevice();
-/** A row in a narrow fence: its text across the top, then run on the left and the rest on the right */
-const narrowRowCss = tw("@max-xs:grid-cols-[auto_1fr] @max-xs:gap-y-1");
-/** Its comment, or uncommented command, across a narrow row */
-const narrowTextCss = tw("@max-xs:order-1 @max-xs:col-span-2");
+/** Resizes `box` by a drag from an element marked `data-resize`. Its height is set inline, as its corner sets it, so it saves the same way */
+function resizeFrom(e: ReactPointerEvent, box: HTMLElement) {
+  if ((e.target as Element).closest("[data-resize]") === null) return;
+  e.preventDefault(); // else it selects text
+  const [y0, h0] = [e.clientY, box.offsetHeight];
+  const onMove = (e: PointerEvent) => void (box.style.height = `${Math.max(minFencePx, h0 + e.clientY - y0)}px`);
+  const onUp = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+  };
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+
+/** The least a drag resizes it to, as its `min-h-10` */
+const minFencePx = 40;
 /** How long after a resize its height is saved */
 const saveDelayMs = 300;
 /** A fence's title in its meta, e.g. ```` ```sh title="Move rob" ```` */
