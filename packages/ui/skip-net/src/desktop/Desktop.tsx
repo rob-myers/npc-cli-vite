@@ -2,7 +2,7 @@ import { cn, Tip, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { CaretLeftIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useMemo } from "react";
-import { GridLayout } from "react-grid-layout";
+import { GridLayout, type GridLayoutProps, setTransform } from "react-grid-layout";
 import { SkipNetContext } from "../context";
 import { deskStyle } from "./classes";
 import { DesktopIcons } from "./DesktopIcons";
@@ -35,6 +35,8 @@ export function Desktop() {
   const geometry = windows.map((x) => `${x.id}:${x.x},${x.y},${x.w},${x.h},${x.shadedH !== undefined}`).join(" ");
   const layout = useMemo(() => toLayout(windows), [geometry]);
   const front = frontOf(windows);
+  const zoom = state.meta.zoom ?? 1;
+  const positionStrategy = useMemo(() => zoomedStrategy(zoom), [zoom]);
   const desk = useStateRef(
     (): DeskState => ({
       animate: false,
@@ -139,6 +141,7 @@ export function Desktop() {
         dragConfig={showAll ? offConfig : dragConfig}
         resizeConfig={showAll ? offConfig : resizeConfig}
         compactor={freeCompactor}
+        positionStrategy={positionStrategy}
         layout={layout}
         onDragStop={(layout) => state.saveLayout(layout)}
         onResizeStop={(layout) => state.saveLayout(layout)}
@@ -257,6 +260,14 @@ const showAllMs = 300;
 const resizeConfig = { handles: ["n", "e", "s", "w", "ne", "nw", "se", "sw"] as const };
 
 const touchDevice = isTouchDevice();
+
+/**
+ * The grid's position strategy, scaled by the tab's CSS zoom. Without it, a press shifts the window.
+ * RGL's own `createScaledStrategy` ignores the grid's offset in the page.
+ */
+function zoomedStrategy(scale: number): NonNullable<GridLayoutProps["positionStrategy"]> {
+  return { type: "transform", scale, calcStyle: setTransform };
+}
 
 /** Its look is in `desktop.css` */
 const gridClass = tw("skip-net-grid min-h-full");
