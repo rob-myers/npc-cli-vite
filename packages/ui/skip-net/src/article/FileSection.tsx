@@ -1,10 +1,13 @@
 import { tw } from "@npc-cli/util";
 import type { ReactNode } from "react";
 
-/** A section of an item's file under a heading, as an SCP's, e.g. `<FileSection title="addendum">…</FileSection>` */
-export function FileSection({ title, children }: { title: string; children?: ReactNode }) {
+/**
+ * A section of an item's file under a heading, as an SCP's, e.g. `<FileSection title="addendum">…</FileSection>`.
+ * An `id` lets a link reach it, e.g. `[see](#addendum)`.
+ */
+export function FileSection({ id, title, children }: { id?: string; title: string; children?: ReactNode }) {
   return (
-    <section className="my-4">
+    <section id={id} className="my-4 scroll-mt-2">
       <div className={headingClass}>
         <TapeTitle title={title} />
         <span aria-hidden className={ruleClass} />
@@ -16,12 +19,20 @@ export function FileSection({ title, children }: { title: string; children?: Rea
 
 /** How an item is activated, where an SCP's file says how it is contained, e.g. its code fences */
 export function ActivationProcedures({ children }: { children?: ReactNode }) {
-  return <FileSection title="special activation procedures">{children}</FileSection>;
+  return (
+    <FileSection id="activationprocedures" title="special activation procedures">
+      {children}
+    </FileSection>
+  );
 }
 
 /** What an item is */
 export function Description({ children }: { children?: ReactNode }) {
-  return <FileSection title="description">{children}</FileSection>;
+  return (
+    <FileSection id="description" title="description">
+      {children}
+    </FileSection>
+  );
 }
 
 /** Its title on a strip of tape, a little crooked */
