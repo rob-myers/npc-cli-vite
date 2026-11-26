@@ -67,13 +67,17 @@ const boltButtonClass = tw(
 const titleBarClass = tw(
   "flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1 text-left font-mono text-xs text-term-muted cursor-pointer transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
 );
-/** Capped until its corner is dragged, which sets an inline height */
+/** Capped until its corner is dragged, which sets an inline height, itself capped by its commands' (`--content-h`) */
 const fenceClass = tw(
-  "group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
+  "group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 [&[style*=height]]:max-h-(--content-h) resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
 );
-/** The caret at its foot whilst more is below, on a chip of its own so it shows over text. A drag of it resizes too */
+/** The caret at its foot whilst more is below, on a chip so it shows over text. A click scrolls on, a drag resizes */
 const caretClass = tw(
   "box-content size-3 px-1.5 mb-0.5 rounded-full border border-term-border-subtle bg-term-fence text-term-muted hover:text-term-foreground group-data-[more=true]/fence:pointer-events-auto group-data-[more=true]/fence:cursor-ns-resize",
+);
+/** Its closing comment, its `#` dropped, under its commands */
+const footerClass = tw(
+  "mx-3 mt-1 mb-0.5 border-t border-dashed border-term-border-subtle pt-1.5 font-mono text-xs leading-snug whitespace-pre-wrap text-sh-keyword/80",
 );
 /** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
 const moreClass = tw(
@@ -147,7 +151,8 @@ function ShellCommands({
     /** Saves its height, set inline by a drag of its corner, foot or caret */
     const onResize = () => {
       syncMore();
-      if (clampHeight(el)) return; // its clamped height resizes it again
+      // a set height goes no taller than its commands, however it is resized
+      if (el.offsetParent !== null) el.style.setProperty("--content-h", `${contentHeightOf(el)}px`);
       const px = Math.round(Number.parseFloat(el.style.height));
       if (Number.isNaN(px) || px === state.meta.fenceHeights?.[fenceId]) return;
       window.clearTimeout(timeoutId);
@@ -170,6 +175,8 @@ function ShellCommands({
     };
   }, [commands]);
 
+  /** Its closing comment, after its last command, if any */
+  const footer = useMemo(() => trailingCommentOf(src), [src]);
   const flat = flatMeta || commands.length === 1;
   /** Flat, its substitutions are edited from its one command's buttons, else its top-right */
   const editInline = flat && rules.length > 0 && commands.length === 1;
@@ -234,8 +241,13 @@ function ShellCommands({
             edit={editInline && <SubsPopover inline rules={rules} values={subs} onChange={changeSub} />}
           />
         ))}
+        {footer !== null && (
+          <p className={footerClass}>
+            <Subbed text={footer} subs={subs} />
+          </p>
+        )}
         <div className={moreClass}>
-          <CaretDownIcon data-resize weight="bold" className={caretClass} />
+          <CaretDownIcon data-resize="more" weight="bold" className={caretClass} />
         </div>
       </div>
     </div>
@@ -365,14 +377,19 @@ function AutorunToggle({ original: example, subs }: { original: Example; subs: R
 const touchDevice = isTouchDevice();
 /** Resizes `box` by a drag from an element marked `data-resize`. Its height is set inline, as its corner sets it, so it saves the same way */
 function resizeFrom(e: ReactPointerEvent, box: HTMLElement) {
-  if ((e.target as Element).closest("[data-resize]") === null) return;
+  const handle = (e.target as Element).closest<HTMLElement>("[data-resize]");
+  if (handle === null) return;
   e.preventDefault(); // else it selects text
   const [y0, h0, max] = [e.clientY, box.offsetHeight, contentHeightOf(box)];
   const onMove = (e: PointerEvent) =>
     void (box.style.height = `${Math.max(minFencePx, Math.min(max, h0 + e.clientY - y0))}px`);
-  const onUp = () => {
+  const onUp = (e: PointerEvent) => {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
+    // a press of its caret that barely moved is a click, scrolling it on
+    if (handle.dataset.resize === "more" && Math.abs(e.clientY - y0) < clickSlopPx) {
+      box.scrollBy({ top: box.clientHeight * scrollShare, behavior: "smooth" });
+    }
   };
   window.addEventListener("pointermove", onMove);
   window.addEventListener("pointerup", onUp);
@@ -388,15 +405,18 @@ function contentHeightOf(box: HTMLElement) {
   return Math.ceil(bottom + Number.parseFloat(paddingBottom) + Number.parseFloat(borderBottomWidth));
 }
 
-/** Shrinks a height set inline, by its corner or a drag, to its content's. Did it? Not whilst hidden */
-function clampHeight(box: HTMLElement) {
-  if (box.style.height === "" || box.offsetParent === null) return false;
-  const max = Math.max(minFencePx, contentHeightOf(box));
-  if (box.offsetHeight <= max + 1) return false;
-  box.style.height = `${max}px`;
-  return true;
+/** Its `#` lines after its last command, without their `#`, else `null` */
+function trailingCommentOf(src: string) {
+  const lines = src.trimEnd().split("\n");
+  const at = lines.findLastIndex((x) => x.trim() !== "" && !x.startsWith("#"));
+  const tail = lines.slice(at + 1).filter((x) => x.trim() !== "" && !/^#\s*@bootable\b/.test(x));
+  return tail.length === 0 ? null : tail.map((x) => x.replace(/^#\s?/, "")).join("\n");
 }
 
+/** How far a press may move and still be a click */
+const clickSlopPx = 4;
+/** How much of its height a click of its caret scrolls */
+const scrollShare = 2 / 3;
 /** The least a drag resizes it to, as its `min-h-10` */
 const minFencePx = 40;
 /** How long after a resize its height is saved */

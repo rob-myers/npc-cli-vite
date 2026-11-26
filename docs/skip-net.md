@@ -80,10 +80,10 @@ An `sh` fence in an article (or one with no language) is a `ShellFence` (`articl
 | `flat` | No title bar, never collapsed. So is a fence of a single command. |
 | `rob=npc` | `rob` may be replaced by any npc's key. See Names, below. |
 
-- **Commands.** It is split into commands (`splitExamples`) and highlighted (`toSegments`). Each row is its comment, a run button on its left, and copy and expand on its right. Its comment, of one or more lines, wraps on its row. Expanded, its command shows beneath. One without a comment shows its command instead. Run runs it in the window's session: see [Running commands](#running-commands).
+- **Commands.** It is split into commands (`splitExamples`) and highlighted (`toSegments`). Each row is its comment, a run button on its left, and copy and expand on its right. Its comment, of one or more lines, wraps on its row. Expanded, its command shows beneath. Comment lines after its last command show beneath its commands, without their `#`. One without a comment shows its command instead. Run runs it in the window's session: see [Running commands](#running-commands).
 - **Id.** A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), its commands' `{fence id}/{index}`. Both stay put whilst its names are replaced.
 - **Collapsing.** A click on its title bar collapses it, saved by fence id in `meta.fenceCollapsed`.
-- **Size.** It is at most 10rem tall, scrolling within, until a drag of its foot, its corner or the caret at its foot (whilst more is below) sets its height, never taller than its commands. That is saved by fence id in `meta.fenceHeights`. A subtle fade shows more below.
+- **Size.** It is at most 10rem tall, scrolling within, until a drag of its foot, its corner or the caret at its foot (whilst more is below) sets its height, never taller than its commands. A click of that caret scrolls it on. That is saved by fence id in `meta.fenceHeights`. A subtle fade shows more below.
 - **Autorun.** A command marked `# @bootable` has a bolt, toggling it in its World's prelude. `# @bootable @default` is on unless toggled off: see `docs/autorun.md`.
 - **Names.** `literal=kind` in its meta marks a literal its comments and commands may have replaced, e.g. ```` ```sh rob=npc kate=npc g0d1=door ````.
   - A kind is a key of `fenceKinds` (`article/fence-rules.ts`), each a pattern a value must match, e.g. `npc` is `npcSpawnConfig.keyPattern`. An unknown kind is ignored.
