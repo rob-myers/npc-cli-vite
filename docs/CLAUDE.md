@@ -17,6 +17,7 @@
   - No stream of consciousness: no clauses strung together on commas, dashes and colons, no "X, so Y — unless Z: W".
   - A second idea is a second short sentence, or left out.
 - **"The plan doc" is the plan review view** in the VS Code extension, opened by `ExitPlanMode` on the plan file (entering plan mode first if need be). It is never `code <file>` or a Claude Doc.
+- **Commit messages are terse.** A short subject, then a few bullets of a few words each, e.g. `- Folding the front window ends it.` No clauses, no explaining how.
 - **Clipboard markdown is plain ASCII** (e.g. a PR body via `pbcopy`). No typographic dashes, arrows, `±`, `°`, `§`, no emoji such as 🤖. Check with `grep -P '[^\x00-\x7F]'` first.
 
 ## Project structure

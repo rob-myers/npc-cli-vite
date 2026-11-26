@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, tw, useStateRef } from "@npc-cli/util";
-import { useContext, useEffect, useLayoutEffect } from "react";
+import { useContext, useEffect } from "react";
 import { SkipNetContext, type State } from "./context";
 import { Desktop } from "./desktop/Desktop";
 import { Stack } from "./desktop/Stack";
@@ -61,6 +61,14 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
           })),
         );
       },
+      /** Escape ends distraction-free, and a backtick over SkipNet toggles Show All, unless typing */
+      onKeyDown(e) {
+        if (e.key === "Escape" && state.hovered && state.distractionFree) return state.toggleDistractionFree(false);
+        if (e.key !== "`" || !state.hovered || state.narrow || state.meta.windows.length === 0) return;
+        if ((e.target as HTMLElement).closest("input, textarea, [contenteditable]") !== null) return;
+        e.preventDefault();
+        state.toggleShowAll();
+      },
       open(content, { fresh = false, below, centre = false } = {}) {
         const { windows } = state.meta;
         const shown = windows.find(
@@ -95,12 +103,31 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
           }),
         );
       },
+      /** Its root's ref: narrow by its width, measured before the first paint, and its keys */
+      setupRoot(el) {
+        state.rootEl = el;
+        if (el === null) return;
+        const sync = (width: number) => {
+          const narrow = width < stackPx;
+          if (narrow !== state.narrow) state.set({ narrow });
+        };
+        sync(el.clientWidth);
+        const observer = new ResizeObserver(([entry]) => sync(entry.contentRect.width));
+        observer.observe(el);
+        window.addEventListener("keydown", state.onKeyDown);
+        return () => {
+          observer.disconnect();
+          window.removeEventListener("keydown", state.onKeyDown);
+        };
+      },
       setWindow(id, patch) {
         state.setWindows(state.meta.windows.map((x) => (x.id === id ? { ...x, ...patch } : x)));
       },
       setWindows(windows) {
         uiStoreApi.setUiMeta(state.meta.id, (draft) => void ((draft as SkipNetUiMeta).windows = windows));
         if (windows.length === 0) state.toggleShowAll(false); // nothing left to show
+        // distraction-free, nothing is left to show once the front window is folded
+        if (frontOf(windows)?.shadedH !== undefined) state.toggleDistractionFree(false);
       },
       toggleDistractionFree(on = !state.distractionFree) {
         if (on !== state.distractionFree) state.set({ distractionFree: on });
@@ -117,19 +144,6 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
   state.meta = meta; // its handlers run long after this render
   state.items = useSkipNetItems(meta.worldKey);
 
-  /** Measured before the first paint too, so a narrow panel never shows the desktop first */
-  useLayoutEffect(() => {
-    if (state.rootEl === null) return;
-    const sync = (width: number) => {
-      const narrow = width < stackPx;
-      if (narrow !== state.narrow) state.set({ narrow });
-    };
-    sync(state.rootEl.clientWidth);
-    const observer = new ResizeObserver(([entry]) => sync(entry.contentRect.width));
-    observer.observe(state.rootEl);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     if (meta.opening === undefined) return;
     const { distractionFree, ...content } = meta.opening;
@@ -138,23 +152,10 @@ export default function SkipNet({ meta }: { meta: SkipNetUiMeta }) {
     uiStoreApi.setUiMeta(meta.id, (draft) => void delete (draft as SkipNetUiMeta).opening);
   }, [meta.opening]);
 
-  useEffect(() => {
-    /** A backtick over SkipNet toggles Show All, unless typing */
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && state.hovered && state.distractionFree) return state.toggleDistractionFree(false);
-      if (e.key !== "`" || !state.hovered || state.narrow || state.meta.windows.length === 0) return;
-      if ((e.target as HTMLElement).closest("input, textarea, [contenteditable]") !== null) return;
-      e.preventDefault();
-      state.toggleShowAll();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   return (
     <SkipNetContext.Provider value={state}>
       <div
-        ref={(el) => void (state.rootEl = el)}
+        ref={state.setupRoot}
         onPointerEnter={() => void (state.hovered = true)}
         onPointerLeave={() => void (state.hovered = false)}
         className={cn(
