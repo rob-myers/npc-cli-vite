@@ -367,7 +367,12 @@ function AutorunToggle({ original: example, subs }: { original: Example; subs: R
   return (
     <Tip content={tip}>
       <button type="button" aria-pressed={on} className={cn(autorunButtonCss, on && autorunOnCss)} onClick={toggle}>
-        {on && <LightningIcon weight="fill" className={cn(runIconCss, "col-start-1 row-start-1 text-yellow-300")} />}
+        {on && (
+          <LightningIcon
+            weight="fill"
+            className={cn(runIconCss, "col-start-1 row-start-1 text-yellow-300 dark:text-yellow-400")}
+          />
+        )}
         <LightningIcon className={cn(runIconCss, "col-start-1 row-start-1")} />
       </button>
     </Tip>
@@ -456,5 +461,7 @@ const autorunButtonCss = cn(
   sideButtonCss,
   "mr-1.5 hover:text-term-accent hover:border-term-accent/50 hover:bg-term-accent/10",
 );
-/** Its bolt outlined in the foreground over a yellow fill */
-const autorunOnCss = tw("text-term-foreground hover:text-term-foreground");
+/** Its bolt outlined in the foreground over a yellow fill. In dark, a darker yellow, else the light outline pales it */
+const autorunOnCss = tw(
+  "text-term-foreground hover:text-term-foreground dark:text-yellow-600 dark:hover:text-yellow-600",
+);
