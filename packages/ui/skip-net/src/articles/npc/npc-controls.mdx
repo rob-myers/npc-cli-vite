@@ -43,16 +43,16 @@ wasd_delta rob | look rob --force
 
 <Description>
 
-Let us agree there is a single player or none at all.
+Let us agree there is a exactly one player or none at all.
 
 ```sh
 # output the player key or null
 playerKey
 ```
 
-By _controls_ we mean a process directly converting user input to player actions or the action of a single npc.
+By _controls_ we mean a process which _directly_<SideNote>The action must commence within 300ms of the input, assuming an unpaused World with unital time scale.</SideNote> converts user input to player actions or the action of a single NPC.
 
-```sh title="listen for user input"
+```sh title="user input demo"
 # click mouse or tap touch screen
 call '({ api }) => document.addEventListener("click", api.writeInfo, { once: true })'
 
@@ -65,7 +65,8 @@ call '({ api }) => document.addEventListener("keyup", api.writeInfo, { once: tru
 # other examples include right click, long press and pinch zoom.
 ```
 
-> Checkout the [activation procedures](#activationprocedures).
-> Commands with a <BoltIcon on /> autorun in the World.
+Important examples of user input listeners are directly above; they'll produce output in the connected terminal.
+As for controls, the reader is invited to inspect the [activation procedures](#activationprocedures).
+Commands with a <BoltIcon on /> autorun in the World.
 
 </Description>
