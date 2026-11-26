@@ -2,7 +2,7 @@ import { ansi, type ProcessMeta, type Session, sessionApi, toProcessStatus } fro
 import { worldPtag } from "@npc-cli/cli/jsh/world/ptag";
 import { uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { error, pause, warn } from "@npc-cli/util/legacy/generic";
-import { type PreludeEntry, preludeApi } from "./store";
+import { type PreludeEntry, preludeApi, substitute } from "./store";
 import { findTty, findTtys, worldTtyOf } from "./ttys";
 
 export { worldTtyOf };
@@ -28,8 +28,11 @@ export async function runPrelude(worldKey: string): Promise<void> {
     Array.from(bySession, async ([sessionKey, group]) => {
       if (sessionKey === undefined) return warn(`prelude: ${worldKey} has no tty: skipped ${group.length}`);
       const ran: string[] = [];
+      const { subs } = preludeApi.get(worldKey);
       for (const entry of group) {
-        if (await runEntry(sessionKey, entry.src).catch(error)) ran.push(labelOf(entry));
+        const own = subs?.[entry.id];
+        const subbed = { ...entry, src: substitute(entry.src, own), comment: substitute(entry.comment, own) };
+        if (await runEntry(sessionKey, subbed.src).catch(error)) ran.push(labelOf(subbed));
       }
       if (ran.length > 0) {
         sessionApi.writeMsg(sessionKey, `autorun ${ansi.White}${ran.join(", ")}`, "info");

@@ -61,15 +61,38 @@ Each file is shown in a frame of its own. Its sections share its key, so one win
 - Each is a chunk of its own, loaded when first shown (`getArticle` in `articles.ts`). Folders follow `folderOrder`, and articles in each `articleOrder`. A stale `articleKey` gives way to the first (`articleKeyOf`).
 - `@mdx-js/rollup` in `packages/app/vite.config.ts` compiles them with no highlighter, so their fences stay raw.
 - `articleComponents` are in scope in each:
-  - `pre` is `ShellFence`. An `sh` fence (or one with no language) is split into commands (`splitExamples` in `article/shell.ts`) and highlighted (`shell-highlight.ts`). Each shows only its comment, a larger run button on its left, copy and expand buttons on its right. Expand, or a click on the comment, shows its command beneath. One without a comment shows its command instead. Run runs it in the window's session (`useSessionRunner`). A fence is at most 10rem tall until resized by its bottom-right corner, scrolling within, and its height is saved by fence id in `meta.fenceHeights`. Its foot fades, with a down caret, whilst more is below.
-  - A fence has a title bar, and a click on it collapses the fence. Its title is the fence's meta, e.g. ```` ```sh title="Move rob" ````, else its count of commands. It starts collapsed, unless its meta says `expanded`. One of a single command, or whose meta says `flat`, has no title bar and never collapses. A toggle is saved by fence id in `meta.fenceCollapsed`. `rehypeFenceMeta` (`vite-plugin-skip-net-articles.ts`) passes the meta on as `metastring`.
-  - A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), for amendments to attach to later.
+  - `pre` is `ShellFence`: see [Code fences](#code-fences).
   - `<Item itemKey="sidestep" />` shows a World item in place (`npc-sidestep`).
   - `<Video id="…" />` is a YouTube video loaded on click (`article/Video.tsx`, lazy, so its library loads only with it), e.g. `video/demo`.
   - `<SideNote>…</SideNote>` is an info icon in the text, showing the note on hover or press (a base-ui Popover with `openOnHover`, since a Tooltip ignores presses).
   - `<ActivationProcedures>…</ActivationProcedures>` and `<Description>…</Description>` are sections under a label-maker tape heading (`<TapeTitle title="…" />`). `<FileSection title="…">` is one with any title (`article/FileSection.tsx`). Inside each, a blank line follows the opening tag and precedes the closing one, so MDX reads fences.
   - `mdx.d.ts` types these tags in the editor, as the global `MDXProvidedComponents` the MDX extension reads.
 - Adding or renaming a file reloads the page. An edit swaps it in place, with no spinner: `react()` in `vite.config.ts` includes `.mdx`, and `vite-plugin-skip-net-articles` reloads its virtual modules only when their content changes.
+
+## Code fences
+
+An `sh` fence in an article (or one with no language) is a `ShellFence` (`article/ShellFence.tsx`). Its meta, after the language, sets how it shows. `rehypeFenceMeta` (`vite-plugin-skip-net-articles.ts`) passes it on as `metastring`.
+
+| Meta | Does |
+| --- | --- |
+| `title="…"` | Its title bar's text. Else its count of commands. |
+| `expanded` | Starts open. Else it starts collapsed. |
+| `flat` | No title bar, never collapsed. So is a fence of a single command. |
+| `rob=npc` | `rob` may be replaced by any npc's key. See Names, below. |
+
+- **Commands.** It is split into commands (`splitExamples`) and highlighted (`toSegments`). Each row is its comment, a run button on its left, and copy and expand on its right. Its comment stays on its row, truncated, until expanded, when its command shows beneath. One without a comment shows its command instead. Run runs it in the window's session: see [Running commands](#running-commands).
+- **Id.** A fence's id is `{articleKey}#{hash of its source}` (`data-fence-id`), its commands' `{fence id}/{index}`. Both stay put whilst its names are replaced.
+- **Collapsing.** A click on its title bar collapses it, saved by fence id in `meta.fenceCollapsed`.
+- **Size.** It is at most 10rem tall, scrolling within, until a drag of its foot, its corner or the caret at its foot (whilst more is below) sets its height, never taller than its commands. That is saved by fence id in `meta.fenceHeights`. A subtle fade shows more below.
+- **Autorun.** A command marked `# @bootable` has a bolt, toggling it in its World's prelude. `# @bootable @default` is on unless toggled off: see `docs/autorun.md`.
+- **Names.** `literal=kind` in its meta marks a literal its comments and commands may have replaced, e.g. ```` ```sh rob=npc kate=npc g0d1=door ````.
+  - A kind is a key of `fenceKinds` (`article/fence-rules.ts`), each a pattern a value must match, e.g. `npc` is `npcSpawnConfig.keyPattern`. An unknown kind is ignored.
+  - Only whole words are replaced, a word being letters, digits, `_` and `-`, so `rob` but not `rob-2`. All are replaced in one pass, so two names may swap (`substitute` in `jsh-prelude/store.ts`).
+  - A collapsible fence shows an input at its title bar's right, with a reset beside it. A flat one shows an edit button, opening the same in a popover beside it: after copy if it has one command, else over its top-right edge. It has no resize grip. With many rules, a picker chooses which input shows (`article/FenceSubs.tsx`).
+  - An invalid value is marked so, and the last valid one stays in use.
+  - Its title, comments, commands, runs and copies use the replaced names. In its title and comments they are coloured as shell keywords (`<Subbed>`). Its values are saved by fence id in `meta.fenceSubs`.
+  - Autorun keeps the original command, and its prelude the replacements of those it runs, by command id (`subs`). The bolt passes them on as it turns one on, and a change saves them, once typing pauses. They are applied as it runs.
+  - The article picker marks an article with names changed by a blue dot on its icon, as it turns the icon of one which autoruns yellow (`Window.tsx`).
 
 ## Chat
 

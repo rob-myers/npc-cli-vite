@@ -59,6 +59,8 @@ export const SkipNetUiMetaSchema = z.object({
   fenceHeights: z.record(z.string(), z.number()).optional(),
   /** Each code fence's collapsed state by its id, once toggled */
   fenceCollapsed: z.record(z.string(), z.boolean()).optional(),
+  /** Each code fence's replacements by its id, e.g. `{ rob: "sue" }` for ```` ```sh rob=npc ```` */
+  fenceSubs: z.record(z.string(), z.record(z.string(), z.string())).optional(),
 });
 
 export type SkipNetUiMeta = z.infer<typeof SkipNetUiMetaSchema>;

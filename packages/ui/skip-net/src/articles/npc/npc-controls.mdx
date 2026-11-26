@@ -5,7 +5,7 @@
 # @bootable
 pick meta.{floor,do} | move $( playerPath ) --force
 
-# keys w/a/s/d move player
+# keys wasd move player
 # @bootable @default=desktop
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
@@ -13,13 +13,14 @@ wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 # @bootable @default
 pick meta.{floor,do} | move $( lastPicked ) --force
 
-# keys w/a/s/d move last picked
+# keys wasd move last picked
 # @bootable
 wasd_delta --nav $( lastPicked ) --force | move $( lastPicked ) --force
 ```
 
-```sh title="control rob"
+```sh title="control rob" rob=npc
 # rob moved by pointer
+# @bootable
 pick meta.{floor,do} | move rob --force
 
 # rob strafed by pointer
@@ -28,13 +29,13 @@ pick meta.{floor,do} | move rob --strafe --force
 # rob looks via long pointer
 pick --long | look rob --force
 
-# rob moved by w/a/s/d keys
+# rob moved by wasd keys
 wasd_delta --nav rob | move rob --force
 
-# rob strafed by w/a/s/d keys
+# rob strafed by wasd keys
 wasd_delta rob | move rob --strafe --force
 
-# rob looks via w/a/s/d keys
+# rob looks via wasd keys
 wasd_delta rob | look rob --force
 ```
 

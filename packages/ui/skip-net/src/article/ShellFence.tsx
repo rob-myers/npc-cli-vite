@@ -1,7 +1,7 @@
 import { type Example, fenceIdOf, type SrcSegment, splitExamples, toSegments } from "@npc-cli/cli";
 import { tokenCss } from "@npc-cli/cli/shell/sh-tokens";
 import { worldTtyOf } from "@npc-cli/ui__jsh-prelude/run";
-import { preludeApi, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
+import { preludeApi, substitute, usePrelude } from "@npc-cli/ui__jsh-prelude/store";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Tip, tw } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
@@ -17,6 +17,7 @@ import {
 import {
   type ComponentProps,
   isValidElement,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
   useContext,
   useEffect,
@@ -27,6 +28,8 @@ import {
 import { SkipNetContext } from "../context";
 import type { SkipNetUiMeta } from "../schema";
 import { ArticleContext } from "./context";
+import { Subbed, SubsEditor, SubsPopover } from "./FenceSubs";
+import { type FenceRule, rulesOf } from "./fence-rules";
 
 /** An article's `pre`: a shell fence's commands run on a click, any other fence is shown as is */
 export function ShellFence(props: ComponentProps<"pre">) {
@@ -43,6 +46,7 @@ export function ShellFence(props: ComponentProps<"pre">) {
         title={titleRe.exec(meta)?.[1]}
         collapsedByDefault={!expandedRe.test(meta)}
         flat={flatRe.test(meta)}
+        rules={rulesOf(meta)}
       />
     );
   }
@@ -53,17 +57,23 @@ export function ShellFence(props: ComponentProps<"pre">) {
 const frameClass = tw("relative not-prose my-3 rounded border border-term-border-subtle bg-term-fence overflow-hidden");
 /** Its foot, which a drag resizes it by, as a desktop window's edge */
 const edgeClass = tw("absolute inset-x-0 bottom-0 z-1 h-1.5 cursor-ns-resize");
-/** Its title bar, which collapses it */
+/** Its title bar: its collapse, then any replacements */
+const titleRowClass = tw("flex items-center gap-2 pr-2");
+/** A bolt whilst collapsed with a command which autoruns, opening it there */
+const boltButtonClass = tw(
+  "grid size-5 shrink-0 place-items-center rounded-sm cursor-pointer hover:bg-term-hover-strong",
+);
+/** Its title, which collapses it */
 const titleBarClass = tw(
-  "flex w-full items-center gap-1.5 px-2 py-1 text-left font-mono text-xs text-term-muted cursor-pointer transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
+  "flex min-w-0 flex-1 items-center gap-1.5 px-2 py-1 text-left font-mono text-xs text-term-muted cursor-pointer transition-colors hover:text-term-foreground hover:bg-term-hover-strong",
 );
 /** Capped until its corner is dragged, which sets an inline height */
 const fenceClass = tw(
   "group/fence py-1 min-h-10 [&:not([style*=height])]:max-h-40 resize-y overflow-y-auto scrollbar-thin border-t border-term-border-subtle",
 );
-/** The caret at its foot whilst more is below, which a drag resizes it by too */
+/** The caret at its foot whilst more is below, on a chip of its own so it shows over text. A drag of it resizes too */
 const caretClass = tw(
-  "size-3 text-term-faint hover:text-term-muted group-data-[more=true]/fence:pointer-events-auto group-data-[more=true]/fence:cursor-ns-resize",
+  "box-content size-3 px-1.5 mb-0.5 rounded-full border border-term-border-subtle bg-term-fence text-term-muted hover:text-term-foreground group-data-[more=true]/fence:pointer-events-auto group-data-[more=true]/fence:cursor-ns-resize",
 );
 /** A fade and caret at its foot whilst more is below, as a hidden scrollbar hides that it scrolls */
 const moreClass = tw(
@@ -79,11 +89,14 @@ function ShellCommands({
   title,
   collapsedByDefault,
   flat: flatMeta,
+  rules,
 }: {
   src: string;
   title?: string;
   collapsedByDefault: boolean;
   flat: boolean;
+  /** Literals in it which may be replaced, e.g. from ```` ```sh rob=npc ```` */
+  rules: FenceRule[];
 }) {
   const { articleKey } = useContext(ArticleContext);
   const state = useContext(SkipNetContext);
@@ -91,11 +104,37 @@ function ShellCommands({
   const boxRef = useRef<HTMLDivElement>(null);
   /** By its original, so an amendment can attach to it */
   const fenceId = fenceIdOf(articleKey, src);
-  /** Highlighted once, rather than per render */
-  const commands = useMemo(
-    () => splitExamples(fenceId, src.split("\n")).map((example) => ({ example, segments: toSegments(example) })),
-    [fenceId, src],
-  );
+  /** Its replacements, e.g. `{ rob: "sue" }`, which its comments, commands, runs and copies use */
+  const [subs, setSubs] = useState(() => state.meta.fenceSubs?.[fenceId] ?? {});
+  /** Highlighted once per replacement, rather than per render. Autorun keeps the `original` */
+  const commands = useMemo(() => {
+    const originals = splitExamples(fenceId, src.split("\n"));
+    return splitExamples(fenceId, substitute(src, subs).split("\n")).map((example, i) => ({
+      example,
+      original: originals[i],
+      segments: toSegments(example),
+    }));
+  }, [fenceId, src, subs]);
+  const saveSubsId = useRef(0);
+  /** Shown at once, saved once typing pauses: for its commands which autorun too */
+  const changeSub = (literal: string, value: string) => {
+    const { [literal]: _, ...rest } = subs;
+    const next = value === literal ? rest : { ...rest, [literal]: value };
+    setSubs(next);
+    window.clearTimeout(saveSubsId.current);
+    saveSubsId.current = window.setTimeout(() => {
+      uiStoreApi.setUiMeta(state.meta.id, (draft) => {
+        const meta = draft as SkipNetUiMeta;
+        const { [fenceId]: _, ...rest } = meta.fenceSubs ?? {};
+        meta.fenceSubs = Object.keys(next).length === 0 ? rest : { ...rest, [fenceId]: next }; // none, forgotten
+      });
+      const { worldKey } = state.meta;
+      const autoruns = new Set(preludeApi.entries(worldKey).map((x) => x.id));
+      for (const { original } of commands) {
+        autoruns.has(original.id) && preludeApi.setSubs(worldKey, original.id, next);
+      }
+    }, saveDelayMs);
+  };
 
   useEffect(() => {
     const el = boxRef.current;
@@ -108,6 +147,7 @@ function ShellCommands({
     /** Saves its height, set inline by a drag of its corner, foot or caret */
     const onResize = () => {
       syncMore();
+      if (clampHeight(el)) return; // its clamped height resizes it again
       const px = Math.round(Number.parseFloat(el.style.height));
       if (Number.isNaN(px) || px === state.meta.fenceHeights?.[fenceId]) return;
       window.clearTimeout(timeoutId);
@@ -131,8 +171,14 @@ function ShellCommands({
   }, [commands]);
 
   const flat = flatMeta || commands.length === 1;
+  /** Flat, its substitutions are edited from its one command's buttons, else its top-right */
+  const editInline = flat && rules.length > 0 && commands.length === 1;
+  const editAtCorner = flat && rules.length > 0 && commands.length > 1;
   const [shut, setShut] = useState(() => state.meta.fenceCollapsed?.[fenceId] ?? collapsedByDefault);
   const collapsed = !flat && shut;
+  const { entries } = usePrelude(state.meta.worldKey);
+  /** One of its commands autoruns, shown by a bolt whilst collapsed, which opens it */
+  const autoruns = commands.some(({ original }) => entries.some((x) => x.id === original.id));
   const toggleCollapsed = () => {
     setShut(!collapsed);
     uiStoreApi.setUiMeta(state.meta.id, (draft) => {
@@ -143,26 +189,50 @@ function ShellCommands({
 
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
-    <div className={frameClass} onPointerDown={(e) => boxRef.current && resizeFrom(e, boxRef.current)}>
+    <div
+      // flat with substitutions and many commands, its edit button pokes over its top edge
+      className={cn(frameClass, editAtCorner && "mt-5 overflow-visible")}
+      onPointerDown={(e) => boxRef.current && resizeFrom(e, boxRef.current)}
+    >
       {!collapsed && <span data-resize className={edgeClass} />}
+      {editAtCorner && <SubsPopover rules={rules} values={subs} onChange={changeSub} />}
       {!flat && (
-        <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
-          {collapsed ? (
-            <CaretRightIcon weight="bold" className="size-3" />
-          ) : (
-            <CaretDownIcon weight="bold" className="size-3" />
+        <div className={titleRowClass}>
+          <button type="button" aria-expanded={!collapsed} className={titleBarClass} onClick={toggleCollapsed}>
+            {collapsed ? (
+              <CaretRightIcon weight="bold" className="size-3" />
+            ) : (
+              <CaretDownIcon weight="bold" className="size-3" />
+            )}
+            <span className="min-w-0 truncate">
+              {title === undefined ? `${commands.length} commands` : <Subbed text={title} subs={subs} />}
+            </span>
+          </button>
+          {collapsed && autoruns && (
+            <Tip content="something autoruns">
+              <button type="button" aria-label="autoruns" className={boltButtonClass} onClick={toggleCollapsed}>
+                <LightningIcon weight="fill" className="size-3 text-yellow-400" />
+              </button>
+            </Tip>
           )}
-          <span className="min-w-0 truncate">{title ?? `${commands.length} commands`}</span>
-        </button>
+          {rules.length > 0 && <SubsEditor rules={rules} values={subs} onChange={changeSub} />}
+        </div>
       )}
       <div
         ref={boxRef}
         data-fence-id={fenceId}
-        className={cn(fenceClass, flat ? "border-t-0" : collapsed && "hidden")}
+        className={cn(fenceClass, flat ? "border-t-0 resize-none" : collapsed && "hidden")}
         style={savedPx === undefined ? undefined : { height: savedPx }}
       >
-        {commands.map(({ example, segments }) => (
-          <ShellCommand key={example.id} example={example} segments={segments} />
+        {commands.map(({ example, original, segments }) => (
+          <ShellCommand
+            key={example.id}
+            example={example}
+            original={original}
+            segments={segments}
+            subs={subs}
+            edit={editInline && <SubsPopover inline rules={rules} values={subs} onChange={changeSub} />}
+          />
         ))}
         <div className={moreClass}>
           <CaretDownIcon data-resize weight="bold" className={caretClass} />
@@ -172,8 +242,25 @@ function ShellCommands({
   );
 }
 
-/** Its comment, a run button on its left, copy and expand on its right. Expanded, its command shows beneath */
-function ShellCommand({ example, segments }: { example: Example; segments: SrcSegment[] }) {
+/**
+ * Its comment, a run button on its left, copy and expand on its right. Expanded, its command shows beneath.
+ * `example` has its fence's replacements, its `original` none.
+ */
+function ShellCommand({
+  example,
+  original,
+  segments,
+  subs,
+  edit,
+}: {
+  example: Example;
+  original: Example;
+  segments: SrcSegment[];
+  /** Its fence's replacements, coloured in its comment */
+  subs: Record<string, string>;
+  /** An edit button after copy, if its fence's only command */
+  edit?: ReactNode;
+}) {
   const { copiedSrc, copy, ranId, run, sessionKey } = useContext(ArticleContext);
   const [expanded, setExpanded] = useState(false);
   const toggle = () => setExpanded(!expanded);
@@ -222,13 +309,13 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
           title={expanded ? undefined : example.commentLines.join("\n")}
           onClick={toggle}
         >
-          {example.commentLines.join("\n")}
+          <Subbed text={original.commentLines.join("\n")} subs={subs} />
         </code>
       ) : (
         <div className="min-w-0">{command}</div>
       )}
       <span className="flex items-center gap-0.5">
-        {example.bootable && <AutorunToggle example={example} />}
+        {example.bootable && <AutorunToggle original={original} subs={subs} />}
         <Tip content="copy">
           <button type="button" className={iconButtonCss} onClick={() => copy(src)}>
             {copiedSrc === src ? (
@@ -238,6 +325,7 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
             )}
           </button>
         </Tip>
+        {edit}
         {commented && (
           <Tip content={expanded ? "hide command" : "show command"}>
             <button type="button" className={iconButtonCss} onClick={toggle}>
@@ -252,18 +340,22 @@ function ShellCommand({ example, segments }: { example: Example; segments: SrcSe
 }
 
 /** Whether the World's autorun runs it, in this article's tty */
-function AutorunToggle({ example }: { example: Example }) {
+function AutorunToggle({ original: example, subs }: { original: Example; subs: Record<string, string> }) {
   const { articleKey, sessionKey, worldKey } = useContext(ArticleContext);
   const entry = usePrelude(worldKey).entries.find((x) => x.id === example.id);
   const on = entry !== undefined;
   const toggle = () =>
-    preludeApi.toggle(worldKey, {
-      id: example.id,
-      articleKey,
-      sessionKey: sessionKey ?? undefined,
-      src: example.src,
-      comment: example.commentLines.join("\n"),
-    });
+    preludeApi.toggle(
+      worldKey,
+      {
+        id: example.id,
+        articleKey,
+        sessionKey: sessionKey ?? undefined,
+        src: example.src,
+        comment: example.commentLines.join("\n"),
+      },
+      subs,
+    );
   const tty = entry?.sessionKey ?? worldTtyOf(worldKey);
   const tip = on ? `autoruns in ${tty ?? "no tty yet"}` : "add to autorun";
   return (
@@ -281,14 +373,34 @@ const touchDevice = isTouchDevice();
 function resizeFrom(e: ReactPointerEvent, box: HTMLElement) {
   if ((e.target as Element).closest("[data-resize]") === null) return;
   e.preventDefault(); // else it selects text
-  const [y0, h0] = [e.clientY, box.offsetHeight];
-  const onMove = (e: PointerEvent) => void (box.style.height = `${Math.max(minFencePx, h0 + e.clientY - y0)}px`);
+  const [y0, h0, max] = [e.clientY, box.offsetHeight, contentHeightOf(box)];
+  const onMove = (e: PointerEvent) =>
+    void (box.style.height = `${Math.max(minFencePx, Math.min(max, h0 + e.clientY - y0))}px`);
   const onUp = () => {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
   };
   window.addEventListener("pointermove", onMove);
   window.addEventListener("pointerup", onUp);
+}
+
+/** How tall `box` is with all its commands in view, and no taller, its padding and border included */
+function contentHeightOf(box: HTMLElement) {
+  const rows = [...box.children].filter((el) => !el.classList.contains("sticky"));
+  const last = rows.at(-1);
+  if (last === undefined) return minFencePx;
+  const { paddingBottom, borderBottomWidth } = getComputedStyle(box);
+  const bottom = last.getBoundingClientRect().bottom - box.getBoundingClientRect().top + box.scrollTop;
+  return Math.ceil(bottom + Number.parseFloat(paddingBottom) + Number.parseFloat(borderBottomWidth));
+}
+
+/** Shrinks a height set inline, by its corner or a drag, to its content's. Did it? Not whilst hidden */
+function clampHeight(box: HTMLElement) {
+  if (box.style.height === "" || box.offsetParent === null) return false;
+  const max = Math.max(minFencePx, contentHeightOf(box));
+  if (box.offsetHeight <= max + 1) return false;
+  box.style.height = `${max}px`;
+  return true;
 }
 
 /** The least a drag resizes it to, as its `min-h-10` */
