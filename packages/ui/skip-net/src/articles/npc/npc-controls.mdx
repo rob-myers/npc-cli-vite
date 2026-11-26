@@ -50,4 +50,22 @@ Let us agree there is a single player or none at all.
 playerKey
 ```
 
+By _controls_ we mean a process directly converting user input to player actions or the action of a single npc.
+
+```sh title="listen for user input"
+# click mouse or tap touch screen
+call '({ api }) => document.addEventListener("click", api.writeInfo, { once: true })'
+
+# press key on keyboard
+call '({ api }) => document.addEventListener("keydown", api.writeInfo, { once: true, capture: true })'
+
+# release key on keyboard
+call '({ api }) => document.addEventListener("keyup", api.writeInfo, { once: true, capture: true })'
+
+# other examples include right click, long press and pinch zoom.
+```
+
+> Checkout the [activation procedures](#activationprocedures).
+> Commands with a <BoltIcon on /> autorun in the World.
+
 </Description>
