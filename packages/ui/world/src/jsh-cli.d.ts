@@ -121,6 +121,12 @@ declare namespace JshCli {
     | { key: "talk-tell"; threadKey: string; npcKey: string; to: string; text: string }
     | { key: "started-moving"; npcKey: string }
     | {
+        /** `npcKey`, idle, overlaps `otherKey`, so shuffles off them */
+        key: "npc-overlap";
+        npcKey: string;
+        otherKey: string;
+      }
+    | {
         /** Arrived, or the move was stopped — not one cut short by the next move */
         key: "stopped-moving";
         npcKey: string;
@@ -431,6 +437,10 @@ declare namespace JshCli {
     stuckAccum: number;
     nearest: number;
     nearestAccum: number;
+    /** Seconds idle overlapping another — see `updateIdleOverlap` */
+    overlapAccum: number;
+    /** Where they last shuffled off another, until the overlap ends or they move away */
+    overlapAt: null | Geom.VectJson;
     /** Distance to `dst` when the current move started */
     targetDistance: number;
     unreachableResult: null | NpcUnreachableResult;

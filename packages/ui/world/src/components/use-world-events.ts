@@ -1034,6 +1034,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             break;
           }
+          case "npc-overlap":
+            state.shuffleClear(e.npcKey, e.otherKey);
+            break;
           case "started-moving": {
             const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
             const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
@@ -1687,6 +1690,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
         }
       },
+      shuffleClear(npcKey, otherKey) {
+        const [npc, other] = [w.n[npcKey], w.n[otherKey]];
+        if (npc === undefined || other === undefined || npc.isMoving() === true) return;
+        const [dx, dz] = [npc.position.x - other.position.x, npc.position.z - other.position.z];
+        // on the spot: any way off
+        const angle = Math.hypot(dx, dz) > 0.01 ? Math.atan2(dz, dx) : Math.random() * 2 * Math.PI;
+        const reach = w.npc.config.dist.overlapClear;
+        const to = { x: other.position.x + reach * Math.cos(angle), y: other.position.z + reach * Math.sin(angle) };
+        // any move overrides it, e.g. sidestep's
+        void state.move({ npcKey, to, near: true, shuffle: true }).catch(() => {});
+      },
       async shuffleTo(npc, groundPoint, result) {
         try {
           npc.anim.aimAt({ groundPoint, result });
@@ -2278,6 +2292,8 @@ export type State = {
   };
   /** The navigable point nearest `p`, within `within` metres, if any */
   navNear(p: Geom.VectJson, within?: 0.1 | 4): null | Geom.VectJson;
+  /** Shuffles `npcKey` off `otherKey` to `dist.overlapClear` from them. A failure leaves them be */
+  shuffleClear(npcKey: string, otherKey: string): void;
   /** Steps them on the spot to `groundPoint`, a short way, keeping their facing — see `canShuffle` */
   shuffleTo(
     npc: Npc,

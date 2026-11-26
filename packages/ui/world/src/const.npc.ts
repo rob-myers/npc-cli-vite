@@ -113,6 +113,10 @@ export const npcConfig = {
     armInSide: 0.45,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
     circling: 0.6,
+    /** Idle centres nearer than this intersect. A body is wider than its crowd agent, which keeps them 0.4m apart */
+    overlap: 0.5,
+    /** How far from the other a shuffle off them aims, centre to centre */
+    overlapClear: 0.55,
   },
   time: {
     /** Grace after a move starts, before stuck detection applies */
@@ -120,6 +124,8 @@ export const npcConfig = {
     /** How long an npc must stay motionless to count as stuck */
     /** try fix choke point slow down */
     stuckDuration: 0.8,
+    /** How long two idle npcs overlap before one shuffles off */
+    overlapDuration: 0.5,
     /** Minimum look duration before teleporting onto a nearby doable */
     look: 0.5,
     /** A wall's draw-in of the right arm holds at least this, else taps at a wall shake it in and out */
