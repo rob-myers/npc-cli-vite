@@ -16,7 +16,7 @@ import {
 import "./world-hud.css";
 import { deltaAngle } from "maath/misc";
 import { AnimatePresence, type MotionValue, motion, useDragControls, useMotionValue } from "motion/react";
-import { memo, useContext, useEffect, useRef, useState } from "react";
+import { memo, useContext, useEffect, useReducer, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
 import { gunAttachments, gunColors } from "../service/phaser-gun";
 import { type PhaserIconKey, phaserIconConfig, phaserIcons } from "../service/phaser-icon";
@@ -881,8 +881,16 @@ type FireHintState = {
 /** The bar's options, each saved and highlighted whilst on: toggled in place, so the menu stays open */
 function PlayerMenu({ buttonClass, iconClass }: { buttonClass: string; iconClass: string }) {
   const w = useContext(WorldContext);
-  const saved = getWorldStore(w.key).read();
-  const [labels, setLabels] = useState(saved.roomLabelsShown);
+  /** Each option is read afresh, so this redraws once one is toggled */
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  const { roomLabelsShown } = getWorldStore(w.key).read();
+  /** By label, alphabetically */
+  const options: { label: string; on: boolean; toggle(): void }[] = [
+    { label: "decorations", on: w.debug?.decorShown ?? false, toggle: () => w.debug?.toggleDecor() },
+    { label: "grid", on: w.debug?.gridShown ?? false, toggle: () => w.debug?.toggleGrid() },
+    { label: "room labels", on: roomLabelsShown, toggle: () => w.roomLabels?.setShown(!roomLabelsShown) },
+    { label: "spots", on: w.spots?.shown ?? false, toggle: () => w.spots?.toggle() },
+  ];
   const side = tipSideOf(w.hud?.getLayout() ?? "bar");
   /** Its button whilst open: opened by a click, so a drag of the bar begun on it opens nothing */
   const [anchor, setAnchor] = useState<null | HTMLDivElement>(null);
@@ -907,20 +915,23 @@ function PlayerMenu({ buttonClass, iconClass }: { buttonClass: string; iconClass
         <Menu.Portal container={w.rootEl}>
           <Menu.Positioner anchor={anchor} side={side} sideOffset={6} className="z-50">
             <Menu.Popup className="pointer-events-auto select-none rounded-md border border-neutral-700 overflow-hidden bg-neutral-800/90 text-xs shadow-lg">
-              <Menu.CheckboxItem
-                className={cn(
-                  "flex cursor-pointer items-center px-3 py-1 text-neutral-500 hover:bg-neutral-700 data-checked:text-amber-200",
-                  w.touchDevice && "py-2 text-sm",
-                )}
-                checked={labels}
-                closeOnClick={false}
-                onCheckedChange={(shown) => {
-                  setLabels(shown);
-                  w.roomLabels?.setShown(shown);
-                }}
-              >
-                room labels
-              </Menu.CheckboxItem>
+              {options.map(({ label, on, toggle }) => (
+                <Menu.CheckboxItem
+                  key={label}
+                  className={cn(
+                    "flex cursor-pointer items-center px-3 py-1 text-neutral-500 hover:bg-neutral-700 data-checked:text-amber-200",
+                    w.touchDevice && "py-2 text-sm",
+                  )}
+                  checked={on}
+                  closeOnClick={false}
+                  onCheckedChange={() => {
+                    toggle();
+                    redraw();
+                  }}
+                >
+                  {label}
+                </Menu.CheckboxItem>
+              ))}
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>

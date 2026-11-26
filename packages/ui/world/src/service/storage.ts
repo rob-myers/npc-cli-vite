@@ -65,6 +65,8 @@ export type WorldSettings = {
   contextMenu: boolean;
   /** Whether the map's spots are drawn — see `Debug`'s `spotsShown` */
   spotsShown: boolean;
+  /** Whether the floor's debug grid is drawn — see `Debug`'s `gridShown` */
+  gridShown: boolean;
   /** Whether the frame-rate panel shows — see `WorldView`'s `statsShown` */
   statsShown: boolean;
   /** Which debug controls the player's bar shows: `phaser`, or a mounted item's key — see `Debug`'s `hudDebugShown` */
@@ -126,6 +128,7 @@ const defaultWorldSettings: WorldSettings = {
   raysShown: false,
   contextMenu: true,
   spotsShown: false,
+  gridShown: false,
   statsShown: import.meta.env.DEV,
   hudDebugShown: [],
   hudLayout: isTouchDevice() ? "right" : "bar",

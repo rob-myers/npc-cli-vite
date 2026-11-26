@@ -304,8 +304,6 @@ export function WorldMenu() {
         return w.view.litNpcsEnabled?.value === 1;
       case "colliders":
         return w.debug?.physicsCollidersShown ?? false;
-      case "grid":
-        return w.debug?.gridShown ?? false;
       case "navmesh":
         return w.debug?.navMeshShown ?? false;
       case "toggle doors":
@@ -316,10 +314,6 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "decor points":
         return w.debug?.doPointsShown ?? false;
-      case "decorations":
-        return w.debug?.decorShown ?? false;
-      case "spots":
-        return w.spots?.shown ?? false;
       case "rays":
         return w.debug?.raysShown ?? false;
       case "context menu":
@@ -406,10 +400,6 @@ export function WorldMenu() {
         w.debug?.showPhysicsColliders();
         w.update();
         break;
-      case "grid":
-        w.debug?.set({ gridShown: !w.debug.gridShown });
-        w.r3f?.invalidate();
-        break;
       case "navmesh":
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
         setTimeout(() => w.view.forceUpdate());
@@ -461,17 +451,6 @@ export function WorldMenu() {
       }
       case "fps":
         w.view.setStatsShown();
-        break;
-      case "decorations": {
-        const next = !w.debug?.decorShown;
-        w.debug?.set({ decorShown: next });
-        store.patch({ decorShown: next });
-        w.decor.setupRuntimeInstances(); // decor not meant to show is drawn whilst decorating
-        w.view.forceUpdate();
-        break;
-      }
-      case "spots":
-        w.spots?.toggle();
         break;
       case "rays": {
         const next = !w.debug?.raysShown;
@@ -1724,17 +1703,7 @@ const debugGroups = {
     { key: "lit", value: "lit npcs" },
     { key: "outline", value: "npc outline" },
   ],
-  overlay: [
-    "colliders",
-    "decor points",
-    "decorations",
-    "door normals",
-    "grid",
-    "navmesh",
-    "rays",
-    "room outlines",
-    "spots",
-  ].map((value) => ({
+  overlay: ["colliders", "decor points", "door normals", "navmesh", "rays", "room outlines"].map((value) => ({
     key: value,
     value,
   })),

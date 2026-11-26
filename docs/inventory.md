@@ -39,7 +39,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 - **disconnected**: a blue hud-toast on its own line above the rest, with a plugs icon and a note "connect a tty or world", shown on a click or tap, until a jsh session first reaches the World (`w.wasReadyFor`, filled by `w.isReady(connectionKey)` as `awaitWorld` asks). Until then no profile has run, so e.g. `sounds` plays nothing.
 - All hud-toasts stay hidden until the World has booted (`w.e.bootedAt`, set by `w.e.setBooted` once the first map is warmed), then fade in together.
 - **compass**: the point `w` heads nearest, and a marker on its rim where `w` heads on screen. A grey arc of its circle shows where they look. A far look thickens it, turns it green and shrinks the letter.
-- **options** (`PlayerMenu`, a gear), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
+- **options** (`PlayerMenu`, a gear), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. In order: **decorations** and **grid** (`w.debug.toggleDecor`, `toggleGrid`), **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`), and **spots** (`w.spots.toggle`). Each is read afresh as the menu draws, so one toggled elsewhere, e.g. by the `0` key, shows.
 
 Rules:
 

@@ -80,7 +80,7 @@ Each step only runs if the one before leaves it open:
 
 ## Seeing it in the World
 
-**The spots overlay** is **spots** in the debug **overlay** select, or the `0` key (`w.spots.toggle`, persisted).
+**The spots overlay** is **spots** in the player bar's options menu, or the `0` key (`w.spots.toggle`, persisted).
 - Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way, bar cover, seats and beds.
 - They are coloured by sight from the player: blue their own, green `always`, yellow `may`, white once a shut door opens, grey `never`. They fade with their room, so only "ship" mode shows them all: "sense" hides those in rooms unlit and out of view. A door spot shows whilst either of its rooms does. They fade with the world's fold too (`w.view.foldNode`), so come up as it unfolds on load.
 - jsh `spots show` fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`SpotOverlay`: `w.spots.draw`, `colour`).
