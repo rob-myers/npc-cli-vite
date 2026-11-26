@@ -10,8 +10,8 @@ Where the World puts an npc: on spawning, onto and off doables, apart from one a
 ## Doables
 
 - A seat or bed point with `meta.front-only` (e.g. a sofa's) is taken and left only from in front (`w.e.frontOf`). From behind, they walk round to it, or step off forwards, rather than fade. One doable to another is free.
-- **Getting up** (`w.e.stepOff`, and jsh `act`'s `getUp`) lands beside the doable, with nothing between, e.g. a desk, if possible (`besideDoable`). Else in sight of it, else anywhere in their room, else outside its door (`w.e.closestExitFrom`). At a doable on the navmesh they are let go where they stand. In a full room, either way, they fade out of its door.
-- A fade onto or off a doable never passes another obstacle, only its own, e.g. its chair (`canFade`, `passesOther`). Walking up to one, they stop beside it as getting up lands.
+- **Getting up** (`w.e.stepOff`, and jsh `act`'s `getUp`) lands on the spot beside the doable least blocked from it, the cheapest of those (`besideDoable`, `leastBlocked`): nothing between, else another obstacle, e.g. a desk, else a wall or shut door. Nowhere in their room, outside its door (`w.e.closestExitFrom`). At a doable on the navmesh they are let go where they stand. In a full room, either way, they fade out of its door.
+- A fade onto or off a doable never passes another obstacle, only its own, e.g. its chair (`canFade`, `passesOther`, `w.e.obstacleKeyOf`). Walking up to one, they stop beside it as getting up lands.
 - A move onto a doable with nowhere beside it fades on from outside its room's door, not from wherever they are.
 - Already beside the doable, e.g. just stepped off the chair next to it, they skip the walk up and fade on (`moveOntoDoable`). A walk that short would never arrive.
 - An edit that takes a doer's decor puts them back on a free doable within `reseatMetres` (0.25m), i.e. the one nudged. Else they stand up where they are (`w.e.standUpStrandedDoers`).
