@@ -737,10 +737,17 @@ export default function NPCs() {
       updateIdleOverlap(npc, delta) {
         const { last } = npc;
         const { overlap } = npcConfig.dist;
-        const other = w.npc.near
-          .beside(npc.key, overlap)
-          .find((x) => x.npc.isMoving() === false && state.idleYieldsToIdle(npc, x.npc));
-        if (other === undefined) return void Object.assign(last, { overlapAccum: 0, overlapAt: null });
+        const other =
+          npc.agent?.neis.length === 0 // alone, as most are: no array
+            ? undefined
+            : w.npc.near
+                .beside(npc.key, overlap)
+                .find((x) => x.npc.isMoving() === false && state.idleYieldsToIdle(npc, x.npc));
+        if (other === undefined) {
+          last.overlapAccum = 0; // not `Object.assign`, which allocates each tick
+          last.overlapAt = null;
+          return;
+        }
         // once per spell, unless they have since moved away
         if (last.overlapAt !== null && npc.distanceTo(last.overlapAt) < overlap) return;
         if ((last.overlapAccum += delta) < npcConfig.time.overlapDuration) return;
