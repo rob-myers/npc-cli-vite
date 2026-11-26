@@ -65,14 +65,9 @@ export function SubsEditor({
         />
       )}
       <span aria-invalid={!valid} className={fieldClass}>
-        <Input
-          value={draft}
-          onValueChange={change}
-          aria-invalid={!valid}
-          spellCheck={false}
-          title={`${rule.kind} in place of ${rule.literal}`}
-          className={inputClass}
-        />
+        <Tip content="substitutions">
+          <Input value={draft} onValueChange={change} aria-invalid={!valid} spellCheck={false} className={inputClass} />
+        </Tip>
         <Tip content={`reset to ${rule.literal}`}>
           <button
             type="button"

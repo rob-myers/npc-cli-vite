@@ -281,7 +281,7 @@ function ShellCommand({
     <div
       className={cn(
         "px-3 py-1 border border-transparent", // bordered throughout, so gaining the colour shifts nothing
-        example.id === ranId && "border-term-ok/50 bg-term-ok/10",
+        example.id === ranId && "border-term-ok/30 bg-term-ok/5",
         example.blankBefore > 0 && "mt-0.5",
         // run, comment, then copy and expand. Expanded, its command goes under the comment
         "grid grid-cols-[auto_1fr_auto] items-center gap-x-2",
