@@ -47,6 +47,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       keyedTick: new Map(),
       litRooms: new Map(),
       movesBegun: new WeakMap(),
+      pendingMoves: new WeakMap(),
       timers: new Set(),
       shownRays: new Map(),
       pendingRays: new Map(),
@@ -222,6 +223,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         const close = w.npc.getClosestPoly(exit, 0.5);
         return close.success === true ? helper.parseGroundPoint(close.position) : exit;
+      },
+      countPendingMoves(npc, by) {
+        state.pendingMoves.set(npc, (state.pendingMoves.get(npc) ?? 0) + by);
       },
       dispatchToKeyedListeners(e) {
         for (const listener of state.keyedListener.values()) {
@@ -412,6 +416,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const had = state.carried[npcKey];
         return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
       },
+      hasPendingMove(npc) {
+        return (state.pendingMoves.get(npc) ?? 0) > 0;
+      },
       hasRoomFor(npcKey, kind) {
         const items = state.carried[npcKey]?.items ?? [];
         if (kind === "phaser") return items.every((def) => def.meta?.item !== "phaser");
@@ -446,6 +453,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const dst = (npc.last.dst = helper.parseGroundPoint(to));
         const moveId = state.getMoveId(npc);
         npc.rejectAll(new Error("move again"));
+        state.countPendingMoves(npc, 1);
         try {
           const fades = await state.canFade(npc, dst, groundPoint, doResult, far);
           if (state.moveOverridden(npc, moveId)) return;
@@ -484,6 +492,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // failed before its own move began: at rest, else a stale `moving` fails every later move as stuck
           if (state.moveOverridden(npc, moveId) === false && npc.anim.moving === true) state.moveFailed(npc, e);
           throw e;
+        } finally {
+          state.countPendingMoves(npc, -1);
         }
       },
       moveFailed(npc, e) {
@@ -529,10 +539,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (via !== null) {
           if (w.npc.npcToDoable[npc.key] != null) await state.stepOff(npc, via); // off their own first, so they walk
           if (npc.last.dst !== dst) return;
-          const walk = state.move({ npcKey: npc.key, to: via, fast, strafe });
-          npc.last.dst = dst; // set by the walk: a pause resumes this move
-          await walk;
-          if (npc.last.dst !== dst) return;
+          // already there, e.g. stepped off a chair beside the next: a walk that short never arrives
+          if (npc.distanceTo(via) > dist.arrive) {
+            const walk = state.move({ npcKey: npc.key, to: via, fast, strafe });
+            npc.last.dst = dst; // set by the walk: a pause resumes this move
+            await walk;
+            if (npc.last.dst !== dst) return;
+          }
         }
         if (refused) throw state.roomFull(npc);
         w.events.next({ key: "npc-pre-do", npcKey: npc.key });
@@ -1692,7 +1705,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       shuffleClear(npcKey, otherKey) {
         const [npc, other] = [w.n[npcKey], w.n[otherKey]];
-        if (npc === undefined || other === undefined || npc.isMoving() === true) return;
+        if (npc === undefined || other === undefined) return;
+        // never over a move of theirs, e.g. between its fade off a doable and its walk
+        if (npc.isMoving() === true || state.hasPendingMove(npc) === true) return;
         const [dx, dz] = [npc.position.x - other.position.x, npc.position.z - other.position.z];
         // on the spot: any way off
         const angle = Math.hypot(dx, dz) > 0.01 ? Math.atan2(dz, dx) : Math.random() * 2 * Math.PI;
@@ -2159,6 +2174,11 @@ export type State = {
    * Not `last.dst`, which `moveOntoDoable` points back at the doable whilst it walks them beside it
    */
   movesBegun: WeakMap<Npc, number>;
+  /**
+   * Each npc's count of unsettled `move`s. A move onto a doable counts its walk up to it too.
+   * A move outlasts `isMoving()`, e.g. through a fade or a look.
+   */
+  pendingMoves: WeakMap<Npc, number>;
   /** Game-time timers, run after each npc tick — see `after` */
   timers: Set<{ at: number; fn: () => void }>;
   /** By key, how many rays the rays overlay draws, and how to cancel their clearing — see `showRays` */
@@ -2329,6 +2349,10 @@ export type State = {
   admitWalker(grKey: Geomorph.GmRoomKey, npcKey: string, admit?: boolean): boolean;
   /** Outside the room's nearest door they may pass, on the navmesh. With `near`, only within `doableLook` of it */
   closestExitFrom(grKey: Geomorph.GmRoomKey, npc: Npc, near?: Geom.VectJson): null | Geom.VectJson;
+  /** A `move` of theirs begins (`1`) or settles (`-1`) — see `pendingMoves` */
+  countPendingMoves(npc: Npc, by: 1 | -1): void;
+  /** Whether a `move` of theirs is yet to settle — see `pendingMoves` */
+  hasPendingMove(npc: Npc): boolean;
   /** A side of the door is a full room they are not in: its door area is refused them */
   refusesWalker(gdKey: Geomorph.GmDoorKey, npcKey: string): boolean;
   /** Restore this map's npcs, place the player, then maybe run the intro */

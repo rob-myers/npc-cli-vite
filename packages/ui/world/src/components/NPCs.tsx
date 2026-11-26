@@ -738,7 +738,8 @@ export default function NPCs() {
         const { last } = npc;
         const { overlap } = npcConfig.dist;
         const other =
-          npc.agent?.neis.length === 0 // alone, as most are: no array
+          // Alone, as most are, it allocates nothing. Fading, e.g. off a doable, a shuffle would cut them short
+          npc.agent?.neis.length === 0 || npc.isFading() === true
             ? undefined
             : w.npc.near
                 .beside(npc.key, overlap)
