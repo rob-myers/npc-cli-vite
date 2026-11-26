@@ -299,14 +299,8 @@ function ShellCommand({
       </Tip>
       {commented ? (
         <code
-          // one line, truncated, until expanded. Its glyphs sit high
-          className={cn(
-            codeCss,
-            tokenCss.comment,
-            "min-w-0 cursor-pointer translate-y-px",
-            !expanded && "truncate whitespace-nowrap",
-          )}
-          title={expanded ? undefined : example.commentLines.join("\n")}
+          // each of its lines kept, wrapping beside its buttons. Its glyphs sit high
+          className={cn(codeCss, tokenCss.comment, "min-w-0 cursor-pointer translate-y-px")}
           onClick={toggle}
         >
           <Subbed text={original.commentLines.join("\n")} subs={subs} />
