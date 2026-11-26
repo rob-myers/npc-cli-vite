@@ -41,6 +41,7 @@ import {
   muzzleAt,
   onLine,
   phaserConfig,
+  type Seg,
   segsApart,
   shotPast,
   shouldersOf,
@@ -172,6 +173,20 @@ export default function Phasers() {
         arm.armed = true;
         state.sync();
         drawn && w.events.next({ key: "phasers", armed: true, npcKeys: [npcKey] });
+      },
+      armMeetsNpc(npc, arm, secs, leadSecs) {
+        const ours = gunLine(npc, arm);
+        /** The player gives way to no npc's arm */
+        const player = npc.key === w.player.key;
+        // in their room, or near a door they are near: the arm may reach through it
+        const others = w.npc.near.atDoors(npc.key, w.npc.near.inReach(npc.key, 0));
+        return others.some(
+          (other) =>
+            other.anim.dead !== true &&
+            other.anim.posture !== "lie" && // lain, or a corpse: below the arm
+            (bodyMeetsGun(other, npc, ours, leadSecs) ||
+              (player === false && raisedArmMeets(ours, other, state.arms.get(other.key), secs))),
+        );
       },
       bearingFor(npcKey, at) {
         const npc = w.n[npcKey];
@@ -1141,7 +1156,8 @@ export default function Phasers() {
         // Shields too, which barely move: the rays lead by their velocity, and a draw-in holds `holdSecs`
         const pollSecs = npc.key === w.player.key ? phaserConfig.sampleSecs : phaserConfig.npcPollSecs;
         if (secs - arm.npcPolledSecs < pollSecs) return;
-        arm.npcHit = armMeetsNpc(w, npc, arm, secs);
+        // led by the time before the arm is in: until the next poll, then a draw-in
+        arm.npcHit = state.armMeetsNpc(npc, arm, secs, pollSecs + phaserConfig.drawInSecs);
         /** Their arm at full reach would meet a shield: drawn in, as from a wall */
         const freqs = w.shields?.freqsOf(npc.key);
         const shielded =
@@ -1449,6 +1465,11 @@ export type State = PhaserUniforms & {
     npcKey: string,
     opts?: { at?: null | string; part?: null | string; local?: null | THREE.Vector3; once?: boolean; toward?: string },
   ): void;
+  /**
+   * Does their gun at full aim meet someone in their room: their body or shoulders, or their arm whilst raised? Not one lying down, or dead.
+   * A body is tested where it is, and `leadSecs` on at its velocity relative to theirs, so a walker meets it in time
+   */
+  armMeetsNpc(npc: Npc, arm: ArmEntry, secs: number, leadSecs: number): boolean;
   /** The bearing that faces `npcKey` at `at`: armed, their muzzle's line through it. `null` without them */
   bearingFor(npcKey: string, at: Geom.VectJson): null | number;
   /** How high their gun is held, as it is raised whilst stood or crouched */
@@ -1608,40 +1629,45 @@ function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.V
   );
 }
 
-/** Does their gun at full aim meet someone in their room: their body or shoulders, or their arm whilst raised? Not one lying down, or dead */
-function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: number) {
-  const ours = gunLine(npc, arm);
-  const [mx, mz] = [(ours[0] + ours[2]) / 2, (ours[1] + ours[3]) / 2];
-  const { armWidth, bodyRadius, reach } = phaserConfig;
-  /** Further off than this either way, neither their body nor their gun is in reach */
-  const far = 1.5 * reach + npcDims.agentRadius + 2 * armWidth;
-  /** The player gives way to no npc's arm */
-  const player = npc.key === w.player.key;
-  /** Those in their room, and those near a door they are near: the arm may reach through it */
-  const others = w.npc.near.atDoors(npc.key, w.npc.near.inReach(npc.key, 0));
-  return others.some((other) => {
-    if (other.anim.dead === true || other.anim.posture === "lie") return false; // lain, or a corpse: below the arm
-    const p = other.position;
-    if (Math.abs(p.x - mx) > far || Math.abs(p.z - mz) > far) return false;
-    const stood = other.anim.posture === "stand";
-    // stood, a capsule round the line between their shoulders, which stand wider than their middle
-    const shoulders = stood ? shouldersOf(other) : null;
-    const apart = shoulders === null ? toSeg(p.x, p.z, ours) : segsApart(ours, shoulders);
-    if (apart < (stood ? bodyRadius : npcDims.agentRadius) + armWidth) return true;
-    if (player === true) return false;
-    const theirs = w.phasers.arms.get(other.key);
-    // only an arm up now: of two that would meet, whoever raised first keeps it
-    if (theirs === undefined || theirs.armed === false || theirs.holdUntil > secs) return false;
-    return segsApart(ours, gunLine(other, theirs)) < 2 * armWidth;
-  });
-}
-
 /** The middle of the part their aim is held on: `null` for none, forgetting one whose npc has gone */
 function heldPoint(w: import("./World").State, arm: ArmEntry) {
   const npc = arm.aimAt == null ? undefined : w.n[arm.aimAt.npcKey];
   if (npc === undefined || arm.aimAt == null) return (arm.aimAt = null);
   return bodyPartPoint(npc, arm.aimAt.part, tmpHeld);
 }
+
+/** Their body meets the gun line `ours`, where it is or `leadSecs` on at its velocity relative to the gun's holder */
+function bodyMeetsGun(other: Npc, holder: Npc, ours: Seg, leadSecs: number) {
+  const [vx, , vz] = other.agent?.velocity ?? still;
+  const [hx, , hz] = holder.agent?.velocity ?? still;
+  const [lx, lz] = [(vx - hx) * leadSecs, (vz - hz) * leadSecs];
+  const { x, z } = other.position;
+  const [mx, mz] = [(ours[0] + ours[2]) / 2, (ours[1] + ours[3]) / 2];
+  const { armWidth, reach } = phaserConfig;
+  // out of reach either way, led or not: their bones go unread
+  const far = 1.5 * reach + npcDims.agentRadius + 2 * armWidth + Math.hypot(lx, lz);
+  if (Math.abs(x - mx) > far || Math.abs(z - mz) > far) return false;
+  const within = bodyReach(other) + armWidth;
+  return toSeg(x, z, ours) < within || toSeg(x + lx, z + lz, ours) < within;
+}
+
+/** How far their body reaches from their middle. Stood, as far as their shoulders, which a turn between polls swings round */
+function bodyReach(npc: Npc) {
+  if (npc.anim.posture !== "stand") return npcDims.agentRadius;
+  const s = shouldersOf(npc);
+  const { x, z } = npc.position;
+  const spread = s === null ? 0 : Math.max(Math.hypot(s[0] - x, s[1] - z), Math.hypot(s[2] - x, s[3] - z));
+  return phaserConfig.bodyRadius + spread;
+}
+
+/** Their arm, if up now, meets the gun line `ours`. Of two that would meet, whoever raised first keeps it */
+function raisedArmMeets(ours: Seg, other: Npc, theirs: undefined | ArmEntry, secs: number) {
+  if (theirs === undefined || theirs.armed === false || theirs.holdUntil > secs) return false;
+  return segsApart(ours, gunLine(other, theirs)) < 2 * phaserConfig.armWidth;
+}
+
+/** No velocity, for one without an agent */
+const still = [0, 0, 0] as const;
 
 /** Whether nothing of them is drawn: their room out of view, and they not lit of themselves — as `seenBy` */
 const unseen = (w: import("./World").State, npc: Npc) =>
