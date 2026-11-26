@@ -12,8 +12,8 @@ const AUTORUN_ID = "virtual:skip-net-autorun";
 const RESOLVED_AUTORUN_ID = `\0${AUTORUN_ID}`;
 
 /**
- * Provides each SkipNet article's size and last modified time, by key e.g. `npc-spawn`.
- * A build dates each by its last commit, as a checkout's file times mean nothing.
+ * Provides each SkipNet article's size and last modified time, by key e.g. `npc-spawn`, and each of its files' own.
+ * A file's creation is its first commit. A build dates modified by its last commit, as a checkout's file times mean nothing.
  * Also, as `virtual:skip-net-autorun`, the shell fences with a command autorunning by default.
  */
 export function skipNetArticlesPlugin(): Plugin {
@@ -56,18 +56,31 @@ export function skipNetArticlesPlugin(): Plugin {
   };
 }
 
-/** Each article's total size and newest time over its own file and sections */
-function readArticles(isDev: boolean): Record<string, { bytes: number; modifiedMs: number }> {
-  const byKey: Record<string, { bytes: number; modifiedMs: number }> = {};
+/** Each article's total size and newest time over its own file and sections, and each file's own times */
+function readArticles(isDev: boolean): Record<string, ArticleStats> {
+  const byKey: Record<string, ArticleStats> = {};
   for (const x of readArticleFiles()) {
     const file = path.join(ARTICLES_DIR, x);
     const stat = fs.statSync(file);
     const modifiedMs = isDev ? stat.mtimeMs : (committedMs(file) ?? stat.mtimeMs);
-    const prev = byKey[toKey(x)] ?? { bytes: 0, modifiedMs: 0 };
-    byKey[toKey(x)] = { bytes: prev.bytes + stat.size, modifiedMs: Math.max(prev.modifiedMs, modifiedMs) };
+    // not yet committed: when the file was made
+    const createdMs = firstCommittedMs(file) ?? stat.birthtimeMs;
+    const prev = byKey[toKey(x)] ?? { bytes: 0, modifiedMs: 0, parts: {} };
+    byKey[toKey(x)] = {
+      bytes: prev.bytes + stat.size,
+      modifiedMs: Math.max(prev.modifiedMs, modifiedMs),
+      parts: { ...prev.parts, [x.split(path.sep).join("/")]: { createdMs, modifiedMs } },
+    };
   }
   return byKey;
 }
+
+/** `parts` by path within the articles directory, e.g. `npc/npc-controls/001-device-input.mdx` */
+type ArticleStats = {
+  bytes: number;
+  modifiedMs: number;
+  parts: Record<string, { createdMs: number; modifiedMs: number }>;
+};
 
 /** Each shell fence with a `# @bootable @default` line (or `@default=mobile`, `=desktop`), its source as MDX gives it */
 function readAutorunFences(): { articleKey: string; src: string }[] {
@@ -114,6 +127,19 @@ function toKey(file: string) {
 const fenceRe = /^```(\w*)[^\n]*\n([\s\S]*?)^```[ \t]*$/gm;
 const shellLangs = new Set(["", "sh", "bash"]);
 const autorunLineRe = /^#\s*@bootable\b.*\s@default\b/m;
+
+/** When `file` was first committed, followed through renames */
+function firstCommittedMs(file: string): undefined | number {
+  try {
+    const out = execFileSync("git", ["log", "--follow", "--diff-filter=A", "--format=%ct", "--", file], {
+      encoding: "utf8",
+    });
+    const seconds = out.trim().split("\n").at(-1) ?? "";
+    return seconds === "" ? undefined : Number(seconds) * 1000;
+  } catch {
+    return undefined;
+  }
+}
 
 /** When the file was last committed, if ever */
 function committedMs(file: string): undefined | number {

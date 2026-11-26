@@ -59,5 +59,6 @@ const headingClass = tw("not-prose flex items-center gap-3 mb-2");
 const tapeClass = tw(
   "shrink-0 -ml-3 px-3 py-0.5 bg-[#dedede] text-blue-800 dark:bg-[#151515] dark:text-blue-300 font-sans text-[13px] tracking-[0.18em]",
 );
-const ruleClass = tw("h-px min-w-6 flex-1 bg-[color-mix(in_srgb,var(--color-mac-text)_35%,var(--color-mac-window))]");
+/** It shrinks away rather than overflow, e.g. under a part's floated dates */
+const ruleClass = tw("h-px min-w-0 flex-1 bg-[color-mix(in_srgb,var(--color-mac-text)_35%,var(--color-mac-window))]");
 const bodyClass = tw("*:first:mt-0 *:last:mb-0");

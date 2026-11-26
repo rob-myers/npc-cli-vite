@@ -152,5 +152,5 @@ export function ArticleSessionPicker({ win }: { win: SkipNetWindow }) {
 
 /** A rounded frame around each of an article's files, though not its videos */
 const framedClass = tw(
-  "flex flex-col gap-3 *:rounded-xl *:border *:border-mac-text/20 *:px-4 *:py-3 [&>section>:first-child]:mt-0 [&>section>:last-child]:mb-0",
+  "flex flex-col gap-3 *:rounded-xl *:border *:border-mac-text/20 *:px-4 *:py-3 [&>section>:first-child]:mt-0 [&>section>[data-part-dates]+*]:mt-0 [&>section>:last-child]:mb-0",
 );
