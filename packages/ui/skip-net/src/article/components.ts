@@ -2,15 +2,20 @@ import { lazy } from "react";
 import type { ArticleComponents } from "../articles";
 import { ActivationProcedures, Description, FileSection, TapeTitle } from "./FileSection";
 import { Item } from "./Item";
+import { BoltIcon, CopyIcon, EditIcon, PlayIcon } from "./icons";
 import { ShellFence } from "./ShellFence";
 import { SideNote } from "./SideNote";
 
 /** In scope inside every article, via MDX's `components` prop */
 export const articleComponents = {
   ActivationProcedures,
+  BoltIcon,
+  CopyIcon,
   Description,
+  EditIcon,
   FileSection,
   Item,
+  PlayIcon,
   pre: ShellFence,
   SideNote,
   TapeTitle,

@@ -66,6 +66,7 @@ Each file is shown in a frame of its own. Its sections share its key, so one win
   - `<Video id="…" />` is a YouTube video loaded on click (`article/Video.tsx`, lazy, so its library loads only with it), e.g. `video/demo`.
   - `<SideNote>…</SideNote>` is an info icon in the text, showing the note on hover or press (a base-ui Popover with `openOnHover`, since a Tooltip ignores presses).
   - `<ActivationProcedures>…</ActivationProcedures>` and `<Description>…</Description>` are sections under a label-maker tape heading (`<TapeTitle title="…" />`). `<FileSection title="…">` is one with any title (`article/FileSection.tsx`). Inside each, a blank line follows the opening tag and precedes the closing one, so MDX reads fences.
+  - `<BoltIcon />` (`on` filled yellow), `<PlayIcon />`, `<CopyIcon />` and `<EditIcon />` are the fences' buttons' icons, inline in text (`article/icons.tsx`).
   - `mdx.d.ts` types these tags in the editor, as the global `MDXProvidedComponents` the MDX extension reads.
 - Adding or renaming a file reloads the page. An edit swaps it in place, with no spinner: `react()` in `vite.config.ts` includes `.mdx`, and `vite-plugin-skip-net-articles` reloads its virtual modules only when their content changes.
 
