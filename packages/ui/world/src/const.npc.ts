@@ -516,10 +516,15 @@ export const corpseConfig = {
   speed: 2,
 };
 
-/** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
+/** Effects an npc may show, by `fxKind`: a skin's `fx` meta, else jsh `fx` — see `docs/skins.md` */
+export const npcFxKinds = ["none", "static", "noir", "ghost"] as const;
+
+/** Ghost and static: a shot passes through them, as they become a stipple or a dot screen — see `NpcGhost` */
 export const ghostConfig = {
-  /** How much of a dot screen their body becomes, over `inSecs` as the shot locks on, which waits till then */
+  /** How much of either look their body takes, over `inSecs` as the shot locks on, which waits till then */
   amount: 1,
+  /** A ghost's share of screen pixels dropped, at most */
+  stipple: 0.5,
   inSecs: 0.2,
   /** The dots: radians the grid turns, per pixel so higher is smaller, as `dotScreen` in `extra-fx`, and how bright they read the body */
   dots: { angle: Math.PI / 2, scale: 4.9, gain: 1.6 },

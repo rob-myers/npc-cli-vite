@@ -8,9 +8,10 @@ function loadSkinSheets(sheets: SheetsType, manifest: AssetsSkinManifestType, ca
     Object.values(sheets.skin).map(async ({ key, sheetId, rect }) => {
       const { filename, svgPath } = manifest.byKey[key] ?? {};
       if (!filename) return;
-      const src = svgPath ? await fetchSkinSvgUrl(svgPath, cacheBust) : `/skin/${filename}${cacheBust}`;
-      cts[sheetId].drawImage(await loadImage(src), rect.x, rect.y, rect.width, rect.height);
-      URL.revokeObjectURL(src); // nothing to a url that is no blob's
+      const image = svgPath
+        ? await rasterSkinSvg(svgPath, cacheBust, rect.width)
+        : await loadImage(`/skin/${filename}${cacheBust}`);
+      cts[sheetId].drawImage(image, rect.x, rect.y, rect.width, rect.height);
     }),
   );
 }
@@ -188,13 +189,34 @@ async function loadSheets(
   return canvases;
 }
 
-/** A blob url of the svg without its groups titled `ignore` */
-async function fetchSkinSvgUrl(svgPath: string, cacheBust: string) {
+/**
+ * An svg skin drawn at `size`, without its groups titled `ignore`. Drawn once per version of its text, so a refetch,
+ * e.g. after a hot reload, redraws only the svgs that changed: drawing them all at once hitched the page
+ */
+async function rasterSkinSvg(svgPath: string, cacheBust: string, size: number) {
   const svgText = await fetch(`/${svgPath}${cacheBust}`).then((r) => r.text());
+  const version = `${size} ${hashText(svgText)}`;
+  const cached = svgRasters.get(svgPath);
+  if (cached?.version === version) return cached.canvas;
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
   for (const g of Array.from(doc.querySelectorAll("g"))) {
     if (g.querySelector(":scope > title")?.textContent?.trim() === "ignore") g.remove();
   }
   const svg = new XMLSerializer().serializeToString(doc.documentElement);
-  return URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const canvas = Object.assign(document.createElement("canvas"), { width: size, height: size });
+  canvas.getContext("2d")?.drawImage(await loadImage(url), 0, 0, size, size);
+  URL.revokeObjectURL(url);
+  svgRasters.set(svgPath, { version, canvas });
+  return canvas;
 }
+
+/** A 32-bit FNV-1a hash of `text`, to tell one version of an svg from another */
+function hashText(text: string) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return (hash >>> 0).toString(36);
+}
+
+/** Each svg skin's raster in DEV, by path, with the version of its text it was drawn from */
+const svgRasters = new Map<string, { version: string; canvas: HTMLCanvasElement }>();

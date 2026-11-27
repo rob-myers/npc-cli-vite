@@ -1,6 +1,6 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
-import { agentConfig, npcConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, npcConfig, npcFxKinds, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
 import { mapGroupsOf } from "@npc-cli/ui__world/geomorph";
 import { Task } from "@npc-cli/util";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
@@ -218,6 +218,29 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
+}
+
+/**
+ * Lists the npc effects, or shows one on an npc, from `0` to `1` of it — see `docs/skins.md`
+ * ```sh
+ * fx
+ * fx rob static 0.5
+ * fx rob noir
+ * fx rob ghost
+ * fx rob none
+ * ```
+ */
+export async function* fx({ args, w }: JshCli.RunArg) {
+  const [npcKey, kind = "none", amount = "1"] = args;
+  if (npcKey === undefined) {
+    yield* npcFxKinds;
+    return;
+  }
+  if (!(npcFxKinds as readonly string[]).includes(kind)) {
+    throw Error(`fx "${kind}" not found: try ${npcFxKinds.join(", ")}`);
+  }
+  w.npc.get(npcKey).setFx(kind, Number(amount));
+  w.view.forceUpdate();
 }
 
 /**

@@ -19,7 +19,8 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | --- | --- | --- |
 | `hit` | lands on the part | see [What a hit does](#what-a-hit-does): they recover after |
 | `down` | lands on the part | a hit that puts them down, collapsed or pacified |
-| `ghost` | passes through them, once they are a dot screen | see [Ghost](#ghost) |
+| `ghost` | passes through them, once they are a stipple | see [Ghost](#ghost) |
+| `static` | passes through them, once they are a dot screen | as a ghost: see [Ghost](#ghost) |
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
 | `kill` | lands on the part | a hit that leaves them dead: see [Kill](#kill) |
 
@@ -54,7 +55,7 @@ w.phasers.decide = null; // stop deciding
 **The debug badge** (`w.debug.forceShot`) decides whatever `decide` leaves.
 
 - It shows on the phaser slot whilst **phaser** is ticked under **debug** in the World menu's **hud** select (`w.debug.hudDebugShown`, persisted per World).
-- A click cycles it through `hit`, `down`, `ghost`, `armour` and `kill`. Unticking it resets it to `hit`.
+- A click cycles it through `hit`, `down`, `ghost`, `static`, `armour` and `kill`. Unticking it resets it to `hit`.
 
 ## How a shot ends
 
@@ -62,19 +63,20 @@ The beam strikes `fadeSecs / lockRate` after it locks on. jsh `sounds` plays `ph
 
 - **Raised and on target first.** No shot locks on until the muzzle's line passes within `lockRad` of the lock point (`onLine`): only then does `wieldBeam` show the beam and set `beam.next`. The lock is far quicker than the arm, so else a shot would land unseen from a lowered phaser, or off the barrel whilst they still turn. The beam waits too, as the arm follows it: shown early, it would swing round ahead of their turn.
 - **Missing them.** A shot whose line, from the muzzle through the dot, meets no part of them has no outcome and sends no `npc-shot`. It passes there, e.g. they moved since it was aimed.
-- **Passing them** (a ghost, or a miss), it runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond` within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
+- **Passing them** (a ghost or static, or a miss), it runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond` within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
 - **Whom it meets beyond** (`passOn`): those within reach of its target, in turn along its line, short of that wall, by the box test targeting makes (`npcOnRay`).
-  - Each is given an outcome (`ray: "beyond"`). One already a ghost passes it on, kept a ghost.
+  - Each is given an outcome (`ray: "beyond"`). One already a ghost passes it on, kept as they are (`passesThrough`, `service/phaser-beam.ts`).
   - The first that is not a ghost stops it, and is landed on (`shot.beyond`).
   - It waits, unseen, until these are found, and every ghost among them is one (`shotWaits`).
-- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `ghost` or `armour`.
+- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `ghost`, `static` or `armour`.
 - One lock hits each npc once. Hits are not mirrored over the network.
 
 ### Ghost
 
-They become a ghost, and the shot passes through them (`w.npcGhost`, `ghostConfig` in `const.npc`).
+They become a ghost, and the shot passes through them (`w.npcGhost`, `ghostConfig` in `const.npc`). A `static` shot is the same, but for their look.
 
-- As the shot locks on (`shoot`, `ghost`), their body becomes a dot screen over `inSecs`, its dots fixed on the screen (`dots`, as `dotScreen` in `extra-fx`). It is the npc's `dotScreen` uniform, which leaves their label and outline be.
+- As the shot locks on (`shoot`, `ghost`), their body becomes a stipple over `inSecs`: up to `ghostConfig.stipple` of their screen pixels dropped, evenly. It is the npc's `stipple` uniform, which leaves their label and outline be.
+- `static` makes a dot screen instead, its dots fixed on the screen (`dots`, as `dotScreen` in `extra-fx`). It is the npc's `dotScreen` uniform.
 - The shot waits, unseen, until they are a ghost (`isGhosting`), then passes through them, as one aimed beside them would (`shot.through`, `shot.past`): on to whom it meets beyond (`passOn`), else the wall. No clip plays, but `npc-shot` is emitted.
 - Meanwhile no phaser targets them (`syncTarget`): its dot passes through them to the wall, or whoever is behind.
 - They stay so `holdSecs` after it strikes, else `missSecs` after it locked on, then come back over `outSecs`.

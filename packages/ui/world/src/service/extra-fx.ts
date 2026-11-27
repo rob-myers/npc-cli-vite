@@ -88,6 +88,10 @@ export function warpExtraFxUv(key: ExtraFxKey, u: number, v: number): null | { u
 /** The stock effects are typed as bare `Node`s, which carry none of the operators */
 const asVec4 = (node: THREE.Node) => node as unknown as THREE.Node<"vec4">;
 
+/** Noir's grey for a colour in display values: high contrast, crushed blacks */
+export const noirTone = (display: THREE.Node<"vec3">) =>
+  smoothstep(noirLow, noirHigh, clamp(luminance(display).mul(noirGain), 0, 1));
+
 /** Luminance scaled by `gain`, clamped to `[0, 1]` */
 const lift = (display: THREE.Node<"vec4">, gain: number) => clamp(luminance(display.rgb).mul(gain), 0, 1);
 
@@ -139,10 +143,8 @@ function styleFrame(display: THREE.Node<"vec4">, key: ExtraFxKey): THREE.Node {
       const inFrame = step(0, coord.x).mul(step(coord.x, 1)).mul(step(0, coord.y)).mul(step(coord.y, 1));
       return vec4(lit.mul(inFrame), 1);
     }
-    case "noir": {
-      const lum = smoothstep(noirLow, noirHigh, lift(display, noirGain));
-      return vec4(vignette(vec3(lum), float(noirVignette), float(0.5)), 1);
-    }
+    case "noir":
+      return vec4(vignette(vec3(noirTone(display.rgb)), float(noirVignette), float(0.5)), 1);
     case "duotone":
       return vec4(ramp(lift(display, duotoneGain), duotoneRamp), 1);
     case "cyanotype":

@@ -1,6 +1,6 @@
 import { Select } from "@base-ui/react/select";
 import { CaretDownIcon } from "@phosphor-icons/react";
-import { type ReactNode, type SyntheticEvent, useRef, useState } from "react";
+import { type ComponentProps, type ReactNode, type SyntheticEvent, useRef, useState } from "react";
 import { isTouchDevice } from "../legacy/dom";
 import { cn } from "../service/tailwind-cn";
 import { Tip } from "./Tip";
@@ -18,6 +18,8 @@ export function Picker<T extends string>(props: {
   /** An icon before an option, not a button */
   optionIcon?(value: T): ReactNode;
   title?: string;
+  /** Where `title` shows, `top` by default */
+  titleSide?: ComponentProps<typeof Tip>["side"];
   className?: string;
   /** The popup is portalled out of its panel, whose theme it takes by this class */
   popupClassName: string;
@@ -56,7 +58,7 @@ export function Picker<T extends string>(props: {
       disabled={props.disabled}
       onValueChange={(v) => props.onChange(v as T)}
     >
-      <Tip content={props.title}>
+      <Tip content={props.title} side={props.titleSide}>
         <Select.Trigger
           className={cn(
             "flex items-center gap-1 w-fit max-w-full min-w-0 px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900",

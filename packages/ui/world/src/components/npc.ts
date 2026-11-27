@@ -22,6 +22,7 @@ import {
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcConfig,
+  npcFxKinds,
   npcLabelWeight,
   npcMaterialConfig,
   npcScale,
@@ -86,6 +87,8 @@ export class Npc {
   npcLit: THREE.UniformNode<"float", number>;
   /** `1` draws their body as a dot screen, but not their label or outline — see `NpcGhost` */
   dotScreen: THREE.UniformNode<"float", number>;
+  /** `1` drops a ghost's share of their screen pixels — see `NpcGhost` */
+  stipple: THREE.UniformNode<"float", number>;
   /** `1` in the player's room, eased — see `NpcAnimation.tickRoomLit` */
   roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
@@ -95,6 +98,9 @@ export class Npc {
   overlayBackfaces: ReturnType<typeof uniform<"float", number>>;
   /** The slice their eyes show — see `NpcAnimation.tickEyes` */
   eyesUniform: THREE.UniformNode<"float", number>;
+  /** Their effect, an index of `npcFxKinds`, and how much shows — see `setFx` */
+  fxKind: THREE.UniformNode<"float", number>;
+  fxAmount: THREE.UniformNode<"float", number>;
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   labelStyle: JshCli.NpcLabelStyle = { color: defaultNpcLabelColor, speaking: false };
@@ -206,6 +212,7 @@ export class Npc {
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.dotScreen = init.dotScreen;
+    this.stipple = init.stipple;
     this.roomLit = init.roomLit;
     this.roomSlot = init.roomSlot;
     this.material = init.material;
@@ -217,11 +224,14 @@ export class Npc {
     this.skinIndexUniform = init.skinIndexUniform;
     this.eyesUniform = init.eyesUniform;
     this.overlayBackfaces = init.overlayBackfaces;
+    this.fxKind = init.fxKind;
+    this.fxAmount = init.fxAmount;
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
     this.syncSkinShape();
+    this.syncSkinFx();
   }
 
   /**
@@ -697,10 +707,21 @@ export class Npc {
   }
 
   setSkin(skinKey?: string) {
+    const prevKey = this.skinKey;
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
     this.syncSkinShape();
+    if (this.skinKey !== prevKey) this.syncSkinFx(); // else a reload of the skins undoes jsh `fx`
+  }
+
+  /** Their skin's `fx` meta, if any, else none */
+  syncSkinFx() {
+    const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
+    this.setFx(
+      typeof meta.fx === "string" ? meta.fx : "none",
+      typeof meta["fx-amount"] === "number" ? meta["fx-amount"] : 1,
+    );
   }
 
   /** Their skin's meta shapes them: overlay back faces, their limbs, torso and head, their scale and height */
@@ -728,6 +749,13 @@ export class Npc {
     this.heightScale = this.widthScale * num(meta.height);
     this.skinnedMesh.scale.set(npcScale * this.widthScale, npcScale * this.heightScale, npcScale * this.widthScale);
     this.anim.headY *= this.heightScale / prevHeight;
+  }
+
+  /** Shows an effect of `npcFxKinds`, from `0` to `1` of it */
+  setFx(kind: string, amount = 1) {
+    if (this.fxKind === undefined) return; // before hmr
+    this.fxKind.value = Math.max(0, (npcFxKinds as readonly string[]).indexOf(kind));
+    this.fxAmount.value = amount;
   }
 
   /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */
@@ -759,6 +787,7 @@ export type NpcInit = {
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   dotScreen: THREE.UniformNode<"float", number>;
+  stipple: THREE.UniformNode<"float", number>;
   roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
@@ -771,6 +800,8 @@ export type NpcInit = {
   skinIndexUniform: THREE.UniformNode<"float", number>;
   eyesUniform: THREE.UniformNode<"float", number>;
   overlayBackfaces: THREE.UniformNode<"float", number>;
+  fxKind: THREE.UniformNode<"float", number>;
+  fxAmount: THREE.UniformNode<"float", number>;
 };
 
 /** Pixels the label's pick box reaches beyond its text */

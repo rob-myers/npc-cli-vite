@@ -3,8 +3,11 @@ import {
   cameraPosition,
   cameraProjectionMatrix,
   cameraViewMatrix,
+  colorSpaceToWorking,
+  Fn,
   float,
   frontFacing,
+  If,
   mix,
   modelWorldMatrix,
   mrt,
@@ -24,11 +27,13 @@ import {
   vec2,
   vec3,
   vec4,
+  workingToColorSpace,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldState } from "../components/World";
 import { skinSliceDims } from "../const.both";
-import { eyesConfig, ghostConfig, npcMaterialConfig } from "../const.npc";
+import { eyesConfig, ghostConfig, npcFxKinds, npcMaterialConfig } from "../const.npc";
+import { noirTone } from "./extra-fx";
 import { OBJECT_PICK_KEY_TO_RED } from "./pick";
 import { alwaysShownSlot } from "./room-slots";
 import { selectAs } from "./tsl";
@@ -38,6 +43,10 @@ export type NpcUniforms = {
   colorScale: THREE.UniformNode<"float", number>;
   dotScreen: THREE.UniformNode<"float", number>;
   eyesUniform: THREE.UniformNode<"float", number>;
+  /** How much of their effect shows, from `0` to `1` */
+  fxAmount: THREE.UniformNode<"float", number>;
+  /** Their effect, an index of `npcFxKinds` */
+  fxKind: THREE.UniformNode<"float", number>;
   labelRectUniform: THREE.UniformNode<"vec4", THREE.Vector4>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
@@ -48,6 +57,8 @@ export type NpcUniforms = {
   roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   skinIndexUniform: THREE.UniformNode<"float", number>;
+  /** How much of a stipple a ghost shot has made them — see `NpcGhost` */
+  stipple: THREE.UniformNode<"float", number>;
 };
 
 export type NpcMaterial = NpcUniforms & {
@@ -93,8 +104,8 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   // `alphaTestNode` below gives way with this, or the body would be discarded whole the
   // moment its alpha started dropping
   const mainColor = vec4(
-    mix(vec3(0).mul(positionLocal.y), mix(litRgb, dotScreen(litRgb), u.dotScreen), u.colorScale),
-    skinTex.a.mul(fold).mul(shownFace(u)),
+    mix(vec3(0).mul(positionLocal.y), mix(litRgb, dotScreen(litRgb), staticAmount(u)), u.colorScale),
+    skinTex.a.mul(fold).mul(shownFace(u)).mul(stippled(u, isPickMode)),
   );
 
   // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
@@ -131,7 +142,7 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   );
   // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
   // adds specular off the scene lights to an albedo of zero
-  const beauty = selectAs(isMain, vec4(w.view.fadeRoomsFx.fadeRgb(output.rgb, bodyTint), output.a), output);
+  const beauty = selectAs(isMain, vec4(w.view.fadeRoomsFx.fadeRgb(graded(u, output.rgb), bodyTint), output.a), output);
   material.outputNode = selectAs(isPickMode, npcPick, beauty);
 
   // The silhouette the border is grown from — see `service/npc-outline`. The BODY only: the
@@ -160,6 +171,8 @@ function createUniforms(pickId: number, skinIndex: number): NpcUniforms {
     colorScale: uniform(1),
     dotScreen: uniform(0),
     eyesUniform: uniform(0),
+    fxAmount: uniform(1),
+    fxKind: uniform(0),
     // the text's own box in the label's uv, set by `drawLabel`
     labelRectUniform: uniform(new THREE.Vector4(0, 0, 1, 1)),
     labelYShiftUniform: uniform(0, "float"),
@@ -170,6 +183,7 @@ function createUniforms(pickId: number, skinIndex: number): NpcUniforms {
     roomLit: uniform(0),
     roomSlot: uniform(alwaysShownSlot, "float"),
     skinIndexUniform: uniform(skinIndex),
+    stipple: uniform(0),
   };
 }
 
@@ -185,6 +199,26 @@ export function setOverlayBackfaces(target: Pick<NpcMaterial, "material" | "over
     target.material.side = side;
     target.material.needsUpdate = true;
   }
+}
+
+/** How much of a dot screen they are: a static shot's, else their `static` effect's */
+function staticAmount(u: NpcUniforms) {
+  return u.dotScreen.max(select(u.fxKind.equal(staticKind), u.fxAmount, 0));
+}
+
+/** Their lit colour, else graded as the World's frame would be, by their `noir` effect */
+function graded(u: NpcUniforms, rgb: THREE.Node<"vec3">) {
+  const toDisplay = (c: THREE.Node<"vec3">) =>
+    (workingToColorSpace(vec4(c, 1), THREE.SRGBColorSpace) as unknown as THREE.Node<"vec4">).rgb;
+  const toWorking = (c: THREE.Node<"vec3">) =>
+    (colorSpaceToWorking(vec4(c, 1), THREE.SRGBColorSpace) as unknown as THREE.Node<"vec4">).rgb;
+  return Fn(() => {
+    const out = vec3(rgb).toVar();
+    If(u.fxKind.equal(noirKind), () => {
+      out.assign(mix(rgb, toWorking(vec3(noirTone(toDisplay(rgb)))), u.fxAmount));
+    });
+    return out;
+  })();
 }
 
 /** `1`, except on a back face outside the head overlay's sides (u 0.5..1, v 0.125..0.25) */
@@ -223,6 +257,31 @@ function skinColor(w: World, u: NpcUniforms) {
       .div(slicesPerRow),
   ).depth(u.skinIndexUniform);
   return { skinTex, skinRgb: mix(skinTex.rgb, eyes.rgb, eyes.a.mul(inFace)) };
+}
+
+/**
+ * `0` on the screen pixels a ghost drops, else `1`: a ghost shot's, else their `ghost` effect's. A uniform branch.
+ * None are dropped when picking: its few pixels could all be dropped ones.
+ */
+function stippled(u: NpcUniforms, isPickMode: THREE.Node<"bool">) {
+  return Fn(() => {
+    const shown = float(1).toVar();
+    const isGhost = u.fxKind.equal(ghostKind);
+    If(isPickMode.not().and(isGhost.or(u.stipple.greaterThan(0))), () => {
+      const amount = u.stipple.max(select(isGhost, u.fxAmount, 0));
+      shown.assign(step(amount.mul(ghostConfig.stipple), bayer4()));
+    });
+    return shown;
+  })();
+}
+
+/** A 4x4 ordered dither's threshold at this screen pixel, in `(0, 1)`: half of them below `0.5` in a checkerboard */
+function bayer4() {
+  const p = screenCoordinate.xy.floor();
+  const bayer2 = (q: THREE.Node<"vec2">) => q.x.mul(2).add(q.y.mul(3)).mod(4);
+  const fine = bayer2(p.mod(2));
+  const coarse = bayer2(p.div(2).floor().mod(2));
+  return fine.mul(4).add(coarse).add(0.5).div(16);
 }
 
 /** Ambient, plus the player's light, plus more whilst lit or in the player's room: the light takes what the ambient leaves */
@@ -288,3 +347,7 @@ function labelColor(w: World, u: NpcUniforms, isPickMode: THREE.Node<"bool">, fo
   const alpha = selectAs<"float">(isPickMode, inRect, labelTex.a);
   return vec4(labelTex.rgb, alpha.mul(u.colorScale).mul(fold));
 }
+
+const staticKind = npcFxKinds.indexOf("static");
+const noirKind = npcFxKinds.indexOf("noir");
+const ghostKind = npcFxKinds.indexOf("ghost");

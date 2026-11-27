@@ -1376,7 +1376,7 @@ const debugAttachments = [null, ...gunAttachments];
 type Kept = { label: string; title: string; end?: () => void };
 
 /** How every shot ends, cycled by the phaser's debug badge */
-const shotCycle: JshCli.ShotOutcome[] = ["hit", "down", "ghost", "armour", "kill"];
+const shotCycle: JshCli.ShotOutcome[] = ["hit", "down", "ghost", "static", "armour", "kill"];
 /** A debug badge on the bar: the shot's, or a mounted item's error */
 const debugBadgeClass = tw(
   "cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!",

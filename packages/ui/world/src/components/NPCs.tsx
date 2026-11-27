@@ -609,11 +609,14 @@ export default function NPCs() {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
         mat.dotScreen.value = npc.dotScreen?.value ?? 0; // undefined on an npc from before hmr
+        mat.stipple.value = npc.stipple?.value ?? 0;
         mat.roomLit.value = npc.roomLit?.value ?? 0;
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
         mat.eyesUniform.value = npc.eyesUniform.value;
+        mat.fxKind.value = npc.fxKind?.value ?? 0; // undefined on an npc from before hmr
+        mat.fxAmount.value = npc.fxAmount?.value ?? 1;
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
