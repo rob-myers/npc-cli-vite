@@ -550,7 +550,12 @@
       "key": "scp-939",
       "id": "eed3c82055903f74",
       "filename": "scp-939--eed3c82055903f74.png",
-      "meta": {"skinKey": "scp-939", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-939",
+        "prefix": "scp",
+        "noEyes": true,
+        "taper": 0.4
+      },
       "url": "https://namemc.com/skin/eed3c82055903f74",
       "svgPath": "skin/scp-939.svg"
     }
