@@ -35,7 +35,8 @@ export function clipOf(
   const past = origPoly.outline.map((p) => toGm.transformPoint(Vect.from(p))).filter((p) => !room.contains(p));
   if (past.length === 0) return null;
   const centre = toGm.transformPoint(origPoly.rect.center);
-  const edges = room.lineSegs; // read only now: it clones every edge
+  // read only now: it clones every edge. A repeated point's edge has no normal
+  const edges = room.lineSegs.filter(([a, b]) => !a.equals(b));
   /** By edge index, how far past it a corner lies. A corner past two walls equally, e.g. diagonally out, counts for both */
   const pastBy = new Map<number, number>();
   for (const p of past) {
