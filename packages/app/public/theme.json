@@ -41,7 +41,10 @@
       "ambient": 0.2,
       "brightness": 0.5,
       "fxStrength": 5,
-      "sameRoom": 0.35
+      "sameRoom": 0.35,
+      "labelColor": "#eee",
+      "labelOpacity": 0.85,
+      "labelHalo": "#000"
     },
     "doors": {
       "brightness": 10,

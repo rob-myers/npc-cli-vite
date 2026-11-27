@@ -462,10 +462,13 @@
         "skinKey": "scp-106",
         "prefix": "scp",
         "noEyes": true,
-        "limbs": 0.5,
+        "limbs": 0.85,
+        "legs": 0.55,
+        "taper": 0.5,
         "body": 0.75,
         "head-depth": 0.7,
-        "height": 1.12
+        "height": 1.12,
+        "stoop": 0.15
       },
       "url": "https://namemc.com/skin/b3ebcf965a672ba5",
       "svgPath": "skin/scp-106.svg"

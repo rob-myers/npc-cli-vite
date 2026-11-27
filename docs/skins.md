@@ -150,6 +150,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   the embedded image rather than painting over it.
 - To clear texels with ImageMagick, copy a transparent patch over them: `( -size WxH xc:none ) -geometry +X+Y -compose Copy -composite`. `-region … -alpha transparent` leaves them.
 - Widening slim arms, clear each arm's 16px square first. Else the old layout's overlay texels show through the new one's gaps.
+- A face is drawn cartoony, else it is lost at the size an npc is seen. Bold shapes with dark outlines, a few features exaggerated: big eyes with small pupils, a wide mouth, teeth as separate shapes with gaps (`scp-106`). Fine creases, soft shading and realistic proportions blur into mush.
 - A screen for a face (`robot-2`, `robot-4`) is drawn near-black, its eyes in a bright core over a blurred glow. A dark grey screen reads faded in the World.
 - Fine detail on a face, e.g. glasses (`medic-1`), goes on the head overlay as opaque strokes, its pixel original cleared. The eye slices never touch the overlay.
 - Hair at the back of the head is drawn on the head overlay as tufts, never as one even plane, which reads as a raised panel (`d-4`).
