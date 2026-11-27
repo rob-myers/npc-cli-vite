@@ -40,8 +40,10 @@ export class Npc {
   key: string;
   /** for render cache bust */
   epochMs = 0;
-  /** Their mesh's vertical stretch, from their skin's `height`: drawn taller, their agent unchanged */
+  /** Their mesh's vertical scale, from their skin's `scale` and `height`: their agent unchanged */
   heightScale = 1;
+  /** Their mesh's horizontal scale, from their skin's `scale`: at most `1`, so never wider than their agent */
+  widthScale = 1;
 
   anim = new NpcAnimation(this);
   w: UseStateRef<import("./World").State>;
@@ -701,25 +703,30 @@ export class Npc {
     this.syncSkinShape();
   }
 
-  /** Their skin's meta shapes them: overlay back faces, thin limbs or body, a shallow head, and height */
+  /** Their skin's meta shapes them: overlay back faces, their limbs, torso and head, their scale and height */
   syncSkinShape() {
     const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
-    const scale = (value: unknown) => (typeof value === "number" ? value : 1);
+    const num = (value: unknown, fallback = 1) => (typeof value === "number" ? value : fallback);
     setOverlayBackfaces(this, meta);
     setBodyShape(
       this.geometry,
       this.skinnedMesh.skeleton,
       {
-        limbs: scale(meta.limbs),
-        legs: scale(meta.legs ?? meta.limbs),
-        body: scale(meta.body),
-        headDepth: scale(meta["head-depth"]),
+        limbs: num(meta.limbs),
+        legs: num(meta.legs ?? meta.limbs),
+        body: num(meta.body),
+        headDepth: num(meta["head-depth"]),
+        taper: num(meta.taper),
+        head: num(meta.head),
+        stoop: num(meta.stoop, 0),
+        height: num(meta.height),
       },
       this.w.npc.shapeCache,
     );
     const prevHeight = this.heightScale;
-    this.heightScale = scale(meta.height);
-    this.skinnedMesh.scale.y = this.skinnedMesh.scale.x * this.heightScale;
+    this.widthScale = Math.min(1, num(meta.scale));
+    this.heightScale = this.widthScale * num(meta.height);
+    this.skinnedMesh.scale.set(npcScale * this.widthScale, npcScale * this.heightScale, npcScale * this.widthScale);
     this.anim.headY *= this.heightScale / prevHeight;
   }
 

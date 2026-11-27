@@ -352,7 +352,21 @@ export function addBodyPartAttr(geo: THREE.BufferGeometry, encode: (jointIndex: 
 }
 
 /** An npc's body shape from their skin's meta: each `1` unless thinned */
-export type BodyShape = { limbs?: number; legs?: number; body?: number; headDepth?: number };
+/** An npc's body shape from their skin's meta: each `1` unless shaped, `stoop` `0` */
+export type BodyShape = {
+  limbs?: number;
+  legs?: number;
+  body?: number;
+  headDepth?: number;
+  /** Scale of each limb's far end, and half as much of the hips */
+  taper?: number;
+  /** Size of the head about its base, kept in proportion however tall they are drawn */
+  head?: number;
+  /** How tall they are drawn: the mesh's vertical scale, which a scaled head undoes */
+  height?: number;
+  /** Forward lean of the upper body, as a share of its height */
+  stoop?: number;
+};
 
 /**
  * Thins an npc's geometry in its bind pose: see `shapedPositions`.
@@ -365,8 +379,10 @@ export function setBodyShape(
   shape: BodyShape,
   cache: Map<string, Float32Array>,
 ) {
-  const { limbs = 1, legs = limbs, body = 1, headDepth = 1 } = shape;
-  const plain = limbs === 1 && legs === 1 && body === 1 && headDepth === 1;
+  const { limbs = 1, legs = limbs, body = 1, headDepth = 1, taper = 1, head = 1, stoop = 0 } = shape;
+  /** Only a scaled head undoes the height, so the cache need not key on it otherwise */
+  const height = head === 1 ? 1 : (shape.height ?? 1);
+  const plain = limbs === 1 && legs === 1 && body === 1 && headDepth === 1 && taper === 1 && head === 1 && stoop === 0;
   if (plain && geometry.userData.shaped !== true) return;
   const pos = geometry.getAttribute("position") as THREE.BufferAttribute;
   const array = pos.array as Float32Array;
@@ -376,10 +392,10 @@ export function setBodyShape(
   const bind: Float32Array = geometry.userData.bind ?? cache.get("bind") ?? array.slice();
   geometry.userData.bind = bind;
   if (!cache.has("bind")) cache.set("bind", bind);
-  const key = `${limbs} ${legs} ${body} ${headDepth}`;
+  const key = `${limbs} ${legs} ${body} ${headDepth} ${taper} ${head} ${stoop} ${height}`;
   let shaped = plain ? bind : cache.get(key);
   if (shaped === undefined) {
-    shaped = shapedPositions(bind, geometry, skeleton, { limbs, legs, body, headDepth });
+    shaped = shapedPositions(bind, geometry, skeleton, { limbs, legs, body, headDepth, taper, head, stoop, height });
     cache.set(key, shaped);
   }
   array.set(shaped);
@@ -388,14 +404,15 @@ export function setBodyShape(
 }
 
 /**
- * Positions thinned from `from`, the bind pose: each limb to `limbs` of its width about its own axis, the torso to `body`.
+ * Positions shaped from `from`, the bind pose: each limb to `limbs` of its width about its own axis, the torso to `body`.
  * The legs take `legs`. The chest narrows half as much, and the arms stay put. The head is `headDepth` as deep, its face kept.
+ * Then `taper` narrows each limb toward its end, `head` scales the head, and `stoop` leans all above the waist forward.
  */
 function shapedPositions(
   from: Float32Array,
   geometry: THREE.BufferGeometry,
   skeleton: THREE.Skeleton,
-  { limbs, legs, body, headDepth }: Required<BodyShape>,
+  { limbs, legs, body, headDepth, taper, head: headScale, stoop, height }: Required<BodyShape>,
 ) {
   const out = from.slice();
   const set = (i: number, x: number, y: number, z: number) => out.set([x, y, z], 3 * i);
@@ -432,14 +449,24 @@ function shapedPositions(
       scaleOf[i] = joint === chest ? shoulders : body;
     }
   }
-  const centre = (verts: number[], axis: number) => {
-    const vs = verts.map((i) => from[3 * i + axis]);
-    return (Math.min(...vs) + Math.max(...vs)) / 2;
+  /** `[least, most]` of `verts` along `axis`, in `of` (the bind pose unless given) */
+  const span = (verts: number[], axis: number, of = from) => {
+    const vs = verts.map((i) => of[3 * i + axis]);
+    return [Math.min(...vs), Math.max(...vs)];
   };
+  const centre = (verts: number[], axis: number, of = from) => {
+    const [lo, hi] = span(verts, axis, of);
+    return (lo + hi) / 2;
+  };
+  /** Scale at height `y` of a part spanning `[lo, hi]`: `1` at its top, `end` at its foot */
+  const tapered = (y: number, [lo, hi]: number[], end: number) => 1 + ((end - 1) * (hi - y)) / (hi - lo || 1);
   const torsoZ = centre(torso, 2);
   const torsoHalf = Math.max(...torso.map((i) => Math.abs(from[3 * i])));
-  for (const i of torso)
-    set(i, from[3 * i] * scaleOf[i], from[3 * i + 1], torsoZ + (from[3 * i + 2] - torsoZ) * scaleOf[i]);
+  const torsoY = span(torso, 1);
+  for (const i of torso) {
+    const k = scaleOf[i] * tapered(from[3 * i + 1], torsoY, (1 + taper) / 2);
+    set(i, from[3 * i] * k, from[3 * i + 1], torsoZ + (from[3 * i + 2] - torsoZ) * k);
+  }
   for (const [limb, verts] of byLimb.entries()) {
     const cx = centre(upper[limb], 0);
     const cz = centre(upper[limb], 2);
@@ -447,12 +474,39 @@ function shapedPositions(
     const toX = Math.abs(cx) < torsoHalf ? cx * body : cx;
     /** `limbJoints` lists the arms, then the legs */
     const width = limb < 2 ? limbs : legs;
-    for (const i of verts)
-      set(i, toX + (from[3 * i] - cx) * width, from[3 * i + 1], cz + (from[3 * i + 2] - cz) * width);
+    const limbY = span(verts, 1);
+    for (const i of verts) {
+      const k = width * tapered(from[3 * i + 1], limbY, taper);
+      set(i, toX + (from[3 * i] - cx) * k, from[3 * i + 1], cz + (from[3 * i + 2] - cz) * k);
+    }
   }
   /** The face is at the head's least z, so it stays as the back comes in */
   const faceZ = Math.min(...heads.map((i) => from[3 * i + 2]));
   for (const i of heads) out[3 * i + 2] = faceZ + (from[3 * i + 2] - faceZ) * headDepth;
+  /** The head grows from the middle of its base, the neck */
+  const [hx, hy, hz] = [centre(heads, 0, out), span(heads, 1, out)[0], centre(heads, 2, out)];
+  for (const i of heads)
+    set(
+      i,
+      hx + (out[3 * i] - hx) * headScale,
+      hy + ((out[3 * i + 1] - hy) * headScale) / height,
+      hz + (out[3 * i + 2] - hz) * headScale,
+    );
+  if (stoop !== 0) {
+    /** Above the waist, all leans forward (to `-z`) and down: an arm by its shoulder, so it stays whole */
+    const waist = torsoY[0] + (torsoY[1] - torsoY[0]) * 0.35;
+    const top = Math.max(...heads.map((i) => out[3 * i + 1]));
+    const lean = (y: number) => Math.max(0, Math.min(1, (y - waist) / (top - waist))) * stoop * (top - waist);
+    const shift = (i: number, d: number) => {
+      out[3 * i + 1] -= d * 0.35;
+      out[3 * i + 2] -= d;
+    };
+    for (const i of [...torso, ...heads]) shift(i, lean(out[3 * i + 1]));
+    for (const arm of byLimb.slice(0, 2)) {
+      const d = lean(span(arm, 1)[1]);
+      for (const i of arm) shift(i, d);
+    }
+  }
   return out;
 }
 
