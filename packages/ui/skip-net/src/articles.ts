@@ -1,5 +1,7 @@
+import statsByKey from "virtual:skip-net-articles";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { type ComponentType, createElement, Fragment, type LazyExoticComponent, lazy } from "react";
+import { PartDates } from "./article/PartDates";
 
 export type ArticleComponents = Record<string, ComponentType<any>>;
 type ArticleContent = ComponentType<{ components?: ArticleComponents }>;
@@ -8,9 +10,10 @@ type ArticleContent = ComponentType<{ components?: ArticleComponents }>;
 const loaders = import.meta.glob<{ default: ArticleContent }>(["./articles/*/*.mdx", "./articles/*/*/*.mdx"]);
 type Loader = (typeof loaders)[string];
 /** Each key's files: its own first, then its sections by name. Without `.mdx`, `{key}` sorts before `{key}/…` */
-const keyToLoaders = new Map<string, Loader[]>();
+const keyToLoaders = new Map<string, { part: string; load: Loader }[]>();
 for (const path of Object.keys(loaders).sort((a, b) => (a.slice(0, -4) < b.slice(0, -4) ? -1 : 1))) {
-  keyToLoaders.set(toKey(path), [...(keyToLoaders.get(toKey(path)) ?? []), loaders[path]]);
+  const loader = { part: toPart(path), load: loaders[path] };
+  keyToLoaders.set(toKey(path), [...(keyToLoaders.get(toKey(path)) ?? []), loader]);
 }
 const keyToFolder = new Map(Object.keys(loaders).map((path) => [toKey(path), toFolder(path)]));
 
@@ -75,8 +78,8 @@ export function getArticle(key: string): undefined | LazyExoticComponent<Article
     lazyByKey.set(
       key,
       (Content = lazy(() =>
-        Promise.all([Promise.all(loads.map((load) => load())), pause(firstShowMs)]).then(([ms]) => ({
-          default: (props: { components?: ArticleComponents }) => Sections(ms, props),
+        Promise.all([Promise.all(loads.map(({ load }) => load())), pause(firstShowMs)]).then(([ms]) => ({
+          default: (props: { components?: ArticleComponents }) => Sections(key, loads, ms, props),
         })),
       )),
     );
@@ -84,12 +87,25 @@ export function getArticle(key: string): undefined | LazyExoticComponent<Article
   return Content;
 }
 
-/** Each file in a `section` of its own, which `ArticlePane` frames */
-function Sections(ms: { default: ArticleContent }[], props: { components?: ArticleComponents }) {
+/** Each file in a `section` of its own, which `ArticlePane` frames, headed by its own dates */
+function Sections(
+  key: string,
+  loads: { part: string }[],
+  ms: { default: ArticleContent }[],
+  props: { components?: ArticleComponents },
+) {
+  const parts = statsByKey[key]?.parts;
   return createElement(
     Fragment,
     null,
-    ...ms.map((m, i) => createElement("section", { key: i }, createElement(m.default, props))),
+    ...ms.map((m, i) =>
+      createElement(
+        "section",
+        { key: i },
+        createElement(PartDates, { dates: parts?.[loads[i].part] }),
+        createElement(m.default, props),
+      ),
+    ),
   );
 }
 
@@ -103,6 +119,11 @@ function rank(order: string[], key: string) {
 /** `./articles/npc/npc-spawn.mdx` or `./articles/npc/npc-spawn/001-foo.mdx` -> `npc-spawn` */
 function toKey(path: string) {
   return path.replace(/^\.\/articles\/[^/]+\/([^/]+?)(\.mdx|\/[^/]+\.mdx)$/, "$1");
+}
+
+/** `./articles/npc/npc-spawn/001-foo.mdx` -> `npc/npc-spawn/001-foo.mdx`, as the articles plugin keys its parts */
+function toPart(path: string) {
+  return path.replace(/^\.\/articles\//, "");
 }
 
 /** `./articles/npc/npc-spawn.mdx` -> `npc` */

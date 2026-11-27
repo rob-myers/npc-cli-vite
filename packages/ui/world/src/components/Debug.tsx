@@ -52,7 +52,7 @@ export function Debug() {
       decorShown: getWorldStore(w.key).read().decorShown,
       raysShown: getWorldStore(w.key).read().raysShown ?? false,
       doorNormalsShown: false,
-      gridShown: false,
+      gridShown: getWorldStore(w.key).read().gridShown,
       logGPUInfo: false,
       navMeshHelper: null,
       navMeshShown: false,
@@ -221,6 +221,19 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
         polylinesGeo.getAttribute("shape").needsUpdate = true;
         polylinesGeo.getAttribute("lineColor").needsUpdate = true;
+      },
+      toggleDecor() {
+        const decorShown = !state.decorShown;
+        state.set({ decorShown });
+        getWorldStore(w.key).patch({ decorShown });
+        w.decor.setupRuntimeInstances(); // decor not meant to show is drawn whilst decorating
+        w.view.forceUpdate();
+      },
+      toggleGrid() {
+        const gridShown = !state.gridShown;
+        state.set({ gridShown });
+        getWorldStore(w.key).patch({ gridShown });
+        w.r3f?.invalidate();
       },
     }),
     {
@@ -534,4 +547,8 @@ export type State = {
   drawBoundary(): void;
   /** Writes every shown polyline's discs and joining lines into the one mesh */
   drawPolylines(): void;
+  /** Starts or stops decorating, saved */
+  toggleDecor(): void;
+  /** Shows or hides the floor's grid, saved */
+  toggleGrid(): void;
 };

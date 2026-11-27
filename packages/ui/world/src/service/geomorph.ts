@@ -301,7 +301,8 @@ export function createLayout(
     hullPoly,
     obstacles,
     rooms: rooms.map((x) => x.precision(precision)),
-    unsorted: flat.unsorted.map((x) => x.precision(precision)),
+    // copies: rounded in place, the flat symbol's own would change, and `assets-edit.json` with it
+    unsorted: flat.unsorted.map((x) => x.clone().precision(precision)),
     walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
     windows,
 

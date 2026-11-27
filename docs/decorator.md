@@ -98,7 +98,7 @@ room along, and fades with the room it is now in. A rect or circle gets `meta.fl
 every `decor-created` / `decor-removed`, so whoever edits is saved; not whilst a map changes, which
 removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor out of the save.
 
-**Decorating** is **decorations** in the debug **overlay** select (`w.debug.decorShown`, persisted, off by default):
+**Decorating** is **decorations** in the player bar's options menu (`w.debug.toggleDecor`, `decorShown`, persisted, off by default):
 
 - every runtime decor is drawn, whether or not `meta.shown` says so — `hasInstance` admits it, and
   the toggle rebuilds the runtime instances — so abstract decor can be seen and picked;
@@ -209,6 +209,44 @@ SVG's own screen transform (`toMap`), which letterboxing does not fool.
 
 The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to at least
 `locateZoom`) — never the World's camera, which is the player's.
+
+## A speaker on a wall
+
+A speaker is a tilted quad of one of four images in `media/src/decor`. Hang it as a switch hangs,
+beside one and level with it.
+
+| img | size | height |
+|---|---|---|
+| `speaker-small` | 0.2m by 0.2m | 1.23 |
+| `speaker-box` | 0.35m by 0.3m | 1.28 |
+| `speaker-bar` | 0.6m by 0.2m | 1.23 |
+| `speaker-column` | 0.25m by 0.55m | 1.4 |
+
+- **In the Decorator**: the quad tool, a speaker image, tilt on, and its height. Tilt alone gives
+  `tiltedQuadHeight` (1.35).
+- **Its top edge** lies on the wall's face, with the image reaching into the room. A tilt stands it
+  up about that edge, so it hangs flush.
+- **Its height** is its top. A switch's centre is at 1.125m, so a speaker's height is that plus half
+  its own.
+- **Its sides** are dark grey, not black, from `decorSidesOfImg` in `const.env`. A new speaker image
+  needs an entry there. A placed one's `meta.sides` overrides it.
+
+From the shell, `decor` places a quad unturned, so its top edge runs along x and it faces +z:
+
+```sh
+decor to:[3,12.08] key:speaker-1 type:quad img:speaker-box y3d:1.28 meta:'{ tilt: true }'
+```
+
+On any other wall, give `w.decor.create` the turned transform, e.g. on a wall facing -x at x=4.476,
+its top edge from z=12.94:
+
+```js
+w.decor.create({ type: "quad", key: "speaker-1", img: "speaker-box", y3d: 1.28,
+  transform: [0, 1, -1, 0, 4.476, 12.94], meta: { shown: true, tilt: true } });
+```
+
+In a symbol, it is a MapEdit image node of `speaker-box` named `decor quad speaker y=1.28 tilt`, as a
+screen's is `decor quad screen y=1.6 tilt` (e.g. `symbol/lab--018.json`).
 
 ## Graphs
 

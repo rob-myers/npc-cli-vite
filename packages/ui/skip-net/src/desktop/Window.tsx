@@ -16,7 +16,7 @@ import { articleFolderOf, articleKeys } from "../articles";
 import { ChatWindow } from "../chat/ChatWindow";
 import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
-import type { SkipNetWindow } from "../schema";
+import type { SkipNetUiMeta, SkipNetWindow } from "../schema";
 import { titlePickerPopupClass } from "./classes";
 import { FolderWindow } from "./FolderWindow";
 import { titleOf } from "./windows";
@@ -122,12 +122,16 @@ export const Window = memo(function Window(props: WindowProps) {
                 optionIcon={(articleKey) => {
                   const Icon = articleFolderOf(articleKey) === "video" ? PlayCircleIcon : FileTextIcon;
                   const autoruns = autorunKeys.has(articleKey);
+                  const subbed = hasChangedNames(state.meta.fenceSubs, articleKey);
                   return (
-                    <Icon
-                      weight="bold"
-                      className={cn("size-4 shrink-0", autoruns ? "text-yellow-400" : "opacity-60")}
-                      aria-label={autoruns ? "autoruns" : undefined}
-                    />
+                    <span className="relative shrink-0">
+                      <Icon
+                        weight="bold"
+                        className={cn("size-4", autoruns ? "text-yellow-400" : "opacity-60")}
+                        aria-label={autoruns ? "autoruns" : undefined}
+                      />
+                      {subbed && <span aria-label="names changed" className={subbedDotClass} />}
+                    </span>
                   );
                 }}
                 optionAction={{
@@ -332,3 +336,10 @@ const stripesStyle = {
 };
 
 const touchDevice = isTouchDevice();
+/** Has one of its fences names changed? Only those changed are kept. A fence's id is `{articleKey}#{hash}` */
+function hasChangedNames(fenceSubs: SkipNetUiMeta["fenceSubs"], articleKey: string) {
+  return Object.keys(fenceSubs ?? {}).some((fenceId) => fenceId.startsWith(`${articleKey}#`));
+}
+
+/** On an article's icon whilst one of its fences has names changed */
+const subbedDotClass = tw("absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-sky-400");

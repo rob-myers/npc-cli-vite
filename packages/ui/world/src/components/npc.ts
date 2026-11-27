@@ -111,6 +111,8 @@ export class Npc {
     stuckAccum: 0,
     nearest: Infinity,
     nearestAccum: 0,
+    overlapAccum: 0,
+    overlapAt: null,
     /** Distance to `dst` when the current move started */
     targetDistance: 0,
     /** Non-null iff `dst` was unreachable at time of plan  */

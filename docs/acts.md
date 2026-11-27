@@ -24,3 +24,17 @@ A walk that stalls, e.g. blocked by the player, is given up.
 An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused by hand or by the Jsh pane, the npc stops, and walks or looks on once resumed. Its waits count only whilst it runs, through its `Task` (`docs/tasks.md`). A kill stops every npc it moves.
 
 `sees` asks who sees whom: see `docs/perception.md`.
+
+## Parked, padded and other predicates
+
+Predicates over npcs are Sets and Maps by npcKey in `/shared/map/{mapKey}/pred` (`packages/cli/src/jsh/world/pred.ts`), so per map.
+
+- Most last only whilst the npc does, e.g. `picked`, `parked`, `padded`: removing them forgets it (`forget`).
+- Some outlive them, still per map, e.g. `sidestep`'s per-npc rules (`sidestepRules`). A respawn keeps them.
+- What applies to every map stays out of it, e.g. `/shared/sidestep`, sidestep's defaults.
+
+**Parked npcs are jsh state**, not the World's: `parked`, persisted with the rest of `/shared`. It holds the wall segment each stands against.
+
+- `act park` records via `parked.mark`. A move, respawn or removal unparks.
+- `padded` beside it is the same for `act pad`: by npcKey, the room they were stood with to walk right round them (`by`, from walls and from others).
+- An npc is parked or padded, never both.

@@ -39,7 +39,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 - **disconnected**: a blue hud-toast on its own line above the rest, with a plugs icon and a note "connect a tty or world", shown on a click or tap, until a jsh session first reaches the World (`w.wasReadyFor`, filled by `w.isReady(connectionKey)` as `awaitWorld` asks). Until then no profile has run, so e.g. `sounds` plays nothing.
 - All hud-toasts stay hidden until the World has booted (`w.e.bootedAt`, set by `w.e.setBooted` once the first map is warmed), then fade in together.
 - **compass**: the point `w` heads nearest, and a marker on its rim where `w` heads on screen. A grey arc of its circle shows where they look. A far look thickens it, turns it green and shrinks the letter.
-- **options** (`PlayerMenu`, a gear), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. As yet only **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`).
+- **options** (`PlayerMenu`, a gear), last: right-most, or bottom-most in a column: a menu of saved toggles, each in the World's store and highlighted whilst on, which stays open as one is toggled. In order: **decorations** and **grid** (`w.debug.toggleDecor`, `toggleGrid`), **room labels** (`roomLabelsShown`, `w.roomLabels.setShown`), and **spots** (`w.spots.toggle`). Each is read afresh as the menu draws, so one toggled elsewhere, e.g. by the `0` key, shows.
 
 Rules:
 
@@ -277,11 +277,13 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 - Near a door (its "nearby" sensor), it also looks at whoever else is near that door (`w.e.doorToNpcs`), either side.
   An arm can reach through a doorway into the next room.
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
+- A body is tested where it is, and where it will be once the arm could be in: the poll's interval plus `drawInSecs` on, at its velocity relative to theirs (`armMeetsNpc`'s `leadSecs`). Else a walker is in the gun before it draws in.
 - What can meet someone is their gun at full aim (`gunLine`). Stood, it is a fixed segment in their aim's frame
   (`phaserConfig.gun`, measured off `phaser_aim`): from the elbow to the muzzle, beside their right shoulder. Sat or
   lain, it is a line `reach` long from their right shoulder bone, the way the arm points (`armBearingOf`).
-- A body stood is in the way within `bodyRadius + armWidth` of the line between their shoulder joints, read off the
-  bones as last drawn: blocky shoulders stand ~0.2m out. One sat or lain is within `agentRadius + armWidth` of
+- A body stood is in the way within `bodyRadius + armWidth` of a disc round their middle as wide as their shoulder joints
+  reach, read off the bones as last drawn: blocky shoulders stand ~0.2m out. A disc, as a turn between polls swings
+  the shoulders anywhere in it. One sat or lain is within `agentRadius + armWidth` of
   their middle.
 - An arm is in the way when the two guns come within `2 * armWidth` (`segsApart`), but only an arm up now, not
   drawn in. So of two that would meet, whoever raised first keeps it and only the other draws in.

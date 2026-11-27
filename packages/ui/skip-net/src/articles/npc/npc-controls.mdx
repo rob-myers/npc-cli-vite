@@ -1,14 +1,11 @@
-- __Item #:__ npc-controls
-- __Tags:__ ui, actuation
-- __Activation:__ code, keys, pointer
+<ActivationProcedures>
 
-
-```sh
+```sh title="control player or last picked"
 # pointer moves player
 # @bootable
 pick meta.{floor,do} | move $( playerPath ) --force
 
-# keys move player
+# keys wasd move player
 # @bootable @default=desktop
 wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
@@ -16,25 +13,60 @@ wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 # @bootable @default
 pick meta.{floor,do} | move $( lastPicked ) --force
 
-# pointer moves rob
-# close clicks behind rob back him away
-pick meta.{floor,do} | move rob --backstep --force
+# keys wasd move last picked
+# @bootable
+wasd_delta --nav $( lastPicked ) --force | move $( lastPicked ) --force
+```
 
-# keys move rob
-wasd_delta --nav rob | move rob --force
+```sh title="control rob" rob=npc
+# rob moved by pointer
+# @bootable
+pick meta.{floor,do} | move rob --force
 
-# pointer strafes rob
+# rob strafed by pointer
 pick meta.{floor,do} | move rob --strafe --force
-
-# keys strafe rob
-wasd_delta rob | move rob --strafe --force
 
 # rob looks via long pointer
 pick --long | look rob --force
 
-# rob looks via keys
+# rob moved by wasd keys
+wasd_delta --nav rob | move rob --force
+
+# rob strafed by wasd keys
+wasd_delta rob | move rob --strafe --force
+
+# rob looks via wasd keys
 wasd_delta rob | look rob --force
 ```
 
-#### Description:
-When the NPC is the Player <SideNote>Player ∊ NPC, despite contradiction.</SideNote>
+</ActivationProcedures>
+
+<Description>
+
+Let us agree there is a exactly one player or none at all.
+
+```sh
+# output the player key or null
+playerKey
+```
+
+By _controls_ we mean a process which _directly_<SideNote>The action must commence within 300ms of the input, assuming an unpaused World with unital time scale.</SideNote> converts user input to player actions or the action of a single NPC.
+
+```sh title="user input demo"
+# click mouse or tap touch screen
+call '({ api }) => document.addEventListener("click", api.writeInfo, { once: true })'
+
+# press key on keyboard
+call '({ api }) => document.addEventListener("keydown", api.writeInfo, { once: true, capture: true })'
+
+# release key on keyboard
+call '({ api }) => document.addEventListener("keyup", api.writeInfo, { once: true, capture: true })'
+
+# other examples include right click, mouse wheel, long press and pinch zoom.
+```
+
+Important user input examples are above, they'll produce output in the connected terminal.
+As for controls, the reader is invited to inspect the [activation procedures](#activationprocedures).
+Commands with a <BoltIcon on /> autorun in the World, so they'll already be running unless interrupted.
+
+</Description>

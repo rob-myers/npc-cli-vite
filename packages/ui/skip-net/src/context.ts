@@ -27,6 +27,8 @@ export type State = {
   close(id: string): void;
   /** Swaps it with its neighbour in the stack, above on `-1`, below on `1`, saving `flexById` as each one's share too */
   moveInStack(id: string, by: -1 | 1, flexById?: Record<string, number>): void;
+  /** Escape ends distraction-free, a backtick over it toggles Show All */
+  onKeyDown(e: KeyboardEvent): void;
   /**
    * A new window, else fronts the one already showing that folder, article or item. `fresh` always opens one.
    * `below` places it just beneath that window in the stack. `centre` places a new one in the middle of the desk in view
@@ -37,6 +39,8 @@ export type State = {
   setClearAsked(clearAsked: boolean): void;
   /** Each stacked window's share of the height, by id, unfolding `unfoldId` if given */
   setStackFlex(flexById: Record<string, number>, unfoldId?: string): void;
+  /** Its root's ref, returning its cleanup */
+  setupRoot(el: null | HTMLDivElement): void | (() => void);
   setWindow(id: string, patch: Partial<SkipNetWindow>): void;
   setWindows(windows: SkipNetWindow[]): void;
   /** Turns distraction-free on or off, else flips it */

@@ -6,11 +6,15 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { FlashlightIcon, SquaresFourIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ReactNode, useContext } from "react";
 import { SkipNetContext } from "../context";
+import { frontOf } from "./windows";
 
 /** SkipNet's toolbar: Show All, distraction-free, Clear, and the ◆ menu, portalled into SkipNet */
 export function Toolbar() {
   const state = useContext(SkipNetContext);
   const { windows, worldKey } = state.meta;
+  const front = frontOf(windows);
+  /** Distraction-free has nothing to show: no front window, or it is folded */
+  const frontFolded = front === undefined || front.shadedH !== undefined;
 
   return (
     <>
@@ -34,7 +38,7 @@ export function Toolbar() {
           <button
             type="button"
             className={cn(barButtonClass, state.distractionFree && "bg-mac-select text-mac-on-select")}
-            disabled={windows.length === 0}
+            disabled={frontFolded}
             onClick={() => state.toggleDistractionFree()}
           >
             <FlashlightIcon weight="bold" className="size-4" />

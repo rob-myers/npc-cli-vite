@@ -36,7 +36,7 @@ The diagrams are in `docs/camera/`. `diagrams.py` there regenerates them, writin
 
 **Keys**
 - No key sets the fade mode. The menu's button does: a tap swaps `sight` and `sense` (from `ship`, back to `sight`), and only a long press enters `ship`.
-- `0` toggles the spots overlay (`w.spots.toggle`), as the debug menu's **spots** does.
+- `0` toggles the spots overlay (`w.spots.toggle`), as **spots** in the player bar's options menu does.
 - `-` and `+` (or `=`) step the camera's framing down or up through the presets, low, mid and high (`stepCameraPreset`), from whichever is nearest by fov.
 
 ## Framing

@@ -1,8 +1,8 @@
-import { cn, Tip, tw } from "@npc-cli/util";
+import { cn, Tip, tw, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { XIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { GridLayout } from "react-grid-layout";
+import { CaretLeftIcon, XIcon } from "@phosphor-icons/react";
+import { useContext, useEffect, useMemo } from "react";
+import { GridLayout, type GridLayoutProps, setTransform } from "react-grid-layout";
 import { SkipNetContext } from "../context";
 import { deskStyle } from "./classes";
 import { DesktopIcons } from "./DesktopIcons";
@@ -35,48 +35,86 @@ export function Desktop() {
   const geometry = windows.map((x) => `${x.id}:${x.x},${x.y},${x.w},${x.h},${x.shadedH !== undefined}`).join(" ");
   const layout = useMemo(() => toLayout(windows), [geometry]);
   const front = frontOf(windows);
-  /** Off until mounted, else every window slides in from a corner */
-  const [animate, setAnimate] = useState(false);
-  const deskRef = useRef<HTMLDivElement>(null);
-  /** Show All's tiles have finished moving, so their badges show */
-  const [settled, setSettled] = useState(false);
+  const zoom = state.meta.zoom ?? 1;
+  const positionStrategy = useMemo(() => zoomedStrategy(zoom), [zoom]);
+  const desk = useStateRef(
+    (): DeskState => ({
+      animate: false,
+      el: null,
+      height: 0,
+      scrolledCols: 0,
+      settled: false,
+
+      onKeyDown(e) {
+        if (e.key === "Escape" && state.showAll) state.toggleShowAll(false);
+      },
+      onResize() {
+        if (desk.el !== null) desk.set({ height: desk.el.clientHeight });
+      },
+      onScroll() {
+        const cols = desk.el === null ? 0 : Math.round(desk.el.scrollLeft / cellPx);
+        if (cols !== desk.scrolledCols) desk.set({ scrolledCols: cols });
+      },
+      scrollToLeft() {
+        desk.el?.scrollTo({ left: 0, behavior: "smooth" });
+      },
+    }),
+  );
   /** What is in view, which Show All fills. Scrolling is held meanwhile */
-  const desk = deskRef.current;
-  const view = desk && {
-    x: desk.scrollLeft + showAllPadPx,
-    y: desk.scrollTop + showAllPadPx,
-    width: desk.clientWidth - 2 * showAllPadPx,
-    height: desk.clientHeight - 2 * showAllPadPx,
+  const view = desk.el && {
+    x: desk.el.scrollLeft + showAllPadPx,
+    y: desk.el.scrollTop + showAllPadPx,
+    width: desk.el.clientWidth - 2 * showAllPadPx,
+    height: desk.el.clientHeight - 2 * showAllPadPx,
   };
   const slots = showAll && view !== null ? showAllSlots(windows, view) : null;
 
+  /** Its scroll, size and keys, and Show All's badges once its tiles settle */
   useEffect(() => {
-    const frameId = requestAnimationFrame(() => setAnimate(true));
-    return () => cancelAnimationFrame(frameId);
-  }, []);
-
-  /** Whilst Show All: its badges show once its tiles settle, and Escape ends it */
-  useEffect(() => {
-    setSettled(false);
-    if (!showAll) return;
-    const timeoutId = window.setTimeout(() => setSettled(true), showAllMs);
-    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && state.toggleShowAll(false);
-    window.addEventListener("keydown", onKeyDown);
+    const el = desk.el;
+    if (el === null) return;
+    desk.settled = false;
+    const frameId = requestAnimationFrame(() => desk.animate || desk.set({ animate: true }));
+    const timeoutId = showAll ? window.setTimeout(() => desk.set({ settled: true }), showAllMs) : 0;
+    const observer = new ResizeObserver(desk.onResize);
+    observer.observe(el);
+    desk.onScroll();
+    el.addEventListener("scroll", desk.onScroll, { passive: true });
+    window.addEventListener("keydown", desk.onKeyDown);
     return () => {
+      cancelAnimationFrame(frameId);
       window.clearTimeout(timeoutId);
-      window.removeEventListener("keydown", onKeyDown);
+      observer.disconnect();
+      el.removeEventListener("scroll", desk.onScroll);
+      window.removeEventListener("keydown", desk.onKeyDown);
     };
   }, [showAll]);
 
   return (
     <div
-      ref={deskRef}
+      ref={desk.ref("el")}
       data-skip-net-desk
       // a press on the bare desk ends distraction-free
       onPointerDown={(e) => (e.target as HTMLElement).closest(".react-grid-item") || state.toggleDistractionFree(false)}
       className={cn("relative flex-1 min-h-0 scrollbar-thin", showAll ? "overflow-hidden" : "overflow-auto")}
       style={deskStyle}
     >
+      {desk.scrolledCols > 0 && !showAll && (
+        // sticks to its top-left as it scrolls, taking no room, over every window. Its pill hangs to its foot
+        <div className="sticky left-0 top-0 h-0 w-0" style={{ zIndex: (front?.z ?? 0) + 2 }}>
+          <Tip content="scroll back to the left">
+            <button
+              type="button"
+              className={scrolledClass}
+              style={{ top: desk.height - scrolledPillOffsetPx }}
+              onClick={desk.scrollToLeft}
+            >
+              <CaretLeftIcon weight="bold" className="size-3" />
+              {desk.scrolledCols} cols
+            </button>
+          </Tip>
+        </div>
+      )}
       <DesktopIcons />
       {view !== null && slots !== null && (
         // dims the desk and icons under the windows, and a click on it ends Show All
@@ -85,8 +123,8 @@ export function Desktop() {
           style={{
             left: view.x - showAllPadPx,
             top: view.y - showAllPadPx,
-            width: desk?.clientWidth,
-            height: desk?.clientHeight,
+            width: desk.el?.clientWidth,
+            height: desk.el?.clientHeight,
           }}
           onClick={() => state.toggleShowAll(false)}
         />
@@ -95,7 +133,7 @@ export function Desktop() {
         className={cn(
           gridClass,
           touchDevice && "[&_.react-resizable-handle-se]:size-6!",
-          !animate && "[&_.react-grid-item]:transition-none!",
+          !desk.animate && "[&_.react-grid-item]:transition-none!",
         )}
         style={{ width: desktopPx }}
         width={desktopPx}
@@ -103,6 +141,7 @@ export function Desktop() {
         dragConfig={showAll ? offConfig : dragConfig}
         resizeConfig={showAll ? offConfig : resizeConfig}
         compactor={freeCompactor}
+        positionStrategy={positionStrategy}
         layout={layout}
         onDragStop={(layout) => state.saveLayout(layout)}
         onResizeStop={(layout) => state.saveLayout(layout)}
@@ -132,7 +171,7 @@ export function Desktop() {
               >
                 <Window win={win} front={win.id === front?.id} items={state.items} showAll={showAll} />
               </div>
-              {slot && settled && (
+              {slot && desk.settled && (
                 // unscaled: its title in a badge at its tile's centre, and a close badge at its top-right whilst over it
                 <>
                   <div
@@ -166,6 +205,23 @@ export function Desktop() {
   );
 }
 
+type DeskState = {
+  /** Off until mounted, else every window slides in from a corner */
+  animate: boolean;
+  el: null | HTMLDivElement;
+  /** Its height in view, placing the scroll pill at its foot */
+  height: number;
+  /** How many columns it is scrolled right, shown by a pill whilst more than none */
+  scrolledCols: number;
+  /** Show All's tiles have finished moving, so their badges show */
+  settled: boolean;
+  /** Escape ends Show All */
+  onKeyDown(e: KeyboardEvent): void;
+  onResize(): void;
+  onScroll(): void;
+  scrollToLeft(): void;
+};
+
 const gridConfig = {
   cols: desktopCols,
   rowHeight: cellPx,
@@ -186,6 +242,12 @@ const showAllTitleClass = tw(
 const showAllCloseClass = tw(
   "absolute left-0 top-0 grid place-items-center size-5 rounded-full border border-mac-edge bg-mac-window text-mac-text shadow pointer-events-auto cursor-pointer opacity-0 transition-[transform,opacity] duration-300 ease-out starting:opacity-0 group-hover:opacity-100 hover:bg-mac-select hover:text-mac-on-select",
 );
+/** From the desk's foot to the pill's top */
+const scrolledPillOffsetPx = 30;
+/** Its scroll right, in a pill at its bottom-left */
+const scrolledClass = tw(
+  "absolute left-2 flex items-center gap-1 whitespace-nowrap rounded-full border border-mac-edge bg-mac-window/90 px-2 py-0.5 font-mono text-[11px] text-mac-text shadow cursor-pointer hover:bg-mac-select hover:text-mac-on-select starting:opacity-0 transition-opacity duration-200",
+);
 /** Hidden whilst fitted to its article, and not animated, the grid's own transition overridden */
 const fittingClass = tw("invisible transition-none!");
 /** Show All neither drags nor resizes */
@@ -198,6 +260,14 @@ const showAllMs = 300;
 const resizeConfig = { handles: ["n", "e", "s", "w", "ne", "nw", "se", "sw"] as const };
 
 const touchDevice = isTouchDevice();
+
+/**
+ * The grid's position strategy, scaled by the tab's CSS zoom. Without it, a press shifts the window.
+ * RGL's own `createScaledStrategy` ignores the grid's offset in the page.
+ */
+function zoomedStrategy(scale: number): NonNullable<GridLayoutProps["positionStrategy"]> {
+  return { type: "transform", scale, calcStyle: setTransform };
+}
 
 /** Its look is in `desktop.css` */
 const gridClass = tw("skip-net-grid min-h-full");

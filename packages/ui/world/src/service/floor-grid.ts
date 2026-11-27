@@ -105,9 +105,9 @@ export type FloorGrid = {
 
 /** A cell and its line, in METRES, and the line's ink */
 const cellSize = 1.5;
-const lineWidth = 0.03;
+const lineWidth = 0.015;
 const lineInk = 0.86;
-const lineAlpha = 0.25;
+const lineAlpha = 0.08;
 /** A cell's coordinates: where they start within it, and a glyph's size, in METRES */
 const textInset = 0.05;
 const charWidth = 0.07;

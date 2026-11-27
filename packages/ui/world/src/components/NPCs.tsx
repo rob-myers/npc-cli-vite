@@ -319,6 +319,10 @@ export default function NPCs() {
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
       },
+      idleYieldsToIdle(npc, other) {
+        const [a, b] = [npc.last.idleTime, other.last.idleTime];
+        return a === b ? npc.key > other.key : a > b;
+      },
       inDoorArea(point) {
         const poly = state.getClosestPoly(point, 0.1);
         return poly.success === true && isDoorAreaId(getNodeByRef(w.nav.navMesh, poly.nodeRef).area);
@@ -369,6 +373,8 @@ export default function NPCs() {
               // cannot immediately else walk -> idle slides
               agent.maxAcceleration = agentConfig.maxAcceleration.idleSeparating;
             }
+            // whatever their speed: pressed against another, the crowd's push never settles
+            state.updateIdleOverlap(npc, delta);
             continue;
           }
 
@@ -634,6 +640,7 @@ export default function NPCs() {
         const playerExisted = w.player.exists();
 
         const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
+        Object.assign(npc.last, { idleTime: w.gameTime.now(), overlapAt: null }); // at rest from now, e.g. for `idleYieldsToIdle`
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
@@ -726,6 +733,27 @@ export default function NPCs() {
         if (Math.abs(deltaAngle(npc.rotation.y, target)) > npcConfig.angle.turnBeforeMove) {
           await npc.look({ at });
         }
+      },
+      updateIdleOverlap(npc, delta) {
+        const { last } = npc;
+        const { overlap } = npcConfig.dist;
+        const other =
+          // Alone, as most are, it allocates nothing. Fading, e.g. off a doable, a shuffle would cut them short
+          npc.agent?.neis.length === 0 || npc.isFading() === true
+            ? undefined
+            : w.npc.near
+                .beside(npc.key, overlap)
+                .find((x) => x.npc.isMoving() === false && state.idleYieldsToIdle(npc, x.npc));
+        if (other === undefined) {
+          last.overlapAccum = 0; // not `Object.assign`, which allocates each tick
+          last.overlapAt = null;
+          return;
+        }
+        // once per spell, unless they have since moved away
+        if (last.overlapAt !== null && npc.distanceTo(last.overlapAt) < overlap) return;
+        if ((last.overlapAccum += delta) < npcConfig.time.overlapDuration) return;
+        Object.assign(last, { overlapAccum: 0, overlapAt: npc.point });
+        state.postCrowdTickEvents.push({ key: "npc-overlap", npcKey: npc.key, otherKey: other.npc.key });
       },
       warmCrowd() {
         if (w.client === true) return; // clients never path-find
@@ -1000,6 +1028,8 @@ export type State = {
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
   hasDoMeta(meta: Meta): boolean;
+  /** Both idle and overlapping, whether `npc` makes way for `other`: whoever came to rest later */
+  idleYieldsToIdle(npc: Npc, other: Npc): boolean;
   /** Whether `point` is on the navmesh in a door's area, which a locked door or a full room refuses */
   inDoorArea(point: JshCli.PointAnyFormat): boolean;
   /** Resolves at the end of the next tick, i.e. once the crowd has been updated */
@@ -1031,6 +1061,8 @@ export type State = {
    * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot. `always` turns them anyway
    */
   turnBeforeMoving(npc: Npc, always?: boolean): Promise<void>;
+  /** Both idle, `npc` overlapping another for `overlapDuration` makes way if it yields: `npc-overlap`, once per spell */
+  updateIdleOverlap(npc: Npc, delta: number): void;
   /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
   warmCrowd(): void;
 };

@@ -25,6 +25,7 @@ import {
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
+  decorSidesOfImg,
   doorConfig,
   inventoryConfig,
   MAX_DECOR_QUAD_INSTANCES,
@@ -694,10 +695,12 @@ export default function Decor() {
           batch.inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
         batch.inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-        // black, bar an item's — or whatever `meta.sides` says
+        // meta.sides, else an item's, else its image's, else black
         const sides =
           decor.meta.sides ??
-          (decor.meta.item === undefined ? "#000" : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
+          (decor.meta.item === undefined
+            ? (decorSidesOfImg[decor.meta.img as string] ?? "#000")
+            : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
         tmpColor.set(sides).toArray(batch.sideRgb, id * 3);
         batch.isPoint[id] = decor.type === "point" ? 1 : 0;
         return true;
@@ -868,9 +871,9 @@ export default function Decor() {
   }, [materials]);
 
   useEffect(() => {
-    // a new layout of the map whose decor is built, e.g. an edit: with the other layers, its materials kept
+    // fresh `w.gms` of the built map, e.g. an edit or a World refetch, need their decor keyed and roomed again
     if (state.builtMapKey === w.mapKey) state.rebuildStatic();
-  }, [w.gmsHash]);
+  }, [w.gms]);
 
   return (
     <>

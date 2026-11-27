@@ -2,9 +2,11 @@
 
 <!-- pnpm sync-readme writes this from packages/app/src/components/about.mdx: edit that instead -->
 
-This is SCP NPC-CLI.
+Hey there, I'm Rob Myers
+and this is SCP NPC-CLI.
 
-Hey there, I'm Rob Myers [me.robmyers@gmail.com](mailto:me.robmyers@gmail.com) · [rob-myers/npc-cli-vite](https://github.com/rob-myers/npc-cli-vite)
+- [me.robmyers@gmail.com](mailto:me.robmyers@gmail.com)
+- [rob-myers/npc-cli-vite](https://github.com/rob-myers/npc-cli-vite)
 
 [![NPC CLI demo](https://img.youtube.com/vi/WIIihWnOQ2E/hqdefault.jpg)](https://www.youtube.com/watch?v=WIIihWnOQ2E)
 

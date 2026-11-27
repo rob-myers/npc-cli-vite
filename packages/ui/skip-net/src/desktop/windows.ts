@@ -174,7 +174,7 @@ const cascadeCells = 2;
 /** A new window's width and height, in cells. An article's height is then fitted to it, at most this */
 const sizes: Record<SkipNetKind, [number, number]> = {
   article: [30, articleRows],
-  folder: [20, 12],
+  folder: [12, 12],
   /** Tall enough for a thread with no comments yet */
   chat: [24, 17],
   item: [itemCols, 16],
