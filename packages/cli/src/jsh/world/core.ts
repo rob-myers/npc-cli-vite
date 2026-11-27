@@ -1677,18 +1677,35 @@ export function shield(
 }
 
 /**
+ * Change an npc's skin. With no npc, lists the skins, those worn marked, with who wears them and their meta.
  * ```sh
+ * skin
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
  * skin rob postdoc-0
  * skin rob as:r
  * ```
  */
-export function skin(
+export async function* skin(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; as?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  if (opts.npcKey === undefined) {
+    const keys = w.npc.skin.entries.map((entry) => entry.key);
+    const keyWidth = Math.max(...keys.map((key) => key.length));
+    const { White, Grey, GreyDark, Reset } = api.ansi;
+    for (const key of keys) {
+      const wearers = Object.values(w.n).flatMap((npc) => (npc.skinKey === key ? [npc.key] : []));
+      const shade = wearers.length > 0 ? White : Grey;
+      const mark = wearers.length > 0 ? "*" : " ";
+      const worn = wearers.length > 0 ? ` ${GreyDark}worn by ${shade}${wearers.join(", ")}` : "";
+      const meta = describeSkinMeta(key, w.npc.getSkinMeta(key));
+      const tail = `${worn}${meta ? ` ${GreyDark}meta ${shade}${meta}` : ""}`;
+      yield `${shade}${mark} ${tail ? key.padEnd(keyWidth) : key}${tail}${Reset}`;
+    }
+    return;
+  }
   const npc = w.npc.get(opts.npcKey);
   const prefix = `${(opts.as ??= getLastUnknownNaked(opts) ?? "robot-0")}`;
   const skinKey = w.npc.findSkinKey(prefix);
@@ -1698,6 +1715,14 @@ export function skin(
   }
   npc.setSkin(skinKey);
   w.view.forceUpdate();
+}
+
+/** A skin's meta as its svg title gives it, e.g. `noEyes limbs=0.5`: `eyes` if found, `prefix` only if not its key's */
+function describeSkinMeta(skinKey: string, meta: Meta) {
+  return Object.entries(meta)
+    .filter(([name, value]) => name !== "skinKey" && !(name === "prefix" && skinKey.startsWith(`${value}-`)))
+    .map(([name, value]) => (value === true || name === "eyes" ? name : `${name}=${value}`))
+    .join(" ");
 }
 
 /**

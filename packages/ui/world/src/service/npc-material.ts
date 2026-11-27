@@ -174,11 +174,11 @@ function createUniforms(pickId: number, skinIndex: number): NpcUniforms {
 }
 
 /**
- * Shows the head overlay's sides from within too, if a skin's meta has `overlay-backfaces=head`.
+ * Shows the head overlay's sides from within too, if a skin's meta has `overlayHeadBackfaces`.
  * Its material is double-sided only then: other back faces are discarded (`shownFace`).
  */
 export function setOverlayBackfaces(target: Pick<NpcMaterial, "material" | "overlayBackfaces">, meta: Meta) {
-  const on = meta["overlay-backfaces"] === "head";
+  const on = meta.overlayHeadBackfaces === true;
   target.overlayBackfaces.value = on ? 1 : 0;
   const side = on ? THREE.DoubleSide : THREE.FrontSide;
   if (target.material.side !== side) {

@@ -8,7 +8,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 - `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--86403319024aa40f.png`
 - `{key}.svg` (optional): an overlay drawn over it at 256px, i.e. the detail
-  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlay-backfaces`)
+  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlayHeadBackfaces`)
   - a `<g>` titled `ignore` is dropped when rasterised
 
 `manifest.json` there lists them (`byKey`, with `svgPath` and `meta`), rebuilt by `rebuildSkinManifest`.
@@ -82,7 +82,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   `image-rendering: pixelated`, its `href` a data URI. Everything after it draws over the skin.
 - A flag in that title becomes `meta`, e.g. `meta prefix=mtf noEyes`.
 - The meta group must stay top-level. Wrapped in another group, e.g. one masking the whole skin, its meta is never read: mask each top-level group instead (`cultist-0`).
-  - A bare word is `true`. A value after `=` is parsed as JavaScript, else kept as a string (`tagsToMeta`). So `x=0.5` is a number and `overlay-backfaces=head` the string `head`, but a value naming a global, e.g. `Math`, is that global.
+  - A bare word is `true`. A value after `=` is parsed as JavaScript, else kept as a string (`tagsToMeta`). So `x=0.5` is a number and `prefix=mtf` the string `mtf`, but a value naming a global, e.g. `Math`, is that global.
 - Avoid `<use>`. Boxy SVG re-saves each one as a full copy of what it names, the png included.
 - Keep the `<title>`s: they are how a part is found in Boxy.
 
@@ -90,7 +90,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 
 - The OVERLAY layers render wherever they are opaque, as a shell a little outside the body. The npc
   material discards alpha under 0.9. So clear stray overlay pixels, and draw nothing part-transparent there.
-- As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlay-backfaces=head` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
+- As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlayHeadBackfaces` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
   - Its npc's material is double-sided, and `shownFace` discards every other back face (`setOverlayBackfaces`, `service/npc-material.ts`). Other npcs' stay single-sided.
 - A skin's meta can thin its wearer: `limbs=0.5` for arms and legs half as wide, `legs=0.6` for the legs alone, `body=0.6` for a narrower torso, e.g. `scp-096`, `scp-106`, `scp-682`.
   - The vertices, base and overlay, move in the bind pose (`setBodyShape`, `service/geometry.ts`). Each limb narrows about its own axis, the torso about the body's.
@@ -148,7 +148,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - The top face's upper edge meets the back. The right side's rear is its left edge, and the left side's is its right edge.
   - The base hair under them takes each tuft's blurred shadow just past its tips, and strand lines carrying on from the tufts'.
   - Drawn over a filtered image, they take the same filter (`#punch`), else their browns do not match.
-- Short coily hair is small seeded coils on the head overlay, each a dark clump with a C-shaped curl, ending raggedly above a taper (`d-1`). The base beneath is the hair's colour with fine curls, and below a ragged edge it is skin, with stubble thinning out. It takes `overlay-backfaces=head`.
+- Short coily hair is small seeded coils on the head overlay, each a dark clump with a C-shaped curl, ending raggedly above a taper (`d-1`). The base beneath is the hair's colour with fine curls, and below a ragged edge it is skin, with stubble thinning out. It takes `overlayHeadBackfaces`.
 - Messy hair mixes the two layers (`d-2`).
   - The overlay takes short curved tufts of random size and mixed tones, each clipped to its face. On top they lie away from the crown, and elsewhere they hang down.
   - The base hair takes streaks along the same flow, clipped to its hair texels, and the tufts' blurred shadows.
