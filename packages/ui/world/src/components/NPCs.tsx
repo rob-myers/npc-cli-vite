@@ -53,7 +53,7 @@ import { createNpcMaterial, type NpcMaterial, setOverlayBackfaces } from "../ser
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
 import { neverShownSlot } from "../service/room-slots";
-import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
+import { drawLoadingSkin, loadSkinSheetsEach, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
 import { isDoorAreaId } from "../worker/nav-util";
 import type { PhysicsBijection } from "../worker/physics.store";
@@ -803,7 +803,8 @@ export default function NPCs() {
           new GLTFLoader().loadAsync(devCacheBust(getModelUrl())),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
-        const sheetImages = await loadSkinSheets(w.sheets, skinManifest, cacheBust);
+        const sheetImages = loadSkinSheetsEach(w.sheets, skinManifest, cacheBust);
+        await sheetImages[0]; // the skins worn at boot: nothing waits for the rest
         const sliceImages = await loadSkinSliceSheets(w.sheets, skinManifest, cacheBust, sheetImages);
         return { gltf, sheetImages, sliceImages, skinManifest };
       },
@@ -817,10 +818,19 @@ export default function NPCs() {
     const { width: tw, height: th } = w.texSkin.opts;
     const { ct } = w.texSkin;
     ct.imageSmoothingEnabled = false;
-    Object.values(w.sheets.skin).forEach(({ sheetId, rect }, i) => {
-      ct.clearRect(0, 0, tw, th);
-      ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-      w.texSkin.updateIndex(i);
+    const skins = Object.values(w.sheets.skin);
+    /** Each skin of one sheet into its layer, else a black body whilst its sheet loads */
+    const drawSheet = (sheetId: number, image: CanvasImageSource | null) =>
+      skins.forEach(({ sheetId: id, rect }, i) => {
+        if (id !== sheetId) return;
+        ct.clearRect(0, 0, tw, th);
+        if (image === null) drawLoadingSkin(ct, tw, th);
+        else ct.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+        w.texSkin.updateIndex(i);
+      });
+    queryData.sheetImages.forEach((loading, sheetId) => {
+      if (sheetId > 0) drawSheet(sheetId, null);
+      loading.then((image) => drawSheet(sheetId, image));
     });
 
     // ...and each skin's slices into its layer of the slices' — see `docs/skin-slices.md`

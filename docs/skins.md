@@ -22,6 +22,13 @@ key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaul
 `pnpm exec gen-skin-sheets` only lays them out: one **256px** cell per skin, written to `sheets.json`
 (`skin`, `skinSheetDims`). It draws nothing.
 
+There are two sheets, so a World boots on the skins worn at boot alone (`bootFamilies` in `gen-skin-sheets`):
+
+- Sheet 0 holds the families d, medic, mtf, postdoc, ra and robot. The `skins-and-gltf` query waits for it alone.
+- Sheet 1 holds the rest, e.g. scp, cultist, chaos and hazmat. It loads after (`loadSkinSheetsEach`).
+- Until it arrives, its skins are a black body: base faces opaque, overlays clear (`drawLoadingSkin`). Then each layer is redrawn.
+- A new family goes in sheet 1 unless added to `bootFamilies`.
+
 **In DEV** the World draws each sheet itself (`service/skin-sheets`): per skin its svg, else its png,
 nearest-neighbour. Those canvases feed `w.texSkin`
 directly, and each is POSTed to `/api/skin-sheet/:sheetId`, where the dev server writes
