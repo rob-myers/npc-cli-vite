@@ -534,7 +534,30 @@ export const corpseConfig = {
 };
 
 /** Effects an npc may show, by `fxKind`: a skin's `fx` meta, else jsh `fx` — see `docs/skins.md` */
-export const npcFxKinds = ["none", "static", "noir", "ghost", "shroud"] as const;
+export const npcFxKinds = ["none", "static", "noir", "ghost", "shroud", "embers"] as const;
+
+/**
+ * An `embers` effect's sparks, rising off the body and fading: how many each, metres across, seconds each lasts,
+ * metres it rises and drifts, and where on the body they start (metres out, and up as a share of height)
+ */
+export const emberConfig = {
+  count: 20,
+  size: 0.035,
+  life: 3.6,
+  rise: 0.45,
+  drift: 0.05,
+  spread: 0.18,
+  from: 0.25,
+  to: 1,
+  /** New, then dying (linear) */
+  hot: [1, 0.55, 0.12],
+  cool: [0.6, 0.06, 0],
+  glow: 1.2,
+  /** How quickly each fades through its life: `1` evenly, higher sooner */
+  fadeOut: 2.5,
+  /** Metres they are drawn toward the camera, so those behind the body show over it */
+  towardCamera: 0.35,
+} as const;
 
 /** A shroud's cloth colour (linear): their rim alone shows their shape */
 export const shroudConfig = { color: [0, 0, 0] } as const;

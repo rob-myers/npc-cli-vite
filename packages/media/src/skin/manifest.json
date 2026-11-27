@@ -420,7 +420,14 @@
       "key": "scp-049-2a",
       "id": "af3aa135b92788cc",
       "filename": "scp-049-2a--af3aa135b92788cc.png",
-      "meta": {"skinKey": "scp-049-2a", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-049-2a",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.75,
+        "body": 0.8,
+        "height": 1.05
+      },
       "url": "https://namemc.com/skin/af3aa135b92788cc",
       "svgPath": "skin/scp-049-2a.svg"
     },
@@ -525,7 +532,8 @@
         "prefix": "scp",
         "noEyes": true,
         "body": 0.75,
-        "limbs": 0.75
+        "limbs": 0.75,
+        "fx": "embers"
       },
       "url": "https://namemc.com/skin/cd7bfdf3ed9ffdae",
       "svgPath": "skin/scp-457.svg"

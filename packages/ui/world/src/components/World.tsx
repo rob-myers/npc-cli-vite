@@ -63,6 +63,7 @@ import NPCs from "./NPCs";
 import NpcArmour from "./NpcArmour";
 import NpcBreath from "./NpcBreath";
 import NpcBubbles from "./NpcBubbles";
+import NpcEmbers from "./NpcEmbers";
 import NpcFocus from "./NpcFocus";
 import NpcGhost from "./NpcGhost";
 import NpcRings from "./NpcRings";
@@ -630,6 +631,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <>
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
+                <NpcEmbers key="npc-embers" />
                 <NpcBreath key="npc-breath" />
                 <NpcGhost key="npc-ghost" />
                 <NpcArmour key="npc-armour" />
