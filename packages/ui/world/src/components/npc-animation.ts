@@ -945,11 +945,20 @@ export class NpcAnimation {
       (headYByPose[this.npc.clips[looks]?.name as AnimationClipKey] ?? headYByPose[looks]) * this.npc.heightScale;
     this.npc.setBubbleHeight(bubbleHeightForClip(looks));
     this.npc.setLabelYShift(
-      labelYShiftForClip(looks),
+      this.labelShiftFor(looks),
       crouchMove || looks !== next || rising,
       rising ? clips[next].duration : undefined,
     );
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
+  }
+
+  /** Their label's lift in `pose`: as far above their own head as a default npc's is above theirs, scaled with them */
+  labelShiftFor(pose: AnimationClipKey) {
+    const shift = labelYShiftForClip(pose);
+    const defaultHeadY = this.w.npc.headYByPose[pose];
+    if (defaultHeadY === undefined || this.headY === 0) return shift; // e.g. before their first pose
+    const { heightScale, headScale } = this.npc;
+    return this.headY / (npcScale * heightScale) + shift - defaultHeadY / npcScale + (headScale - 1) * headHeight;
   }
 
   /** Start or stop strafing mid-move, as `face.aim` comes or goes: stopping eases out in `syncStrafe` */
@@ -2070,6 +2079,9 @@ const isCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch");
 const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || isCrouch(clipName);
 /** Crouched half: the head lower than stood, higher than sat */
 const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
+
+/** A head's height in model units: 8px */
+const headHeight = 0.5;
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;

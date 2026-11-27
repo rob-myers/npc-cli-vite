@@ -60,7 +60,8 @@ export default function NpcRings() {
             state.selectRingByNpc.delete(npcKey);
             continue;
           }
-          const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
+          const wanted =
+            (npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius) * npc.widthScale;
           retarget(ring.radius, wanted, selectRingMorphSecs, now);
           // read every tick, unlike the others': an npc walks from one room to the next
           ring.x = npc.position.x;
@@ -136,7 +137,9 @@ export default function NpcRings() {
         // fading one in draws it inwards — which reads as picking them out rather than appearing.
         // Its radius starts at whatever they are already doing, else it would slide into place too.
         // Where it is, and whose room, are read every tick
-        const radius = w.n[npcKey]?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
+        const npc = w.n[npcKey];
+        const radius =
+          (npc?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius) * (npc?.widthScale ?? 1);
         const next: RingInstance = {
           ...selectRingLook,
           style: look.style,

@@ -534,7 +534,10 @@ export const corpseConfig = {
 };
 
 /** Effects an npc may show, by `fxKind`: a skin's `fx` meta, else jsh `fx` — see `docs/skins.md` */
-export const npcFxKinds = ["none", "static", "noir", "ghost"] as const;
+export const npcFxKinds = ["none", "static", "noir", "ghost", "shroud"] as const;
+
+/** A shroud's cloth colour (linear): their rim alone shows their shape */
+export const shroudConfig = { color: [0, 0, 0] } as const;
 
 /** Ghost and static: a shot passes through them, as they become a stipple or a dot screen — see `NpcGhost` */
 export const ghostConfig = {

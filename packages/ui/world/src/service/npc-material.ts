@@ -32,7 +32,7 @@ import {
 import * as THREE from "three/webgpu";
 import type { State as WorldState } from "../components/World";
 import { skinSliceDims } from "../const.both";
-import { eyesConfig, ghostConfig, npcFxKinds, npcMaterialConfig } from "../const.npc";
+import { eyesConfig, ghostConfig, npcFxKinds, npcMaterialConfig, shroudConfig } from "../const.npc";
 import { noirTone } from "./extra-fx";
 import { OBJECT_PICK_KEY_TO_RED } from "./pick";
 import { alwaysShownSlot } from "./room-slots";
@@ -98,7 +98,7 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   const { skinTex, skinRgb } = skinColor(w, u);
   // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
   // skin happened to be — a dark uniform takes a rim as readily as a pale one
-  const litRgb = skinRgb
+  const litRgb = shrouded(u, skinRgb)
     .mul(exposure(w, litAmount, u.roomLit, shared, fold))
     .add(vec3(...npcMaterialConfig.rim.color).mul(rim(fold)));
   // `alphaTestNode` below gives way with this, or the body would be discarded whole the
@@ -219,6 +219,11 @@ function graded(u: NpcUniforms, rgb: THREE.Node<"vec3">) {
     });
     return out;
   })();
+}
+
+/** Their skin, else the cloth of their `shroud` effect */
+function shrouded(u: NpcUniforms, rgb: THREE.Node<"vec3">) {
+  return mix(rgb, vec3(...shroudConfig.color), select(u.fxKind.equal(shroudKind), u.fxAmount, 0));
 }
 
 /** `1`, except on a back face outside the head overlay's sides (u 0.5..1, v 0.125..0.25) */
@@ -351,3 +356,4 @@ function labelColor(w: World, u: NpcUniforms, isPickMode: THREE.Node<"bool">, fo
 const staticKind = npcFxKinds.indexOf("static");
 const noirKind = npcFxKinds.indexOf("noir");
 const ghostKind = npcFxKinds.indexOf("ghost");
+const shroudKind = npcFxKinds.indexOf("shroud");

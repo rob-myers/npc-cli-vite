@@ -383,7 +383,8 @@
         "noEyes": true,
         "scale": 0.65,
         "head": 1.3,
-        "clips": "scp_017"
+        "clips": "scp_017",
+        "agentRadius": 0.65
       },
       "url": "https://namemc.com/skin/26dd3229bfc26f08",
       "svgPath": "skin/scp-017.svg"

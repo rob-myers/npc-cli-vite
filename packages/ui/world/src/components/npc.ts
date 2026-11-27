@@ -48,6 +48,8 @@ export class Npc {
   heightScale = 1;
   /** Their mesh's horizontal scale, from their skin's `scale`: at most `1`, so never wider than their agent */
   widthScale = 1;
+  /** Their head's size, from their skin's `head` meta */
+  headScale = 1;
   /** Their agent's radius: the usual, times their skin's `agentRadius`, so a big body keeps others off */
   agentRadius: number = npcDims.agentRadius;
 
@@ -796,6 +798,8 @@ export class Npc {
     this.heightScale = this.widthScale * num(meta.height);
     this.skinnedMesh.scale.set(npcScale * this.widthScale, npcScale * this.heightScale, npcScale * this.widthScale);
     this.anim.headY *= this.heightScale / prevHeight;
+    this.headScale = num(meta.head);
+    this.setLabelYShift(this.anim.labelShiftFor(this.anim.pose));
     // at most half the crowd's neighbour range, so any two are neighbours before they touch
     this.agentRadius = Math.min(crowdConfig.collisionQueryRange / 2, npcDims.agentRadius * num(meta.agentRadius));
     if (this.agent !== null) this.agent.radius = this.agentRadius;
