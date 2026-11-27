@@ -54,6 +54,8 @@ A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each cli
 - `scp_049_2a_*`: a gaunt zombie, slack, the head lolled and twitching, the arms half raised. Its walk shambles, lurching side to side.
 - `scp_049_2b_*`: a fresh zombie, slumped on its left leg, the head hanging, the arms limp. Its walk limps, the right leg stiff and dragging. Both have `agentRadius=1.6`. They have no run: hurried, the default `run` plays.
 - `scp_1471_*`: dog-like. A shallow hunch, the long arms dangling. Its idle sniffs in quick bobs, cocks its head one way then the other, and pants. Its walk is a low loping trot, bouncing twice a step, the head low and level. Its skin's meta has `agentRadius=1.5`: its idle stays within that, its walk within about 0.4 m.
+- `scp_610_*`: hunched and labouring, spasms jerking a shoulder, the head and the chest in turn, an arm twitching with each (linear keys, so they stay sharp). Its walk lurches and limps, the right leg swinging short, the right arm wide and the left limp, a chest jerk and a head spasm each stride. Its skin's meta has `agentRadius=1.5`.
+- `scp_939_*`: a low stalk, crouched deep, the clawed arms hanging forward. Its idle tilts its eyeless head one way and the other to listen, and tips it back and holds, as if mimicking a voice. Its walk creeps on the walk's own legs, crouched, the head level. It is `height=1.4`, `agentRadius=1.75`: kept within about 0.4 m. Not on all fours: its body would reach 1.5 m ahead of its centre, past any crowd radius.
 - `scp_682_*`: a restless predator in a deep crouch, its head level. Over a 6s idle the head weaves like a snake, then holds, then snaps at 3s. A shudder runs up the body at 4.5s, its regeneration. The chest swells slowly and empties fast, and the claws twitch. The snap and shudder are linear keys, so they stay sharp. Its walk is a stalk on the walk's own legs, crouched and splayed, the shoulders rolling against each step while the head stays locked forward. Its skin's meta has `agentRadius=1.75`, the most the crowd allows: keep every part within about 0.42 m of its centre, or it reaches into others.
 - `scp_106_*`: stooped and slack, the head lolling, the arms limp. Its walk limps, the right leg dragging stiff.
 
@@ -63,7 +65,7 @@ A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each cli
 
 - It is made additive at load, against its first frame (`makeClipAdditive` in `NPCs`), so it adds only the bend over any gait. Their stride and pace stay their own.
 - `anim.setDuck` eases it in or out over `duckConfig.fadeSecs`, held at its last frame (`tickDuck`). Only whilst stood upright, not crouched. `setPose` leaves it be.
-- Tall npcs stoop under lintels with it (`docs/skins.md`). It lowers a 1.2-height npc's head about 0.2m. Keep its first key the rest pose, every bone keyed.
+- Tall npcs stoop under lintels with it (`docs/skins.md`). It lowers a 1.2-height npc's head about 0.2m. Taller than `doorwayDuck.crouchAbove` (1.3), e.g. `scp-939`, they crouch instead: a stoop deep enough would bend them double. Keep its first key the rest pose, every bone keyed.
 
 ## Mirrored clips
 

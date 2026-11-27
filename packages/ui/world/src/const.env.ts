@@ -248,8 +248,8 @@ export const wallHeight = 1.8;
 export const doorHeight = wallHeight - 0.001;
 /** Metres a lintel hangs down over a door, in front of it */
 export const lintelHeight = 0.1;
-/** Npcs taller than `heightScale` (their skin's) stoop once their head is within `reach` metres of a door they pass through, so it clears the lintel. They stand once it is `clear` metres past the door's line, or `leave` from it if they turn away */
-export const doorwayDuck = { heightScale: 1.1, reach: 0.7, clear: 0.35, leave: 0.9 };
+/** Npcs taller than `heightScale` (their skin's) stoop once their head is within `reach` metres of a door they pass through, so it clears the lintel. They stand once it is `clear` metres past the door's line, or `leave` from it if they turn away. Taller than `crouchAbove`, they crouch instead */
+export const doorwayDuck = { heightScale: 1.1, reach: 0.7, clear: 0.35, leave: 0.9, crouchAbove: 1.3 };
 /** A door's depth: just proud of the walls beside it (faces ±0.05, a hull's ±0.1), so their trim stays behind */
 export const doorPanelDepth = { hull: 0.201, nonHull: 0.101 } as const;
 

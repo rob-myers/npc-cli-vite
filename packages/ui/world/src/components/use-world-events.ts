@@ -2010,12 +2010,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       duckInDoorway(npcKey, gdKey, side = 1) {
         const npc = w.n[npcKey];
         if (npc === undefined) return void state.doorwayDucked.delete(npcKey);
+        const ducked = state.doorwayDucked.get(npcKey);
         if (gdKey === null) {
-          if (state.doorwayDucked.delete(npcKey)) npc.anim.setDuck(false);
-        } else {
-          npc.anim.setDuck(true);
-          state.doorwayDucked.set(npcKey, { gdKey, side });
+          if (ducked === undefined) return;
+          state.doorwayDucked.delete(npcKey);
+          if (ducked.crouched) npc.anim.setCrouch(0);
+          else npc.anim.setDuck(false);
+          return;
         }
+        // the tallest crouch, as a stoop deep enough would bend them double
+        const crouched = npc.heightScale > doorwayDuck.crouchAbove && npc.anim.crouchLevel === 0;
+        if (crouched) npc.anim.setCrouch(2);
+        else npc.anim.setDuck(true);
+        state.doorwayDucked.set(npcKey, { gdKey, side, crouched });
       },
       trackDoorway(npcKey, gdKey) {
         const door = w.door.byKey[gdKey];
@@ -2550,9 +2557,9 @@ export type State = {
   trackDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey): void;
   /** Tall npcs near a door, the only ones `syncDoorwayDuck` looks at: added as they near one */
   doorwayWatched: Set<string>;
-  /** The tall npcs stooping in a doorway: its door, and the side of its line they came from — see `syncDoorwayDuck` */
-  doorwayDucked: Map<string, { gdKey: Geomorph.GmDoorKey; side: number }>;
-  /** A tall npc stoops in door `gdKey`'s doorway, coming from `side` of its line, so their head clears its lintel. `null` stands them up */
+  /** The tall npcs stooping, or crouching, in a doorway: its door, the side of its line they came from, and which — see `syncDoorwayDuck` */
+  doorwayDucked: Map<string, { gdKey: Geomorph.GmDoorKey; side: number; crouched: boolean }>;
+  /** A tall npc stoops in door `gdKey`'s doorway, else crouches if taller still, coming from `side` of its line, so their head clears its lintel. `null` stands them up */
   duckInDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey | null, side?: number): void;
   /** Each tick, stoops tall npcs near a door's line, and stands them again further off — see `doorwayDuck` */
   syncDoorwayDuck(): void;

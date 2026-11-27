@@ -554,7 +554,13 @@
       "key": "scp-610",
       "id": "5447f65b76c19354",
       "filename": "scp-610--5447f65b76c19354.png",
-      "meta": {"skinKey": "scp-610", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-610",
+        "prefix": "scp",
+        "noEyes": true,
+        "clips": "scp_610",
+        "agentRadius": 1.5
+      },
       "url": "https://namemc.com/skin/5447f65b76c19354",
       "svgPath": "skin/scp-610.svg"
     },
@@ -597,7 +603,11 @@
         "skinKey": "scp-939",
         "prefix": "scp",
         "noEyes": true,
-        "taper": 0.4
+        "height": 1.4,
+        "limbs": 0.7,
+        "taper": 0.4,
+        "clips": "scp_939",
+        "agentRadius": 1.75
       },
       "url": "https://namemc.com/skin/eed3c82055903f74",
       "svgPath": "skin/scp-939.svg"
