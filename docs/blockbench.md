@@ -51,6 +51,7 @@ A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each cli
 - `scp_1000_*`: a slow sway, heavy breaths, the head scanning, long arms swinging. Its walk rolls heavily. Its body is big for an agent, so its skin's meta has `agentRadius=1.5`: the crowd keeps others off it.
 - `scp-650` wears `clips=scp_173`: a statue too.
 - `scp_096_*`: hunched, the hands over the face, shoulders heaving in sobs. Its walk shambles in short steps, swaying.
+- `scp_682_*`: a restless predator in a deep crouch, its head level. Over a 6s idle the head weaves like a snake, then holds, then snaps at 3s. A shudder runs up the body at 4.5s, its regeneration. The chest swells slowly and empties fast, and the claws twitch. The snap and shudder are linear keys, so they stay sharp. Its walk is a stalk on the walk's own legs, crouched and splayed, the shoulders rolling against each step while the head stays locked forward. Its skin's meta has `agentRadius=1.75`, the most the crowd allows: keep every part within about 0.42 m of its centre, or it reaches into others.
 - `scp_106_*`: stooped and slack, the head lolling, the arms limp. Its walk limps, the right leg dragging stiff.
 
 ## The duck

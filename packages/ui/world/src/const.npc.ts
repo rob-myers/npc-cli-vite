@@ -259,6 +259,8 @@ export const fromAnimationClipKey = {
   scp_106_breathe: true,
   scp_106_walk: true,
   scp_173_breathe: true,
+  scp_682_breathe: true,
+  scp_682_walk: true,
   shift_weight: true,
   shrug: true,
   shuffle: true,
@@ -673,6 +675,8 @@ export const fadeSecs: Record<
   scp_106_breathe: {},
   scp_106_walk: {},
   scp_173_breathe: {},
+  scp_682_breathe: {},
+  scp_682_walk: {},
   shift_weight: {},
   shrug: {},
   // brief, so it must fade quickly to be seen at all
