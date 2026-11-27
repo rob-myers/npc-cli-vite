@@ -434,7 +434,13 @@ function onSoundsEvent(e: JshCli.Event, w: JshCli.WorldState, hearing: Hearing) 
       heard(e.by) && playAt(w, "fire", e.by, { amount: e.charge, look: w.phasers?.lookOf(e.by) });
       break;
     case "npc-shot":
-      heard(e.by, e.npcKey) && playAt(w, e.outcome === "down" || e.outcome === "kill" ? "hit" : e.outcome, e.npcKey);
+      // a static shot passes through as a ghost's does, and sounds the same
+      heard(e.by, e.npcKey) &&
+        playAt(
+          w,
+          e.outcome === "down" || e.outcome === "kill" ? "hit" : e.outcome === "static" ? "ghost" : e.outcome,
+          e.npcKey,
+        );
       break;
     case "phaser-struck":
       e.what !== "nothing" && heard(e.by) && getAudio().sfx("struck", heardAt(w, e.at)); // its charge soaked up

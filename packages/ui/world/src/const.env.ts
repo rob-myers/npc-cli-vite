@@ -225,7 +225,15 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     brightness: 1,
     skirtBrightness: 1,
   },
-  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1, sameRoom: 0.2 },
+  npcs: {
+    ambient: 0,
+    brightness: 0.25,
+    fxStrength: 1,
+    sameRoom: 0.2,
+    labelColor: "#bbb",
+    labelOpacity: 0.35,
+    labelHalo: "",
+  },
   doors: {
     brightness: 1,
     opacity: 0.8,
@@ -240,6 +248,8 @@ export const wallHeight = 1.8;
 export const doorHeight = wallHeight - 0.001;
 /** Metres a lintel hangs down over a door, in front of it */
 export const lintelHeight = 0.1;
+/** Npcs taller than `heightScale` (their skin's) half crouch within `reach` metres of a door they pass through, so their head clears its lintel. They stand once out of its inside sensor, or past `leave` if they turn away */
+export const doorwayCrouch = { heightScale: 1.1, reach: 0.8, leave: 0.95 };
 /** A door's depth: just proud of the walls beside it (faces ±0.05, a hull's ±0.1), so their trim stays behind */
 export const doorPanelDepth = { hull: 0.201, nonHull: 0.101 } as const;
 

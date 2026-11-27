@@ -49,7 +49,7 @@ export class Npc {
   /** Their mesh's horizontal scale, from their skin's `scale`: at most `1`, so never wider than their agent */
   widthScale = 1;
   /** Their agent's radius: the usual, times their skin's `agentRadius`, so a big body keeps others off */
-  agentRadius = npcDims.agentRadius;
+  agentRadius: number = npcDims.agentRadius;
 
   anim = new NpcAnimation(this);
   w: UseStateRef<import("./World").State>;

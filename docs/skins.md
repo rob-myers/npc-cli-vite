@@ -104,7 +104,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - Every npc has its own geometry, so others are untouched. `npc.syncSkinShape` applies it with each skin, and restores it for the next.
   - Each shape is worked out once, then copied in (`w.npc.shapeCache`, keyed by shape, with the bind pose as `bind`). A glTF reload clears it.
 - A skin whose meta has `scale=0.5` is drawn half size, e.g. `scp-017`, and `height=1.25` a quarter taller, stretched upright alone, e.g. `scp-096` (`npc.widthScale`, `npc.heightScale`).
-  - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` their head passes through it, for now.
+  - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` they half crouch to pass through a door: within 0.8m of its line, stood in its doorway or their path crossing it. They stand once out of its inside sensor, or past 0.95m if they turn away (`doorwayCrouch` in `const.env`, `syncDoorwayCrouch` in `use-world-events`). Passing by, they stay stood. One crouching anyway is left be.
   - Their agent, gait and stance are unchanged by either. Their head height (`anim.headY`) scales with them, even mid-pose.
   - `scale` only shrinks: it is capped at `1`, since a wider body would reach past its agent, into walls and other npcs. Grow by `height` alone, upright.
 - A skin's meta can give its wearer clips of their own: `clips=scp_096` plays `scp_096_walk` for `walk`, and so on — see `docs/blockbench.md`.
