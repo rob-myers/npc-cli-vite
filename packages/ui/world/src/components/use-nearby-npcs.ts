@@ -23,8 +23,10 @@ export default function useNearbyNpcs(w: UseStateRef<WorldState>) {
       },
       inReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
-        if (at === undefined) return [];
-        if (doors === 0) return state.inRooms([at], npcKey);
+        return at === undefined ? [] : state.inReachOf(at, doors, npcKey);
+      },
+      inReachOf(at, doors = 1, exclude) {
+        if (doors === 0) return state.inRooms([at], exclude);
         if (w.gmRoomGraph.getNode(at.grKey) === null) return [];
         // their room is depth 0, its connectors 1, the rooms beyond those 2
         const rooms = w.gmRoomGraph
@@ -34,7 +36,7 @@ export default function useNearbyNpcs(w: UseStateRef<WorldState>) {
               : node.type !== "door" || w.door.isSeenThrough(node.gdKey) === false,
           )
           .flatMap((node) => (node.type === "room" ? [node] : []));
-        return state.inRooms(rooms, npcKey);
+        return state.inRooms(rooms, exclude);
       },
       inRooms(rooms, exclude, out = []) {
         out.length = 0;
@@ -57,6 +59,8 @@ export type State = {
   beside(npcKey: string, within: number): { npc: Npc; dist: number }[];
   /** Others in the room of `npcKey`, or in rooms up to `doors` doors away (default `1`) through doors seen through */
   inReach(npcKey: string, doors?: number): Npc[];
+  /** As `inReach`, from room `at`, bar `exclude` */
+  inReachOf(at: Geomorph.GmRoomId, doors?: number, exclude?: string): Npc[];
   /** The npcs in `rooms`, bar `exclude`, written to `out` (cleared first) */
   inRooms(rooms: Iterable<{ gmId: number; roomId: number }>, exclude?: string, out?: Npc[]): Npc[];
 };

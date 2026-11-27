@@ -68,6 +68,7 @@ async function unmet(w: JshCli.WorldState, needs: string[], player: JshCli.Npc, 
  * ask "Who goes there?" with:abe friend:"A friend" foe:"[near] Step aside"
  * ask npc:bob "Who goes there?" with:abe friend:"A friend"
  * ask npc:abe "Got a light?" yes:Sure no:Sorry topic:smoke
+ * ask "Who goes there?" with:abe via:speaker-box-3 friend:"A friend"
  * ```
  */
 export function ask({ api, args, w }: JshCli.RunArg) {
@@ -78,7 +79,7 @@ export function ask({ api, args, w }: JshCli.RunArg) {
     talkOptKeys.has(key) || operands.includes(key) ? [] : [toChoice(key, String(value))],
   );
   const topic = opts.topic === undefined ? undefined : String(opts.topic);
-  w.speech.ask(npcKey, toKey, lineOf(operands), replies, { topic });
+  w.speech.ask(npcKey, toKey, lineOf(operands), replies, { topic, speakers: speakersOf(w, opts, toKey) });
 }
 
 /**
@@ -116,12 +117,13 @@ export function reply({ api, args, w }: JshCli.RunArg) {
  * tell "Move along" with:abe
  * tell npc:bob "Move along" with:abe
  * tell npc:abe "Move along"
+ * tell npc:kate "Report to the lab" with:rob via:room
  * ```
  */
 export function tell({ api, args, w }: JshCli.RunArg) {
   const opts = api.jsArg(args) as TalkOpts;
   const [npcKey, toKey] = partiesOf(w, opts);
-  w.speech.tell(npcKey, toKey, lineOf(api.getJsOperands(args, opts)));
+  w.speech.tell(npcKey, toKey, lineOf(api.getJsOperands(args, opts)), { speakers: speakersOf(w, opts, toKey) });
 }
 
 /** The bare words, as a line */
@@ -141,6 +143,11 @@ function partiesOf(w: JshCli.WorldState, opts: TalkOpts): [string, string] {
   return [w.npc.get(String(from)).key, w.npc.get(String(to)).key];
 }
 
+/** The speakers `via:` names, if given: a speaker's decor key, `room` for the listener's, else a channel */
+function speakersOf(w: JshCli.WorldState, opts: TalkOpts, toKey: string) {
+  return opts.via === undefined ? undefined : w.speech.speakersOf(String(opts.via), toKey);
+}
+
 /** `"[near,psi] Step aside"` as a reply needing `near` and `psi` */
 function toChoice(key: string, value: string): TalkChoice {
   const [, needs, text] = value.match(/^\[([^\]]*)\]\s*(.*)$/) ?? [];
@@ -148,10 +155,10 @@ function toChoice(key: string, value: string): TalkChoice {
   return { key, text, needs: needs.split(",").flatMap((need) => need.trim() || []) };
 }
 
-type TalkOpts = { with?: unknown; npc?: unknown; topic?: unknown } & Record<string, unknown>;
+type TalkOpts = { with?: unknown; npc?: unknown; topic?: unknown; via?: unknown } & Record<string, unknown>;
 
 /** Options of `ask` that are not replies */
-const talkOptKeys = new Set(["with", "npc", "topic"]);
+const talkOptKeys = new Set(["with", "npc", "topic", "via"]);
 
 /**
  * Each need a reply may name: a pip on it, tested when pressed.

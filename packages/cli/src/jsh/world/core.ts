@@ -1631,11 +1631,16 @@ export function revoke(
  * say hi with:rob for:10
  * say hi with:rob for:Infinity
  * say hi with:kate &  # carries on without waiting
+ * say "Lights out in five" with:abe via:pa  # through every speaker on channel pa
  * ```
  */
 export async function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { as: "with", npc: "with", for: "secs" }),
+  opts: { with?: string; words?: string; secs?: number; via?: string } = api.jsArg(args, {
+    as: "with",
+    npc: "with",
+    for: "secs",
+  }),
 ) {
   const npcKey = opts.with ?? w.player?.key;
   if (npcKey === undefined) throw Error("no player");
@@ -1643,7 +1648,9 @@ export async function say(
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
   if (!words) return;
 
-  const id = w.speech.say(npc.key, words, opts.secs);
+  // `via:room` is their own room's
+  const speakers = opts.via === undefined ? undefined : w.speech.speakersOf(`${opts.via}`, npc.key);
+  const id = w.speech.say(npc.key, words, opts.secs, { speakers });
   /** Whether this line is still being said */
   const saying = () => w.speech.uttering.get(npc.key)?.id === id;
   let suspended = api.isRunning() === false;

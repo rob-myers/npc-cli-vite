@@ -119,7 +119,7 @@ function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onLocate, onTo
       ref={el}
       className={cn(
         "group flex items-center gap-1.5 pl-2 pr-1 py-0.5 cursor-pointer hover:bg-zinc-800/60 border-y border-transparent",
-        isSelected && "bg-zinc-800",
+        isSelected && "bg-zinc-700 text-zinc-100 shadow-[inset_2px_0_0_var(--deco-selected)]",
         edge === "top" && "border-t-amber-300",
         edge === "bottom" && "border-b-amber-300",
       )}

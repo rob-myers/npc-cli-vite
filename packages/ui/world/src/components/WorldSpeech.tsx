@@ -6,6 +6,7 @@ import { type ReactNode, useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
 import { psiKhandhas } from "../const.npc";
 
+import { addSpeakerHearers, speakersOf } from "../service/speakers";
 import { speechConfig, utteranceOf } from "../service/speech";
 import { getWorldStore } from "../service/storage";
 import { type TalkChoice, threadKeyOf } from "../service/talk";
@@ -86,7 +87,8 @@ export function WorldSpeech() {
         const threadKey = threadKeyOf([npcKey, toKey]);
         state.talks[threadKey] = { npcKey, toKey, replies, topic: opts?.topic, ended: false };
         if (toKey === w.player?.key) state.set({ panelOpen: true, panelTab: "comms" });
-        state.say(npcKey, text, undefined, { to: [toKey], hold: replies.length > 0, topic: opts?.topic });
+        const { topic, speakers } = opts ?? {};
+        state.say(npcKey, text, undefined, { to: [toKey], hold: replies.length > 0, topic, speakers });
         const keys = replies.map((choice) => choice.key);
         w.events.next({ key: "talk-ask", threadKey, npcKey, to: toKey, text, replies: keys });
       },
@@ -120,14 +122,14 @@ export function WorldSpeech() {
         w.events.next({ key: "talk-reply", threadKey, npcKey: toKey, to: npcKey, choice: key });
         return true;
       },
-      tell(npcKey, toKey, text) {
+      tell(npcKey, toKey, text, opts) {
         const threadKey = threadKeyOf([npcKey, toKey]);
         const talk = state.talks[threadKey];
         if (talk !== undefined) {
           talk.replies = [];
           talk.choosing = talk.refused = undefined;
         }
-        state.say(npcKey, text, undefined, { to: [toKey] });
+        state.say(npcKey, text, undefined, { to: [toKey], speakers: opts?.speakers });
         w.events.next({ key: "talk-tell", threadKey, npcKey, to: toKey, text });
       },
       choose(threadKey, key) {
@@ -156,7 +158,12 @@ export function WorldSpeech() {
         anim.turnHeadTo(to.point);
         return () => anim.turnHeadTo(null);
       },
-      hearChunk(entry, chunk, forPlayer, hearers = state.hearersOf(entry.npcKey)) {
+      hearChunk(
+        entry,
+        chunk,
+        forPlayer,
+        hearers = addSpeakerHearers(w, entry.speakers, state.hearersOf(entry.npcKey)),
+      ) {
         const playerKey = w.player?.key;
         if (forPlayer === true && playerKey !== undefined) hearers.add(playerKey);
         for (const npcKey of hearers) {
@@ -302,6 +309,7 @@ export function WorldSpeech() {
           parties,
           topic: opts?.topic,
           heard: new Map(),
+          speakers: opts?.speakers,
         };
 
         state.history.push(entry);
@@ -309,7 +317,7 @@ export function WorldSpeech() {
         state.update();
 
         state.utter(entry, { secs, hold: opts?.hold });
-        w.events.next({ key: "speech", id: entry.id, npcKey, words, epochMs, to });
+        w.events.next({ key: "speech", id: entry.id, npcKey, words, epochMs, to, speakers: opts?.speakers });
         return entry.id;
       },
       cutOff(npcKey, id) {
@@ -317,6 +325,9 @@ export function WorldSpeech() {
         if (uttering?.id !== id) return;
         uttering.cancel();
         w.bubble?.dropLine(npcKey);
+      },
+      speakersOf(via, toKey) {
+        return speakersOf(w, via, toKey);
       },
       setPaused(npcKey, paused) {
         state.uttering.get(npcKey)?.setPaused(paused);
@@ -340,15 +351,16 @@ export function WorldSpeech() {
         const utt = utteranceOf(entry.words);
         entry.chunks = utt.chunks.map((chunk) => chunk.text);
         const forPlayer = playerKey !== undefined && (toPlayer || (entry.parties ?? []).includes(playerKey));
-        const near = state.hearersOf(npcKey);
+        const own = state.hearersOf(npcKey);
+        const near = addSpeakerHearers(w, entry.speakers, new Set(own));
         entry.via = forPlayer && playerKey !== undefined && near.has(playerKey) === false ? "comms" : undefined;
         /** Whom it is said to: the player for a repeat, else the first it addresses */
         const toKey = toPlayer ? playerKey : entry.parties?.[1];
-        /** Said into a mic, to someone out of earshot: they neither turn nor gesture */
-        const miked = toKey !== undefined && near.has(toKey) === false;
+        /** Said into a mic, through speakers or to someone out of earshot: they neither turn nor gesture */
+        const miked = entry.speakers !== undefined || (toKey !== undefined && own.has(toKey) === false);
 
         // over their head, which moves as they speak, facing whom they speak to
-        w.bubble?.say(npcKey, utt, { secs, hold, forPlayer, comms: entry.via === "comms" });
+        w.bubble?.say(npcKey, utt, { secs, hold, forPlayer, comms: entry.via === "comms", speakers: entry.speakers });
         const speaker = w.n?.[npcKey];
         speaker?.anim.talk(utt.spokenSecs, miked === false);
         const unface = speaker === undefined || toKey === undefined || miked ? null : state.faceTo(speaker, toKey);
@@ -821,6 +833,8 @@ export type SpeechEntry = {
   heard?: Map<string, Set<number>>;
   /** To or from the player, out of their earshot */
   via?: "comms";
+  /** The speakers it was said through, by decor key */
+  speakers?: string[];
   /** The player asked for it again: awaiting an answer, and how many times it was refused */
   repeat?: { pending: boolean; refused: number };
 };
@@ -906,7 +920,14 @@ export type State = {
    * Into the history, and over their head for `secs`, or on `hold` until someone it addresses answers.
    * Returns its id, which `uttering` holds whilst it is said
    */
-  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; topic?: string; hold?: boolean }): number;
+  say(
+    npcKey: string,
+    words: string,
+    secs?: number,
+    opts?: { to?: string[]; topic?: string; hold?: boolean; speakers?: string[] },
+  ): number;
+  /** The speakers' decor keys `via` names: a speaker, `room` for those in `toKey`'s room, else a channel */
+  speakersOf(via: string, toKey: string): string[];
   /** Which of `demoThoughts` is next */
   thoughtAt: number;
   /** Reads their next thought, as psi does — see `docs/psi.md` */
@@ -914,13 +935,19 @@ export type State = {
   /** Into the history as a thought of theirs, and over their head */
   think(npcKey: string, words: string, tag: ThoughtTag): void;
   /** `npcKey` asks `toKey`, held over their head until replied to. Emits `talk-ask` */
-  ask(npcKey: string, toKey: string, text: string, replies: TalkChoice[], opts?: { topic?: string }): void;
+  ask(
+    npcKey: string,
+    toKey: string,
+    text: string,
+    replies: TalkChoice[],
+    opts?: { topic?: string; speakers?: string[] },
+  ): void;
   /** Ends the talk of the two. Emits `talk-bye` */
   bye(npcKey: string, toKey: string): void;
   /** The one asked says reply `key` to the asker. False if it is not open. Emits `talk-reply` */
   reply(threadKey: string, key: string): boolean;
   /** `npcKey` tells `toKey`, closing any open ask of the two. Emits `talk-tell` */
-  tell(npcKey: string, toKey: string, text: string): void;
+  tell(npcKey: string, toKey: string, text: string, opts?: { speakers?: string[] }): void;
   /** The player presses a reply. One with needs emits `talk-choose`, and fails unless answered within `chooseTimeoutMs` */
   choose(threadKey: string, key: string): void;
   /** The pressed reply `key` is refused, its `failed` needs flashed. False if not pressed. Emits `talk-refused` */
