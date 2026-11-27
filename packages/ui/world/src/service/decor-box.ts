@@ -1,6 +1,6 @@
 import { Mat } from "@npc-cli/util/geom";
 import * as THREE from "three/webgpu";
-import { decorCuboidHeight, sguToWorldScale } from "../const.env";
+import { decorCuboidHeight, decorTiltGap, sguToWorldScale } from "../const.env";
 import { embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "./geometry";
 
 /** A decor that stops a phaser shot: a quad, bar a switch or a keycard */
@@ -14,8 +14,13 @@ export function quadMatrix(decor: Geomorph.DecorQuad, entry: QuadImage, out: THR
   // e.g. key=switch and screen
   const shouldTilt = decor.meta.tilt === true;
   let tiltMat4: THREE.Matrix4 | null = null;
+  /** The image's downward direction in plan, which a tilt turns to face out of the wall */
+  const outward = { x: 0, y: 0 };
   if (shouldTilt) {
     const { a, b, c, d } = tmpMat;
+    const downLength = Math.hypot(c, d) || 1;
+    outward.x = c / downLength;
+    outward.y = d / downLength;
     // NORMALISED: `makeRotationAxis` takes a unit axis, and this one is a column of the
     // decor's own transform — so a scaled decor would hand it a longer vector, and what
     // came back would not be a rotation at all
@@ -29,7 +34,11 @@ export function quadMatrix(decor: Geomorph.DecorQuad, entry: QuadImage, out: THR
   const yScale = decor.meta.h ?? decorCuboidHeight;
   //biome-ignore format: preserve newlines
   const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: out });
-  if (tiltMat4) mat4.premultiply(tiltMat4);
+  if (tiltMat4) {
+    mat4.premultiply(tiltMat4);
+    mat4.elements[12] += outward.x * decorTiltGap;
+    mat4.elements[14] += outward.y * decorTiltGap;
+  }
   return mat4;
 }
 

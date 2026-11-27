@@ -314,6 +314,17 @@ export const decorGridSize = geomorphGridMeters * 2;
 /** Metres tall a decor quad's cuboid is, without a `meta.h` */
 export const decorCuboidHeight = 0.05;
 
+/** Metres a tilted decor quad stands off its wall, else its back z-fights the wall's face */
+export const decorTiltGap = 0.005;
+
+/** A decor quad's side colour by its image, unless `meta.sides` is given. Else black */
+export const decorSidesOfImg: Record<string, string> = {
+  "speaker-bar": "#232428",
+  "speaker-box": "#232428",
+  "speaker-column": "#232428",
+  "speaker-small": "#232428",
+};
+
 export const decorKeyFallback = "icon--warn";
 export const decorPointKeyFallback = "abstract-point";
 

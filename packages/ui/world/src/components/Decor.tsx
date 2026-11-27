@@ -25,6 +25,7 @@ import {
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
+  decorSidesOfImg,
   doorConfig,
   inventoryConfig,
   MAX_DECOR_QUAD_INSTANCES,
@@ -694,10 +695,12 @@ export default function Decor() {
           batch.inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
         batch.inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-        // black, bar an item's — or whatever `meta.sides` says
+        // meta.sides, else an item's, else its image's, else black
         const sides =
           decor.meta.sides ??
-          (decor.meta.item === undefined ? "#000" : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
+          (decor.meta.item === undefined
+            ? (decorSidesOfImg[decor.meta.img] ?? "#000")
+            : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
         tmpColor.set(sides).toArray(batch.sideRgb, id * 3);
         batch.isPoint[id] = decor.type === "point" ? 1 : 0;
         return true;

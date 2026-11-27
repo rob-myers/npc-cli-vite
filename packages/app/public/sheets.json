@@ -638,184 +638,212 @@
       "originalWidth": 16,
       "originalHeight": 12
     },
+    "speaker-bar": {
+      "key": "speaker-bar",
+      "rect": {"x": 209, "y": 504, "width": 205, "height": 69},
+      "sheetId": 0,
+      "originalWidth": 24,
+      "originalHeight": 8
+    },
     "screen-0": {
       "key": "screen-0",
-      "rect": {"x": 209, "y": 504, "width": 188, "height": 137},
+      "rect": {"x": 554, "y": 2, "width": 188, "height": 137},
       "sheetId": 0,
       "originalWidth": 44,
       "originalHeight": 32
     },
+    "speaker-column": {
+      "key": "speaker-column",
+      "rect": {"x": 554, "y": 141, "width": 86, "height": 188},
+      "sheetId": 0,
+      "originalWidth": 10,
+      "originalHeight": 22
+    },
     "box-crate": {
       "key": "box-crate",
-      "rect": {"x": 554, "y": 2, "width": 171, "height": 120},
+      "rect": {"x": 416, "y": 331, "width": 171, "height": 120},
       "sheetId": 0,
       "originalWidth": 20,
       "originalHeight": 14
     },
     "label": {
       "key": "label",
-      "rect": {"x": 554, "y": 124, "width": 171, "height": 64},
+      "rect": {"x": 209, "y": 575, "width": 171, "height": 64},
       "sheetId": 0,
       "originalWidth": 40,
       "originalHeight": 15
     },
     "sign-hazard": {
       "key": "sign-hazard",
-      "rect": {"x": 485, "y": 190, "width": 171, "height": 171},
+      "rect": {"x": 416, "y": 453, "width": 171, "height": 171},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "box-tote": {
       "key": "box-tote",
-      "rect": {"x": 399, "y": 504, "width": 154, "height": 103},
+      "rect": {"x": 2, "y": 660, "width": 154, "height": 103},
       "sheetId": 0,
       "originalWidth": 18,
       "originalHeight": 12
     },
     "box-case": {
       "key": "box-case",
-      "rect": {"x": 555, "y": 363, "width": 137, "height": 86},
+      "rect": {"x": 589, "y": 331, "width": 137, "height": 86},
       "sheetId": 0,
       "originalWidth": 16,
       "originalHeight": 10
     },
     "box": {
       "key": "box",
-      "rect": {"x": 416, "y": 363, "width": 137, "height": 137},
+      "rect": {"x": 382, "y": 626, "width": 137, "height": 137},
       "sheetId": 0,
       "originalWidth": 16,
       "originalHeight": 16
     },
     "book": {
       "key": "book",
-      "rect": {"x": 555, "y": 451, "width": 103, "height": 128},
+      "rect": {"x": 521, "y": 626, "width": 103, "height": 128},
       "sheetId": 0,
       "originalWidth": 8,
       "originalHeight": 10
     },
+    "speaker-box": {
+      "key": "speaker-box",
+      "rect": {"x": 158, "y": 660, "width": 120, "height": 103},
+      "sheetId": 0,
+      "originalWidth": 14,
+      "originalHeight": 12
+    },
     "keycard": {
       "key": "keycard",
-      "rect": {"x": 555, "y": 581, "width": 103, "height": 77},
+      "rect": {"x": 626, "y": 419, "width": 103, "height": 77},
       "sheetId": 0,
       "originalWidth": 4,
       "originalHeight": 3
     },
+    "speaker-small": {
+      "key": "speaker-small",
+      "rect": {"x": 642, "y": 141, "width": 69, "height": 69},
+      "sheetId": 0,
+      "originalWidth": 8,
+      "originalHeight": 8
+    },
     "abstract-point": {
       "key": "abstract-point",
-      "rect": {"x": 660, "y": 451, "width": 52, "height": 52},
+      "rect": {"x": 485, "y": 175, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 660, "y": 505, "width": 52, "height": 52},
+      "rect": {"x": 485, "y": 229, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--spot-corner": {
       "key": "icon--spot-corner",
-      "rect": {"x": 660, "y": 559, "width": 52, "height": 52},
+      "rect": {"x": 280, "y": 641, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-cover": {
       "key": "icon--spot-cover",
-      "rect": {"x": 658, "y": 190, "width": 52, "height": 52},
+      "rect": {"x": 280, "y": 695, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-decor": {
       "key": "icon--spot-decor",
-      "rect": {"x": 658, "y": 244, "width": 52, "height": 52},
+      "rect": {"x": 642, "y": 212, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-do": {
       "key": "icon--spot-do",
-      "rect": {"x": 658, "y": 298, "width": 52, "height": 52},
+      "rect": {"x": 642, "y": 266, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-door": {
       "key": "icon--spot-door",
-      "rect": {"x": 2, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 626, "y": 498, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-doorway": {
       "key": "icon--spot-doorway",
-      "rect": {"x": 56, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 680, "y": 498, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-fill": {
       "key": "icon--spot-fill",
-      "rect": {"x": 110, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 589, "y": 552, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-lie": {
       "key": "icon--spot-lie",
-      "rect": {"x": 164, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 643, "y": 552, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-sit": {
       "key": "icon--spot-sit",
-      "rect": {"x": 218, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 626, "y": 606, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--spot-wall": {
       "key": "icon--spot-wall",
-      "rect": {"x": 272, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 680, "y": 606, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 12,
       "originalHeight": 12
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 326, "y": 660, "width": 52, "height": 52},
+      "rect": {"x": 626, "y": 660, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 380, "y": 660, "width": 43, "height": 43},
+      "rect": {"x": 697, "y": 552, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 399, "y": 609, "width": 43, "height": 43},
+      "rect": {"x": 485, "y": 283, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 416, "y": 331, "width": 26, "height": 26},
+      "rect": {"x": 713, "y": 141, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 727, "height": 714}],
-  "maxDecorSheetDim": {"width": 727, "height": 714},
+  "decorSheetDims": [{"width": 744, "height": 765}],
+  "maxDecorSheetDim": {"width": 744, "height": 765},
   "skin": {
     "d-0": {
       "key": "d-0",

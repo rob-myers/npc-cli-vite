@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 220" width="10" height="22">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="22" y="1" width="56" height="9" rx="2" fill="#3a3b40" stroke="#1c1d20" stroke-width="2"/>
+    <circle cx="28" cy="5" r="2" fill="#6b6e75"/>
+    <circle cx="72" cy="5" r="2" fill="#6b6e75"/>
+    <rect x="4" y="8" width="92" height="208" rx="14" fill="#121316" stroke="#2c2e33" stroke-width="4"/>
+    <rect x="14" y="18" width="72" height="174" rx="8" fill="#050506" stroke="#1d1e22" stroke-width="2"/>
+    <path d="M20 24H80M23 30H77M20 36H80M23 42H77M20 48H80M23 54H77M20 60H80M23 66H77M20 72H80M23 78H77M20 84H80M23 90H77M20 96H80M23 102H77M20 108H80M23 114H77M20 120H80M23 126H77M20 132H80M23 138H77M20 144H80M23 150H77M20 156H80M23 162H77M20 168H80M23 174H77M20 180H80M23 186H77" fill="none" stroke="#34363c" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="0.01 5.99"/>
+    <rect x="18" y="200" width="22" height="5" rx="1.5" fill="#2e3035"/>
+    <circle cx="78" cy="202.5" r="3" fill="#43c463" stroke="#0b0c0e" stroke-width="1"/>
+  </g>
+</svg>

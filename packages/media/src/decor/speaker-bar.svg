@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="24" height="8">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="30" y="1" width="44" height="9" rx="2" fill="#3a3b40" stroke="#1c1d20" stroke-width="2"/>
+    <circle cx="36" cy="5" r="2" fill="#6b6e75"/>
+    <circle cx="68" cy="5" r="2" fill="#6b6e75"/>
+    <rect x="166" y="1" width="44" height="9" rx="2" fill="#3a3b40" stroke="#1c1d20" stroke-width="2"/>
+    <circle cx="172" cy="5" r="2" fill="#6b6e75"/>
+    <circle cx="204" cy="5" r="2" fill="#6b6e75"/>
+    <rect x="4" y="8" width="232" height="68" rx="14" fill="#121316" stroke="#2c2e33" stroke-width="4"/>
+    <rect x="14" y="18" width="198" height="48" rx="8" fill="#050506" stroke="#1d1e22" stroke-width="2"/>
+    <path d="M20 24H206M23 30H203M20 36H206M23 42H203M20 48H206M23 54H203M20 60H206" fill="none" stroke="#34363c" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="0.01 5.99"/>
+    <circle cx="224" cy="42" r="3" fill="#43c463" stroke="#0b0c0e" stroke-width="1"/>
+  </g>
+</svg>

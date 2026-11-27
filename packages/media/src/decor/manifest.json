@@ -248,6 +248,38 @@
       "outputWidth": 171,
       "outputHeight": 171
     },
+    "speaker-bar": {
+      "key": "speaker-bar",
+      "filename": "speaker-bar.svg",
+      "width": 24,
+      "height": 8,
+      "outputWidth": 205,
+      "outputHeight": 69
+    },
+    "speaker-box": {
+      "key": "speaker-box",
+      "filename": "speaker-box.svg",
+      "width": 14,
+      "height": 12,
+      "outputWidth": 120,
+      "outputHeight": 103
+    },
+    "speaker-column": {
+      "key": "speaker-column",
+      "filename": "speaker-column.svg",
+      "width": 10,
+      "height": 22,
+      "outputWidth": 86,
+      "outputHeight": 188
+    },
+    "speaker-small": {
+      "key": "speaker-small",
+      "filename": "speaker-small.svg",
+      "width": 8,
+      "height": 8,
+      "outputWidth": 69,
+      "outputHeight": 69
+    },
     "switch": {
       "key": "switch",
       "filename": "switch.svg",
