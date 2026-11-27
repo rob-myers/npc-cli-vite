@@ -96,12 +96,16 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - The vertices, base and overlay, move in the bind pose (`setBodyShape`, `service/geometry.ts`). Each limb narrows about its own axis, the torso about the body's.
   - The chest narrows half as much as the hips and stomach, keeping the shoulders. The arms keep their axes, a little away from the chest. The legs follow the hips in.
   - `head-depth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
+  - `taper=0.35` narrows each limb toward its end to that share, and the torso toward the hips half as much (`scp-650`).
+  - `head=1.3` scales the head about its base, the neck (`scp-017`). It keeps its proportions under `height`, which would otherwise squash or stretch it.
+  - `stoop=0.25` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
   - The skin is drawn at full width as usual, and squeezed. Thinning a limb by transparent texels instead shows it hollow: through the gaps, its far faces are culled.
   - Every npc has its own geometry, so others are untouched. `npc.syncSkinShape` applies it with each skin, and restores it for the next.
   - Each shape is worked out once, then copied in (`w.npc.shapeCache`, keyed by shape, with the bind pose as `bind`). A glTF reload clears it.
-- A skin whose meta has `height=1.25` is drawn a quarter taller (`npc.heightScale`): their mesh is stretched upright alone, e.g. `scp-096`.
+- A skin whose meta has `scale=0.5` is drawn half size, e.g. `scp-017`, and `height=1.25` a quarter taller, stretched upright alone, e.g. `scp-096` (`npc.widthScale`, `npc.heightScale`).
   - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` their head passes through it, for now.
-  - Their agent, gait and stance are unchanged. Their head height (`anim.headY`) scales with it, even mid-pose.
+  - Their agent, gait and stance are unchanged by either. Their head height (`anim.headY`) scales with them, even mid-pose.
+  - `scale` only shrinks: it is capped at `1`, since a wider body would reach past its agent, into walls and other npcs. Grow by `height` alone, upright.
 - The torso is three cuboids, chest, stomach and hips. Each one's top samples the body top, and each one's bottom
   the body bottom. A crouch bares them, so fill the body top and bottom.
 - The head layer's unused corner, texels (0–8, 0–4), is sampled twice. The feet take (1–7, 0–4), and the torso overlay's tops and bottoms take all of it.
@@ -190,7 +194,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - The dev server rebuilds `manifest.json` on any skin png or svg change. A DEV World redraws the sheets.
 - Check an svg written by hand or script with `xmllint --noout`. One that does not parse is not drawn.
 - Spawn the skin next to the player, in `sight`, to see it lit as it will be.
-- jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `as:mtf` keeps one family, `r:2.5` widens it.
+- jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `prefix:mtf` (or `pre:mtf`) keeps one family, `r:2.5` widens it.
 - Load a DEV World before committing, so `sheet/skin.N.png` and `sheet/skin-slices.N.png` are current.
 - The dev server saves a sheet only when what it is drawn from changes: its layout, its skins' sources and meta, or the drawing code (`skin-sheet-hash.ts`). The hash is kept in the png. So another browser's rendering never rewrites it.
 - It saves only from this machine, over http. A self-signed https page (`USE_HTTPS`) may draw them wrongly when certificate invalid.

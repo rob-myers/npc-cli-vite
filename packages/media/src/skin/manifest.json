@@ -377,7 +377,13 @@
       "key": "scp-017",
       "id": "26dd3229bfc26f08",
       "filename": "scp-017--26dd3229bfc26f08.png",
-      "meta": {"skinKey": "scp-017", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-017",
+        "prefix": "scp",
+        "noEyes": true,
+        "scale": 0.5,
+        "head": 1.3
+      },
       "url": "https://namemc.com/skin/26dd3229bfc26f08",
       "svgPath": "skin/scp-017.svg"
     },
@@ -393,25 +399,30 @@
       "key": "scp-049",
       "id": "ce2157445043c1a8",
       "filename": "scp-049--ce2157445043c1a8.png",
-      "meta": {"skinKey": "scp-049", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-049",
+        "prefix": "scp",
+        "noEyes": true,
+        "taper": 0.6
+      },
       "url": "https://namemc.com/skin/ce2157445043c1a8",
       "svgPath": "skin/scp-049.svg"
     },
-    "scp-049-2-0": {
-      "key": "scp-049-2-0",
+    "scp-049-2a": {
+      "key": "scp-049-2a",
       "id": "af3aa135b92788cc",
-      "filename": "scp-049-2-0--af3aa135b92788cc.png",
-      "meta": {"skinKey": "scp-049-2-0", "prefix": "scp", "noEyes": true},
+      "filename": "scp-049-2a--af3aa135b92788cc.png",
+      "meta": {"skinKey": "scp-049-2a", "prefix": "scp", "noEyes": true},
       "url": "https://namemc.com/skin/af3aa135b92788cc",
-      "svgPath": "skin/scp-049-2-0.svg"
+      "svgPath": "skin/scp-049-2a.svg"
     },
-    "scp-049-2-1": {
-      "key": "scp-049-2-1",
+    "scp-049-2b": {
+      "key": "scp-049-2b",
       "id": "0fb7149eaf9be151",
-      "filename": "scp-049-2-1--0fb7149eaf9be151.png",
-      "meta": {"skinKey": "scp-049-2-1", "prefix": "scp", "noEyes": true},
+      "filename": "scp-049-2b--0fb7149eaf9be151.png",
+      "meta": {"skinKey": "scp-049-2b", "prefix": "scp", "noEyes": true},
       "url": "https://namemc.com/skin/0fb7149eaf9be151",
-      "svgPath": "skin/scp-049-2-1.svg"
+      "svgPath": "skin/scp-049-2b.svg"
     },
     "scp-096": {
       "key": "scp-096",
@@ -423,7 +434,8 @@
         "noEyes": true,
         "limbs": 0.5,
         "body": 0.6,
-        "height": 1.25
+        "height": 1.25,
+        "head-depth": 0.8
       },
       "url": "https://namemc.com/skin/95fcf188bec2b0eb",
       "svgPath": "skin/scp-096.svg"
@@ -432,7 +444,13 @@
       "key": "scp-1000",
       "id": "47ca8e6fd200c31d",
       "filename": "scp-1000--47ca8e6fd200c31d.png",
-      "meta": {"skinKey": "scp-1000", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-1000",
+        "prefix": "scp",
+        "noEyes": true,
+        "height": 1.2,
+        "stoop": 0.25
+      },
       "url": "https://namemc.com/skin/47ca8e6fd200c31d",
       "svgPath": "skin/scp-1000.svg"
     },
@@ -456,7 +474,14 @@
       "key": "scp-1471",
       "id": "ceb79b98ddf14db9",
       "filename": "scp-1471--ceb79b98ddf14db9.png",
-      "meta": {"skinKey": "scp-1471", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-1471",
+        "prefix": "scp",
+        "noEyes": true,
+        "body": 0.7,
+        "limbs": 0.65,
+        "taper": 0.5
+      },
       "url": "https://namemc.com/skin/ceb79b98ddf14db9",
       "svgPath": "skin/scp-1471.svg"
     },
@@ -472,7 +497,13 @@
       "key": "scp-457",
       "id": "cd7bfdf3ed9ffdae",
       "filename": "scp-457--cd7bfdf3ed9ffdae.png",
-      "meta": {"skinKey": "scp-457", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-457",
+        "prefix": "scp",
+        "noEyes": true,
+        "body": 0.75,
+        "limbs": 0.75
+      },
       "url": "https://namemc.com/skin/cd7bfdf3ed9ffdae",
       "svgPath": "skin/scp-457.svg"
     },
@@ -488,7 +519,12 @@
       "key": "scp-650",
       "id": "0a58b4436b8b8fa9",
       "filename": "scp-650--0a58b4436b8b8fa9.png",
-      "meta": {"skinKey": "scp-650", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-650",
+        "prefix": "scp",
+        "noEyes": true,
+        "taper": 0.35
+      },
       "url": "https://namemc.com/skin/0a58b4436b8b8fa9",
       "svgPath": "skin/scp-650.svg"
     },
@@ -500,6 +536,7 @@
         "skinKey": "scp-682",
         "prefix": "scp",
         "noEyes": true,
+        "limbs": 0.8,
         "legs": 0.6,
         "height": 1.2
       },

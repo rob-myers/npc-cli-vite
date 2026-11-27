@@ -1149,17 +1149,17 @@
       "originalWidth": 64,
       "originalHeight": 64
     },
-    "scp-049-2-0": {
-      "key": "scp-049-2-0",
-      "filename": "scp-049-2-0--af3aa135b92788cc.png",
+    "scp-049-2a": {
+      "key": "scp-049-2a",
+      "filename": "scp-049-2a--af3aa135b92788cc.png",
       "rect": {"x": 2, "y": 776, "width": 256, "height": 256},
       "sheetId": 1,
       "originalWidth": 64,
       "originalHeight": 64
     },
-    "scp-049-2-1": {
-      "key": "scp-049-2-1",
-      "filename": "scp-049-2-1--0fb7149eaf9be151.png",
+    "scp-049-2b": {
+      "key": "scp-049-2b",
+      "filename": "scp-049-2b--0fb7149eaf9be151.png",
       "rect": {"x": 260, "y": 776, "width": 256, "height": 256},
       "sheetId": 1,
       "originalWidth": 64,
@@ -1442,13 +1442,13 @@
       "rect": {"x": 782, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
-    "scp-049-2-0": {
-      "key": "scp-049-2-0",
+    "scp-049-2a": {
+      "key": "scp-049-2a",
       "rect": {"x": 782, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
-    "scp-049-2-1": {
-      "key": "scp-049-2-1",
+    "scp-049-2b": {
+      "key": "scp-049-2b",
       "rect": {"x": 782, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
