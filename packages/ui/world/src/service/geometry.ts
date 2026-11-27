@@ -351,6 +351,122 @@ export function addBodyPartAttr(geo: THREE.BufferGeometry, encode: (jointIndex: 
   return geo;
 }
 
+/** An npc's body shape from their skin's meta: each `1` unless thinned */
+export type BodyShape = { limbs?: number; legs?: number; body?: number; headDepth?: number };
+
+/**
+ * Thins an npc's geometry in its bind pose: see `shapedPositions`.
+ * `cache` holds the bind pose (`bind`) and each shape's positions, shared by every npc of one glTF.
+ * Each geometry keeps its bind pose by reference too, in `userData.bind`.
+ */
+export function setBodyShape(
+  geometry: THREE.BufferGeometry,
+  skeleton: THREE.Skeleton,
+  shape: BodyShape,
+  cache: Map<string, Float32Array>,
+) {
+  const { limbs = 1, legs = limbs, body = 1, headDepth = 1 } = shape;
+  const plain = limbs === 1 && legs === 1 && body === 1 && headDepth === 1;
+  if (plain && geometry.userData.shaped !== true) return;
+  const pos = geometry.getAttribute("position") as THREE.BufferAttribute;
+  const array = pos.array as Float32Array;
+  const cached = cache.get("bind");
+  if (cached !== undefined && cached.length !== array.length) cache.clear();
+  /** Its own reference first, so a cleared cache never loses a shaped npc's bind pose. Unshaped, its positions are it */
+  const bind: Float32Array = geometry.userData.bind ?? cache.get("bind") ?? array.slice();
+  geometry.userData.bind = bind;
+  if (!cache.has("bind")) cache.set("bind", bind);
+  const key = `${limbs} ${legs} ${body} ${headDepth}`;
+  let shaped = plain ? bind : cache.get(key);
+  if (shaped === undefined) {
+    shaped = shapedPositions(bind, geometry, skeleton, { limbs, legs, body, headDepth });
+    cache.set(key, shaped);
+  }
+  array.set(shaped);
+  pos.needsUpdate = true;
+  geometry.userData.shaped = !plain;
+}
+
+/**
+ * Positions thinned from `from`, the bind pose: each limb to `limbs` of its width about its own axis, the torso to `body`.
+ * The legs take `legs`. The chest narrows half as much, and the arms stay put. The head is `headDepth` as deep, its face kept.
+ */
+function shapedPositions(
+  from: Float32Array,
+  geometry: THREE.BufferGeometry,
+  skeleton: THREE.Skeleton,
+  { limbs, legs, body, headDepth }: Required<BodyShape>,
+) {
+  const out = from.slice();
+  const set = (i: number, x: number, y: number, z: number) => out.set([x, y, z], 3 * i);
+  const count = from.length / 3;
+  const joints = geometry.getAttribute("skinIndex");
+  const weights = geometry.getAttribute("skinWeight");
+  const jointOf = (name: string) => skeleton.bones.findIndex((b) => b.name === name);
+  const limbOf = new Map(limbJoints.flatMap((names, limb) => names.map((name) => [jointOf(name), limb] as const)));
+  /** The upper joint of each limb, e.g. a thigh */
+  const upperJoints = new Set(limbJoints.map(([name]) => jointOf(name)));
+  const torsoOf = new Set(torsoJoints.map(jointOf));
+  const byLimb = limbJoints.map(() => [] as number[]);
+  /** The upper joint's vertices alone fix a limb's axis: a foot reaches further forward */
+  const upper = limbJoints.map(() => [] as number[]);
+  const torso: number[] = [];
+  const head = jointOf("head");
+  const heads: number[] = [];
+  const chest = jointOf("chest");
+  /** The chest's own scale, so the shoulders stay broad */
+  const shoulders = (1 + body) / 2;
+  const scaleOf: number[] = [];
+  for (let i = 0; i < count; i++) {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (weights.getComponent(i, k) > weights.getComponent(i, best)) best = k;
+    const joint = joints.getComponent(i, best);
+    const limb = limbOf.get(joint);
+    if (limb !== undefined) {
+      byLimb[limb].push(i);
+      if (upperJoints.has(joint)) upper[limb].push(i);
+    } else if (joint === head) {
+      heads.push(i);
+    } else if (torsoOf.has(joint)) {
+      torso.push(i);
+      scaleOf[i] = joint === chest ? shoulders : body;
+    }
+  }
+  const centre = (verts: number[], axis: number) => {
+    const vs = verts.map((i) => from[3 * i + axis]);
+    return (Math.min(...vs) + Math.max(...vs)) / 2;
+  };
+  const torsoZ = centre(torso, 2);
+  const torsoHalf = Math.max(...torso.map((i) => Math.abs(from[3 * i])));
+  for (const i of torso)
+    set(i, from[3 * i] * scaleOf[i], from[3 * i + 1], torsoZ + (from[3 * i + 2] - torsoZ) * scaleOf[i]);
+  for (const [limb, verts] of byLimb.entries()) {
+    const cx = centre(upper[limb], 0);
+    const cz = centre(upper[limb], 2);
+    /** A leg stays under the narrower hips, and an arm keeps its axis, a little away from the chest */
+    const toX = Math.abs(cx) < torsoHalf ? cx * body : cx;
+    /** `limbJoints` lists the arms, then the legs */
+    const width = limb < 2 ? limbs : legs;
+    for (const i of verts)
+      set(i, toX + (from[3 * i] - cx) * width, from[3 * i + 1], cz + (from[3 * i + 2] - cz) * width);
+  }
+  /** The face is at the head's least z, so it stays as the back comes in */
+  const faceZ = Math.min(...heads.map((i) => from[3 * i + 2]));
+  for (const i of heads) out[3 * i + 2] = faceZ + (from[3 * i + 2] - faceZ) * headDepth;
+  return out;
+}
+
+/** The torso's joints, which narrow about the body's axis */
+const torsoJoints = ["hips", "stomach", "chest"];
+
+/** Each limb's joints: an arm, then a leg, whose vertices narrow about one axis */
+const limbJoints = [
+  ["rightarm", "rightforearm"],
+  ["leftarm", "leftforearm"],
+  ["rightthigh", "rightshin", "rightfoot"],
+  ["leftthigh", "leftshin", "leftfoot"],
+];
+
 /** Merge geometries without Three.js groups (→ 1 draw call).
  *  Adds float "groupId" attribute (0, 1, 2…) per vertex for shader branching. */
 export function mergeWithGroupAttr(base: THREE.BufferGeometry, ...extras: THREE.BufferGeometry[]) {

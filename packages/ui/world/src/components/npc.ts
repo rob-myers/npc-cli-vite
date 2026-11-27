@@ -27,6 +27,7 @@ import {
   npcScale,
   otherNpcLabelColor,
 } from "../const.npc";
+import { setBodyShape } from "../service/geometry";
 import { helper } from "../service/helper";
 import { setOverlayBackfaces } from "../service/npc-material";
 import { bodyPartPoint } from "../service/phaser-beam";
@@ -39,6 +40,8 @@ export class Npc {
   key: string;
   /** for render cache bust */
   epochMs = 0;
+  /** Their mesh's vertical stretch, from their skin's `height`: drawn taller, their agent unchanged */
+  heightScale = 1;
 
   anim = new NpcAnimation(this);
   w: UseStateRef<import("./World").State>;
@@ -216,6 +219,7 @@ export class Npc {
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
+    this.syncSkinShape();
   }
 
   /**
@@ -694,7 +698,29 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
-    setOverlayBackfaces(this, this.w.npc.getSkinMeta(this.skinKey ?? ""));
+    this.syncSkinShape();
+  }
+
+  /** Their skin's meta shapes them: overlay back faces, thin limbs or body, a shallow head, and height */
+  syncSkinShape() {
+    const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
+    const scale = (value: unknown) => (typeof value === "number" ? value : 1);
+    setOverlayBackfaces(this, meta);
+    setBodyShape(
+      this.geometry,
+      this.skinnedMesh.skeleton,
+      {
+        limbs: scale(meta.limbs),
+        legs: scale(meta.legs ?? meta.limbs),
+        body: scale(meta.body),
+        headDepth: scale(meta["head-depth"]),
+      },
+      this.w.npc.shapeCache,
+    );
+    const prevHeight = this.heightScale;
+    this.heightScale = scale(meta.height);
+    this.skinnedMesh.scale.y = this.skinnedMesh.scale.x * this.heightScale;
+    this.anim.headY *= this.heightScale / prevHeight;
   }
 
   /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */

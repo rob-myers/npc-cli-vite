@@ -71,6 +71,7 @@ export default function NPCs() {
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
       headYByPose: mapValues(fromAnimationClipKey, () => 0),
+      shapeCache: new Map(),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       defaultSkinKey: "medic-0",
       breathTune: { ...defaultBreathTune, ...getWorldStore(w.key).read().breathTune },
@@ -198,9 +199,13 @@ export default function NPCs() {
          * - BUT currently don't support add/remove/change other properties
          */
         swapNpcClasses(Object.values(state.npc));
+        if (newGltf === true) state.shapeCache.clear();
         for (const npc of Object.values(state.npc)) {
           // `NpcInstance` carries their position and rotation over to the new mesh
-          if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
+          if (newGltf === true) {
+            Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
+            npc.syncSkinShape();
+          }
 
           state.resetMaterials(npc); // can overwrite materials while debugging
           npc.init();
@@ -902,6 +907,8 @@ export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
   /** Metres of the head bone's pivot above an npc's feet, per pose at its start — see `Psi` */
   headYByPose: Record<AnimationClipKey, number>;
+  /** The bind pose and each body shape's positions, shared by every npc — see `setBodyShape` */
+  shapeCache: Map<string, Float32Array>;
   crowd: crowdApi.Crowd;
   /** The skin an npc wears unless given another */
   readonly defaultSkinKey: string;

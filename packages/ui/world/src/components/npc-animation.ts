@@ -930,7 +930,7 @@ export class NpcAnimation {
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     /** The pose they look to be in: a fall dead starts stood, but they end lain */
     const looks = dieClips.has(next) ? "lie" : next;
-    this.headY = this.w.npc.headYByPose[looks];
+    this.headY = this.w.npc.headYByPose[looks] * this.npc.heightScale;
     this.npc.setBubbleHeight(bubbleHeightForClip(looks));
     this.npc.setLabelYShift(
       labelYShiftForClip(looks),

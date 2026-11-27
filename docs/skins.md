@@ -85,15 +85,16 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   material discards alpha under 0.9. So clear stray overlay pixels, and draw nothing part-transparent there.
 - As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlay-backfaces=head` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
   - Its npc's material is double-sided, and `shownFace` discards every other back face (`setOverlayBackfaces`, `service/npc-material.ts`). Other npcs' stay single-sided.
-- A skin's meta can thin its wearer: `limbs=0.5` for arms and legs half as wide, `body=0.6` for a narrower torso, e.g. `scp-096`, `scp-106`.
+- A skin's meta can thin its wearer: `limbs=0.5` for arms and legs half as wide, `legs=0.6` for the legs alone, `body=0.6` for a narrower torso, e.g. `scp-096`, `scp-106`, `scp-682`.
   - The vertices, base and overlay, move in the bind pose (`setBodyShape`, `service/geometry.ts`). Each limb narrows about its own axis, the torso about the body's.
   - The chest narrows half as much as the hips and stomach, keeping the shoulders. The arms keep their axes, a little away from the chest. The legs follow the hips in.
   - `head-depth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
+  - The skin is drawn at full width as usual, and squeezed. Thinning a limb by transparent texels instead shows it hollow: through the gaps, its far faces are culled.
   - Every npc has its own geometry, so others are untouched. `npc.syncSkinShape` applies it with each skin, and restores it for the next.
+  - Each shape is worked out once, then copied in (`w.npc.shapeCache`, keyed by shape, with the bind pose as `bind`). A glTF reload clears it.
 - A skin whose meta has `height=1.25` is drawn a quarter taller (`npc.heightScale`): their mesh is stretched upright alone, e.g. `scp-096`.
   - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` their head passes through it, for now.
-  - Their agent, gait and stance are unchanged. Their head height (`anim.headY`) scales with it.
-  - The skin is drawn at full width as usual, and squeezed. Thinning a limb by transparent texels instead shows it hollow: through the gaps, its far faces are culled.
+  - Their agent, gait and stance are unchanged. Their head height (`anim.headY`) scales with it, even mid-pose.
 - The torso is three cuboids, chest, stomach and hips. Each one's top samples the body top, and each one's bottom
   the body bottom. A crouch bares them, so fill the body top and bottom.
 - The head layer's unused corner, texels (0–8, 0–4), is sampled twice. The feet take (1–7, 0–4), and the torso overlay's tops and bottoms take all of it.
