@@ -545,7 +545,9 @@
         "noEyes": true,
         "body": 0.75,
         "limbs": 0.75,
-        "fx": "embers"
+        "fx": "embers",
+        "clips": "scp_457",
+        "agentRadius": 1.5
       },
       "url": "https://namemc.com/skin/cd7bfdf3ed9ffdae",
       "svgPath": "skin/scp-457.svg"
