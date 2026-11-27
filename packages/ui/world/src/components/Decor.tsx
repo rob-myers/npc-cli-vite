@@ -699,7 +699,7 @@ export default function Decor() {
         const sides =
           decor.meta.sides ??
           (decor.meta.item === undefined
-            ? (decorSidesOfImg[decor.meta.img] ?? "#000")
+            ? (decorSidesOfImg[decor.meta.img as string] ?? "#000")
             : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
         tmpColor.set(sides).toArray(batch.sideRgb, id * 3);
         batch.isPoint[id] = decor.type === "point" ? 1 : 0;
