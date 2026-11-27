@@ -35,6 +35,17 @@ The model is `packages/media/src/blockbench/current/current.bbmodel`. Export it 
 
 `talk_left` is the left arm talking: a 2.4s loop of the forearm raised and beating, with an open gesture midway. It moves `leftarm` and `leftforearm` alone, so it plays beside a right arm's pose.
 
+## A skin's own clips
+
+A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each clip `{prefix}_{key}` in place of `key`, e.g. `scp_096_walk` for `walk` (`npc.syncSkinClips`, `npc.skinClips`). Their pose is still `walk`, so gaits, posture and fades go by it.
+
+- Make one as a new clip, above, named `{prefix}_{key}`: the same length as `key`'s, so a walk keeps its pace (`gaitStride`).
+- Keep it upright and within the run's reach (`x` within ±6.58 px, `z` from -11.1 to 1.4 px): nothing prone.
+- An idle that reaches further, e.g. hands held at a hunched face, can take a drawn-in take, `{prefix}_breathe_avoid`. Whilst another stands within `poseConfig.idleNear` (1 m), and `holdSecs` after, it plays instead (`syncIdleAvoid` in `NPCs`), as a pose's `avoid` does.
+- `scp_173_breathe`: a statue. Stood rigid, a head snaps aside for a frame now and then. It has no walk: it is placed, never seen to move.
+- `scp_096_*`: hunched, the hands over the face, shoulders heaving in sobs. Its walk shambles in short steps, swaying.
+- `scp_106_*`: stooped and slack, the head lolling, the arms limp. Its walk limps, the right leg dragging stiff.
+
 ## Mirrored clips
 
 Some clips are made at load by mirroring another, so they are in neither the `.bbmodel` nor the glTF. `mirroredClips` in `const.npc.ts` lists each by the clip it mirrors, and `NPCs` builds them with `mirrorClip` (`service/clips.ts`).

@@ -106,6 +106,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` their head passes through it, for now.
   - Their agent, gait and stance are unchanged by either. Their head height (`anim.headY`) scales with them, even mid-pose.
   - `scale` only shrinks: it is capped at `1`, since a wider body would reach past its agent, into walls and other npcs. Grow by `height` alone, upright.
+- A skin's meta can give its wearer clips of their own: `clips=scp_096` plays `scp_096_walk` for `walk`, and so on — see `docs/blockbench.md`.
 - A skin's meta can give its wearer an effect: `fx=noir`, with `fx-amount=0.5` for half of it. jsh `fx` lists them, `fx rob ghost` sets one by hand, and so does the **fx** select in their menu (`PickMenu`).
   - `static` and `ghost` are the looks of those shot so, held (`docs/engagements.md`): a dot screen, and a stipple dropping half their screen pixels. `noir` is the frame grade's grey (`noirTone`, `service/extra-fx.ts`).
   - It is two uniforms, `fxKind` (an index of `npcFxKinds`) and `fxAmount` (`npc.setFx`). Each effect is a uniform branch in `service/npc-material.ts`, so other npcs skip it.

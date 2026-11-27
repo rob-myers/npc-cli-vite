@@ -435,7 +435,8 @@
         "limbs": 0.5,
         "body": 0.6,
         "height": 1.25,
-        "head-depth": 0.8
+        "head-depth": 0.8,
+        "clips": "scp_096"
       },
       "url": "https://namemc.com/skin/95fcf188bec2b0eb",
       "svgPath": "skin/scp-096.svg"
@@ -468,7 +469,8 @@
         "body": 0.75,
         "head-depth": 0.7,
         "height": 1.12,
-        "stoop": 0.15
+        "stoop": 0.15,
+        "clips": "scp_106"
       },
       "url": "https://namemc.com/skin/b3ebcf965a672ba5",
       "svgPath": "skin/scp-106.svg"
@@ -494,7 +496,12 @@
       "key": "scp-173",
       "id": "db0d7f7cf301e2d8",
       "filename": "scp-173--db0d7f7cf301e2d8.png",
-      "meta": {"skinKey": "scp-173", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-173",
+        "prefix": "scp",
+        "noEyes": true,
+        "clips": "scp_173"
+      },
       "url": "https://namemc.com/skin/db0d7f7cf301e2d8",
       "svgPath": "skin/scp-173.svg"
     },

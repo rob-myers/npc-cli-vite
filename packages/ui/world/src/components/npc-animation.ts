@@ -930,7 +930,10 @@ export class NpcAnimation {
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     /** The pose they look to be in: a fall dead starts stood, but they end lain */
     const looks = dieClips.has(next) ? "lie" : next;
-    this.headY = this.w.npc.headYByPose[looks] * this.npc.heightScale;
+    // by the clip that plays, e.g. a skin's own
+    const { headYByPose } = this.w.npc;
+    this.headY =
+      (headYByPose[this.npc.clips[looks]?.name as AnimationClipKey] ?? headYByPose[looks]) * this.npc.heightScale;
     this.npc.setBubbleHeight(bubbleHeightForClip(looks));
     this.npc.setLabelYShift(
       labelYShiftForClip(looks),
@@ -2024,8 +2027,9 @@ export type UpperAim = {
   hold?: { line: THREE.Ray; weight: number };
 };
 
+/** A clip's key: the one a skin's clip stands in for, else its name — see `Npc.syncSkinClips` */
 function keyOf(clip: THREE.AnimationClip) {
-  return clip.name as AnimationClipKey;
+  return (clip.userData.clipKey ?? clip.name) as AnimationClipKey;
 }
 
 function bubbleHeightForClip(clipName: AnimationClipKey): number {

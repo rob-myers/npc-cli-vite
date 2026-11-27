@@ -1,5 +1,6 @@
 import type { UseStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
+import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import type { buildGraph } from "@react-three/fiber";
 import {
   createDefaultQueryFilter,
@@ -148,8 +149,13 @@ export class Npc {
     worker: rejectNoop,
   };
 
+  /** Their skin's own clips in place of some, else `null` — see `syncSkinClips` */
+  skinClips: null | Record<AnimationClipKey, THREE.AnimationClip> = null;
+  /** Their skin's idle and its drawn-in take, shown until `until` — see `NPCs`' `syncIdleAvoid` */
+  idleAvoid: null | { calm: THREE.AnimationClip; drawn: THREE.AnimationClip; until: number } = null;
+
   get clips() {
-    return this.w.npc.clips;
+    return this.skinClips ?? this.w.npc.clips;
   }
 
   /** Which layer of the label texture array is theirs: their pick id */
@@ -228,6 +234,7 @@ export class Npc {
     this.fxAmount = init.fxAmount;
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
+    this.syncSkinClips();
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
     this.syncSkinShape();
@@ -715,7 +722,42 @@ export class Npc {
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
     this.syncSkinShape();
-    if (this.skinKey !== prevKey) this.syncSkinFx(); // else a reload of the skins undoes jsh `fx`
+    // the same skin again, e.g. a reload of the skins, keeps jsh `fx` and their clips
+    if (this.skinKey === prevKey) return;
+    this.syncSkinFx();
+    this.syncSkinClips();
+    if (this.group !== null) this.anim.setPose(this.anim.pose, { force: true });
+  }
+
+  /**
+   * Their skin's `clips` meta, a prefix, plays each clip `{prefix}_{key}` in place of `key`, e.g. `scp_096_walk`.
+   * Their move and idle clips follow.
+   */
+  syncSkinClips() {
+    const prev = this.clips;
+    const base = this.w.npc.clips;
+    const prefix = this.w.npc.getSkinMeta(this.skinKey ?? "").clips;
+    this.skinClips =
+      typeof prefix === "string"
+        ? mapValues(base, (clip, key) => {
+            const own = base[`${prefix}_${key}` as AnimationClipKey];
+            if (own === undefined) return clip;
+            own.userData.clipKey = key; // so its pose is `key`
+            return own;
+          })
+        : null;
+    const idle = defaultIdleAnimationClipKey;
+    const drawn = this.skinClips === null ? undefined : base[`${prefix}_${idle}_avoid` as AnimationClipKey];
+    if (drawn !== undefined) drawn.userData.clipKey = idle; // so its pose is the idle's
+    this.idleAvoid =
+      this.skinClips !== null && drawn !== undefined ? { calm: this.skinClips[idle], drawn, until: 0 } : null;
+    /** The clip of the same key in their new set, from their old set or the shared one */
+    const remap = (clip: THREE.AnimationClip) => {
+      const key = keys(prev).find((k) => prev[k] === clip) ?? keys(base).find((k) => base[k] === clip);
+      return key === undefined ? clip : this.clips[key];
+    };
+    if (this.anim.moveClip !== undefined) this.anim.moveClip = remap(this.anim.moveClip);
+    if (this.anim.idleClip !== undefined) this.anim.idleClip = remap(this.anim.idleClip);
   }
 
   /** Their skin's `fx` meta, if any, else none */

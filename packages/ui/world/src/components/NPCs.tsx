@@ -38,6 +38,7 @@ import {
   npcMaterialConfig,
   npcScale,
   npcSpawnConfig,
+  poseConfig,
 } from "../const.npc";
 import { mirrorClip } from "../service/clips";
 import { postCorpseCollider } from "../service/corpse-body";
@@ -380,6 +381,7 @@ export default function NPCs() {
             }
             // whatever their speed: pressed against another, the crowd's push never settles
             state.updateIdleOverlap(npc, delta);
+            if (npc.idleAvoid != null) state.syncIdleAvoid(npc);
             continue;
           }
 
@@ -546,13 +548,13 @@ export default function NPCs() {
         if (typeof decorKey === "string") {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
+          npc.anim.idleClip = npc.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
           state.setNpcDo(opts.npcKey, decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
+          npc.anim.idleClip = npc.clips[defaultIdleAnimationClipKey]; // their skin's, if it has one
           state.setNpcDo(opts.npcKey, null);
         }
 
@@ -706,6 +708,18 @@ export default function NPCs() {
           const body = npc.anim.fall?.body;
           if (body != null) postCorpseCollider(npc, body);
         }
+      },
+      syncIdleAvoid(npc) {
+        const avoid = npc.idleAvoid;
+        if (avoid === null || npc.skinClips === null) return;
+        const now = w.gameTime.now();
+        if (state.near.beside(npc.key, poseConfig.idleNear).length > 0) avoid.until = now + poseConfig.holdSecs;
+        const next = avoid.until > now ? avoid.drawn : avoid.calm;
+        const key = defaultIdleAnimationClipKey;
+        if (npc.skinClips[key] === next) return;
+        npc.skinClips[key] = next;
+        if (npc.anim.idleClip === avoid.calm || npc.anim.idleClip === avoid.drawn) npc.anim.idleClip = next;
+        if (npc.anim.pose === key) npc.anim.setPose(key, { fade: poseConfig.drawInSecs, force: true });
       },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
@@ -878,6 +892,7 @@ export default function NPCs() {
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
+      npc.syncSkinClips?.(); // their skin's clips, from the new ones
       if (staleClips.length === 0 || npc.group === null) continue; // unmounted: the mount shows it
       const posed = staleClips.find((clip) => clip.name === npc.anim.pose);
       const { time = 0, paused = false, timeScale = 1 } = (posed && npc.anim.mixer.existingAction(posed)) ?? {};
@@ -978,6 +993,8 @@ export type State = {
   setBrightness(next: number): void;
   /** Puts back corpses' sensors, e.g. once the physics world is rebuilt */
   syncCorpseColliders(): void;
+  /** Their skin's idle drawn in whilst another stands close, e.g. hands at the face, else as it was */
+  syncIdleAvoid(npc: Npc): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
   /** Their material and uniforms — see `service/npc-material` */

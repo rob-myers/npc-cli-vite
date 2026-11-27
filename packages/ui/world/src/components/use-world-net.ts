@@ -776,7 +776,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             const npc = w.n[netNpc.key];
             if (npc === undefined) continue;
             if (netNpc.lit === true) w.e.setNpcLit(npc, true);
-            const idleClip = w.npc.clips[netNpc.idleClipKey];
+            const idleClip = npc.clips[netNpc.idleClipKey];
             if (idleClip !== undefined && npc.anim.idleClip !== idleClip) {
               npc.anim.idleClip = idleClip;
               npc.anim.setPose(netNpc.idleClipKey, { fade: 0 });
