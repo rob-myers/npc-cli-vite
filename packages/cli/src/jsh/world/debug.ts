@@ -98,7 +98,7 @@ export async function* debug_skins(
       const angle = (2 * Math.PI * i) / keys.length;
       return { x: cx + r * Math.cos(angle), y: cz + r * Math.sin(angle) };
     }),
-    keys: keys.map((as) => as.replaceAll("-", "")),
+    keys,
     skins: keys,
     looks: keys.map(() => ({ x: cx, y: cz })),
     verify: true,
