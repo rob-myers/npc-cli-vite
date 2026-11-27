@@ -884,6 +884,8 @@ export default function NPCs() {
     // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
     for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
     for (const [key, from] of entries(mirroredClips)) if (from !== undefined) clips[key] = mirrorClip(clips[from], key);
+    // only its bend from rest, added over any gait
+    clips.duck = THREE.AnimationUtils.makeClipAdditive(clips.duck.clone());
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);

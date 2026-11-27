@@ -51,6 +51,14 @@ A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each cli
 - `scp_096_*`: hunched, the hands over the face, shoulders heaving in sobs. Its walk shambles in short steps, swaying.
 - `scp_106_*`: stooped and slack, the head lolling, the arms limp. Its walk limps, the right leg dragging stiff.
 
+## The duck
+
+`duck` is a stoop: the back bent forward, the knees a little bent, the head tilted up to look ahead. It is a 0.25s clip from rest to the stoop.
+
+- It is made additive at load, against its first frame (`makeClipAdditive` in `NPCs`), so it adds only the bend over any gait. Their stride and pace stay their own.
+- `anim.setDuck` eases it in or out over `duckConfig.fadeSecs`, held at its last frame (`tickDuck`). Only whilst stood upright, not crouched. `setPose` leaves it be.
+- Tall npcs stoop under lintels with it (`docs/skins.md`). It lowers a 1.2-height npc's head about 0.2m. Keep its first key the rest pose, every bone keyed.
+
 ## Mirrored clips
 
 Some clips are made at load by mirroring another, so they are in neither the `.bbmodel` nor the glTF. `mirroredClips` in `const.npc.ts` lists each by the clip it mirrors, and `NPCs` builds them with `mirrorClip` (`service/clips.ts`).

@@ -211,6 +211,7 @@ export const fromAnimationClipKey = {
   die_forward_mirror: true,
   drop: true,
   drop_left: true,
+  duck: true,
   get_up_back: true,
   get_up_back_mirror: true,
   get_up_forward: true,
@@ -319,6 +320,8 @@ export const defaultIdleAnimationClipKey = "breathe" satisfies import("./compone
 
 /** Fallback for @see {fadeSecs} */
 export const defaultFadeSecs = 0.3;
+/** Seconds into or out of a half crouch, stood or moving */
+export const halfCrouchFadeSecs = 0.18;
 
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
@@ -571,8 +574,8 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  backwards: {},
-  breathe: { shuffle: 0.15, shuffle_step: 0.2 },
+  backwards: { crouch_half_backwards: halfCrouchFadeSecs },
+  breathe: { shuffle: 0.15, shuffle_step: 0.2, crouch_half: halfCrouchFadeSecs },
   check_wrist: {},
   check_wrist_avoid: {},
   collapse: { collapsed: 0 },
@@ -581,11 +584,11 @@ export const fadeSecs: Record<
   crouch: {},
   crouch_backwards: {},
   crouch_cover: {},
-  crouch_half: {},
-  crouch_half_backwards: {},
+  crouch_half: { breathe: halfCrouchFadeSecs },
+  crouch_half_backwards: { backwards: halfCrouchFadeSecs },
   crouch_half_strafe_left: {},
   crouch_half_strafe_right: {},
-  crouch_half_walk: {},
+  crouch_half_walk: { walk: halfCrouchFadeSecs },
   crouch_left: {},
   crouch_strafe_left: {},
   crouch_strafe_right: {},
@@ -596,6 +599,7 @@ export const fadeSecs: Record<
   die_forward_mirror: {},
   drop: {},
   drop_left: {},
+  duck: {},
   get_up_back: { breathe: 0 },
   get_up_back_mirror: { breathe: 0 },
   get_up_forward: { breathe: 0 },
@@ -668,7 +672,7 @@ export const fadeSecs: Record<
   talk_left: {},
   phaser_aim: { shuffle: 0.15 },
   phaser_aim_avoid: {},
-  walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25 },
+  walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25, crouch_half_walk: halfCrouchFadeSecs },
 };
 
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
@@ -828,10 +832,10 @@ export const strafeSpeed = {
   crouch_strafe_right: 0.3,
   crouch_backwards: 0.4,
   crouch_strafe_left: 0.3,
-  crouch_half_walk: 0.6,
-  crouch_half_strafe_right: 0.4,
-  crouch_half_backwards: 0.6,
-  crouch_half_strafe_left: 0.4,
+  crouch_half_walk: 0.85,
+  crouch_half_strafe_right: 0.55,
+  crouch_half_backwards: 0.8,
+  crouch_half_strafe_left: 0.55,
   /** Running, each way paced near a straight run's cadence. Ahead may differ from `maxSpeed.run` */
   run_ahead: 3,
   run_strafe_right: 1.7,
@@ -845,6 +849,9 @@ export const strafeSpeed = {
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;
+
+/** A stoop under a lintel, added over any gait (`duck`, additive): seconds it takes to ease in or out */
+export const duckConfig = { fadeSecs: 0.25 };
 
 /** One collapsed scoots back-first (`collapsed_drag`): metres a cycle covers, and metres per second */
 export const dragConfig = { stride: 0.25, speed: 0.25 } as const;

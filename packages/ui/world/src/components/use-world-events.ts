@@ -9,7 +9,7 @@ import {
   decorCuboidHeight,
   defaultPlayerKey,
   doorConfig,
-  doorwayCrouch,
+  doorwayDuck,
   floorFadeDelayMs,
   type ItemKind,
   inventoryConfig,
@@ -39,7 +39,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       handling: new Set(),
       reachedRight: new Set(),
       insideDoorways: new Map(),
-      doorwayCrouched: new Map(),
+      doorwayDucked: new Map(),
       doorwayWatched: new Set(),
       inView: { graph: null, byRoom: new Map() },
       doorOpen: {},
@@ -740,7 +740,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEditMap() {
         // their rooms predate the edit, which may renumber them: physics reports who stands in a doorway again
-        for (const npcKey of state.doorwayCrouched.keys()) state.crouchInDoorway(npcKey, false);
+        for (const npcKey of state.doorwayDucked.keys()) state.duckInDoorway(npcKey, null);
         state.insideDoorways.clear();
         state.recomputeNpcRoomRelationships();
         state.syncLitRooms();
@@ -980,7 +980,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.type === "nearby") {
               (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).nearby.add(npc.key);
               (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).nearby.add(e.meta.gdKey);
-              if ((npc.heightScale ?? 1) > doorwayCrouch.heightScale) state.doorwayWatched.add(npc.key);
+              if ((npc.heightScale ?? 1) > doorwayDuck.heightScale) state.doorwayWatched.add(npc.key);
             }
             if (e.type === "inside") {
               (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
@@ -1191,7 +1191,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
         state.syncDoorways();
-        state.syncDoorwayCrouch();
+        state.syncDoorwayDuck();
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting
         // on a room to arrive takes it the moment it lands rather than at the next door event
         state.syncNpcRoomSlots();
@@ -1789,36 +1789,38 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
-      syncDoorwayCrouch() {
-        const { reach, leave } = doorwayCrouch;
+      syncDoorwayDuck() {
+        const { reach, clear, leave } = doorwayDuck;
         for (const npcKey of state.doorwayWatched) {
           const nearby = state.npcToDoors[npcKey]?.nearby ?? noDoors;
-          const crouched = state.doorwayCrouched.has(npcKey);
+          const ducked = state.doorwayDucked.get(npcKey);
           const npc = w.n[npcKey];
-          if (npc === undefined || (nearby.size === 0 && crouched === false)) {
+          if (npc === undefined || (nearby.size === 0 && ducked === undefined)) {
             state.doorwayWatched.delete(npcKey); // gone, or near no door
             continue;
           }
-          let near = Number.POSITIVE_INFINITY;
-          let through = false;
-          for (const gdKey of nearby) {
-            const door = w.door.byKey[gdKey];
-            if (door === undefined) continue;
-            const dist = distToSegment(npc.point, door.src, door.dst);
-            near = Math.min(near, dist);
-            // stood in its doorway, or heading through it: not passing by
-            if (dist < reach && crouched === false)
-              through ||= state.insideDoorways.get(npcKey)?.gdKey === gdKey || pathCrosses(npc, door.src, door.dst);
-          }
-          if (crouched === false) {
-            if (through) state.crouchInDoorway(npcKey, true);
+          const head = headPointOf(npc);
+          if (ducked !== undefined) {
+            const door = w.door.byKey[ducked.gdKey];
+            // past its line by `clear`, else turned away short of it
+            const done =
+              door === undefined ||
+              sideOfDoor(head, door) * ducked.side < -clear ||
+              distToSegment(head, door.src, door.dst) > leave;
+            if (done) state.duckInDoorway(npcKey, null);
             continue;
           }
-          const entered = state.doorwayCrouched.get(npcKey) === true;
-          const inside = state.insideDoorways.has(npcKey);
-          if (inside === true && entered === false) state.doorwayCrouched.set(npcKey, true);
-          // through and out of its inside sensor, else turned away short of it
-          if ((entered === true && inside === false) || near > leave) state.crouchInDoorway(npcKey, false);
+          for (const gdKey of nearby) {
+            const door = w.door.byKey[gdKey];
+            if (door === undefined || distToSegment(head, door.src, door.dst) >= reach) continue;
+            // stood under its lintel, or heading through it: not passing by
+            const under =
+              state.insideDoorways.get(npcKey)?.gdKey === gdKey && Math.abs(sideOfDoor(head, door)) <= clear;
+            if (under || pathCrosses(npc, door.src, door.dst)) {
+              state.duckInDoorway(npcKey, gdKey, Math.sign(sideOfDoor(head, door)) || 1);
+              break;
+            }
+          }
         }
       },
       syncDoorways() {
@@ -2005,15 +2007,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return w.door.toggleLock(door, opts);
       },
-      crouchInDoorway(npcKey, inside) {
+      duckInDoorway(npcKey, gdKey, side = 1) {
         const npc = w.n[npcKey];
-        if (npc === undefined) return void state.doorwayCrouched.delete(npcKey);
-        if (inside === false) {
-          if (state.doorwayCrouched.delete(npcKey)) npc.anim.setCrouch(0);
-        } else if (npc.anim.crouchLevel === 0) {
-          npc.anim.setCrouch(1);
-          // else e.g. seated
-          if ((npc.anim.crouchLevel as number) === 1) state.doorwayCrouched.set(npcKey, false);
+        if (npc === undefined) return void state.doorwayDucked.delete(npcKey);
+        if (gdKey === null) {
+          if (state.doorwayDucked.delete(npcKey)) npc.anim.setDuck(false);
+        } else {
+          npc.anim.setDuck(true);
+          state.doorwayDucked.set(npcKey, { gdKey, side });
         }
       },
       trackDoorway(npcKey, gdKey) {
@@ -2547,14 +2548,14 @@ export type State = {
   >;
   /** Notes the door an npc has stepped into, for `syncDoorways` */
   trackDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey): void;
-  /** Tall npcs near a door, the only ones `syncDoorwayCrouch` looks at: added as they near one */
+  /** Tall npcs near a door, the only ones `syncDoorwayDuck` looks at: added as they near one */
   doorwayWatched: Set<string>;
-  /** The tall npcs a doorway has half crouched, each `true` once in its inside sensor — see `syncDoorwayCrouch` */
-  doorwayCrouched: Map<string, boolean>;
-  /** A tall npc half crouches in a doorway, so their head clears its lintel, and stands again after, unless they crouched anyway */
-  crouchInDoorway(npcKey: string, inside: boolean): void;
-  /** Each tick, crouches tall npcs near a door's line, and stands them again further off — see `doorwayCrouch` */
-  syncDoorwayCrouch(): void;
+  /** The tall npcs stooping in a doorway: its door, and the side of its line they came from — see `syncDoorwayDuck` */
+  doorwayDucked: Map<string, { gdKey: Geomorph.GmDoorKey; side: number }>;
+  /** A tall npc stoops in door `gdKey`'s doorway, coming from `side` of its line, so their head clears its lintel. `null` stands them up */
+  duckInDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey | null, side?: number): void;
+  /** Each tick, stoops tall npcs near a door's line, and stands them again further off — see `doorwayDuck` */
+  syncDoorwayDuck(): void;
   /** Whilst in a doorway, their room is whichever is on their side of the door's line */
   syncDoorways(): void;
   /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
@@ -2643,6 +2644,20 @@ function distToSegment(p: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) {
   const [dx, dy] = [b.x - a.x, b.y - a.y];
   const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
+
+/** Their head's pivot in plan, as last drawn. Else where they stand */
+function headPointOf(npc: Npc): Geom.VectJson {
+  const bone = npc.anim.upperHead.entry?.bone;
+  if (bone === undefined) return npc.point;
+  const { x, z } = tmpVec3.setFromMatrixPosition(bone.matrixWorld);
+  return { x, y: z };
+}
+const tmpVec3 = new THREE.Vector3();
+
+/** Signed metres from `p` to the door's line, positive where its `normal` points */
+function sideOfDoor(p: Geom.VectJson, door: { src: Geom.VectJson; normal: Geom.VectJson }) {
+  return (p.x - door.src.x) * door.normal.x + (p.y - door.src.y) * door.normal.y;
 }
 
 /** Whether a moving npc's path, from where they stand through their next corners, crosses the segment from `a` to `b` */
