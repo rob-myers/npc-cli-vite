@@ -193,6 +193,16 @@ function ShellCommands({
       meta.fenceCollapsed = { ...meta.fenceCollapsed, [fenceId]: !collapsed };
     });
   };
+  /** Each command's expanded state by its id, as saved */
+  const [expanded, setExpanded] = useState(() => state.meta.commandExpanded ?? {});
+  const toggleExpanded = (id: string) => {
+    const next = { ...expanded, [id]: expanded[id] !== true };
+    setExpanded(next);
+    uiStoreApi.setUiMeta(state.meta.id, (draft) => {
+      const meta = draft as SkipNetUiMeta;
+      meta.commandExpanded = { ...meta.commandExpanded, [id]: next[id] };
+    });
+  };
 
   const savedPx = state.meta.fenceHeights?.[fenceId];
   return (
@@ -238,6 +248,8 @@ function ShellCommands({
             original={original}
             segments={segments}
             subs={subs}
+            expanded={expanded[original.id] === true}
+            onToggleExpanded={() => toggleExpanded(original.id)}
             edit={editInline && <SubsPopover inline rules={rules} values={subs} onChange={changeSub} />}
           />
         ))}
@@ -263,6 +275,8 @@ function ShellCommand({
   original,
   segments,
   subs,
+  expanded,
+  onToggleExpanded: toggle,
   edit,
 }: {
   example: Example;
@@ -270,12 +284,13 @@ function ShellCommand({
   segments: SrcSegment[];
   /** Its fence's replacements, coloured in its comment */
   subs: Record<string, string>;
+  /** Its command shows beneath its comment */
+  expanded: boolean;
+  onToggleExpanded(): void;
   /** An edit button after copy, if its fence's only command */
   edit?: ReactNode;
 }) {
   const { copiedSrc, copy, ranId, run, sessionKey } = useContext(ArticleContext);
-  const [expanded, setExpanded] = useState(false);
-  const toggle = () => setExpanded(!expanded);
   const { src } = example;
   /** Without a comment, its command is shown in its place */
   const commented = example.commentLines.length > 0;
