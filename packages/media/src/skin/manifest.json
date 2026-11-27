@@ -424,9 +424,11 @@
         "skinKey": "scp-049-2a",
         "prefix": "scp",
         "noEyes": true,
-        "limbs": 0.75,
-        "body": 0.8,
-        "height": 1.05
+        "limbs": 0.55,
+        "body": 0.7,
+        "height": 1.05,
+        "clips": "scp_049_2a",
+        "agentRadius": 1.6
       },
       "url": "https://namemc.com/skin/af3aa135b92788cc",
       "svgPath": "skin/scp-049-2a.svg"
@@ -435,7 +437,15 @@
       "key": "scp-049-2b",
       "id": "0fb7149eaf9be151",
       "filename": "scp-049-2b--0fb7149eaf9be151.png",
-      "meta": {"skinKey": "scp-049-2b", "prefix": "scp", "noEyes": true},
+      "meta": {
+        "skinKey": "scp-049-2b",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.6,
+        "body": 0.85,
+        "clips": "scp_049_2b",
+        "agentRadius": 1.6
+      },
       "url": "https://namemc.com/skin/0fb7149eaf9be151",
       "svgPath": "skin/scp-049-2b.svg"
     },
