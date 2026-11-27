@@ -18,8 +18,10 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import {
   agentConfig,
+  crowdConfig,
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcConfig,
@@ -46,6 +48,8 @@ export class Npc {
   heightScale = 1;
   /** Their mesh's horizontal scale, from their skin's `scale`: at most `1`, so never wider than their agent */
   widthScale = 1;
+  /** Their agent's radius: the usual, times their skin's `agentRadius`, so a big body keeps others off */
+  agentRadius = npcDims.agentRadius;
 
   anim = new NpcAnimation(this);
   w: UseStateRef<import("./World").State>;
@@ -741,13 +745,14 @@ export class Npc {
       typeof prefix === "string"
         ? mapValues(base, (clip, key) => {
             const own = base[`${prefix}_${key}` as AnimationClipKey];
-            if (own === undefined) return clip;
+            if (own === undefined || own.tracks.length === 0) return clip; // e.g. a clip since removed
             own.userData.clipKey = key; // so its pose is `key`
             return own;
           })
         : null;
     const idle = defaultIdleAnimationClipKey;
-    const drawn = this.skinClips === null ? undefined : base[`${prefix}_${idle}_avoid` as AnimationClipKey];
+    const found = this.skinClips === null ? undefined : base[`${prefix}_${idle}_avoid` as AnimationClipKey];
+    const drawn = found !== undefined && found.tracks.length > 0 ? found : undefined;
     if (drawn !== undefined) drawn.userData.clipKey = idle; // so its pose is the idle's
     this.idleAvoid =
       this.skinClips !== null && drawn !== undefined ? { calm: this.skinClips[idle], drawn, until: 0 } : null;
@@ -763,10 +768,7 @@ export class Npc {
   /** Their skin's `fx` meta, if any, else none */
   syncSkinFx() {
     const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
-    this.setFx(
-      typeof meta.fx === "string" ? meta.fx : "none",
-      typeof meta["fx-amount"] === "number" ? meta["fx-amount"] : 1,
-    );
+    this.setFx(typeof meta.fx === "string" ? meta.fx : "none", typeof meta.fxAmount === "number" ? meta.fxAmount : 1);
   }
 
   /** Their skin's meta shapes them: overlay back faces, their limbs, torso and head, their scale and height */
@@ -781,7 +783,7 @@ export class Npc {
         limbs: num(meta.limbs),
         legs: num(meta.legs ?? meta.limbs),
         body: num(meta.body),
-        headDepth: num(meta["head-depth"]),
+        headDepth: num(meta.headDepth),
         taper: num(meta.taper),
         head: num(meta.head),
         stoop: num(meta.stoop, 0),
@@ -794,6 +796,9 @@ export class Npc {
     this.heightScale = this.widthScale * num(meta.height);
     this.skinnedMesh.scale.set(npcScale * this.widthScale, npcScale * this.heightScale, npcScale * this.widthScale);
     this.anim.headY *= this.heightScale / prevHeight;
+    // at most half the crowd's neighbour range, so any two are neighbours before they touch
+    this.agentRadius = Math.min(crowdConfig.collisionQueryRange / 2, npcDims.agentRadius * num(meta.agentRadius));
+    if (this.agent !== null) this.agent.radius = this.agentRadius;
   }
 
   /** Shows an effect of `npcFxKinds`, from `0` to `1` of it */

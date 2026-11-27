@@ -43,6 +43,11 @@ A skin's meta can name a prefix, `clips=scp_096`. Its wearer then plays each cli
 - Keep it upright and within the run's reach (`x` within ±6.58 px, `z` from -11.1 to 1.4 px): nothing prone.
 - An idle that reaches further, e.g. hands held at a hunched face, can take a drawn-in take, `{prefix}_breathe_avoid`. Whilst another stands within `poseConfig.idleNear` (1 m), and `holdSecs` after, it plays instead (`syncIdleAvoid` in `NPCs`), as a pose's `avoid` does.
 - `scp_173_breathe`: a statue. Stood rigid, a head snaps aside for a frame now and then. It has no walk: it is placed, never seen to move.
+- `scp_049_*`: upright, the hands clasped behind, the head tilting as it studies. Its walk is a deliberate stride, arms still.
+- `scp_035_*`: too still, the head tilting with too much interest then snapping back, a forearm twitching. Its walk is too smooth: no bob, no sway.
+- `scp_017_*`: hunched and utterly still, then a slow head turn. Its walk is a low creep in short steps.
+- `scp_1000_*`: a slow sway, heavy breaths, the head scanning, long arms swinging. Its walk rolls heavily. Its body is big for an agent, so its skin's meta has `agentRadius=1.5`: the crowd keeps others off it.
+- `scp-650` wears `clips=scp_173`: a statue too.
 - `scp_096_*`: hunched, the hands over the face, shoulders heaving in sobs. Its walk shambles in short steps, swaying.
 - `scp_106_*`: stooped and slack, the head lolling, the arms limp. Its walk limps, the right leg dragging stiff.
 

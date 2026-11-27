@@ -222,7 +222,7 @@ export default function NPCs() {
               pathOptimizationRange,
             } = getAgentParams();
             Object.assign(npc.agent, {
-              radius,
+              radius: npc.agentRadius ?? radius,
               height,
               collisionQueryRange,
               boundaryQueryRange,
@@ -472,12 +472,10 @@ export default function NPCs() {
           } satisfies WW.MsgToWorker);
         }
 
-        npc.agentId = crowdApi.addAgent(
-          state.crowd,
-          w.nav.navMesh,
-          helper.groundPointToTuple(groundPoint),
-          getAgentParams(),
-        );
+        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, helper.groundPointToTuple(groundPoint), {
+          ...getAgentParams(),
+          radius: npc.agentRadius ?? npcDims.agentRadius, // undefined on an npc from before hmr
+        });
         state.byAgentId[npc.agentId] = npc;
         npc.agent = state.crowd.agents[npc.agentId];
 
@@ -713,7 +711,12 @@ export default function NPCs() {
         const avoid = npc.idleAvoid;
         if (avoid === null || npc.skinClips === null) return;
         const now = w.gameTime.now();
-        if (state.near.beside(npc.key, poseConfig.idleNear).length > 0) avoid.until = now + poseConfig.holdSecs;
+        // by room, not the crowd's neighbours, whose range is shorter
+        const { x, z } = npc.position;
+        const close = state.near
+          .inReach(npc.key)
+          .some((o) => (o.position.x - x) ** 2 + (o.position.z - z) ** 2 < poseConfig.idleNear ** 2);
+        if (close) avoid.until = now + poseConfig.holdSecs;
         const next = avoid.until > now ? avoid.drawn : avoid.calm;
         const key = defaultIdleAnimationClipKey;
         if (npc.skinClips[key] === next) return;

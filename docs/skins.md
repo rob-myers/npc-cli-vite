@@ -95,10 +95,11 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 - A skin's meta can thin its wearer: `limbs=0.5` for arms and legs half as wide, `legs=0.6` for the legs alone, `body=0.6` for a narrower torso, e.g. `scp-096`, `scp-106`, `scp-682`.
   - The vertices, base and overlay, move in the bind pose (`setBodyShape`, `service/geometry.ts`). Each limb narrows about its own axis, the torso about the body's.
   - The chest narrows half as much as the hips and stomach, keeping the shoulders. The arms keep their axes, a little away from the chest. The legs follow the hips in.
-  - `head-depth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
+  - `headDepth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
   - `taper=0.35` narrows each limb toward its end to that share, and the torso toward the hips half as much (`scp-650`).
   - `head=1.3` scales the head about its base, the neck (`scp-017`). It keeps its proportions under `height`, which would otherwise squash or stretch it.
-  - `stoop=0.25` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
+  - `stoop=0.1` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
+  - `agentRadius=1.5` makes their crowd agent that much wider (`npc.agentRadius`), so the crowd keeps others off a big body (`scp-1000`). It is capped at half the crowd's neighbour range (`collisionQueryRange`): the crowd only parts two agents it finds as neighbours, so their radii must add up to no more than that.
   - The skin is drawn at full width as usual, and squeezed. Thinning a limb by transparent texels instead shows it hollow: through the gaps, its far faces are culled.
   - Every npc has its own geometry, so others are untouched. `npc.syncSkinShape` applies it with each skin, and restores it for the next.
   - Each shape is worked out once, then copied in (`w.npc.shapeCache`, keyed by shape, with the bind pose as `bind`). A glTF reload clears it.
@@ -107,7 +108,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - Their agent, gait and stance are unchanged by either. Their head height (`anim.headY`) scales with them, even mid-pose.
   - `scale` only shrinks: it is capped at `1`, since a wider body would reach past its agent, into walls and other npcs. Grow by `height` alone, upright.
 - A skin's meta can give its wearer clips of their own: `clips=scp_096` plays `scp_096_walk` for `walk`, and so on — see `docs/blockbench.md`.
-- A skin's meta can give its wearer an effect: `fx=noir`, with `fx-amount=0.5` for half of it. jsh `fx` lists them, `fx rob ghost` sets one by hand, and so does the **fx** select in their menu (`PickMenu`).
+- A skin's meta can give its wearer an effect: `fx=noir`, with `fxAmount=0.5` for half of it. jsh `fx` lists them, `fx rob ghost` sets one by hand, and so does the **fx** select in their menu (`PickMenu`).
   - `static` and `ghost` are the looks of those shot so, held (`docs/engagements.md`): a dot screen, and a stipple dropping half their screen pixels. `noir` is the frame grade's grey (`noirTone`, `service/extra-fx.ts`).
   - It is two uniforms, `fxKind` (an index of `npcFxKinds`) and `fxAmount` (`npc.setFx`). Each effect is a uniform branch in `service/npc-material.ts`, so other npcs skip it.
   - A skin's `fx` is applied at spawn and when the skin changes (`syncSkinFx`), so a reload of the skins keeps one set by hand.

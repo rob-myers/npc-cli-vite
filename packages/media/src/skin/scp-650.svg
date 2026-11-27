@@ -16,7 +16,7 @@
 </filter>
 <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="0.6"/></filter><clipPath id="bases"><path d="M0 32h32v32h-32zM32 32h32v32h-32zM64 32h32v32h-32zM96 32h32v32h-32zM32 0h32v32h-32zM64 0h32v32h-32zM64 80h16v48h-16zM80 80h32v48h-32zM112 80h16v48h-16zM128 80h32v48h-32zM80 64h32v16h-32zM112 64h32v16h-32zM160 80h16v48h-16zM176 80h16v48h-16zM192 80h16v48h-16zM208 80h16v48h-16zM176 64h16v16h-16zM192 64h16v16h-16zM128 208h16v48h-16zM144 208h16v48h-16zM160 208h16v48h-16zM176 208h16v48h-16zM144 192h16v16h-16zM160 192h16v16h-16zM0 80h16v48h-16zM16 80h16v48h-16zM32 80h16v48h-16zM48 80h16v48h-16zM16 64h16v16h-16zM32 64h16v16h-16zM64 208h16v48h-16zM80 208h16v48h-16zM96 208h16v48h-16zM112 208h16v48h-16zM80 192h16v16h-16zM96 192h16v16h-16z"/></clipPath></defs>
 <g style="pointer-events: none;">
-<title>meta prefix=scp noEyes taper=0.35</title>
+<title>meta prefix=scp noEyes taper=0.35 clips=scp_173</title>
 <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsSAAALEgHS3X78AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAADiSURBVHic7drNDoIwEEVh6qJ9/8dtN7pzgT+TMNQj6fk2JETjzWUKhrRsgVrrPfrMN2OMkvn+bDc6AM0C6AA0C6AD0CyADkAr0XO+97611p7HT+eOov8nhAXMRhew/BJ4W0DvPXW8EpfA/kT26l9tCpwA8sf/wUv70UREV2z2+4Nsvr3lJ8AC6AA0/CkwW3RPWH4CLIAOQLMAOgDNAugANAugA9AsgA4gSZIkSZL0a6fvzpi9v+DsHSXLvxGyADoALb2e6P0F2XvC8hNgAXQAmgXQAWgWQAegWQAdgGYBdADaA9rLbfNgX7/7AAAAAElFTkSuQmCC" width="256" height="256" style="image-rendering: pixelated;">
 <title>scp-650--0a58b4436b8b8fa9</title>
 </image>

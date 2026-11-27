@@ -85,8 +85,8 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Npc placement | `docs/npc-placement.md` | Where the World puts an npc. `placeNpcAt` gives one on the navmesh an agent. Getting up lands beside the doable (`w.e.stepOff`), and `meta.front-only` seats are taken and left from in front. One at a doable on the navmesh is hard pinned, an idle one softly. Two idle npcs overlapping: whoever came to rest later shuffles off (`updateIdleOverlap`), never mid-fade or mid-move (`w.e.hasPendingMove`). A room's `max-walkers=N` admits at most N onto its floor (`w.e.admitWalker`). |
 | Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
 | Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their menu (`PickMenu`). |
-| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
-| Workers | `docs/workers.md` | See [Navigation](#navigation-and-crowd). |
+| Navcat | `docs/navcat.md` | The navmesh and the crowd of agents, on `navcat`. Set `agent.position` before `requestMoveTarget` to teleport. An npc's poly is `npc.nodeRef`. A short move shuffles. An agent's radius is `npc.agentRadius`, from skin meta, capped at half `collisionQueryRange`. Navcat is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param (`0`, so `agent.boundary` is empty: the doc says how to find walls instead), corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
+| Workers | `docs/workers.md` | See [Workers](#workers). |
 | Time | `docs/time.md` | Two clocks. `w.gameTime` is scaled (`0`-`2`, the menu's slider, jsh `timescale`) and held by a pause: behaviours, animations, timers and detection run on it. `w.realTime` never is: the camera and UI marks. Wait in game time with `w.e.after`, `w.e.wait` or jsh `wSleep`, never `setTimeout`. |
 | Tasks | `docs/tasks.md` | A jsh command's wait on the World, which a kill must end, runs as a `Task` (`@npc-cli/util`), e.g. `task.until` on World state. So does World code with async steps of its own. |
 | jsh pausing | `docs/jsh-pause.md` | World commands (and their descendants) pause with the World via a pause group made in `awaitWorld`. One that must keep going calls `api.setPausable("world", false)` first, like `pick`. |
@@ -147,16 +147,10 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - Space held with the phaser lowered looks as far as sight goes along their facing (`setFarLook`), extending their frontier, recast as they turn or walk. Raised, the same look runs along the muzzle's line. It overrides any look whilst held. In gaze mode, or whilst `r` is held, it casts along the pointer instead, and gaze mode stays on. The bar says "focal max" ("gaze max"). Letting go of Space ends it, giving the look back.
   - A look caps their frontier at its distance (`w.player.look`). A tap or right-click sets it until another, or the hud-toast's x. It starts at 1.5m (`lookBase`, kept per World). `r` held a while, or gaze mode, steers it only whilst on. See Following the player in `docs/camera.md`.
 
-## Navigation and crowd
+## Workers
 
-- The navmesh uses `navcat` (a recast/detour JS port). Agents live in a `crowd`. `navcat` is patched: see `docs/navcat-patch.md`.
-- **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
-- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
-- The first corner's `nodeRef` is the poly *after* it, not the current one.
-- **A short move shuffles.** From rest, stood, a move within `dist.shuffleTarget` (0.25m, Manhattan) shuffles rather than walks: the four `shuffle_step` clips, blended by heading as a strafe's are (`docs/npc-strafe.md`), not the turn's `shuffle`, keeping their facing. It lands within `arriveMin`, where a walk stops short (`canShuffle`, `shuffleTo` in `use-world-events`). A move's `shuffle: true` (jsh `move --shuffle`) shuffles however far, `false` never.
-- **`agent.boundary` is always empty.** See `docs/navcat-patch.md` for how to find the walls near an npc.
+See `docs/workers.md`.
 
-**Workers** (see `docs/workers.md`):
 - Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycasts on a `SegGrid`, `w.navWorker`). See `docs/workers.md`.
 - The nav worker runs as two copies: `bulk` (navmesh, `park`, `pad`, `hide`...) and `fast` (rays, `sees`, quick queries). Post with `w.navWorker.post(msg, role?)`, never to a `Worker` directly.
 - jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one with jsh's plan ops (`park`, `pad`…), sent from `plan.main.ts`.

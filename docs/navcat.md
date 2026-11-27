@@ -1,15 +1,43 @@
-# The navcat patch
+# Navcat
+
+The navmesh uses `navcat`, a recast/detour JS port. Npcs' agents live in a `crowd`, stepped each tick in `NPCs`' `onTick`. `navcat` is patched: see [The patch](#the-patch).
+
+## Agents
+
+- **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
+- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
+- The first corner's `nodeRef` is the poly *after* it, not the current one.
+- **`agent.boundary` is always empty.** See [The patch](#the-patch), 2, for how to find the walls near an npc.
+
+## Agent radius
+
+An npc's agent radius is `npc.agentRadius`: `npcDims.agentRadius` (0.2m), times their skin's `agentRadius` meta (`docs/skins.md`), e.g. `scp-1000`'s `1.5`.
+
+- It is capped at half `collisionQueryRange` (0.7m). The crowd only parts agents it finds as neighbours, within that range centre to centre, so any two must be neighbours before they touch.
+- Separation goes by distance alone. Only collision uses the radii, pushing two apart to their sum.
+- Door areas and the physics body stay sized for the usual radius, as a big body is no wider.
+- Arrival slows within twice an agent's radius, so a bigger one eases in from further out.
+
+## Short moves
+
+A short move shuffles. From rest, stood, a move within `dist.shuffleTarget` (0.25m, Manhattan) shuffles rather than walks.
+
+- It plays the four `shuffle_step` clips, blended by heading as a strafe's are (`docs/npc-strafe.md`), not the turn's `shuffle`, keeping their facing.
+- It lands within `arriveMin`, where a walk stops short (`canShuffle`, `shuffleTo` in `use-world-events`).
+- A move's `shuffle: true` (jsh `move --shuffle`) shuffles however far, `false` never.
+
+## The patch
 
 `navcat` (the recast/detour port the crowd runs on) is patched via pnpm —
 `patches/navcat@0.4.1.patch`, under `patchedDependencies` in `pnpm-workspace.yaml`. Four changes
 in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`, and one in `dist/index.js`.
 
-## 1. Four corners, not three
+### 1. Four corners, not three
 
 `updateCorners` asks `findCorners` for `4`. An npc's intention (`npc.getCorners`) is
 `[position, ...agent.corners]`, and three could stop short of the door about to be passed.
 
-## 2. `boundaryQueryRange`: walls looked for less far than npcs
+### 2. `boundaryQueryRange`: walls looked for less far than npcs
 
 Navcat gathers neighbours and wall segments within one `collisionQueryRange`. Walls found far out
 slow a walker for a goal beside one; a long range for npcs is what lets them plan round each other.
@@ -26,7 +54,7 @@ as the crowd would: `findLocalNeighbourhood` from their poly (`npc.nodeRef`), th
 - `queryBoundary` in `plan.worker.ts`, for `park`. `debug_boundary npc:rob` draws what it finds.
 - `wallNear` in `sidestep.ts`, so a collapsed npc keeps to a wall.
 
-## 3. A corner given up stays given up
+### 3. A corner given up stays given up
 
 Each tick an agent steers at the first corner of its corridor. Navcat gives a corner up only
 whilst the agent is within `MIN_TARGET_DIST` (1 cm) of it, tested afresh every tick. The patch
@@ -55,7 +83,7 @@ Three cases, all seen as an npc rocking back and forth, the corner popping in an
 The neighbours are only looked at with the corner under three radii off, and by squared
 distances, so on most ticks the rule costs one comparison.
 
-## 4. Pressed against an npc, the desired velocity folds onto their tangent
+### 4. Pressed against an npc, the desired velocity folds onto their tangent
 
 Avoidance scores a candidate partly by its distance from the desired velocity `dvel`. Touching an
 npc with `dvel` pointing through them, every open candidate is a slide along their tangent, and a
@@ -68,7 +96,7 @@ at its speed; only the sampler's copy changes. The side is the lean of `dvel`, e
 corner comes and goes over, and re-choosing each tick would turn them back at every flip. Contact
 only (`0.02`): folding from wider, a corner just past their far side is folded away from for ever.
 
-## 5. A path ending ON a mesh vertex keeps its END
+### 5. A path ending ON a mesh vertex keeps its END
 
 In `dist/index.js`. `findStraightPath` appends the target last, flagged `END`. When the point before it
 is the same point (the target is itself a vertex of the mesh, e.g. the mesh nearest a click just off
@@ -85,7 +113,7 @@ and ended `stuck` rather than arriving:
 `w.e.move` does its part too: a target off the mesh is aimed at the mesh nearest it, as nothing could
 arrive at the point itself.
 
-## Editing the patch
+### Editing the patch
 
 ```sh
 pnpm patch navcat@0.4.1          # extracts WITH the current patch applied, prints the dir
