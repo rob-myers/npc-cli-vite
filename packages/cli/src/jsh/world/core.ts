@@ -1544,29 +1544,31 @@ export function ring(
  * remove test-decor-point will
  *
  * remove npc:rob
- * remove npcs:'["rob',"kate"]'
+ * remove npcs:'["rob","kate"]'
+ * # remove npcs and runtime decor whose keys match, never the player
+ * remove /hazmat/
+ * remove /^scp-0\d\d$/
  * ```
  */
 export async function remove(
   { w, api, args }: JshCli.RunArg,
-  opts: { npcKey?: string; npcKeys?: string[] } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npc?: string; npcs?: string[] | true } = api.jsArg(args),
 ) {
-  if (args.length === 1) {
-    if (args[0] === "npcs") {
-      return w.e.removeNpcs(...Object.keys(w.n).filter((key) => key !== w.player.key));
-    } else if (args[0] === "decor") {
-      return w.decor.remove(...Object.keys(w.decor.runtime.byKey));
-    } else if (typeof opts.npcKey === "string") {
-      return w.e.removeNpcs(opts.npcKey);
-    } else if (Array.isArray(opts.npcKeys)) {
-      return w.e.removeNpcs(...opts.npcKeys);
-    }
-  }
-
-  const npcKeys = args.filter((arg) => arg in w.n);
-  const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
-  npcKeys.length && w.e.removeNpcs(...npcKeys);
-  runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
+  const named = new Set([...args, opts.npc ?? "", ...(Array.isArray(opts.npcs) ? opts.npcs : [])]);
+  /** Each `/…/` arg as a regex, its `g` flag dropped since it makes `test` stateful */
+  const patterns = args.flatMap((arg) => {
+    const [, source, flags = ""] = arg.match(/^\/(.+)\/([a-z]*)$/) ?? [];
+    return source ? [new RegExp(source, flags.replace("g", ""))] : [];
+  });
+  const matches = (key: string) => patterns.some((pattern) => pattern.test(key));
+  const npcKeys = Object.keys(w.n).filter(
+    (key) => named.has(key) || (key !== w.player.key && (opts.npcs === true || matches(key))),
+  );
+  const decorKeys = Object.keys(w.decor.runtime.byKey).filter(
+    (key) => named.has(key) || named.has("decor") || matches(key),
+  );
+  if (npcKeys.length > 0) w.e.removeNpcs(...npcKeys);
+  if (decorKeys.length > 0) w.decor.remove(...decorKeys);
   setTimeout(() => w.view.forceUpdate(0.001), 30);
 }
 
