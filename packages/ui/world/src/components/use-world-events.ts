@@ -722,6 +722,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npc?.setAmbient(npcs.ambient, npcs.sameRoom);
         w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
+        for (const npc of Object.values(w.n ?? {})) npc.drawLabel(); // their colour is the theme's
         w.phasers?.syncTheme();
         w.shields?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);

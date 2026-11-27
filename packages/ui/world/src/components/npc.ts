@@ -274,21 +274,25 @@ export class Npc {
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);
 
-    // lighter unless they are the player: grey rather than the default yellow, thinner, and part see-through.
+    // lighter unless they are the player: the theme's colour rather than the default yellow, thinner, and part see-through.
     // `system-ui` has the lighter weights, which plain `sans-serif` may not
     const isPlayer = this.w.player.is(this.key);
     const { color } = this.labelStyle;
-    ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? otherNpcLabelColor : color;
+    const { labelColor = otherNpcLabelColor, labelOpacity = 0.35, labelHalo = "" } = this.w.getTheme().npcs;
+    ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? labelColor : color;
     const weight = npcLabelWeight[this.w.touchDevice ? "touch" : "desktop"];
     ct.font = `${isPlayer ? weight.player : weight.other} 36px system-ui, sans-serif`;
-    ct.globalAlpha = isPlayer ? 1 : 0.35;
+    ct.globalAlpha = isPlayer ? 1 : labelOpacity;
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
-    // ct.strokeStyle = "black";
-    // ct.lineWidth = 2;
 
     const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
+    // a halo beneath, so it reads on a light floor and a dark one
+    if (isPlayer === false && labelHalo !== "") {
+      Object.assign(ct, { strokeStyle: labelHalo, lineWidth: 7, lineJoin: "round" });
+      ct.strokeText(labelText, width / 2, height / 2);
+    }
     ct.fillText(labelText, width / 2, height / 2);
     ct.globalAlpha = 1;
     const m = ct.measureText(labelText);
@@ -298,7 +302,6 @@ export class Npc {
       (width / 2 + m.actualBoundingBoxRight + labelPickPadPx) / width,
       (height / 2 + m.actualBoundingBoxDescent + labelPickPadPx) / height,
     );
-    // ct.strokeText(labelText, width / 2, height / 2);
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }

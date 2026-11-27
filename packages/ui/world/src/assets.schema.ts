@@ -220,8 +220,20 @@ export const WorldThemeSchema = z.object({
       fxStrength: z.number().min(0).max(8).default(1),
       /** The exposure added to those in the player's room — see `NpcAnimation.tickRoomLit` */
       sameRoom: z.number().min(0).max(1).default(0.2),
+      /** Other npcs' labels: their colour, opacity and halo (none if empty). The player's is their own — see `Npc.drawLabel` */
+      labelColor: z.string().default("#bbb" satisfies typeof import("./const.npc.ts").otherNpcLabelColor),
+      labelOpacity: z.number().min(0).max(1).default(0.35),
+      labelHalo: z.string().default(""),
     })
-    .default({ ambient: 0, brightness: 0.25, fxStrength: 1, sameRoom: 0.2 }),
+    .default({
+      ambient: 0,
+      brightness: 0.25,
+      fxStrength: 1,
+      sameRoom: 0.2,
+      labelColor: "#bbb",
+      labelOpacity: 0.35,
+      labelHalo: "",
+    }),
   doors: z
     .object({
       brightness: z.number(),
