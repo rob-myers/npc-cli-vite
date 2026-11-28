@@ -45,7 +45,7 @@ import {
   getZoomStops,
   stepCameraPreset,
 } from "../service/camera-view";
-import { deferPipelines } from "../service/defer-pipelines";
+import { pipelinesSettled, prepareBootPipelines } from "../service/defer-pipelines";
 import { createExtraFx, type ExtraFx, type ExtraFxKey, parseExtraFxKey, warpExtraFxUv } from "../service/extra-fx";
 import {
   createFadeRooms,
@@ -1007,11 +1007,8 @@ export function WorldView(props: React.PropsWithChildren) {
         // override THREE.WebGPURenderer
         w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
         w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.texDoorLabel.renderer = w.r3f.gl;
-        deferPipelines(
-          w.r3f.gl,
-          () => (w.e?.bootedAt ?? 0) > 0,
-          () => w.r3f?.invalidate(),
-        );
+        prepareBootPipelines(w);
+        state.update(); // shows "compiling shaders" until booted
         w.r3f.gl.domElement.addEventListener(redrawForSnapshotEvent, state.renderForSnapshot);
         // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
         // live only there — three re-uploads the rest from their mirrors, these are redrawn
@@ -1204,6 +1201,7 @@ export function WorldView(props: React.PropsWithChildren) {
         return state.runBusy(compilingShadersText, async () => {
           const { gl, scene, camera } = w.r3f;
           const renderer = gl as unknown as THREE.WebGPURenderer;
+          await pipelinesSettled(renderer); // what is drawn so far shows before frames are held
           state.warming = true;
           state.syncRenderMode();
           await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
@@ -1796,6 +1794,10 @@ export function WorldView(props: React.PropsWithChildren) {
 
   useEffect(() => void w.menu.update?.(), [state.pixelRatio.used]); // `{}` until WorldMenu mounts
 
+  /** What the busy overlay says. Pipelines compile from the canvas's creation until booted (`prepareBootPipelines`) */
+  const booting = w.threeReady === true && !((w.e?.bootedAt ?? 0) > 0);
+  const busyText = state.busy ?? (booting ? compilingShadersText : null);
+
   return (
     <div className="unzoom size-full" ref={ref}>
       <Canvas
@@ -1924,20 +1926,21 @@ export function WorldView(props: React.PropsWithChildren) {
       {/* busy indicator: something heavy is running e.g. a shader recompile — see `runBusy`.
           Informative only, so it takes no pointer events */}
       <AnimatePresence>
-        {state.busy !== null && (
+        {busyText !== null && (
           <motion.div
             className={cn(
               indicatorClassName,
               // its top under the first line of hud-toasts, not centred there; dark to stand out
               "pointer-events-none top-11 translate-y-0 z-70 whitespace-nowrap border border-yellow-200/30 bg-black/60",
             )}
-            initial={{ opacity: 0 }}
+            // at boot frames are few, so no fade in
+            initial={booting ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
             <div className="size-3 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
-            {state.busy}
+            {busyText}
           </motion.div>
         )}
       </AnimatePresence>

@@ -40,12 +40,41 @@ created on the thread that also finishes frames).
   `compileAsync`s the pick pass, whose attachments differ from the screen's, so the first tap
   needn't build every material a second pipeline. Dawn creates them on worker threads. The warm
   then sets `w.e.bootedAt`.
+  - It waits for the screen's deferred pipelines first (`pipelinesSettled`), so what they draw is
+    shown before frames are held. Started at once, it held a cold boot's World black until `booted`.
+    Waiting, the hull's outline showed at ~4.8 s, not ~6.5 s, and `booted` came no later.
+  - On a cold GPU the first map unfolds before it (`onBootstrapMap`): the intro pan, the rise, then
+    the floor's fade. The floor filled in at ~6.8 s, not ~8.2 s, and `booted` came ~0.9 s later.
+  - The GPU counts as cold when pipelines took over `coldSettleMs` (500 ms) to settle. A warm one
+    boots first, then unfolds: unfolding first had made a warm revisit's `booted` ~1.1 s later.
+- **The first look compiles first.** Until `pipelinesSettled` lets them go, `deferPipelines` holds
+  the scene's other draws without asking for their pipelines (`firstLookMaterials`, `prepareBootPipelines`).
+  Dawn compiles on ~8 threads, so npcs, labels, shields, phasers and the debug overlays had held
+  up the walls, doors and decor. The first look's pipelines were done at ~3.8 s, not ~5 s, and the
+  hull showed at ~3.7 s, not ~4.5 s.
+  - At most `maxCompiling` (4) compile at once. With ~9 at once, 2 of 3 runs stalled ~0.6 s at
+    ~1.1 s. Capped, none did, and the compiler's total time fell from ~35 s to ~14 s.
+- **Every World material has a `name`**, which a trace shows as its pipeline's label, e.g.
+  `renderPipeline_floor_40`. A material mostly has two pipelines: the screen's, ~1 s each on a cold
+  GPU, and the pick pass's, ~10–40 ms. A transparent double-sided one has two of the screen's.
+- **The World's root is black** (`World`), so the veil lifts onto black, not the tab's grey, whilst
+  the canvas has yet to draw.
 - **Until booted, three creates pipelines asynchronously** (`deferPipelines`, `service/defer-pipelines.ts`). It
   patches three's pipeline cache and backend: a draw or compute needing a new pipeline asks Dawn
   for it off the GPU's frame thread, and is skipped until it is ready. So the World still appears
   bit by bit, each part once compiled. three itself creates them synchronously, which compiled
   each on the thread that puts frames on screen: up to 4 s without a frame. After `booted` three
   is as it was.
+- **"compiling shaders" shows from the canvas's creation until `booted`** (`WorldView`), the
+  window `deferPipelines` covers. It showed for the pick pass's warm alone, from ~3 s on a cold boot.
+- **Texture pipelines compile before the World draws** (`warmTexturePipelines`, from `prepareBootPipelines`).
+  The first upload of a GPU-backed canvas, e.g. the floor's, compiles two unlabelled shaders on the
+  GPU's main thread. Left to the World's first frame, that ran beside its pipelines' compiles and
+  took ~1 s, and a second ~1 s freeze followed at ~2 s. Warmed, it takes ~0.17 s, at ~0.6 s.
+  A cold boot (2026-11-28) then lost 0.6 s of frames, where it lost 2.2 s.
+  - The warm canvas is 256×256: a smaller one is drawn in software, its upload sent from the CPU.
+  - three's mipmap pipeline is warmed too. It is created synchronously, a 0.15 s hitch at ~0.8 s
+    otherwise. Warmed, it joins the copy's, one ~0.3 s gap at ~0.6 s.
 - **A tty is created at its fitted size** (`fitOf`, `packages/cli/src/tty/xterm-fit.ts`), so its
   WebGL canvas never resizes at boot. `Tty`'s fit takes "hidden" from its element, not
   `useMeasure`'s `bounds`, which start at zero and would force a resize.
@@ -59,6 +88,9 @@ created on the thread that also finishes frames).
   parse. `go.run` is not awaited: TinyGo's `main` returns at once and the exports stay callable.
 - **`hashJson(state.assets, false)`** in `World.tsx`: 9 ms, where pretty-printing took 50.
 - **Skins draw from their sheets first.** The SVG overlays are a second query (`NPCs.tsx`).
+- **A DEV World's skin canvases stay on the CPU** (`cpuContext`, `service/skin-sheets.ts`). They are
+  drawn into `texSkin` and read for eyes, so on the GPU each refresh read one back synchronously:
+  ~200 ms on the main thread, then a stalled frame.
 - **drei `<Stats>` is off in production**, behind the debug menu's **fps**.
 - **The WebRTC probe waits for the boot and an idle moment** (`probeWebRtcWhenIdle`).
 - **The hud-toasts wait for `bootedAt`**, then fade in on the compositor (`WorldHud`).
@@ -109,7 +141,6 @@ created on the thread that also finishes frames).
 
 - **A cold boot takes ~5 s to `booted`** (2026-11-20), bounded by the GPU compiling every
   pipeline. Only fewer shader variants would shorten it.
-- **One 1.5 s freeze early in a cold boot**, a Metal compile before the World is on screen.
 - **A flaky layout shift.** In about half of Lighthouse runs the right allotment pane shifts
   (CLS 0.258). Treat CLS as noise when comparing runs.
 - **The `World` chunk is 1.9 MB.**
@@ -139,7 +170,8 @@ to the JS function that made it.
   visitor's Chrome is not: `RasterDecoderImpl::DoEndRasterCHROMIUM` stalls the GPU's frame thread
   too. To warm it alone, first load the app with `navigator.gpu` hidden
   (`Page.addScriptToEvaluateOnNewDocument`). three then runs the World on WebGL, whose shaders are
-  other Metal code. Then measure a first visit in a new tab.
+  other Metal code. Load it twice, each held 5 s after `booted`: after one load, Skia stalls of up
+  to 2.3 s remained. Then measure a first visit in a new tab.
 - `DeviceBase::APICreateRenderPipeline` or `APICreateComputePipeline` on the GPU process's main
   thread (trace categories `gpu`, `gpu.dawn`) is a pipeline created synchronously.
 - Trace from the browser target (`Tracing.start`), then open the app with `Target.createTarget`.

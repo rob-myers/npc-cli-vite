@@ -20,6 +20,7 @@ import {
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { bodyOf, type CorpseBody, toBody } from "../service/corpse-body";
+import { pipelinesSettled } from "../service/defer-pipelines";
 import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { probeWebRtcWhenIdle } from "../service/net-signaling";
@@ -632,6 +633,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
          * - it won't be if we `remove {playerKey}` and refreshed
          */
         let playerWasSaved = false;
+        /** The first map rises from its flat hull, the floor fading in, then the room names */
+        let unfolded = false;
+        const unfold = async () => {
+          unfolded = true;
+          await w.view.holdBeforeUnfold(); // held a beat with the fade brought on
+          const rising = w.foldTo(1);
+          await pause(floorFadeDelayMs);
+          void w.floor?.fadeTo(1);
+          await rising;
+          // the names come back once the fade the unfold started has settled — by then only the
+          // rooms that stay are still shown, so only their labels appear. Not awaited: the
+          // intro pan has nothing to do with it
+          w.view.revealRoomLabels(1, roomLabel.revealMs, MODE_FADE_SECS * 1000);
+        };
 
         try {
           // a map with the last one's geomorphs requests no physics, which would rebuild these
@@ -651,26 +666,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+          // a cold GPU unfolds the first map once it can be drawn, before the pick pass's warm
+          const coldGpu = firstBootstrap === true && (await pipelinesSettled(w.r3f?.gl)) > coldSettleMs;
+          if (coldGpu === true) {
+            if (playerWasSaved === false) await player.panTo();
+            await unfold();
+          }
+
           // the pick pass compiles now, not on the first tap. Awaited: no frame is drawn meanwhile
           await w.view.warmPipelines();
 
-          if (firstBootstrap === true && playerWasSaved === false) {
+          if (firstBootstrap === true && coldGpu === false && playerWasSaved === false) {
             await player.panTo();
           }
         } finally {
           state.setBooted(); // a failed restore boots too
           if (firstBootstrap === true) {
-            // the first map is on screen as a flat hull: held a beat with the fade brought on,
-            // then unfolded with a delayed floor fade-in
-            await w.view.holdBeforeUnfold();
-            const rising = w.foldTo(1);
-            await pause(floorFadeDelayMs);
-            void w.floor?.fadeTo(1);
-            await rising;
-            // the names come back once the fade the unfold started has settled — by then only the
-            // rooms that stay are still shown, so only their labels appear. Not awaited: the
-            // intro pan has nothing to do with it
-            w.view.revealRoomLabels(1, roomLabel.revealMs, MODE_FADE_SECS * 1000);
+            if (unfolded === false) await unfold();
           } else {
             // behind black since `fadeOut` — snap onto the player, so it lifts onto them
             await player.panTo({ animate: false });
@@ -1594,6 +1606,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.bootedAt = performance.now();
         performance.mark(`${w.key}:booted`);
         w.hud?.update();
+        w.view?.update(); // hides "compiling shaders"
         void probeWebRtcWhenIdle().then(() => w.menu.update?.()); // its peers would stall the boot
       },
       setNpcLit(npc, next = npc.lit === false) {
@@ -2687,3 +2700,6 @@ function segmentsCross(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b: 
 }
 
 const noDoors: ReadonlySet<Geomorph.GmDoorKey> = new Set();
+
+/** Pipelines settling slower than this were compiled afresh, so the GPU is cold */
+const coldSettleMs = 500;
