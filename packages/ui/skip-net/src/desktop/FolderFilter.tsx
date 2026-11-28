@@ -19,7 +19,7 @@ export function FolderFilter({ hidden, onToggle }: { hidden: string[]; onToggle(
               className={segmentClass}
               onClick={() => onToggle(key)}
             >
-              <Check weight={shown ? "fill" : "regular"} />
+              <Check weight="bold" />
               <span>{key}</span>
             </button>
           );
@@ -35,7 +35,7 @@ const filterBarClass = tw("px-2 pt-1 pb-1.5 border-b border-mac-edge");
 const segmentsClass = tw(
   "flex rounded-sm border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)] overflow-hidden divide-x divide-mac-edge",
 );
-/** Green and ticked whilst shown, else dimmed */
+/** A green tick whilst shown, else dimmed */
 const segmentClass = tw(
-  "flex-1 flex items-center justify-center gap-1 px-2 py-0.5 cursor-pointer text-mac-muted hover:bg-mac-text/10 [&_svg]:size-3.5 [&_svg]:shrink-0 aria-checked:bg-emerald-500/20 aria-checked:text-emerald-800 dark:aria-checked:text-emerald-300",
+  "flex-1 flex items-center justify-center gap-1 px-2 py-0.5 cursor-pointer text-mac-muted hover:bg-mac-text/10 [&_svg]:size-4 [&_svg]:shrink-0 aria-checked:text-mac-text aria-checked:[&_svg]:text-emerald-600 dark:aria-checked:[&_svg]:text-emerald-400",
 );
