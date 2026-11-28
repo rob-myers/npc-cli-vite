@@ -487,7 +487,7 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
           }}
         />
       </div>
-      {/* one wrapping row: what they have, lit if so */}
+      {/* one wrapping row: what they have, lit if so, their skin */}
       <div className="flex max-w-56 flex-wrap items-center gap-1">
         {itemToggle("psi")}
         {npcKey === w.player?.key ? (
@@ -529,6 +529,19 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
             {item.text}
           </Toggle>
         ))}
+        <Picker
+          value={npc.skinKey ?? ""}
+          options={w.npc.skin.entries.map((entry) => entry.key)}
+          title="skin"
+          // as wide as the longest key, so a change of skin never rewraps the row
+          className="pointer-events-auto w-[13ch] shrink-0 justify-between border-white/20 bg-black/60 text-white"
+          popupClassName="font-mono"
+          onChange={(next) => {
+            w.n[npcKey]?.setSkin(next);
+            w.view.forceUpdate(); // shown even paused
+            touch();
+          }}
+        />
         <DeleteButton label="remove" onDelete={() => (w.e.removeNpcs(npcKey), w.r3f?.invalidate())} />
       </div>
       {npcKey === w.player?.key && <BreathControls w={w} />}
