@@ -16960,6 +16960,20 @@
         },
         {
           "type": "Polygon",
+          "coordinates": [
+            [[27.25, 1.4], [27.25, 1.5875], [26.75, 1.5875], [26.75, 1.4]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "galley",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 26.75, 1.4],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
           "coordinates": [[[16, 7.65], [15.85, 7.65], [15.85, 7.5], [16, 7.5]]],
           "meta": {
             "decor": true,
@@ -18565,20 +18579,6 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[3.25, 1.40625], [3.25, 1.59375], [2.75, 1.59375], [2.75, 1.40625]]
-          ],
-          "meta": {
-            "decor": true,
-            "point": true,
-            "label": "galley",
-            "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 2.75, 1.4063],
-            "direction": {"x": 1, "y": 0}
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
             [[1, 0.25625], [1, 0.44375], [0.5, 0.44375], [0.5, 0.25625]]
           ],
           "meta": {
@@ -18622,6 +18622,20 @@
             "tilt": true,
             "transform": [1, 0, 0, 1, 1.3625, 0.8],
             "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[3.25, 1.40625], [3.25, 1.59375], [2.75, 1.59375], [2.75, 1.40625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "galley",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2.75, 1.4063],
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -18672,7 +18686,7 @@
           "coordinates": [
             [[1.3125, 2.9], [1.3125, 3.1], [0.1875, 3.1], [0.1875, 2.9]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "locker"}
+          "meta": {"door": true, "slide": [1, 0], "label": "galley"}
         }
       ],
       "obstacles": [
@@ -62538,6 +62552,20 @@
         },
         {
           "type": "Polygon",
+          "coordinates": [
+            [[27.25, 1.4], [27.25, 1.5875], [26.75, 1.5875], [26.75, 1.4]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "galley",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 26.75, 1.4],
+            "direction": {"x": 1, "y": 0}
+          }
+        },
+        {
+          "type": "Polygon",
           "coordinates": [[[16, 7.65], [15.85, 7.65], [15.85, 7.5], [16, 7.5]]],
           "meta": {
             "decor": true,
@@ -64750,21 +64778,6 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[27.25, 1.4063], [27.25, 1.5938], [26.75, 1.5938], [26.75, 1.4063]]
-          ],
-          "meta": {
-            "decor": true,
-            "point": true,
-            "label": "galley",
-            "img": "label",
-            "transform": [-0.5, 0, 0, 0.5, 27.25, 1.4063],
-            "direction": {"x": -1, "y": 0},
-            "y": 0.01
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
             [[29.5, 0.2562], [29.5, 0.4437], [29, 0.4437], [29, 0.2562]]
           ],
           "meta": {
@@ -64809,6 +64822,21 @@
             "tilt": true,
             "transform": [-1, 0, 0, 1, 28.6375, 0.8],
             "doorId": 34
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[27.25, 1.4063], [27.25, 1.5938], [26.75, 1.5938], [26.75, 1.4063]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "galley",
+            "img": "label",
+            "transform": [-0.5, 0, 0, 0.5, 27.25, 1.4063],
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -65724,7 +65752,7 @@
           "coordinates": [
             [[29.8125, 2.9], [29.8125, 3.1], [28.6875, 3.1], [28.6875, 2.9]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "locker", "det": -1}
+          "meta": {"door": true, "slide": [-1, 0], "label": "galley", "det": -1}
         },
         {
           "type": "Polygon",
@@ -70253,20 +70281,6 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[3.25, 1.40625], [3.25, 1.59375], [2.75, 1.59375], [2.75, 1.40625]]
-          ],
-          "meta": {
-            "decor": true,
-            "point": true,
-            "label": "galley",
-            "img": "label",
-            "transform": [0.5, 0, 0, 0.5, 2.75, 1.4063],
-            "direction": {"x": 1, "y": 0}
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
             [[1, 0.25625], [1, 0.44375], [0.5, 0.44375], [0.5, 0.25625]]
           ],
           "meta": {
@@ -70310,6 +70324,20 @@
             "tilt": true,
             "transform": [1, 0, 0, 1, 1.3625, 0.8],
             "doorId": 0
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[3.25, 1.40625], [3.25, 1.59375], [2.75, 1.59375], [2.75, 1.40625]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "label": "galley",
+            "img": "label",
+            "transform": [0.5, 0, 0, 0.5, 2.75, 1.4063],
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -70360,7 +70388,7 @@
           "coordinates": [
             [[1.3125, 2.9], [1.3125, 3.1], [0.1875, 3.1], [0.1875, 2.9]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "locker"}
+          "meta": {"door": true, "slide": [1, 0], "label": "galley"}
         }
       ],
       "obstacles": [
