@@ -13,7 +13,7 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 - **Tab zoom.** The grid's position strategy is scaled by its tab's zoom (`zoomedStrategy`). Else a press shifts the window, and a drag outruns the pointer.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
 - **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **files**, **chat**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
-- **The files folder** (`FolderWindow`) shows one article folder (`articleFolders`), **video**, **npc** or **scp**, picked in its title bar. It lists its articles: name, when modified, and size (once wide enough). It is saved as the window's `folder` (unset or stale, the first). A click on an article opens it, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build. The plugin is imported as a package, so editing it needs a dev server restart.
+- **The files folder** (`FolderWindow`) shows one article folder (`articleFolders`), **video**, **npc** or **scp**, chosen from a favourites bar under its title. It lists its articles: name, when modified, and size (once wide enough). It is saved as the window's `folder` (unset or stale, the first). A click on an article opens it, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build. The plugin is imported as a package, so editing it needs a dev server restart.
 
 ## Windows
 
@@ -56,6 +56,8 @@ An article has a key, e.g. `npc-controls`, unique across the folders of `src/art
 
 - `{folder}/{key}.mdx`, its own file, shown first. It may be missing.
 - `{folder}/{key}/*.mdx`, its sections, shown after in name order, e.g. `npc-controls/001-device-input.mdx`. The name only orders a section: a heading is its own `# …`.
+
+A file may say where it comes from, e.g. `export const source = { "SCP Wiki": "https://…" }`: its window's title bar shows its links, the first file's that has one (`PartSource`). Links leaving an article open in a new tab.
 
 Each file is shown in a frame of its own. Its sections share its key, so one window, chat thread, fence ids and folder entry (sizes summed, the newest date). They replaced the jobs library and the blog, and may replace items.
 

@@ -1,16 +1,14 @@
 import statsByKey from "virtual:skip-net-articles";
 import { cn, tw } from "@npc-cli/util";
-import { Picker } from "@npc-cli/util/picker";
 import { useContext } from "react";
 import { articleFolders } from "../articles";
 import { SkipNetContext } from "../context";
 import type { SkipNetWindow } from "../schema";
-import { titlePickerClass, titlePickerPopupClass } from "./classes";
 import { InTitle } from "./InTitle";
-import { DocumentIcon, VideoFileIcon } from "./icons";
+import { DocumentIcon, FolderIcon, VideoFileIcon } from "./icons";
 
 /**
- * The files folder: a folder picked in its title bar, its articles beneath.
+ * The files folder: its folders along a favourites bar, the chosen one's articles beneath.
  * A click on an article opens it.
  */
 export function FolderWindow({ win }: { win: SkipNetWindow }) {
@@ -22,16 +20,22 @@ export function FolderWindow({ win }: { win: SkipNetWindow }) {
   return (
     <div className="size-full flex flex-col">
       <InTitle>
-        <Picker
-          value={chosen?.key ?? ""}
-          options={articleFolders.map((x) => x.key)}
-          onChange={(folder) => state.setWindow(win.id, { folder })}
-          title="the folder shown"
-          className={cn(titlePickerClass, folderPickerClass)}
-          popupClassName={cn(titlePickerPopupClass, "text-sm")}
-        />
         <span className="text-mac-muted">{count === 1 ? "1 item" : `${count} items`}</span>
       </InTitle>
+      <nav aria-label="folders" className={favouritesClass}>
+        {articleFolders.map((folder) => (
+          <button
+            key={folder.key}
+            type="button"
+            aria-pressed={folder.key === chosen?.key}
+            className={favouriteClass}
+            onClick={() => state.setWindow(win.id, { folder: folder.key })}
+          >
+            <FolderIcon />
+            {folder.key}
+          </button>
+        ))}
+      </nav>
       <div className="@container flex-1 min-h-0 overflow-auto scrollbar-thin">
         <div className={cn(rowClass, "sticky top-0 bg-mac-window text-mac-muted border-b border-mac-edge")}>
           <span>Name</span>
@@ -97,7 +101,9 @@ const rowButtonClass = tw("w-full text-left cursor-pointer hover:bg-mac-text/10"
 const nameClass = tw("min-w-0 flex items-center gap-1.5 [&_svg]:size-4 [&_svg]:shrink-0");
 /** Shown only in a window wide enough */
 const sizeClass = tw("hidden @xs:block text-right");
-/** A classic pop-up menu: the window's colour, boxed, with a hard drop shadow */
-const folderPickerClass = tw(
-  "h-5 px-2 text-sm rounded-sm border border-mac-edge bg-mac-window shadow-[1px_1px_0_var(--color-mac-shadow)] hover:bg-mac-window data-popup-open:bg-mac-text/15",
+/** A strip of favourites under the title bar, as a Finder window's */
+const favouritesClass = tw("flex gap-1 px-2 py-1 border-b border-mac-edge bg-mac-title overflow-x-auto scrollbar-none");
+/** A folder's icon and name, highlighted whilst chosen */
+const favouriteClass = tw(
+  "shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-sm cursor-pointer text-mac-text hover:bg-mac-text/10 [&_svg]:size-4 aria-pressed:bg-mac-text/20",
 );

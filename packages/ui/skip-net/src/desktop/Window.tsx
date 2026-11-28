@@ -106,14 +106,17 @@ export const Window = memo(function Window(props: WindowProps) {
           className={cn(
             // the session picker beside it gives way first
             "relative min-w-0 px-2 bg-mac-title",
-            win.kind === "article" ? "flex items-center gap-1" : "truncate",
+            win.kind === "article" ? "flex items-center gap-1 min-w-min" : "truncate",
             front ? "font-bold" : "text-mac-muted",
             big ? "text-base" : "text-sm",
           )}
         >
           {win.kind === "article" ? (
             <>
-              <span className="truncate">{title}</span>
+              {/* at least its first 8 characters, e.g. scp-1000 */}
+              <span className="truncate" style={{ minWidth: `${Math.min(8, title.length)}ch` }}>
+                {title}
+              </span>
               <Picker
                 chevronOnly
                 value={title}
