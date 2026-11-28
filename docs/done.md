@@ -604,6 +604,49 @@
     - uis-loaded event fires once
     - exit-or-hide event has at least 60s between firing
 
+## By Nov 28th 2026
+
+- ❌ can expand/collapse all SkipNet code-fences
+- ✅ initially pick player so lastPicked more natural
+  - first map load only
+- ✅ towards d-class experiments
+  - ✅ wall-mounted `decor speaker`
+  - ✅ can speak through speaker
+    - `say listen to me carefully with:rob via:speaker`
+  - ✅ shields
+  - ✅ locked doors
+  - ✅ lit d-class in disconnected room
+  - ✅ hazardous reading material
+    - can use extant `decor book`
+- ✅ scp skins
+  - 50 total skins
+- ✅ npc skin fx
+  - `fx rob none`
+  - `fx rob ghost`
+  - `fx rob noir`
+  - `fx rob stop-motion`
+- ✅ scp animations
+  - ✅ scp-173 idle statue motion
+  - ❌ crawling
+  - ✅ scp-096 idle head in hands
+  - ✅ scp-096 idle drawn-back head in hands
+  - ✅ scp-096 walk head in hands
+  - ✅ scp-106 idle stopped
+  - ✅ scp-106 walk stopped
+  - ✅ scp-049
+  - ✅ scp-035
+  - ✅ scp-017
+  - ✅ scp-1000
+  - ✅ scp-650
+- ✅ ra-1 skin refinement
+- ❌ tethered mode
+  - double-r to turn off too
+  - can tether to other npc
+- ❌ crouch strafes by default
+- ✅ saw phaser lowered through closed door when nearly entered
+- ✅ initial World load slowdown so allotment responsive
+- ❌ decorator inspector toggles off/on on world pause via escape?
+
 ## By Nov 24th 2026
 
 - ✅ SkipNet refine
