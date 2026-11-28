@@ -78,27 +78,31 @@ export async function debug_corners(
 
 /**
  * Spawn an npc per skin in a circle about an npc, facing them, each named after its skin sans hyphens.
- * `as` keeps those whose key begins with it. `r` is at least 1. Yields any skin that found no place.
+ * `prefix` (or `pre`) keeps those whose key begins with it. `r` is at least 1. Yields any skin that found no place.
  * ```sh
  * debug_skins rob
- * debug_skins npc:rob r:2 as:mtf
+ * debug_skins rob r:1.5 prefix:scp-
+ * debug_skins npc:rob r:2 pre:mtf
  * ```
  */
 export async function* debug_skins(
   { api, args, w }: JshCli.RunArg,
-  opts: { npcKey?: string; r?: number; as?: string } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npcKey?: string; r?: number; prefix?: string; pre?: string } = api.jsArg(args, {
+    npc: "npcKey",
+  }),
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { x: cx, z: cz } = w.npc.get(opts.npcKey).position;
   const r = opts.r ?? 1.6;
   if (!(r >= 1)) throw Error("r must be at least 1");
-  const keys = w.npc.skin.entries.map((e) => e.key).filter((key) => key.startsWith(opts.as ?? ""));
+  const prefix = opts.prefix ?? opts.pre ?? "";
+  const keys = w.npc.skin.entries.map((e) => e.key).filter((key) => key.startsWith(prefix));
   const failed = await w.e.spawnMany({
     ats: keys.map((_, i) => {
       const angle = (2 * Math.PI * i) / keys.length;
       return { x: cx + r * Math.cos(angle), y: cz + r * Math.sin(angle) };
     }),
-    keys: keys.map((as) => as.replaceAll("-", "")),
+    keys,
     skins: keys,
     looks: keys.map(() => ({ x: cx, y: cz })),
     verify: true,

@@ -3,24 +3,51 @@ import { type AssetsSkinManifestType, getSheetUrl, type SheetsType, type SkinEye
 import { type EyeFrame, eyeFrames, skinSliceDims } from "../const.both";
 
 /** The skin sheets, each skin drawn from its svg, else its png — see `docs/skins.md` */
-export function loadSkinSheets(sheets: SheetsType, manifest: AssetsSkinManifestType, cacheBust: string) {
+function loadSkinSheets(sheets: SheetsType, manifest: AssetsSkinManifestType, cacheBust: string) {
   return loadSheets("skin", sheets, sheets.skinSheetDims, cacheBust, (cts) =>
     Object.values(sheets.skin).map(async ({ key, sheetId, rect }) => {
       const { filename, svgPath } = manifest.byKey[key] ?? {};
       if (!filename) return;
-      const src = svgPath ? await fetchSkinSvgUrl(svgPath, cacheBust) : `/skin/${filename}${cacheBust}`;
-      cts[sheetId].drawImage(await loadImage(src), rect.x, rect.y, rect.width, rect.height);
-      URL.revokeObjectURL(src); // nothing to a url that is no blob's
+      const image = svgPath
+        ? await rasterSkinSvg(svgPath, cacheBust, rect.width)
+        : await loadImage(`/skin/${filename}${cacheBust}`);
+      cts[sheetId].drawImage(image, rect.x, rect.y, rect.width, rect.height);
     }),
   );
 }
+
+/** Each skin sheet as it loads: a World waits for sheet 0 alone, which holds the skins worn at boot */
+export function loadSkinSheetsEach(sheets: SheetsType, manifest: AssetsSkinManifestType, cacheBust: string) {
+  if (!import.meta.env.DEV) {
+    return sheets.skinSheetDims.map((_, i) => loadImage(getSheetUrl(sheets, `skin.${i}.png`, cacheBust)));
+  }
+  const all = loadSkinSheets(sheets, manifest, cacheBust);
+  return sheets.skinSheetDims.map((_, i) => all.then((images) => images[i]));
+}
+
+/** A black body for a skin whose sheet is still loading: its base faces opaque, its overlay and unused corner clear */
+export function drawLoadingSkin(ct: CanvasRenderingContext2D, width: number, height: number) {
+  const k = width / 64;
+  ct.fillStyle = "#000";
+  ct.fillRect(0, 0, width, height);
+  for (const [x, y, w, h] of loadingSkinClear) ct.clearRect(x * k, y * k, w * k, h * k);
+}
+
+/** In skin texels: the head's unused corner, then each overlay */
+const loadingSkinClear = [
+  [0, 0, 8, 4],
+  [32, 0, 32, 16],
+  [0, 32, 56, 16],
+  [0, 48, 16, 16],
+  [48, 48, 16, 16],
+];
 
 /** The slice sheets, each skin's eyes drawn every way from its face in `skinSheets` — see `docs/skin-slices.md` */
 export function loadSkinSliceSheets(
   sheets: SheetsType,
   manifest: AssetsSkinManifestType,
   cacheBust: string,
-  skinSheets: CanvasImageSource[],
+  skinSheets: Promise<CanvasImageSource>[],
 ) {
   const { cell, slice } = skinSliceDims;
   const perRow = cell / slice;
@@ -35,7 +62,7 @@ export function loadSkinSliceSheets(
       if (faceCt === null) return;
       faceCt.imageSmoothingEnabled = false;
       faceCt.drawImage(
-        skinSheets[skin.sheetId],
+        await skinSheets[skin.sheetId],
         x + width / 8,
         y + height / 8,
         width / 8,
@@ -162,13 +189,34 @@ async function loadSheets(
   return canvases;
 }
 
-/** A blob url of the svg without its groups titled `ignore` */
-async function fetchSkinSvgUrl(svgPath: string, cacheBust: string) {
+/**
+ * An svg skin drawn at `size`, without its groups titled `ignore`. Drawn once per version of its text, so a refetch,
+ * e.g. after a hot reload, redraws only the svgs that changed: drawing them all at once hitched the page
+ */
+async function rasterSkinSvg(svgPath: string, cacheBust: string, size: number) {
   const svgText = await fetch(`/${svgPath}${cacheBust}`).then((r) => r.text());
+  const version = `${size} ${hashText(svgText)}`;
+  const cached = svgRasters.get(svgPath);
+  if (cached?.version === version) return cached.canvas;
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
   for (const g of Array.from(doc.querySelectorAll("g"))) {
     if (g.querySelector(":scope > title")?.textContent?.trim() === "ignore") g.remove();
   }
   const svg = new XMLSerializer().serializeToString(doc.documentElement);
-  return URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  const canvas = Object.assign(document.createElement("canvas"), { width: size, height: size });
+  canvas.getContext("2d")?.drawImage(await loadImage(url), 0, 0, size, size);
+  URL.revokeObjectURL(url);
+  svgRasters.set(svgPath, { version, canvas });
+  return canvas;
 }
+
+/** A 32-bit FNV-1a hash of `text`, to tell one version of an svg from another */
+function hashText(text: string) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return (hash >>> 0).toString(36);
+}
+
+/** Each svg skin's raster in DEV, by path, with the version of its text it was drawn from */
+const svgRasters = new Map<string, { version: string; canvas: HTMLCanvasElement }>();

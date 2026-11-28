@@ -62,7 +62,7 @@ Hooks live in `.githooks/`; `pnpm install` enables them via the `prepare` script
 | [decorator](decorator.md) | The Decorator panel and runtime decor |
 | [workers](workers.md) | The physics and nav web workers |
 | [web-rtc-worlds](web-rtc-worlds.md) | One World joining another over WebRTC |
-| [navcat-patch](navcat-patch.md) | The patched crowd/navmesh library |
+| [navcat](navcat.md) | The navmesh, the crowd and its agents, and the navcat patch |
 | [npc-outlines](npc-outlines.md) | The border drawn round npcs |
 | [page-load-perf](page-load-perf.md) | Page load measurements |
 | [screen-slideshows](screen-slideshows.md) | Turning a screen recording into a README slideshow |

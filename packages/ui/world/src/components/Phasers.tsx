@@ -60,6 +60,7 @@ import {
   legMeets,
   type NpcTarget,
   partOnRay,
+  passesThrough,
   raysMeet,
   reflect,
   type StruckKind,
@@ -739,11 +740,11 @@ export default function Phasers() {
         /** A ghost passes it on. Anyone else is where the burst ends, rather than following them as they writhe */
         const landOn = (on: Npc, target: NpcTarget, outcome: JshCli.ShotOutcome, at: THREE.Vector3) => {
           state.landRay(npc, on, target.part, outcome, at, tip ?? from);
-          if (outcome !== "ghost") arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
+          if (passesThrough(outcome) === false) arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
         };
         // one passing them, unless a ghost, has no outcome
-        if (outcome === "ghost" || end === part) landOn(dst, to, outcome, part);
-        if (outcome !== "ghost" && end === part && tip !== null) state.spreadOn(npc, arm, tip, part);
+        if (passesThrough(outcome) || end === part) landOn(dst, to, outcome, part);
+        if (passesThrough(outcome) === false && end === part && tip !== null) state.spreadOn(npc, arm, tip, part);
         // on through whoever it meets beyond, to the one it lands on
         for (const next of shot?.beyond ?? []) {
           const on = w.n[next.npcKey];
@@ -785,7 +786,8 @@ export default function Phasers() {
         ] as const)
           for (const m of byDist(ms)) state.landRay(npc, m.on, m.part, state.outcomeFor(npc, m.on, ray), m.at, m.from);
         // each ending on whom it meets, bar a ghost: a bounce drawn only after it met no one
-        const solid = (m: null | { on: Npc }) => m !== null && arm.met?.get(m.on.key)?.outcome !== "ghost";
+        const solid = (m: null | { on: Npc }) =>
+          m !== null && passesThrough(arm.met?.get(m.on.key)?.outcome ?? "hit") === false;
         arm.spreadHit = met.map((m, i) => {
           const leg = legs[i] ?? null;
           const legMeet = legMet[i] ?? null;
@@ -801,10 +803,10 @@ export default function Phasers() {
         const hits = arm?.met?.get(on.key)?.landed !== true; // once a shot each
         arm?.met?.set(on.key, { outcome, landed: true });
         if (hits) {
-          if (outcome === "ghost") w.npcGhost?.struck(on);
+          if (passesThrough(outcome)) w.npcGhost?.struck(on);
           state.land(npc, on, part, outcome, at, from);
         }
-        if (outcome === "ghost") return; // it passes through
+        if (passesThrough(outcome)) return;
         state.impact(npc, at, from, on);
         if (outcome === "armour") w.npcArmour?.flash(on, part, at, from);
       },
@@ -899,13 +901,13 @@ export default function Phasers() {
           .sort((a, b) => a.dist - b.dist);
         for (const { on, part, local, x, y } of met) {
           // a ghost already passes it on too
-          const outcome = w.npcGhost?.ghosts.has(on.key) === true ? "ghost" : state.outcomeFor(npc, on, "beyond");
+          const outcome = w.npcGhost?.ghosts.get(on.key)?.look ?? state.outcomeFor(npc, on, "beyond");
           shot.beyond.push({ npcKey: on.key, part, local, outcome });
-          if (outcome !== "ghost") {
+          if (passesThrough(outcome) === false) {
             shot.past = { x, y }; // it ends on them
             break;
           }
-          w.npcGhost?.ghost(on); // one, or kept one, as it passes through
+          w.npcGhost?.ghost(on, outcome); // one, or kept one, as it passes through
         }
         w.r3f?.invalidate();
       },
@@ -920,9 +922,9 @@ export default function Phasers() {
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
         const clear = to.local != null && state.meetPart(npc, arm, dst, to) === false;
         // a ghost's passes through them, as one aimed beside them passes
-        const ghosted = clear === false && shot.outcome === "ghost";
-        if (ghosted === true) w.npcGhost?.ghost(dst);
-        if (clear === false && ghosted === false) return;
+        const passes = passesThrough(shot.outcome) ? shot.outcome : null;
+        if (clear === false && passes !== null) w.npcGhost?.ghost(dst, passes);
+        if (clear === false && passes === null) return;
         const through = targetPoint(dst, to, new THREE.Vector3());
         shot.through = through;
         const length = Math.hypot(through.x - npc.position.x, through.z - npc.position.z) || 1;

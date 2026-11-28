@@ -1,8 +1,9 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { MicrophoneIcon } from "@phosphor-icons/react";
+import { MicrophoneIcon, SpeakerHighIcon } from "@phosphor-icons/react";
 import { memo, useCallback, useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { OverlayBounds, toScreen } from "../service/overlay";
+import { relayDecor, relayKey, speakerPoint, speakerShown } from "../service/speakers";
 import { pageSecs, type Utterance } from "../service/speech";
 import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
 import { Glyphed } from "./TalkThread";
@@ -26,25 +27,39 @@ export default function NpcBubbles() {
         for (const { target } of items) state.sizes.set(target, sizeOf(target as HTMLElement));
         w.r3f?.invalidate();
       }),
+      relays: new Map(),
       sizes: new WeakMap(),
       thoughts: new Map(),
 
+      anchor(key, out) {
+        const npc = w.n?.[key];
+        if (npc !== undefined) return out.setFromMatrixPosition(npc.skinnedMesh.matrixWorld).add(npc.bubbleOffset);
+        const speaker = relayDecor(w, key);
+        return speaker === undefined ? null : speakerPoint(w, speaker, out);
+      },
       delete(...npcKeys) {
         for (const npcKey of npcKeys) {
-          state.lines.delete(npcKey);
+          for (const key of state.keysOf(npcKey)) state.lines.delete(key);
+          state.relays.delete(npcKey);
           state.thoughts.delete(npcKey);
           state.hidden.delete(npcKey);
         }
         state.update();
       },
       dropLine(npcKey) {
-        if (state.lines.delete(npcKey)) state.sync(npcKey);
+        for (const key of state.keysOf(npcKey)) if (state.lines.delete(key)) state.sync(key);
+      },
+      keysOf(npcKey) {
+        const relays = state.relays.get(npcKey) ?? [];
+        return [npcKey, ...relays.filter((key) => state.lines.get(key)?.relayOf === npcKey)];
       },
       missChunk(npcKey, chunk) {
-        const line = state.lines.get(npcKey);
-        if (line === undefined) return;
-        line.unheard.add(chunk);
-        showUnheard(line, [chunk]);
+        for (const key of state.keysOf(npcKey)) {
+          const line = state.lines.get(key);
+          if (line === undefined) continue;
+          line.unheard.add(chunk);
+          showUnheard(line, [chunk]);
+        }
       },
       onTick(delta) {
         for (const [npcKey, line] of state.lines) {
@@ -83,10 +98,8 @@ export default function NpcBubbles() {
         // nothing is read from the DOM here: sizes come from `observer`
         for (const [npcKey, el] of state.els) {
           if (only !== undefined && npcKey !== only) continue;
-          const npc = w.n?.[npcKey];
           const size = state.sizes.get(el);
-          if (npc === undefined || size === undefined) continue;
-          tmpPoint.setFromMatrixPosition(npc.skinnedMesh.matrixWorld).add(npc.bubbleOffset);
+          if (size === undefined || state.anchor(npcKey, tmpPoint) === null) continue;
           const { x, y } = toScreen(tmpPoint, camera, canvas, box);
           // what is for the player is kept inside the World's edges, as a menu is
           if (state.thoughts.has(npcKey) === false && state.lines.get(npcKey)?.forPlayer !== true) {
@@ -100,21 +113,21 @@ export default function NpcBubbles() {
         }
       },
       release(...npcKeys) {
-        for (const npcKey of npcKeys) {
-          const line = state.lines.get(npcKey);
+        for (const key of npcKeys.flatMap(state.keysOf)) {
+          const line = state.lines.get(key);
           if (line?.held !== true) continue;
           line.held = false;
           const { pages, spokenSecs } = line.utt;
           line.end = Math.max(line.t, spokenSecs) + pageSecs(pages[pages.length - 1]);
         }
       },
-      say(npcKey, utt, { secs, hold = false, forPlayer = false, comms = false } = {}) {
+      say(npcKey, utt, { secs, hold = false, forPlayer = false, comms = false, speakers = [] } = {}) {
         if (!(npcKey in w.n)) return;
         const { pages, pageAt, spokenSecs } = utt;
         const end = hold
           ? Infinity
           : Math.max(pageAt[pageAt.length - 1] + (secs ?? pageSecs(pages[pages.length - 1])), spokenSecs);
-        state.lines.set(npcKey, {
+        const lineOf = (relayOf?: string): Line => ({
           id: state.nextId++,
           utt,
           t: 0,
@@ -125,9 +138,15 @@ export default function NpcBubbles() {
           said: 0,
           unheard: new Set(),
           forPlayer,
-          comms,
+          comms: comms && relayOf === undefined,
+          relayOf,
           wordEls: [],
         });
+        for (const key of state.keysOf(npcKey).slice(1)) state.lines.delete(key);
+        const relays = speakers.map(relayKey);
+        state.relays.set(npcKey, relays);
+        state.lines.set(npcKey, lineOf());
+        for (const key of relays) state.lines.set(key, lineOf(npcKey));
         state.sync(npcKey);
       },
       sayWord(line, i) {
@@ -137,8 +156,10 @@ export default function NpcBubbles() {
         });
       },
       setPaused(npcKey, paused) {
-        const line = state.lines.get(npcKey);
-        if (line !== undefined) line.paused = paused;
+        for (const key of state.keysOf(npcKey)) {
+          const line = state.lines.get(key);
+          if (line !== undefined) line.paused = paused;
+        }
       },
       setShown(npcKey, shown) {
         if (shown === !state.hidden.has(npcKey)) return;
@@ -146,7 +167,7 @@ export default function NpcBubbles() {
         state.update();
       },
       sync(npcKey) {
-        if (w.n?.[npcKey] === undefined) {
+        if (w.n?.[npcKey] === undefined && relayDecor(w, npcKey) === undefined) {
           state.lines.delete(npcKey);
           state.thoughts.delete(npcKey);
         }
@@ -157,6 +178,8 @@ export default function NpcBubbles() {
         for (const [npcKey, el] of state.els) {
           if (only !== undefined && npcKey !== only) continue;
           const npc = w.n[npcKey];
+          const speaker = npc === undefined ? relayDecor(w, npcKey) : undefined;
+          if (speaker !== undefined) el.style.opacity = `${speakerShown(w, speaker)}`;
           if (npc === undefined) continue;
           const lit = npc.npcLit.value * w.view.litNpcsEnabled.value;
           el.style.opacity = `${Math.max(w.view.fadeRoomsFx.visibilityOf(npc.roomSlot.value), lit)}`;
@@ -264,6 +287,9 @@ function SaidBubble({ line, elRef }: { line: Line; elRef: (el: HTMLDivElement | 
       ref={elRef}
       className="said-bubble mb-1.5 w-max max-w-64 rounded-xl border border-white/30 bg-black/75 px-2.5 py-1 text-[13px] text-white/95"
     >
+      {line.relayOf !== undefined && (
+        <SpeakerHighIcon weight="bold" className="mr-1 inline size-3 align-[-1px] text-white/60" />
+      )}
       {line.comms && <MicrophoneIcon weight="bold" className="mr-1 inline size-3 align-[-1px] text-white/60" />}
       {pageChunks.map((cs, p) => (
         <span key={p} data-page={p}>
@@ -339,11 +365,17 @@ export type State = {
   /** The line each said last, by npcKey */
   lines: Map<string, Line>;
   nextId: number;
+  /** The bubble keys of the speakers each npc last spoke through, e.g. `@speaker-box-3` */
+  relays: Map<string, string[]>;
   /** The thought last read off each, and the seconds it has left */
   thoughts: Map<string, Thought>;
+  /** Where bubble `key` sits: over an npc's head, or a speaker */
+  anchor(key: string, out: THREE.Vector3): THREE.Vector3 | null;
   delete(...npcKeys: string[]): void;
   /** Their line goes at once, any thought kept */
   dropLine(npcKey: string): void;
+  /** Their bubble's key, then those of the speakers still saying their line */
+  keysOf(npcKey: string): string[];
   /** The player missed `chunk` of the line `npcKey` is saying: it shows as "…" */
   missChunk(npcKey: string, chunk: number): void;
   /** Lines run down whilst unpaused — see `World`'s `onTick` */
@@ -354,12 +386,12 @@ export type State = {
   release(...npcKeys: string[]): void;
   /**
    * Over them, replacing what they said before, page by page. Its last page lasts `secs`, or until released when `hold`.
-   * Only one `forPlayer` is kept in view. `comms` shows a mic
+   * Only one `forPlayer` is kept in view. `comms` shows a mic. Each of `speakers` says it too
    */
   say(
     npcKey: string,
     utt: Utterance,
-    opts?: { secs?: number; hold?: boolean; forPlayer?: boolean; comms?: boolean },
+    opts?: { secs?: number; hold?: boolean; forPlayer?: boolean; comms?: boolean; speakers?: string[] },
   ): void;
   /** Word `i` is said: it lights, and the bubble swells */
   sayWord(line: Line, i: number): void;
@@ -394,6 +426,8 @@ type Line = {
   unheard: Set<number>;
   forPlayer: boolean;
   comms: boolean;
+  /** Said at a speaker, by this npc */
+  relayOf?: string;
   el?: HTMLDivElement | null;
   wordEls: HTMLElement[];
 };

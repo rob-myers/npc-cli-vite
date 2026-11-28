@@ -580,9 +580,10 @@ function SkinCard({
               href={skinEntry.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded p-0.5 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
+              className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-xs text-sky-300 hover:bg-slate-700 hover:text-sky-200"
             >
-              <ArrowSquareOutIcon className="size-4" />
+              source
+              <ArrowSquareOutIcon className="size-3.5" />
             </a>
           </Tip>
         )}

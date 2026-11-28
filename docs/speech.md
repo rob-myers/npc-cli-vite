@@ -100,6 +100,27 @@ The player sees only what they heard:
 
 A net client judges hearing for its own player, as it runs the same `say` on each line it is sent.
 
+## Through a speaker
+
+A decor quad with `meta.speaker` is a speaker: `true`, or a channel such as `pa` (`docs/decorator.md`). `say`, `ask` and `tell` take `via:`, saying the line through speakers too (`service/speakers.ts`).
+
+| `via:` | Speakers |
+| --- | --- |
+| a decor key, e.g. `via:speaker-box-3` | that one |
+| `room` | those in the listener's room, or for `say` the speaker's own |
+| any other word, e.g. `via:pa` | every one on that channel |
+
+```sh
+say "Lights out in five" with:abe via:pa
+tell npc:kate "Report to the lab" with:rob via:room
+```
+
+- **Bubbles.** Each speaker shows the line too, with a speaker glyph, keyed `@{decorKey}` in `w.bubble` (`relays`). It lights, pauses, misses and ends with the npc's own.
+- **Hearing.** Earshot is the npc's and each speaker's, by the same rule (`addSpeakerHearers`, `w.npc.near.inReachOf`). The player hearing it at a speaker is not over comms.
+- **The npc** speaks into a mic: their head moves, but they neither turn nor gesture.
+- No speaker matching fails the command, e.g. `no speaker: pa`.
+- The `speech` event carries `speakers`, so a net client shows them too.
+
 ## Needs: jsh `comms`
 
 ![needs, tested on a press](speech/needs-press.svg)

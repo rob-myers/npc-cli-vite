@@ -1,6 +1,6 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
-import { agentConfig, npcConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, npcConfig, npcFxKinds, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
 import { mapGroupsOf } from "@npc-cli/ui__world/geomorph";
 import { Task } from "@npc-cli/util";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
@@ -218,6 +218,29 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
+}
+
+/**
+ * Lists the npc effects, or shows one on an npc, from `0` to `1` of it — see `docs/skins.md`
+ * ```sh
+ * fx
+ * fx rob static 0.5
+ * fx rob noir
+ * fx rob ghost
+ * fx rob none
+ * ```
+ */
+export async function* fx({ args, w }: JshCli.RunArg) {
+  const [npcKey, kind = "none", amount = "1"] = args;
+  if (npcKey === undefined) {
+    yield* npcFxKinds;
+    return;
+  }
+  if (!(npcFxKinds as readonly string[]).includes(kind)) {
+    throw Error(`fx "${kind}" not found: try ${npcFxKinds.join(", ")}`);
+  }
+  w.npc.get(npcKey).setFx(kind, Number(amount));
+  w.view.forceUpdate();
 }
 
 /**
@@ -1544,29 +1567,31 @@ export function ring(
  * remove test-decor-point will
  *
  * remove npc:rob
- * remove npcs:'["rob',"kate"]'
+ * remove npcs:'["rob","kate"]'
+ * # remove npcs and runtime decor whose keys match, never the player
+ * remove /hazmat/
+ * remove /^scp-0\d\d$/
  * ```
  */
 export async function remove(
   { w, api, args }: JshCli.RunArg,
-  opts: { npcKey?: string; npcKeys?: string[] } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npc?: string; npcs?: string[] | true } = api.jsArg(args),
 ) {
-  if (args.length === 1) {
-    if (args[0] === "npcs") {
-      return w.e.removeNpcs(...Object.keys(w.n).filter((key) => key !== w.player.key));
-    } else if (args[0] === "decor") {
-      return w.decor.remove(...Object.keys(w.decor.runtime.byKey));
-    } else if (typeof opts.npcKey === "string") {
-      return w.e.removeNpcs(opts.npcKey);
-    } else if (Array.isArray(opts.npcKeys)) {
-      return w.e.removeNpcs(...opts.npcKeys);
-    }
-  }
-
-  const npcKeys = args.filter((arg) => arg in w.n);
-  const runtimeDecorKeys = args.filter((arg) => arg in w.decor.runtime.byKey);
-  npcKeys.length && w.e.removeNpcs(...npcKeys);
-  runtimeDecorKeys.length && w.decor.remove(...runtimeDecorKeys);
+  const named = new Set([...args, opts.npc ?? "", ...(Array.isArray(opts.npcs) ? opts.npcs : [])]);
+  /** Each `/…/` arg as a regex, its `g` flag dropped since it makes `test` stateful */
+  const patterns = args.flatMap((arg) => {
+    const [, source, flags = ""] = arg.match(/^\/(.+)\/([a-z]*)$/) ?? [];
+    return source ? [new RegExp(source, flags.replace("g", ""))] : [];
+  });
+  const matches = (key: string) => patterns.some((pattern) => pattern.test(key));
+  const npcKeys = Object.keys(w.n).filter(
+    (key) => named.has(key) || (key !== w.player.key && (opts.npcs === true || matches(key))),
+  );
+  const decorKeys = Object.keys(w.decor.runtime.byKey).filter(
+    (key) => named.has(key) || named.has("decor") || matches(key),
+  );
+  if (npcKeys.length > 0) w.e.removeNpcs(...npcKeys);
+  if (decorKeys.length > 0) w.decor.remove(...decorKeys);
   setTimeout(() => w.view.forceUpdate(0.001), 30);
 }
 
@@ -1606,11 +1631,16 @@ export function revoke(
  * say hi with:rob for:10
  * say hi with:rob for:Infinity
  * say hi with:kate &  # carries on without waiting
+ * say "Lights out in five" with:abe via:pa  # through every speaker on channel pa
  * ```
  */
 export async function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { with?: string; words?: string; secs?: number } = api.jsArg(args, { as: "with", npc: "with", for: "secs" }),
+  opts: { with?: string; words?: string; secs?: number; via?: string } = api.jsArg(args, {
+    as: "with",
+    npc: "with",
+    for: "secs",
+  }),
 ) {
   const npcKey = opts.with ?? w.player?.key;
   if (npcKey === undefined) throw Error("no player");
@@ -1618,7 +1648,9 @@ export async function say(
   const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
   if (!words) return;
 
-  const id = w.speech.say(npc.key, words, opts.secs);
+  // `via:room` is their own room's
+  const speakers = opts.via === undefined ? undefined : w.speech.speakersOf(`${opts.via}`, npc.key);
+  const id = w.speech.say(npc.key, words, opts.secs, { speakers });
   /** Whether this line is still being said */
   const saying = () => w.speech.uttering.get(npc.key)?.id === id;
   let suspended = api.isRunning() === false;
@@ -1677,18 +1709,35 @@ export function shield(
 }
 
 /**
+ * Change an npc's skin. With no npc, lists the skins, those worn marked, with who wears them and their meta.
  * ```sh
+ * skin
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
  * skin rob postdoc-0
  * skin rob as:r
  * ```
  */
-export function skin(
+export async function* skin(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; as?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  if (opts.npcKey === undefined) {
+    const keys = w.npc.skin.entries.map((entry) => entry.key);
+    const keyWidth = Math.max(...keys.map((key) => key.length));
+    const { White, Grey, GreyDark, Reset } = api.ansi;
+    for (const key of keys) {
+      const wearers = Object.values(w.n).flatMap((npc) => (npc.skinKey === key ? [npc.key] : []));
+      const shade = wearers.length > 0 ? White : Grey;
+      const mark = wearers.length > 0 ? "*" : " ";
+      const worn = wearers.length > 0 ? ` ${GreyDark}worn by ${shade}${wearers.join(", ")}` : "";
+      const meta = describeSkinMeta(key, w.npc.getSkinMeta(key));
+      const tail = `${worn}${meta ? ` ${GreyDark}meta ${shade}${meta}` : ""}`;
+      yield `${shade}${mark} ${tail ? key.padEnd(keyWidth) : key}${tail}${Reset}`;
+    }
+    return;
+  }
   const npc = w.npc.get(opts.npcKey);
   const prefix = `${(opts.as ??= getLastUnknownNaked(opts) ?? "robot-0")}`;
   const skinKey = w.npc.findSkinKey(prefix);
@@ -1698,6 +1747,14 @@ export function skin(
   }
   npc.setSkin(skinKey);
   w.view.forceUpdate();
+}
+
+/** A skin's meta as its svg title gives it, e.g. `noEyes limbs=0.5`: `eyes` if found, `prefix` only if not its key's */
+function describeSkinMeta(skinKey: string, meta: Meta) {
+  return Object.entries(meta)
+    .filter(([name, value]) => name !== "skinKey" && !(name === "prefix" && skinKey.startsWith(`${value}-`)))
+    .map(([name, value]) => (value === true || name === "eyes" ? name : `${name}=${value}`))
+    .join(" ");
 }
 
 /**

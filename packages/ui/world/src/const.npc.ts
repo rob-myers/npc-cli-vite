@@ -211,6 +211,7 @@ export const fromAnimationClipKey = {
   die_forward_mirror: true,
   drop: true,
   drop_left: true,
+  duck: true,
   get_up_back: true,
   get_up_back_mirror: true,
   get_up_forward: true,
@@ -244,6 +245,34 @@ export const fromAnimationClipKey = {
   run_backwards: true,
   run_strafe_left: true,
   run_strafe_right: true,
+  scp_017_breathe: true,
+  scp_017_walk: true,
+  scp_035_breathe: true,
+  scp_035_walk: true,
+  scp_049_breathe: true,
+  scp_049_walk: true,
+  scp_049_2a_breathe: true,
+  scp_049_2a_walk: true,
+  scp_049_2b_breathe: true,
+  scp_049_2b_walk: true,
+  scp_096_breathe: true,
+  scp_096_breathe_avoid: true,
+  scp_096_walk: true,
+  scp_1000_breathe: true,
+  scp_1000_walk: true,
+  scp_106_breathe: true,
+  scp_106_walk: true,
+  scp_1471_breathe: true,
+  scp_1471_walk: true,
+  scp_173_breathe: true,
+  scp_457_breathe: true,
+  scp_457_walk: true,
+  scp_610_breathe: true,
+  scp_610_walk: true,
+  scp_682_breathe: true,
+  scp_682_walk: true,
+  scp_939_breathe: true,
+  scp_939_walk: true,
   shift_weight: true,
   shrug: true,
   shuffle: true,
@@ -305,6 +334,8 @@ export const defaultIdleAnimationClipKey = "breathe" satisfies import("./compone
 
 /** Fallback for @see {fadeSecs} */
 export const defaultFadeSecs = 0.3;
+/** Seconds into or out of a half crouch, stood or moving */
+export const halfCrouchFadeSecs = 0.18;
 
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
@@ -516,10 +547,41 @@ export const corpseConfig = {
   speed: 2,
 };
 
-/** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
+/** Effects an npc may show, by `fxKind`: a skin's `fx` meta, else jsh `fx` — see `docs/skins.md` */
+export const npcFxKinds = ["none", "static", "noir", "ghost", "shroud", "embers"] as const;
+
+/**
+ * An `embers` effect's sparks, rising off the body and fading: how many each, metres across, seconds each lasts,
+ * metres it rises and drifts, and where on the body they start (metres out, and up as a share of height)
+ */
+export const emberConfig = {
+  count: 20,
+  size: 0.035,
+  life: 3.6,
+  rise: 0.45,
+  drift: 0.05,
+  spread: 0.18,
+  from: 0.25,
+  to: 1,
+  /** New, then dying (linear) */
+  hot: [1, 0.55, 0.12],
+  cool: [0.6, 0.06, 0],
+  glow: 1.2,
+  /** How quickly each fades through its life: `1` evenly, higher sooner */
+  fadeOut: 2.5,
+  /** Metres they are drawn toward the camera, so those behind the body show over it */
+  towardCamera: 0.35,
+} as const;
+
+/** A shroud's cloth colour (linear): their rim alone shows their shape */
+export const shroudConfig = { color: [0, 0, 0] } as const;
+
+/** Ghost and static: a shot passes through them, as they become a stipple or a dot screen — see `NpcGhost` */
 export const ghostConfig = {
-  /** How much of a dot screen their body becomes, over `inSecs` as the shot locks on, which waits till then */
+  /** How much of either look their body takes, over `inSecs` as the shot locks on, which waits till then */
   amount: 1,
+  /** A ghost's share of screen pixels dropped, at most */
+  stipple: 0.5,
   inSecs: 0.2,
   /** The dots: radians the grid turns, per pixel so higher is smaller, as `dotScreen` in `extra-fx`, and how bright they read the body */
   dots: { angle: Math.PI / 2, scale: 4.9, gain: 1.6 },
@@ -552,8 +614,8 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  backwards: {},
-  breathe: { shuffle: 0.15, shuffle_step: 0.2 },
+  backwards: { crouch_half_backwards: halfCrouchFadeSecs },
+  breathe: { shuffle: 0.15, shuffle_step: 0.2, crouch_half: halfCrouchFadeSecs },
   check_wrist: {},
   check_wrist_avoid: {},
   collapse: { collapsed: 0 },
@@ -562,11 +624,11 @@ export const fadeSecs: Record<
   crouch: {},
   crouch_backwards: {},
   crouch_cover: {},
-  crouch_half: {},
-  crouch_half_backwards: {},
+  crouch_half: { breathe: halfCrouchFadeSecs },
+  crouch_half_backwards: { backwards: halfCrouchFadeSecs },
   crouch_half_strafe_left: {},
   crouch_half_strafe_right: {},
-  crouch_half_walk: {},
+  crouch_half_walk: { walk: halfCrouchFadeSecs },
   crouch_left: {},
   crouch_strafe_left: {},
   crouch_strafe_right: {},
@@ -577,6 +639,7 @@ export const fadeSecs: Record<
   die_forward_mirror: {},
   drop: {},
   drop_left: {},
+  duck: {},
   get_up_back: { breathe: 0 },
   get_up_back_mirror: { breathe: 0 },
   get_up_forward: { breathe: 0 },
@@ -610,6 +673,34 @@ export const fadeSecs: Record<
   run_backwards: {},
   run_strafe_left: {},
   run_strafe_right: {},
+  scp_017_breathe: {},
+  scp_017_walk: {},
+  scp_035_breathe: {},
+  scp_035_walk: {},
+  scp_049_breathe: {},
+  scp_049_walk: {},
+  scp_049_2a_breathe: {},
+  scp_049_2a_walk: {},
+  scp_049_2b_breathe: {},
+  scp_049_2b_walk: {},
+  scp_096_breathe: {},
+  scp_096_breathe_avoid: {},
+  scp_096_walk: {},
+  scp_1000_breathe: {},
+  scp_1000_walk: {},
+  scp_106_breathe: {},
+  scp_106_walk: {},
+  scp_1471_breathe: {},
+  scp_1471_walk: {},
+  scp_173_breathe: {},
+  scp_457_breathe: {},
+  scp_457_walk: {},
+  scp_610_breathe: {},
+  scp_610_walk: {},
+  scp_682_breathe: {},
+  scp_682_walk: {},
+  scp_939_breathe: {},
+  scp_939_walk: {},
   shift_weight: {},
   shrug: {},
   // brief, so it must fade quickly to be seen at all
@@ -635,7 +726,7 @@ export const fadeSecs: Record<
   talk_left: {},
   phaser_aim: { shuffle: 0.15 },
   phaser_aim_avoid: {},
-  walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25 },
+  walk: { shuffle: 0.15, run: 0.25, run_ahead: 0.25, crouch_half_walk: halfCrouchFadeSecs },
 };
 
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
@@ -722,6 +813,8 @@ export const poseConfig = {
     talk_left: { upper: "talk_left", avoid: null, side: "left" },
   },
   near: 0.65,
+  /** Metres within which another draws a skin's idle in, e.g. `scp_096_breathe_avoid`: it reaches further than an arm */
+  idleNear: 1,
   /** Seconds they stay drawn in at least, and take to draw in */
   holdSecs: 0.5,
   drawInSecs: 0.15,
@@ -793,10 +886,10 @@ export const strafeSpeed = {
   crouch_strafe_right: 0.3,
   crouch_backwards: 0.4,
   crouch_strafe_left: 0.3,
-  crouch_half_walk: 0.6,
-  crouch_half_strafe_right: 0.4,
-  crouch_half_backwards: 0.6,
-  crouch_half_strafe_left: 0.4,
+  crouch_half_walk: 0.85,
+  crouch_half_strafe_right: 0.55,
+  crouch_half_backwards: 0.8,
+  crouch_half_strafe_left: 0.55,
   /** Running, each way paced near a straight run's cadence. Ahead may differ from `maxSpeed.run` */
   run_ahead: 3,
   run_strafe_right: 1.7,
@@ -810,6 +903,9 @@ export const strafeSpeed = {
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;
+
+/** A stoop under a lintel, added over any gait (`duck`, additive): seconds it takes to ease in or out */
+export const duckConfig = { fadeSecs: 0.25 };
 
 /** One collapsed scoots back-first (`collapsed_drag`): metres a cycle covers, and metres per second */
 export const dragConfig = { stride: 0.25, speed: 0.25 } as const;

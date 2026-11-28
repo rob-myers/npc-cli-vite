@@ -21,8 +21,8 @@ export default function NpcShadows() {
         for (const npc of Object.values(w.n)) {
           xzoData[i * 4] = npc.position.x;
           xzoData[i * 4 + 1] = npc.position.z;
-          // sat or lain, the body no longer hides it
-          xzoData[i * 4 + 2] = npc.isNotStanding() ? 0 : 1;
+          // its size: a smaller npc casts a smaller one. Sat or lain, none, as the body no longer hides it
+          xzoData[i * 4 + 2] = npc.isNotStanding() ? 0 : npc.widthScale;
           // a shadow goes where the npc casting it goes, faded room and all
           xzoData[i * 4 + 3] = npc.roomSlot.value;
           i++;
@@ -70,7 +70,7 @@ function createShadowResources(
   geo.setAttribute("position", pos);
   geo.setAttribute("uv", base.getAttribute("uv"));
   geo.setIndex(base.getIndex());
-  // per instance: world `xz`, an opacity, then the slot of the room its npc stands in
+  // per instance: world `xz`, its size (`0` hides it), then the slot of the room its npc stands in
   const xzoData = new Float32Array(MAX_NPCS * 4);
   const xzoAttr = new THREE.InstancedBufferAttribute(xzoData, 4);
   geo.setAttribute("shadowXZO", xzoAttr);
@@ -114,7 +114,8 @@ const shadowY = 0.015;
  */
 function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THREE.Node<"float">) {
   const { xzo, objectPick, fold } = shadow;
-  const worldPos = vec4(positionLocal.x.add(xzo.x), shadowY, positionLocal.z.add(xzo.y), 1.0);
+  const scale = xzo.z;
+  const worldPos = vec4(positionLocal.x.mul(scale).add(xzo.x), shadowY, positionLocal.z.mul(scale).add(xzo.y), 1.0);
 
   // plain circle, solid out to (radius - edgeSoftness) then a thin fade
   const distToCenter = vec2(positionLocal.x, positionLocal.z).length();
@@ -122,8 +123,7 @@ function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THR
   const baseAlpha = float(1)
     .sub(distToCenter.sub(npcShadowRadius - edgeSoftness).div(edgeSoftness))
     .clamp(0, 1)
-    .mul(npcShadowAlphaFactor)
-    .mul(xzo.z);
+    .mul(npcShadowAlphaFactor);
   const alpha = selectAs<"float">(objectPick.notEqual(0), float(0), baseAlpha);
 
   return {

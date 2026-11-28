@@ -13,6 +13,7 @@ import {
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
   dragConfig,
+  duckConfig,
   eyesConfig,
   fadeSecs,
   fidgetClipKeys,
@@ -221,6 +222,8 @@ export class NpcAnimation {
   overBody = newOverBody();
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
+  /** Whether they stoop under a lintel, and how far, eased — see `tickDuck` */
+  duck = { on: false, weight: 0 };
   /** Whilst they speak: seconds left, seconds in, how far the head's motion is eased in, and whether `talk_left` is ours */
   talking = { secs: 0, t: 0, weight: 0, gesture: false };
   /** A jolt from a shot armour took, easing out, else `null` — see `flinch` */
@@ -725,6 +728,11 @@ export class NpcAnimation {
     this.w.events.next({ key: "npc-toggled", npcKey: this.npc.key });
   }
 
+  /** They stoop, e.g. under a lintel, over whatever gait they are in. Only whilst stood */
+  setDuck(on: boolean) {
+    this.duck.on = on;
+  }
+
   /** Crouch to `level`, or stand back up into the default idle with `0`. Only from standing, never sat or lain */
   setCrouch(level: CrouchLevel) {
     if (level === this.crouchLevel) return;
@@ -874,7 +882,8 @@ export class NpcAnimation {
     const { clips } = this.npc;
 
     for (const clip of Object.values(clips)) {
-      if (shown.some((key) => clips[key] === clip)) {
+      // the duck is added over the pose, weighed by `tickDuck`
+      if (clip === clips.duck || shown.some((key) => clips[key] === clip)) {
         continue;
       }
       const hidden = this.mixer.existingAction(clip);
@@ -930,14 +939,26 @@ export class NpcAnimation {
     if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     /** The pose they look to be in: a fall dead starts stood, but they end lain */
     const looks = dieClips.has(next) ? "lie" : next;
-    this.headY = this.w.npc.headYByPose[looks];
+    // by the clip that plays, e.g. a skin's own
+    const { headYByPose } = this.w.npc;
+    this.headY =
+      (headYByPose[this.npc.clips[looks]?.name as AnimationClipKey] ?? headYByPose[looks]) * this.npc.heightScale;
     this.npc.setBubbleHeight(bubbleHeightForClip(looks));
     this.npc.setLabelYShift(
-      labelYShiftForClip(looks),
+      this.labelShiftFor(looks),
       crouchMove || looks !== next || rising,
       rising ? clips[next].duration : undefined,
     );
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
+  }
+
+  /** Their label's lift in `pose`: as far above their own head as a default npc's is above theirs, scaled with them */
+  labelShiftFor(pose: AnimationClipKey) {
+    const shift = labelYShiftForClip(pose);
+    const defaultHeadY = this.w.npc.headYByPose[pose];
+    if (defaultHeadY === undefined || this.headY === 0) return shift; // e.g. before their first pose
+    const { heightScale, headScale } = this.npc;
+    return this.headY / (npcScale * heightScale) + shift - defaultHeadY / npcScale + (headScale - 1) * headHeight;
   }
 
   /** Start or stop strafing mid-move, as `face.aim` comes or goes: stopping eases out in `syncStrafe` */
@@ -1205,6 +1226,7 @@ export class NpcAnimation {
 
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
+    this.tickDuck(delta);
     this.mixer.update(delta);
     rebindFall(this);
     tickFall(this);
@@ -1339,6 +1361,21 @@ export class NpcAnimation {
     s.wrote[0].copy(upper.bone.quaternion);
     s.wrote[1].copy(fore.bone.quaternion);
     s.written = true;
+  }
+
+  /** Eases the stoop in or out, held at its deepest and added over the pose */
+  tickDuck(delta: number) {
+    const { duck } = this;
+    const target = duck.on === true && this.posture === "stand" && this.crouched === false ? 1 : 0;
+    if (target === 0 && duck.weight === 0) return;
+    const step = delta / duckConfig.fadeSecs;
+    duck.weight = target === 1 ? Math.min(1, duck.weight + step) : Math.max(0, duck.weight - step);
+    const action = this.mixer.clipAction(this.npc.clips.duck);
+    if (duck.weight === 0) return void action.stop();
+    if (action.isScheduled() === false) action.play();
+    action.paused = true;
+    action.time = action.getClip().duration;
+    action.setEffectiveWeight(duck.weight * duck.weight * (3 - 2 * duck.weight));
   }
 
   /** Works out the air in their lungs, for `NpcBreath` to draw, and has their body breathe with them */
@@ -2024,8 +2061,9 @@ export type UpperAim = {
   hold?: { line: THREE.Ray; weight: number };
 };
 
+/** A clip's key: the one a skin's clip stands in for, else its name — see `Npc.syncSkinClips` */
 function keyOf(clip: THREE.AnimationClip) {
-  return clip.name as AnimationClipKey;
+  return (clip.userData.clipKey ?? clip.name) as AnimationClipKey;
 }
 
 function bubbleHeightForClip(clipName: AnimationClipKey): number {
@@ -2041,6 +2079,9 @@ const isCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch");
 const isLowClip = (clipName: AnimationClipKey) => clipName.startsWith("collapsed") || isCrouch(clipName);
 /** Crouched half: the head lower than stood, higher than sat */
 const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
+
+/** A head's height in model units: 8px */
+const headHeight = 0.5;
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;

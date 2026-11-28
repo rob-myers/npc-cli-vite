@@ -338,3 +338,10 @@ export function reflect(way: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geo
 
 const tmpLegFrom = new THREE.Vector3();
 const tmpLegDir = new THREE.Vector3();
+
+/** The shot outcomes that pass through them */
+export type PassOutcome = "ghost" | "static";
+
+/** Whether a shot with `outcome` passes through them */
+export const passesThrough = (outcome: JshCli.ShotOutcome): outcome is PassOutcome =>
+  outcome === "ghost" || outcome === "static";

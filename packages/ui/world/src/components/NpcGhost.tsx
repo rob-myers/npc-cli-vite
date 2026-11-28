@@ -2,10 +2,11 @@ import { useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import { ghostConfig } from "../const.npc";
+import type { PassOutcome } from "../service/phaser-beam";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
-/** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `docs/engagements.md` */
+/** Ghost and static: a shot passes through them, as they become a stipple or a dot screen — see `docs/engagements.md` */
 export default function NpcGhost() {
   const w = useContext(WorldContext);
 
@@ -13,10 +14,11 @@ export default function NpcGhost() {
     (): State => ({
       ghosts: new Map(),
 
-      ghost(npc) {
-        // shot again whilst a ghost: they stay one
-        const startSecs = w.gameTime.now() - (state.ghosts.has(npc.key) ? ghostConfig.inSecs : 0);
-        state.ghosts.set(npc.key, { npc, startSecs, struckSecs: null });
+      ghost(npc, look) {
+        // shot again whilst a ghost: they stay one, as they were
+        const prev = state.ghosts.get(npc.key);
+        const startSecs = w.gameTime.now() - (prev === undefined ? 0 : ghostConfig.inSecs);
+        state.ghosts.set(npc.key, { npc, look: prev?.look ?? look, startSecs, struckSecs: null });
         state.onTick(); // shown at once, even paused
       },
       isGhosting(npcKey) {
@@ -27,11 +29,12 @@ export default function NpcGhost() {
         if (state.ghosts.size === 0) return; // nearly always
         const now = w.gameTime.now();
         const { amount, inSecs, holdSecs, missSecs, outSecs } = ghostConfig;
-        for (const [npcKey, { npc, startSecs, struckSecs }] of state.ghosts) {
+        for (const [npcKey, { npc, look, startSecs, struckSecs }] of state.ghosts) {
           /** Seconds since they began to come back: unstruck, once the shot is surely gone */
           const back = now - (struckSecs === null ? startSecs + missSecs : struckSecs + holdSecs);
           const out = THREE.MathUtils.clamp(1 - back / outSecs, 0, 1);
-          if (npc.dotScreen !== undefined) npc.dotScreen.value = amount * Math.min(1, (now - startSecs) / inSecs) * out;
+          const uniform = look === "ghost" ? npc.stipple : npc.dotScreen;
+          if (uniform !== undefined) uniform.value = amount * Math.min(1, (now - startSecs) / inSecs) * out;
           if (out === 0) state.ghosts.delete(npcKey);
         }
         w.r3f?.invalidate(); // one more frame once the last is back
@@ -52,6 +55,7 @@ export default function NpcGhost() {
 /** A shot at them that passes through */
 type Ghost = {
   npc: Npc;
+  look: PassOutcome;
   startSecs: number;
   struckSecs: null | number;
 };
@@ -59,11 +63,11 @@ type Ghost = {
 export type State = {
   /** Each until they come back */
   ghosts: Map<string, Ghost>;
-  /** A shot at `npc` locks on that will pass through them: they become a dot screen */
-  ghost(npc: Npc): void;
+  /** A shot at `npc` locks on that will pass through them: they become a stipple, or a dot screen if `static` */
+  ghost(npc: Npc, look: PassOutcome): void;
   /** Becoming a ghost still, so a shot at them waits */
   isGhosting(npcKey: string): boolean;
-  /** Each a tick further on: how much of a dot screen they are */
+  /** Each a tick further on: how much of a stipple or dot screen they are */
   onTick(): void;
   /** The shot at `npc` strikes, passing through them */
   struck(npc: Npc): void;

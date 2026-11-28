@@ -21,9 +21,9 @@ import path from "node:path";
 import {
   AssetsSkinManifestSchema,
   emptySheets,
-  type SkinSlicesSheetEntry,
   SheetsSchema,
   type SkinSheetEntry,
+  type SkinSlicesSheetEntry,
 } from "@npc-cli/ui__world/assets.schema";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { jsonParser } from "@npc-cli/util/json-parser";
@@ -35,6 +35,9 @@ import { rebuildSkinManifest } from "../service/watch-skin-pngs.ts";
 
 /** A 64px Minecraft skin, drawn at the 256px of its svg overlay — see `drawSkinSheets` */
 const skinSheetCellSize = 256;
+
+/** Families of the skins worn at boot, packed into sheet 0: a World waits for no other sheet — see `docs/skins.md` */
+const bootFamilies = new Set(["d", "medic", "mtf", "postdoc", "ra", "robot"]);
 
 /** A skin's slices: a 4x4 grid of 32px ones, as `skinSliceDims` has it */
 const skinSlicesCellSize = 128;
@@ -55,24 +58,22 @@ if (entries.length === 0) {
 
 type RectangleData = { key: string; filename: string; originalWidth: number; originalHeight: number };
 
-// 3. pack skin pngs
-const {
-  bins,
-  width: maxWidth,
-  height: maxHeight,
-} = packRectangles<RectangleData>(
-  entries.map(({ key, filename }) => ({
-    width: skinSheetCellSize,
-    height: skinSheetCellSize,
-    data: { key, filename, originalWidth: 64, originalHeight: 64 },
-  })),
-  {
-    logPrefix: "gen-skin-sheets",
-    packedPadding: 2,
-    maxWidth: 4096,
-    maxHeight: 4096,
-  },
+// 3. pack skin pngs: the families worn at boot into sheet 0, the rest after it
+const isBoot = ({ key }: (typeof entries)[number]) => bootFamilies.has(key.split("-")[0]);
+const packSkins = (group: typeof entries) =>
+  packRectangles<RectangleData>(
+    group.map(({ key, filename }) => ({
+      width: skinSheetCellSize,
+      height: skinSheetCellSize,
+      data: { key, filename, originalWidth: 64, originalHeight: 64 },
+    })),
+    { logPrefix: "gen-skin-sheets", packedPadding: 2, maxWidth: 4096, maxHeight: 4096 },
+  ).bins;
+const bins = [...packSkins(entries.filter(isBoot)), ...packSkins(entries.filter((e) => !isBoot(e)))].filter(
+  (bin) => bin.rects.length > 0,
 );
+const maxWidth = Math.max(...bins.map((bin) => bin.width));
+const maxHeight = Math.max(...bins.map((bin) => bin.height));
 
 // 4. pack a cell of slices per skin, drawn or not
 const sliceBins = packRectangles<{ key: string }>(

@@ -1,5 +1,73 @@
 {
   "byKey": {
+    "chaos-0": {
+      "key": "chaos-0",
+      "id": "73c9ab816d77b3b9",
+      "filename": "chaos-0--73c9ab816d77b3b9.png",
+      "meta": {"skinKey": "chaos-0", "prefix": "chaos", "noEyes": true},
+      "url": "https://namemc.com/skin/73c9ab816d77b3b9",
+      "svgPath": "skin/chaos-0.svg"
+    },
+    "chaos-1": {
+      "key": "chaos-1",
+      "id": "cffd94eb8cc74d2a",
+      "filename": "chaos-1--cffd94eb8cc74d2a.png",
+      "meta": {"skinKey": "chaos-1", "prefix": "chaos", "noEyes": true},
+      "url": "https://namemc.com/skin/cffd94eb8cc74d2a",
+      "svgPath": "skin/chaos-1.svg"
+    },
+    "chaos-2": {
+      "key": "chaos-2",
+      "id": "464a4c7bfdef2f46",
+      "filename": "chaos-2--464a4c7bfdef2f46.png",
+      "meta": {"skinKey": "chaos-2", "prefix": "chaos", "noEyes": true},
+      "url": "https://namemc.com/skin/464a4c7bfdef2f46",
+      "svgPath": "skin/chaos-2.svg"
+    },
+    "cultist-0": {
+      "key": "cultist-0",
+      "id": "16a745cbd76f6f9e",
+      "filename": "cultist-0--16a745cbd76f6f9e.png",
+      "meta": {
+        "skinKey": "cultist-0",
+        "prefix": "cultist",
+        "noEyes": true,
+        "body": 0.8,
+        "height": 1.08,
+        "limbs": 0.8
+      },
+      "url": "https://namemc.com/skin/16a745cbd76f6f9e",
+      "svgPath": "skin/cultist-0.svg"
+    },
+    "cultist-1": {
+      "key": "cultist-1",
+      "id": "3f8e61c474f2e558",
+      "filename": "cultist-1--3f8e61c474f2e558.png",
+      "meta": {
+        "skinKey": "cultist-1",
+        "prefix": "cultist",
+        "noEyes": true,
+        "body": 0.8,
+        "limbs": 0.8
+      },
+      "url": "https://namemc.com/skin/3f8e61c474f2e558",
+      "svgPath": "skin/cultist-1.svg"
+    },
+    "cultist-2": {
+      "key": "cultist-2",
+      "id": "12a2302c12003a61",
+      "filename": "cultist-2--12a2302c12003a61.png",
+      "meta": {
+        "skinKey": "cultist-2",
+        "prefix": "cultist",
+        "noEyes": true,
+        "body": 0.8,
+        "height": 0.9,
+        "limbs": 0.8
+      },
+      "url": "https://namemc.com/skin/12a2302c12003a61",
+      "svgPath": "skin/cultist-2.svg"
+    },
     "d-0": {
       "key": "d-0",
       "id": "786e7e7dd850c2b8",
@@ -19,7 +87,7 @@
       "meta": {
         "skinKey": "d-1",
         "prefix": "d",
-        "overlay-backfaces": "head",
+        "overlayHeadBackfaces": true,
         "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
       },
       "url": "https://namemc.com/skin/2a2804c8ff60ef75",
@@ -65,9 +133,33 @@
       "key": "d-5",
       "id": "1938c8e17e34ebdc",
       "filename": "d-5--1938c8e17e34ebdc.png",
-      "meta": {"skinKey": "d-5", "prefix": "d", "overlay-backfaces": "head"},
+      "meta": {"skinKey": "d-5", "prefix": "d", "overlayHeadBackfaces": true},
       "url": "https://namemc.com/skin/1938c8e17e34ebdc",
       "svgPath": "skin/d-5.svg"
+    },
+    "hazmat-0": {
+      "key": "hazmat-0",
+      "id": "4e67c4047b3fa115",
+      "filename": "hazmat-0--4e67c4047b3fa115.png",
+      "meta": {"skinKey": "hazmat-0", "prefix": "hazmat", "noEyes": true},
+      "url": "https://namemc.com/skin/4e67c4047b3fa115",
+      "svgPath": "skin/hazmat-0.svg"
+    },
+    "hazmat-1": {
+      "key": "hazmat-1",
+      "id": "568e754121b16914",
+      "filename": "hazmat-1--568e754121b16914.png",
+      "meta": {"skinKey": "hazmat-1", "prefix": "hazmat", "noEyes": true},
+      "url": "https://namemc.com/skin/568e754121b16914",
+      "svgPath": "skin/hazmat-1.svg"
+    },
+    "hazmat-2": {
+      "key": "hazmat-2",
+      "id": "5cd8a924f6737812",
+      "filename": "hazmat-2--5cd8a924f6737812.png",
+      "meta": {"skinKey": "hazmat-2", "prefix": "hazmat", "noEyes": true},
+      "url": "https://namemc.com/skin/5cd8a924f6737812",
+      "svgPath": "skin/hazmat-2.svg"
     },
     "medic-0": {
       "key": "medic-0",
@@ -76,8 +168,6 @@
       "meta": {
         "skinKey": "medic-0",
         "prefix": "medic",
-        "firstSeen": "NoneType_",
-        "doctor": true,
         "eyes": {"open": [1, 3, 1, 2], "pupil": [1, 3, 1, 2]}
       },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
@@ -178,7 +268,6 @@
       "meta": {
         "skinKey": "postdoc-0",
         "prefix": "postdoc",
-        "firstSeen": "o__________",
         "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
       },
       "url": "https://namemc.com/skin/8c524ef1dc111a13",
@@ -203,7 +292,6 @@
       "meta": {
         "skinKey": "postdoc-2",
         "prefix": "postdoc",
-        "firstSeen": "J_az",
         "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
       },
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
@@ -284,6 +372,247 @@
       "meta": {"skinKey": "robot-4", "prefix": "robot"},
       "url": "https://namemc.com/skin/cf9e073bbee7247c",
       "svgPath": "skin/robot-4.svg"
+    },
+    "scp-017": {
+      "key": "scp-017",
+      "id": "26dd3229bfc26f08",
+      "filename": "scp-017--26dd3229bfc26f08.png",
+      "meta": {
+        "skinKey": "scp-017",
+        "prefix": "scp",
+        "noEyes": true,
+        "scale": 0.65,
+        "head": 1.3,
+        "clips": "scp_017",
+        "agentRadius": 0.65
+      },
+      "url": "https://namemc.com/skin/26dd3229bfc26f08",
+      "svgPath": "skin/scp-017.svg"
+    },
+    "scp-035": {
+      "key": "scp-035",
+      "id": "28c17d137a221e1d",
+      "filename": "scp-035--28c17d137a221e1d.png",
+      "meta": {
+        "skinKey": "scp-035",
+        "prefix": "scp",
+        "noEyes": true,
+        "clips": "scp_035"
+      },
+      "url": "https://namemc.com/skin/28c17d137a221e1d",
+      "svgPath": "skin/scp-035.svg"
+    },
+    "scp-049": {
+      "key": "scp-049",
+      "id": "ce2157445043c1a8",
+      "filename": "scp-049--ce2157445043c1a8.png",
+      "meta": {
+        "skinKey": "scp-049",
+        "prefix": "scp",
+        "noEyes": true,
+        "taper": 0.6,
+        "clips": "scp_049"
+      },
+      "url": "https://namemc.com/skin/ce2157445043c1a8",
+      "svgPath": "skin/scp-049.svg"
+    },
+    "scp-049-2a": {
+      "key": "scp-049-2a",
+      "id": "af3aa135b92788cc",
+      "filename": "scp-049-2a--af3aa135b92788cc.png",
+      "meta": {
+        "skinKey": "scp-049-2a",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.55,
+        "body": 0.7,
+        "height": 1.05,
+        "clips": "scp_049_2a",
+        "agentRadius": 1.6
+      },
+      "url": "https://namemc.com/skin/af3aa135b92788cc",
+      "svgPath": "skin/scp-049-2a.svg"
+    },
+    "scp-049-2b": {
+      "key": "scp-049-2b",
+      "id": "0fb7149eaf9be151",
+      "filename": "scp-049-2b--0fb7149eaf9be151.png",
+      "meta": {
+        "skinKey": "scp-049-2b",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.6,
+        "body": 0.85,
+        "clips": "scp_049_2b",
+        "agentRadius": 1.6
+      },
+      "url": "https://namemc.com/skin/0fb7149eaf9be151",
+      "svgPath": "skin/scp-049-2b.svg"
+    },
+    "scp-096": {
+      "key": "scp-096",
+      "id": "95fcf188bec2b0eb",
+      "filename": "scp-096--95fcf188bec2b0eb.png",
+      "meta": {
+        "skinKey": "scp-096",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.5,
+        "body": 0.6,
+        "height": 1.25,
+        "headDepth": 0.8,
+        "clips": "scp_096"
+      },
+      "url": "https://namemc.com/skin/95fcf188bec2b0eb",
+      "svgPath": "skin/scp-096.svg"
+    },
+    "scp-1000": {
+      "key": "scp-1000",
+      "id": "47ca8e6fd200c31d",
+      "filename": "scp-1000--47ca8e6fd200c31d.png",
+      "meta": {
+        "skinKey": "scp-1000",
+        "prefix": "scp",
+        "noEyes": true,
+        "height": 1.2,
+        "stoop": 0.1,
+        "taper": 0.5,
+        "agentRadius": 1.5,
+        "clips": "scp_1000"
+      },
+      "url": "https://namemc.com/skin/47ca8e6fd200c31d",
+      "svgPath": "skin/scp-1000.svg"
+    },
+    "scp-106": {
+      "key": "scp-106",
+      "id": "b3ebcf965a672ba5",
+      "filename": "scp-106--b3ebcf965a672ba5.png",
+      "meta": {
+        "skinKey": "scp-106",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.85,
+        "legs": 0.55,
+        "taper": 0.5,
+        "body": 0.75,
+        "headDepth": 0.7,
+        "height": 1.12,
+        "stoop": 0.15,
+        "clips": "scp_106"
+      },
+      "url": "https://namemc.com/skin/b3ebcf965a672ba5",
+      "svgPath": "skin/scp-106.svg"
+    },
+    "scp-1471": {
+      "key": "scp-1471",
+      "id": "ceb79b98ddf14db9",
+      "filename": "scp-1471--ceb79b98ddf14db9.png",
+      "meta": {
+        "skinKey": "scp-1471",
+        "prefix": "scp",
+        "noEyes": true,
+        "body": 0.7,
+        "limbs": 0.65,
+        "taper": 0.5,
+        "head": 0.75,
+        "height": 1.15,
+        "clips": "scp_1471",
+        "agentRadius": 1.5
+      },
+      "url": "https://namemc.com/skin/ceb79b98ddf14db9",
+      "svgPath": "skin/scp-1471.svg"
+    },
+    "scp-173": {
+      "key": "scp-173",
+      "id": "db0d7f7cf301e2d8",
+      "filename": "scp-173--db0d7f7cf301e2d8.png",
+      "meta": {
+        "skinKey": "scp-173",
+        "prefix": "scp",
+        "noEyes": true,
+        "clips": "scp_173"
+      },
+      "url": "https://namemc.com/skin/db0d7f7cf301e2d8",
+      "svgPath": "skin/scp-173.svg"
+    },
+    "scp-457": {
+      "key": "scp-457",
+      "id": "cd7bfdf3ed9ffdae",
+      "filename": "scp-457--cd7bfdf3ed9ffdae.png",
+      "meta": {
+        "skinKey": "scp-457",
+        "prefix": "scp",
+        "noEyes": true,
+        "body": 0.75,
+        "limbs": 0.75,
+        "fx": "embers",
+        "clips": "scp_457",
+        "agentRadius": 1.5
+      },
+      "url": "https://namemc.com/skin/cd7bfdf3ed9ffdae",
+      "svgPath": "skin/scp-457.svg"
+    },
+    "scp-610": {
+      "key": "scp-610",
+      "id": "5447f65b76c19354",
+      "filename": "scp-610--5447f65b76c19354.png",
+      "meta": {
+        "skinKey": "scp-610",
+        "prefix": "scp",
+        "noEyes": true,
+        "clips": "scp_610",
+        "agentRadius": 1.5
+      },
+      "url": "https://namemc.com/skin/5447f65b76c19354",
+      "svgPath": "skin/scp-610.svg"
+    },
+    "scp-650": {
+      "key": "scp-650",
+      "id": "0a58b4436b8b8fa9",
+      "filename": "scp-650--0a58b4436b8b8fa9.png",
+      "meta": {
+        "skinKey": "scp-650",
+        "prefix": "scp",
+        "noEyes": true,
+        "taper": 0.35,
+        "clips": "scp_173"
+      },
+      "url": "https://namemc.com/skin/0a58b4436b8b8fa9",
+      "svgPath": "skin/scp-650.svg"
+    },
+    "scp-682": {
+      "key": "scp-682",
+      "id": "1004d5c60ec753ee",
+      "filename": "scp-682--1004d5c60ec753ee.png",
+      "meta": {
+        "skinKey": "scp-682",
+        "prefix": "scp",
+        "noEyes": true,
+        "limbs": 0.8,
+        "legs": 0.6,
+        "height": 1.2,
+        "clips": "scp_682",
+        "agentRadius": 1.75
+      },
+      "url": "https://namemc.com/skin/1004d5c60ec753ee",
+      "svgPath": "skin/scp-682.svg"
+    },
+    "scp-939": {
+      "key": "scp-939",
+      "id": "eed3c82055903f74",
+      "filename": "scp-939--eed3c82055903f74.png",
+      "meta": {
+        "skinKey": "scp-939",
+        "prefix": "scp",
+        "noEyes": true,
+        "height": 1.4,
+        "limbs": 0.7,
+        "taper": 0.4,
+        "clips": "scp_939",
+        "agentRadius": 1.75
+      },
+      "url": "https://namemc.com/skin/eed3c82055903f74",
+      "svgPath": "skin/scp-939.svg"
     }
   }
 }

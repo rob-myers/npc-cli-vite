@@ -4,6 +4,7 @@ import { PushPinIcon, TargetIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
 import * as THREE from "three/webgpu";
 import { doorHeight } from "../const.env";
+import { npcFxKinds } from "../const.npc";
 import { actionClass, cancelClass, markClass, OverlayBounds, offsetUnder, toScreen } from "../service/overlay";
 import { slotOf } from "../service/room-slots";
 import BreathControls from "./BreathControls";
@@ -448,11 +449,12 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
     );
   };
   const hasPhaser = w.e.hasItem(npcKey, "phaser");
+  const fxKind = npcFxKinds[npc.fxKind?.value ?? 0] ?? "none";
 
   return (
     <>
-      {/* one wrapping row: where they are, their pose, and what they have, lit if so */}
-      <div className="flex max-w-56 flex-wrap items-center gap-1">
+      {/* one row that never wraps: where they are, their pose and their effect */}
+      <div className="flex max-w-56 items-center gap-1">
         {grKey !== undefined && <Info label="room">{grKey}</Info>}
         <Picker
           value={npc.anim.pose}
@@ -467,6 +469,26 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
             touch();
           }}
         />
+        <Picker
+          value={fxKind}
+          options={npcFxKinds.map((kind) => (kind === "none" ? { value: kind, label: "no fx" } : kind))}
+          title="fx"
+          titleSide="right"
+          // keeps its width, the pose truncating instead, and looks off until chosen
+          className={cn(
+            "pointer-events-auto shrink-0 border-white/20 bg-black/60 text-white",
+            fxKind === "none" && "opacity-50",
+          )}
+          popupClassName="font-mono"
+          onChange={(next) => {
+            w.n[npcKey]?.setFx(next);
+            w.r3f?.invalidate(); // shown even paused
+            touch();
+          }}
+        />
+      </div>
+      {/* one wrapping row: what they have, lit if so */}
+      <div className="flex max-w-56 flex-wrap items-center gap-1">
         {itemToggle("psi")}
         {npcKey === w.player?.key ? (
           itemToggle("phaser")

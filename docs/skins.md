@@ -8,7 +8,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 - `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--86403319024aa40f.png`
 - `{key}.svg` (optional): an overlay drawn over it at 256px, i.e. the detail
-  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlay-backfaces`)
+  - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. `prefix`, `noEyes`, `overlayHeadBackfaces`)
   - a `<g>` titled `ignore` is dropped when rasterised
 
 `manifest.json` there lists them (`byKey`, with `svgPath` and `meta`), rebuilt by `rebuildSkinManifest`.
@@ -21,6 +21,13 @@ key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaul
 
 `pnpm exec gen-skin-sheets` only lays them out: one **256px** cell per skin, written to `sheets.json`
 (`skin`, `skinSheetDims`). It draws nothing.
+
+There are two sheets, so a World boots on the skins worn at boot alone (`bootFamilies` in `gen-skin-sheets`):
+
+- Sheet 0 holds the families d, medic, mtf, postdoc, ra and robot. The `skins-and-gltf` query waits for it alone.
+- Sheet 1 holds the rest, e.g. scp, cultist, chaos and hazmat. It loads after (`loadSkinSheetsEach`).
+- Until it arrives, its skins are a black body: base faces opaque, overlays clear (`drawLoadingSkin`). Then each layer is redrawn.
+- A new family goes in sheet 1 unless added to `bootFamilies`.
 
 **In DEV** the World draws each sheet itself (`service/skin-sheets`): per skin its svg, else its png,
 nearest-neighbour. Those canvases feed `w.texSkin`
@@ -74,7 +81,8 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 - First a top-level `<g>` titled `meta prefix={family}`. In it is the png as an `<image>` 256 square, with
   `image-rendering: pixelated`, its `href` a data URI. Everything after it draws over the skin.
 - A flag in that title becomes `meta`, e.g. `meta prefix=mtf noEyes`.
-  - A bare word is `true`. A value after `=` is parsed as JavaScript, else kept as a string (`tagsToMeta`). So `x=0.5` is a number and `overlay-backfaces=head` the string `head`, but a value naming a global, e.g. `Math`, is that global.
+- The meta group must stay top-level. Wrapped in another group, e.g. one masking the whole skin, its meta is never read: mask each top-level group instead (`cultist-0`).
+  - A bare word is `true`. A value after `=` is parsed as JavaScript, else kept as a string (`tagsToMeta`). So `x=0.5` is a number and `prefix=mtf` the string `mtf`, but a value naming a global, e.g. `Math`, is that global.
 - Avoid `<use>`. Boxy SVG re-saves each one as a full copy of what it names, the png included.
 - Keep the `<title>`s: they are how a part is found in Boxy.
 
@@ -82,8 +90,29 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
 
 - The OVERLAY layers render wherever they are opaque, as a shell a little outside the body. The npc
   material discards alpha under 0.9. So clear stray overlay pixels, and draw nothing part-transparent there.
-- As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlay-backfaces=head` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
+- As in Minecraft, the overlay shows only its outer faces. A skin whose meta has `overlayHeadBackfaces` shows the head overlay's four sides from within too, e.g. a crew cut's rim seen across the head (`d-5`).
   - Its npc's material is double-sided, and `shownFace` discards every other back face (`setOverlayBackfaces`, `service/npc-material.ts`). Other npcs' stay single-sided.
+- A skin's meta can thin its wearer: `limbs=0.5` for arms and legs half as wide, `legs=0.6` for the legs alone, `body=0.6` for a narrower torso, e.g. `scp-096`, `scp-106`, `scp-682`.
+  - The vertices, base and overlay, move in the bind pose (`setBodyShape`, `service/geometry.ts`). Each limb narrows about its own axis, the torso about the body's.
+  - The chest narrows half as much as the hips and stomach, keeping the shoulders. The arms keep their axes, a little away from the chest. The legs follow the hips in.
+  - `headDepth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
+  - `taper=0.35` narrows each limb toward its end to that share, and the torso toward the hips half as much (`scp-650`).
+  - `head=1.3` scales the head about its base, the neck (`scp-017`). It keeps its proportions under `height`, which would otherwise squash or stretch it.
+  - `stoop=0.1` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
+  - `agentRadius=1.5` makes their crowd agent that much wider (`npc.agentRadius`), so the crowd keeps others off a big body (`scp-1000`). Below `1` it is narrower, e.g. `scp-017`'s `0.65`, matching its `scale`. It is capped at half the crowd's neighbour range (`collisionQueryRange`): the crowd only parts two agents it finds as neighbours, so their radii must add up to no more than that.
+  - The skin is drawn at full width as usual, and squeezed. Thinning a limb by transparent texels instead shows it hollow: through the gaps, its far faces are culled.
+  - Every npc has its own geometry, so others are untouched. `npc.syncSkinShape` applies it with each skin, and restores it for the next.
+  - Each shape is worked out once, then copied in (`w.npc.shapeCache`, keyed by shape, with the bind pose as `bind`). A glTF reload clears it.
+- A skin whose meta has `scale=0.5` is drawn half size, e.g. `scp-017`, and `height=1.25` a quarter taller, stretched upright alone, e.g. `scp-096` (`npc.widthScale`, `npc.heightScale`). Their shadow and select ring scale with `widthScale` (`NpcShadows`, `NpcRings`). Their label sits as far above their own head as a default npc's is above theirs, scaled with them, a bigger `head` raising it (`anim.labelShiftFor`).
+  - A door's lintel is about 1.7m, and an npc stands about 1.53m. So past `height=1.1` they stoop to pass through a door, in the `duck` clip added over their gait (`docs/blockbench.md`). They stoop once their head is within 0.7m of its line, stood under it or their path crossing it. They stand once it is 0.35m past, or 0.9m off if they turn away (`doorwayDuck` in `const.env`, `syncDoorwayDuck` in `use-world-events`). Passing by, they stay upright. A crouch hides the stoop. Past `height=1.3` (`crouchAbove`) they crouch instead, e.g. `scp-939`.
+  - Their agent, gait and stance are unchanged by either. Their head height (`anim.headY`) scales with them, even mid-pose.
+  - `scale` only shrinks: it is capped at `1`, since a wider body would reach past its agent, into walls and other npcs. Grow by `height` alone, upright.
+- A skin's meta can give its wearer clips of their own: `clips=scp_096` plays `scp_096_walk` for `walk`, and so on — see `docs/blockbench.md`.
+- A skin's meta can give its wearer an effect: `fx=noir`, with `fxAmount=0.5` for half of it. jsh `fx` lists them, `fx rob ghost` sets one by hand, and so does the **fx** select in their menu (`PickMenu`).
+  - `static` and `ghost` are the looks of those shot so, held (`docs/engagements.md`): a dot screen, and a stipple dropping half their screen pixels. `noir` is the frame grade's grey (`noirTone`, `service/extra-fx.ts`). `shroud` turns their skin to cloth of `shroudConfig.color` (`const.npc`), solid black, their rim alone showing their shape. `scp-017` needs none: its skin is black already. `embers` sends sparks up off their body, cooling as they fade (`NpcEmbers`, `emberConfig`), e.g. `scp-457`. The sparks are camera-facing specks in one draw, moved by the shader.
+  - It is two uniforms, `fxKind` (an index of `npcFxKinds`) and `fxAmount` (`npc.setFx`). Each effect bar `embers` is a uniform branch in `service/npc-material.ts`, so other npcs skip it. `embers` is drawn apart, by `NpcEmbers`.
+  - A skin's `fx` is applied at spawn and when the skin changes (`syncSkinFx`), so a reload of the skins keeps one set by hand.
+  - An effect can't add a vertex attribute: an npc's mesh already uses all eight vertex buffers WebGPU allows.
 - The torso is three cuboids, chest, stomach and hips. Each one's top samples the body top, and each one's bottom
   the body bottom. A crouch bares them, so fill the body top and bottom.
 - The head layer's unused corner, texels (0–8, 0–4), is sampled twice. The feet take (1–7, 0–4), and the torso overlay's tops and bottoms take all of it.
@@ -123,6 +152,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   the embedded image rather than painting over it.
 - To clear texels with ImageMagick, copy a transparent patch over them: `( -size WxH xc:none ) -geometry +X+Y -compose Copy -composite`. `-region … -alpha transparent` leaves them.
 - Widening slim arms, clear each arm's 16px square first. Else the old layout's overlay texels show through the new one's gaps.
+- A face is drawn cartoony, else it is lost at the size an npc is seen. Bold shapes with dark outlines, a few features exaggerated: big eyes with small pupils, a wide mouth, teeth as separate shapes with gaps (`scp-106`). Fine creases, soft shading and realistic proportions blur into mush.
 - A screen for a face (`robot-2`, `robot-4`) is drawn near-black, its eyes in a bright core over a blurred glow. A dark grey screen reads faded in the World.
 - Fine detail on a face, e.g. glasses (`medic-1`), goes on the head overlay as opaque strokes, its pixel original cleared. The eye slices never touch the overlay.
 - Hair at the back of the head is drawn on the head overlay as tufts, never as one even plane, which reads as a raised panel (`d-4`).
@@ -130,7 +160,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - The top face's upper edge meets the back. The right side's rear is its left edge, and the left side's is its right edge.
   - The base hair under them takes each tuft's blurred shadow just past its tips, and strand lines carrying on from the tufts'.
   - Drawn over a filtered image, they take the same filter (`#punch`), else their browns do not match.
-- Short coily hair is small seeded coils on the head overlay, each a dark clump with a C-shaped curl, ending raggedly above a taper (`d-1`). The base beneath is the hair's colour with fine curls, and below a ragged edge it is skin, with stubble thinning out. It takes `overlay-backfaces=head`.
+- Short coily hair is small seeded coils on the head overlay, each a dark clump with a C-shaped curl, ending raggedly above a taper (`d-1`). The base beneath is the hair's colour with fine curls, and below a ragged edge it is skin, with stubble thinning out. It takes `overlayHeadBackfaces`.
 - Messy hair mixes the two layers (`d-2`).
   - The overlay takes short curved tufts of random size and mixed tones, each clipped to its face. On top they lie away from the crown, and elsewhere they hang down.
   - The base hair takes streaks along the same flow, clipped to its hair texels, and the tufts' blurred shadows.
@@ -172,7 +202,7 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
 - The dev server rebuilds `manifest.json` on any skin png or svg change. A DEV World redraws the sheets.
 - Check an svg written by hand or script with `xmllint --noout`. One that does not parse is not drawn.
 - Spawn the skin next to the player, in `sight`, to see it lit as it will be.
-- jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `as:mtf` keeps one family, `r:2.5` widens it.
+- jsh `debug_skins rob` spawns one npc per skin in a circle about rob, facing them, named e.g. `mtf1`. `prefix:mtf` (or `pre:mtf`) keeps one family, `r:2.5` widens it.
 - Load a DEV World before committing, so `sheet/skin.N.png` and `sheet/skin-slices.N.png` are current.
 - The dev server saves a sheet only when what it is drawn from changes: its layout, its skins' sources and meta, or the drawing code (`skin-sheet-hash.ts`). The hash is kept in the png. So another browser's rendering never rewrites it.
 - It saves only from this machine, over http. A self-signed https page (`USE_HTTPS`) may draw them wrongly when certificate invalid.

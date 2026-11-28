@@ -230,6 +230,8 @@ beside one and level with it.
   its own.
 - **Its sides** are dark grey, not black, from `decorSidesOfImg` in `const.env`. A new speaker image
   needs an entry there. A placed one's `meta.sides` overrides it.
+- **To be spoken through**, it needs `meta.speaker`: `true`, or a channel such as `pa`. See Through a
+  speaker in `docs/speech.md`.
 
 From the shell, `decor` places a quad unturned, so its top edge runs along x and it faces +z:
 
@@ -245,7 +247,7 @@ w.decor.create({ type: "quad", key: "speaker-1", img: "speaker-box", y3d: 1.28,
   transform: [0, 1, -1, 0, 4.476, 12.94], meta: { shown: true, tilt: true } });
 ```
 
-In a symbol, it is a MapEdit image node of `speaker-box` named `decor quad speaker y=1.28 tilt`, as a
+In a symbol, it is a MapEdit image node of `speaker-box` named `decor quad speaker y=1.28 tilt speaker=pa`, as a
 screen's is `decor quad screen y=1.6 tilt` (e.g. `symbol/lab--018.json`).
 
 ## Graphs

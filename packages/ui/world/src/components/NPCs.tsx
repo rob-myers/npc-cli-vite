@@ -38,6 +38,7 @@ import {
   npcMaterialConfig,
   npcScale,
   npcSpawnConfig,
+  poseConfig,
 } from "../const.npc";
 import { mirrorClip } from "../service/clips";
 import { postCorpseCollider } from "../service/corpse-body";
@@ -53,7 +54,7 @@ import { createNpcMaterial, type NpcMaterial, setOverlayBackfaces } from "../ser
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
 import { neverShownSlot } from "../service/room-slots";
-import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
+import { drawLoadingSkin, loadSkinSheetsEach, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
 import { isDoorAreaId } from "../worker/nav-util";
 import type { PhysicsBijection } from "../worker/physics.store";
@@ -71,6 +72,7 @@ export default function NPCs() {
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
       headYByPose: mapValues(fromAnimationClipKey, () => 0),
+      shapeCache: new Map(),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       defaultSkinKey: "medic-0",
       breathTune: { ...defaultBreathTune, ...getWorldStore(w.key).read().breathTune },
@@ -198,9 +200,13 @@ export default function NPCs() {
          * - BUT currently don't support add/remove/change other properties
          */
         swapNpcClasses(Object.values(state.npc));
+        if (newGltf === true) state.shapeCache.clear();
         for (const npc of Object.values(state.npc)) {
           // `NpcInstance` carries their position and rotation over to the new mesh
-          if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
+          if (newGltf === true) {
+            Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
+            npc.syncSkinShape();
+          }
 
           state.resetMaterials(npc); // can overwrite materials while debugging
           npc.init();
@@ -216,7 +222,7 @@ export default function NPCs() {
               pathOptimizationRange,
             } = getAgentParams();
             Object.assign(npc.agent, {
-              radius,
+              radius: npc.agentRadius ?? radius,
               height,
               collisionQueryRange,
               boundaryQueryRange,
@@ -375,6 +381,7 @@ export default function NPCs() {
             }
             // whatever their speed: pressed against another, the crowd's push never settles
             state.updateIdleOverlap(npc, delta);
+            if (npc.idleAvoid != null) state.syncIdleAvoid(npc);
             continue;
           }
 
@@ -465,12 +472,10 @@ export default function NPCs() {
           } satisfies WW.MsgToWorker);
         }
 
-        npc.agentId = crowdApi.addAgent(
-          state.crowd,
-          w.nav.navMesh,
-          helper.groundPointToTuple(groundPoint),
-          getAgentParams(),
-        );
+        npc.agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, helper.groundPointToTuple(groundPoint), {
+          ...getAgentParams(),
+          radius: npc.agentRadius ?? npcDims.agentRadius, // undefined on an npc from before hmr
+        });
         state.byAgentId[npc.agentId] = npc;
         npc.agent = state.crowd.agents[npc.agentId];
 
@@ -541,13 +546,13 @@ export default function NPCs() {
         if (typeof decorKey === "string") {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
+          npc.anim.idleClip = npc.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
           state.setNpcDo(opts.npcKey, decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
-          npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
+          npc.anim.idleClip = npc.clips[defaultIdleAnimationClipKey]; // their skin's, if it has one
           state.setNpcDo(opts.npcKey, null);
         }
 
@@ -604,11 +609,14 @@ export default function NPCs() {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
         mat.dotScreen.value = npc.dotScreen?.value ?? 0; // undefined on an npc from before hmr
+        mat.stipple.value = npc.stipple?.value ?? 0;
         mat.roomLit.value = npc.roomLit?.value ?? 0;
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
         mat.eyesUniform.value = npc.eyesUniform.value;
+        mat.fxKind.value = npc.fxKind?.value ?? 0; // undefined on an npc from before hmr
+        mat.fxAmount.value = npc.fxAmount?.value ?? 1;
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
@@ -698,6 +706,23 @@ export default function NPCs() {
           const body = npc.anim.fall?.body;
           if (body != null) postCorpseCollider(npc, body);
         }
+      },
+      syncIdleAvoid(npc) {
+        const avoid = npc.idleAvoid;
+        if (avoid === null || npc.skinClips === null) return;
+        const now = w.gameTime.now();
+        // by room, not the crowd's neighbours, whose range is shorter
+        const { x, z } = npc.position;
+        const close = state.near
+          .inReach(npc.key)
+          .some((o) => (o.position.x - x) ** 2 + (o.position.z - z) ** 2 < poseConfig.idleNear ** 2);
+        if (close) avoid.until = now + poseConfig.holdSecs;
+        const next = avoid.until > now ? avoid.drawn : avoid.calm;
+        const key = defaultIdleAnimationClipKey;
+        if (npc.skinClips[key] === next) return;
+        npc.skinClips[key] = next;
+        if (npc.anim.idleClip === avoid.calm || npc.anim.idleClip === avoid.drawn) npc.anim.idleClip = next;
+        if (npc.anim.pose === key) npc.anim.setPose(key, { fade: poseConfig.drawInSecs, force: true });
       },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
@@ -798,7 +823,8 @@ export default function NPCs() {
           new GLTFLoader().loadAsync(devCacheBust(getModelUrl())),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
-        const sheetImages = await loadSkinSheets(w.sheets, skinManifest, cacheBust);
+        const sheetImages = loadSkinSheetsEach(w.sheets, skinManifest, cacheBust);
+        await sheetImages[0]; // the skins worn at boot: nothing waits for the rest
         const sliceImages = await loadSkinSliceSheets(w.sheets, skinManifest, cacheBust, sheetImages);
         return { gltf, sheetImages, sliceImages, skinManifest };
       },
@@ -812,10 +838,19 @@ export default function NPCs() {
     const { width: tw, height: th } = w.texSkin.opts;
     const { ct } = w.texSkin;
     ct.imageSmoothingEnabled = false;
-    Object.values(w.sheets.skin).forEach(({ sheetId, rect }, i) => {
-      ct.clearRect(0, 0, tw, th);
-      ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-      w.texSkin.updateIndex(i);
+    const skins = Object.values(w.sheets.skin);
+    /** Each skin of one sheet into its layer, else a black body whilst its sheet loads */
+    const drawSheet = (sheetId: number, image: CanvasImageSource | null) =>
+      skins.forEach(({ sheetId: id, rect }, i) => {
+        if (id !== sheetId) return;
+        ct.clearRect(0, 0, tw, th);
+        if (image === null) drawLoadingSkin(ct, tw, th);
+        else ct.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+        w.texSkin.updateIndex(i);
+      });
+    queryData.sheetImages.forEach((loading, sheetId) => {
+      if (sheetId > 0) drawSheet(sheetId, null);
+      loading.then((image) => drawSheet(sheetId, image));
     });
 
     // ...and each skin's slices into its layer of the slices' — see `docs/skin-slices.md`
@@ -849,6 +884,8 @@ export default function NPCs() {
     // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
     for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
     for (const [key, from] of entries(mirroredClips)) if (from !== undefined) clips[key] = mirrorClip(clips[from], key);
+    // only its bend from rest, added over any gait
+    clips.duck = THREE.AnimationUtils.makeClipAdditive(clips.duck.clone());
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
@@ -860,6 +897,7 @@ export default function NPCs() {
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
+      npc.syncSkinClips?.(); // their skin's clips, from the new ones
       if (staleClips.length === 0 || npc.group === null) continue; // unmounted: the mount shows it
       const posed = staleClips.find((clip) => clip.name === npc.anim.pose);
       const { time = 0, paused = false, timeScale = 1 } = (posed && npc.anim.mixer.existingAction(posed)) ?? {};
@@ -902,6 +940,8 @@ export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
   /** Metres of the head bone's pivot above an npc's feet, per pose at its start — see `Psi` */
   headYByPose: Record<AnimationClipKey, number>;
+  /** The bind pose and each body shape's positions, shared by every npc — see `setBodyShape` */
+  shapeCache: Map<string, Float32Array>;
   crowd: crowdApi.Crowd;
   /** The skin an npc wears unless given another */
   readonly defaultSkinKey: string;
@@ -958,6 +998,8 @@ export type State = {
   setBrightness(next: number): void;
   /** Puts back corpses' sensors, e.g. once the physics world is rebuilt */
   syncCorpseColliders(): void;
+  /** Their skin's idle drawn in whilst another stands close, e.g. hands at the face, else as it was */
+  syncIdleAvoid(npc: Npc): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
   /** Their material and uniforms — see `service/npc-material` */

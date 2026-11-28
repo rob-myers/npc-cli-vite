@@ -1,5 +1,6 @@
 import type { UseStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
+import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import type { buildGraph } from "@react-three/fiber";
 import {
   createDefaultQueryFilter,
@@ -17,16 +18,20 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import {
   agentConfig,
+  crowdConfig,
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcConfig,
+  npcFxKinds,
   npcLabelWeight,
   npcMaterialConfig,
   npcScale,
   otherNpcLabelColor,
 } from "../const.npc";
+import { setBodyShape } from "../service/geometry";
 import { helper } from "../service/helper";
 import { setOverlayBackfaces } from "../service/npc-material";
 import { bodyPartPoint } from "../service/phaser-beam";
@@ -39,6 +44,14 @@ export class Npc {
   key: string;
   /** for render cache bust */
   epochMs = 0;
+  /** Their mesh's vertical scale, from their skin's `scale` and `height`: their agent unchanged */
+  heightScale = 1;
+  /** Their mesh's horizontal scale, from their skin's `scale`: at most `1`, so never wider than their agent */
+  widthScale = 1;
+  /** Their head's size, from their skin's `head` meta */
+  headScale = 1;
+  /** Their agent's radius: the usual, times their skin's `agentRadius`, so a big body keeps others off */
+  agentRadius: number = npcDims.agentRadius;
 
   anim = new NpcAnimation(this);
   w: UseStateRef<import("./World").State>;
@@ -81,6 +94,8 @@ export class Npc {
   npcLit: THREE.UniformNode<"float", number>;
   /** `1` draws their body as a dot screen, but not their label or outline — see `NpcGhost` */
   dotScreen: THREE.UniformNode<"float", number>;
+  /** `1` drops a ghost's share of their screen pixels — see `NpcGhost` */
+  stipple: THREE.UniformNode<"float", number>;
   /** `1` in the player's room, eased — see `NpcAnimation.tickRoomLit` */
   roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
@@ -90,6 +105,9 @@ export class Npc {
   overlayBackfaces: ReturnType<typeof uniform<"float", number>>;
   /** The slice their eyes show — see `NpcAnimation.tickEyes` */
   eyesUniform: THREE.UniformNode<"float", number>;
+  /** Their effect, an index of `npcFxKinds`, and how much shows — see `setFx` */
+  fxKind: THREE.UniformNode<"float", number>;
+  fxAmount: THREE.UniformNode<"float", number>;
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   labelStyle: JshCli.NpcLabelStyle = { color: defaultNpcLabelColor, speaking: false };
@@ -137,8 +155,13 @@ export class Npc {
     worker: rejectNoop,
   };
 
+  /** Their skin's own clips in place of some, else `null` — see `syncSkinClips` */
+  skinClips: null | Record<AnimationClipKey, THREE.AnimationClip> = null;
+  /** Their skin's idle and its drawn-in take, shown until `until` — see `NPCs`' `syncIdleAvoid` */
+  idleAvoid: null | { calm: THREE.AnimationClip; drawn: THREE.AnimationClip; until: number } = null;
+
   get clips() {
-    return this.w.npc.clips;
+    return this.skinClips ?? this.w.npc.clips;
   }
 
   /** Which layer of the label texture array is theirs: their pick id */
@@ -201,6 +224,7 @@ export class Npc {
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.dotScreen = init.dotScreen;
+    this.stipple = init.stipple;
     this.roomLit = init.roomLit;
     this.roomSlot = init.roomSlot;
     this.material = init.material;
@@ -212,10 +236,15 @@ export class Npc {
     this.skinIndexUniform = init.skinIndexUniform;
     this.eyesUniform = init.eyesUniform;
     this.overlayBackfaces = init.overlayBackfaces;
+    this.fxKind = init.fxKind;
+    this.fxAmount = init.fxAmount;
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
+    this.syncSkinClips();
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
+    this.syncSkinShape();
+    this.syncSkinFx();
   }
 
   /**
@@ -258,21 +287,25 @@ export class Npc {
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);
 
-    // lighter unless they are the player: grey rather than the default yellow, thinner, and part see-through.
+    // lighter unless they are the player: the theme's colour rather than the default yellow, thinner, and part see-through.
     // `system-ui` has the lighter weights, which plain `sans-serif` may not
     const isPlayer = this.w.player.is(this.key);
     const { color } = this.labelStyle;
-    ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? otherNpcLabelColor : color;
+    const { labelColor = otherNpcLabelColor, labelOpacity = 0.35, labelHalo = "" } = this.w.getTheme().npcs;
+    ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? labelColor : color;
     const weight = npcLabelWeight[this.w.touchDevice ? "touch" : "desktop"];
     ct.font = `${isPlayer ? weight.player : weight.other} 36px system-ui, sans-serif`;
-    ct.globalAlpha = isPlayer ? 1 : 0.35;
+    ct.globalAlpha = isPlayer ? 1 : labelOpacity;
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
-    // ct.strokeStyle = "black";
-    // ct.lineWidth = 2;
 
     const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
+    // a halo beneath, so it reads on a light floor and a dark one
+    if (isPlayer === false && labelHalo !== "") {
+      Object.assign(ct, { strokeStyle: labelHalo, lineWidth: 7, lineJoin: "round" });
+      ct.strokeText(labelText, width / 2, height / 2);
+    }
     ct.fillText(labelText, width / 2, height / 2);
     ct.globalAlpha = 1;
     const m = ct.measureText(labelText);
@@ -282,7 +315,6 @@ export class Npc {
       (width / 2 + m.actualBoundingBoxRight + labelPickPadPx) / width,
       (height / 2 + m.actualBoundingBoxDescent + labelPickPadPx) / height,
     );
-    // ct.strokeText(labelText, width / 2, height / 2);
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
   }
@@ -691,10 +723,93 @@ export class Npc {
   }
 
   setSkin(skinKey?: string) {
+    const prevKey = this.skinKey;
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     if (skinIndex === -1) console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
-    setOverlayBackfaces(this, this.w.npc.getSkinMeta(this.skinKey ?? ""));
+    this.syncSkinShape();
+    // the same skin again, e.g. a reload of the skins, keeps jsh `fx` and their clips
+    if (this.skinKey === prevKey) return;
+    this.syncSkinFx();
+    this.syncSkinClips();
+    if (this.group !== null) this.anim.setPose(this.anim.pose, { force: true });
+  }
+
+  /**
+   * Their skin's `clips` meta, a prefix, plays each clip `{prefix}_{key}` in place of `key`, e.g. `scp_096_walk`.
+   * Their move and idle clips follow.
+   */
+  syncSkinClips() {
+    const prev = this.clips;
+    const base = this.w.npc.clips;
+    const prefix = this.w.npc.getSkinMeta(this.skinKey ?? "").clips;
+    this.skinClips =
+      typeof prefix === "string"
+        ? mapValues(base, (clip, key) => {
+            const own = base[`${prefix}_${key}` as AnimationClipKey];
+            if (own === undefined || own.tracks.length === 0) return clip; // e.g. a clip since removed
+            own.userData.clipKey = key; // so its pose is `key`
+            return own;
+          })
+        : null;
+    const idle = defaultIdleAnimationClipKey;
+    const found = this.skinClips === null ? undefined : base[`${prefix}_${idle}_avoid` as AnimationClipKey];
+    const drawn = found !== undefined && found.tracks.length > 0 ? found : undefined;
+    if (drawn !== undefined) drawn.userData.clipKey = idle; // so its pose is the idle's
+    this.idleAvoid =
+      this.skinClips !== null && drawn !== undefined ? { calm: this.skinClips[idle], drawn, until: 0 } : null;
+    /** The clip of the same key in their new set, from their old set or the shared one */
+    const remap = (clip: THREE.AnimationClip) => {
+      const key = keys(prev).find((k) => prev[k] === clip) ?? keys(base).find((k) => base[k] === clip);
+      return key === undefined ? clip : this.clips[key];
+    };
+    if (this.anim.moveClip !== undefined) this.anim.moveClip = remap(this.anim.moveClip);
+    if (this.anim.idleClip !== undefined) this.anim.idleClip = remap(this.anim.idleClip);
+  }
+
+  /** Their skin's `fx` meta, if any, else none */
+  syncSkinFx() {
+    const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
+    this.setFx(typeof meta.fx === "string" ? meta.fx : "none", typeof meta.fxAmount === "number" ? meta.fxAmount : 1);
+  }
+
+  /** Their skin's meta shapes them: overlay back faces, their limbs, torso and head, their scale and height */
+  syncSkinShape() {
+    const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
+    const num = (value: unknown, fallback = 1) => (typeof value === "number" ? value : fallback);
+    setOverlayBackfaces(this, meta);
+    setBodyShape(
+      this.geometry,
+      this.skinnedMesh.skeleton,
+      {
+        limbs: num(meta.limbs),
+        legs: num(meta.legs ?? meta.limbs),
+        body: num(meta.body),
+        headDepth: num(meta.headDepth),
+        taper: num(meta.taper),
+        head: num(meta.head),
+        stoop: num(meta.stoop, 0),
+        height: num(meta.height),
+      },
+      this.w.npc.shapeCache,
+    );
+    const prevHeight = this.heightScale;
+    this.widthScale = Math.min(1, num(meta.scale));
+    this.heightScale = this.widthScale * num(meta.height);
+    this.skinnedMesh.scale.set(npcScale * this.widthScale, npcScale * this.heightScale, npcScale * this.widthScale);
+    this.anim.headY *= this.heightScale / prevHeight;
+    this.headScale = num(meta.head);
+    this.setLabelYShift(this.anim.labelShiftFor(this.anim.pose));
+    // at most half the crowd's neighbour range, so any two are neighbours before they touch
+    this.agentRadius = Math.min(crowdConfig.collisionQueryRange / 2, npcDims.agentRadius * num(meta.agentRadius));
+    if (this.agent !== null) this.agent.radius = this.agentRadius;
+  }
+
+  /** Shows an effect of `npcFxKinds`, from `0` to `1` of it */
+  setFx(kind: string, amount = 1) {
+    if (this.fxKind === undefined) return; // before hmr
+    this.fxKind.value = Math.max(0, (npcFxKinds as readonly string[]).indexOf(kind));
+    this.fxAmount.value = amount;
   }
 
   /** Holds them where their agent stands, e.g. at a doable on the navmesh, or lets them go as idle */
@@ -726,6 +841,7 @@ export type NpcInit = {
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   dotScreen: THREE.UniformNode<"float", number>;
+  stipple: THREE.UniformNode<"float", number>;
   roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
@@ -738,6 +854,8 @@ export type NpcInit = {
   skinIndexUniform: THREE.UniformNode<"float", number>;
   eyesUniform: THREE.UniformNode<"float", number>;
   overlayBackfaces: THREE.UniformNode<"float", number>;
+  fxKind: THREE.UniformNode<"float", number>;
+  fxAmount: THREE.UniformNode<"float", number>;
 };
 
 /** Pixels the label's pick box reaches beyond its text */

@@ -9,6 +9,7 @@ import {
   decorCuboidHeight,
   defaultPlayerKey,
   doorConfig,
+  doorwayDuck,
   floorFadeDelayMs,
   type ItemKind,
   inventoryConfig,
@@ -38,6 +39,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       handling: new Set(),
       reachedRight: new Set(),
       insideDoorways: new Map(),
+      doorwayDucked: new Map(),
+      doorwayWatched: new Set(),
       inView: { graph: null, byRoom: new Map() },
       doorOpen: {},
       doorToNpcs: {},
@@ -722,6 +725,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npc?.setAmbient(npcs.ambient, npcs.sameRoom);
         w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
+        for (const npc of Object.values(w.n ?? {})) npc.drawLabel(); // their colour is the theme's
         w.phasers?.syncTheme();
         w.shields?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
@@ -736,6 +740,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEditMap() {
         // their rooms predate the edit, which may renumber them: physics reports who stands in a doorway again
+        for (const npcKey of state.doorwayDucked.keys()) state.duckInDoorway(npcKey, null);
         state.insideDoorways.clear();
         state.recomputeNpcRoomRelationships();
         state.syncLitRooms();
@@ -975,6 +980,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.type === "nearby") {
               (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).nearby.add(npc.key);
               (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).nearby.add(e.meta.gdKey);
+              if ((npc.heightScale ?? 1) > doorwayDuck.heightScale) state.doorwayWatched.add(npc.key);
             }
             if (e.type === "inside") {
               (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
@@ -1185,6 +1191,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
         state.syncDoorways();
+        state.syncDoorwayDuck();
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting
         // on a room to arrive takes it the moment it lands rather than at the next door event
         state.syncNpcRoomSlots();
@@ -1782,6 +1789,40 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
+      syncDoorwayDuck() {
+        const { reach, clear, leave } = doorwayDuck;
+        for (const npcKey of state.doorwayWatched) {
+          const nearby = state.npcToDoors[npcKey]?.nearby ?? noDoors;
+          const ducked = state.doorwayDucked.get(npcKey);
+          const npc = w.n[npcKey];
+          if (npc === undefined || (nearby.size === 0 && ducked === undefined)) {
+            state.doorwayWatched.delete(npcKey); // gone, or near no door
+            continue;
+          }
+          const head = headPointOf(npc);
+          if (ducked !== undefined) {
+            const door = w.door.byKey[ducked.gdKey];
+            // past its line by `clear`, else turned away short of it
+            const done =
+              door === undefined ||
+              sideOfDoor(head, door) * ducked.side < -clear ||
+              distToSegment(head, door.src, door.dst) > leave;
+            if (done) state.duckInDoorway(npcKey, null);
+            continue;
+          }
+          for (const gdKey of nearby) {
+            const door = w.door.byKey[gdKey];
+            if (door === undefined || distToSegment(head, door.src, door.dst) >= reach) continue;
+            // stood under its lintel, or heading through it: not passing by
+            const under =
+              state.insideDoorways.get(npcKey)?.gdKey === gdKey && Math.abs(sideOfDoor(head, door)) <= clear;
+            if (under || pathCrosses(npc, door.src, door.dst)) {
+              state.duckInDoorway(npcKey, gdKey, Math.sign(sideOfDoor(head, door)) || 1);
+              break;
+            }
+          }
+        }
+      },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
           const npc = w.n[npcKey];
@@ -1965,6 +2006,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         opts.access ??= state.npcCanAccess(opts.npcKey, gdKey);
 
         return w.door.toggleLock(door, opts);
+      },
+      duckInDoorway(npcKey, gdKey, side = 1) {
+        const npc = w.n[npcKey];
+        if (npc === undefined) return void state.doorwayDucked.delete(npcKey);
+        const ducked = state.doorwayDucked.get(npcKey);
+        if (gdKey === null) {
+          if (ducked === undefined) return;
+          state.doorwayDucked.delete(npcKey);
+          if (ducked.crouched) npc.anim.setCrouch(0);
+          else npc.anim.setDuck(false);
+          return;
+        }
+        // the tallest crouch, as a stoop deep enough would bend them double
+        const crouched = npc.heightScale > doorwayDuck.crouchAbove && npc.anim.crouchLevel === 0;
+        if (crouched) npc.anim.setCrouch(2);
+        else npc.anim.setDuck(true);
+        state.doorwayDucked.set(npcKey, { gdKey, side, crouched });
       },
       trackDoorway(npcKey, gdKey) {
         const door = w.door.byKey[gdKey];
@@ -2497,6 +2555,14 @@ export type State = {
   >;
   /** Notes the door an npc has stepped into, for `syncDoorways` */
   trackDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey): void;
+  /** Tall npcs near a door, the only ones `syncDoorwayDuck` looks at: added as they near one */
+  doorwayWatched: Set<string>;
+  /** The tall npcs stooping, or crouching, in a doorway: its door, the side of its line they came from, and which — see `syncDoorwayDuck` */
+  doorwayDucked: Map<string, { gdKey: Geomorph.GmDoorKey; side: number; crouched: boolean }>;
+  /** A tall npc stoops in door `gdKey`'s doorway, else crouches if taller still, coming from `side` of its line, so their head clears its lintel. `null` stands them up */
+  duckInDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey | null, side?: number): void;
+  /** Each tick, stoops tall npcs near a door's line, and stands them again further off — see `doorwayDuck` */
+  syncDoorwayDuck(): void;
   /** Whilst in a doorway, their room is whichever is on their side of the door's line */
   syncDoorways(): void;
   /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
@@ -2579,3 +2645,45 @@ function rayPolyline({ src, dst, result, y = raysDebug.y }: ShownRay): Polyline 
     result === null ? "failed" : result.hit === null ? "none" : result.hitDoor !== null ? "door" : "wall";
   return { ...style, points, color: color[stoppedBy] };
 }
+
+/** Metres from `p` to the segment from `a` to `b` */
+function distToSegment(p: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) {
+  const [dx, dy] = [b.x - a.x, b.y - a.y];
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
+
+/** Their head's pivot in plan, as last drawn. Else where they stand */
+function headPointOf(npc: Npc): Geom.VectJson {
+  const bone = npc.anim.upperHead.entry?.bone;
+  if (bone === undefined) return npc.point;
+  const { x, z } = tmpVec3.setFromMatrixPosition(bone.matrixWorld);
+  return { x, y: z };
+}
+const tmpVec3 = new THREE.Vector3();
+
+/** Signed metres from `p` to the door's line, positive where its `normal` points */
+function sideOfDoor(p: Geom.VectJson, door: { src: Geom.VectJson; normal: Geom.VectJson }) {
+  return (p.x - door.src.x) * door.normal.x + (p.y - door.src.y) * door.normal.y;
+}
+
+/** Whether a moving npc's path, from where they stand through their next corners, crosses the segment from `a` to `b` */
+function pathCrosses(npc: import("./npc").Npc, a: Geom.VectJson, b: Geom.VectJson) {
+  if (npc.isMoving() === false || npc.agent === null) return false;
+  let from = npc.point;
+  for (const { position } of npc.agent.corners) {
+    const to = { x: position[0], y: position[2] };
+    if (segmentsCross(from, to, a, b)) return true;
+    from = to;
+  }
+  return false;
+}
+
+/** Whether segments `p`–`q` and `a`–`b` cross */
+function segmentsCross(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) {
+  const side = (o: Geom.VectJson, s: Geom.VectJson, t: Geom.VectJson) =>
+    (s.x - o.x) * (t.y - o.y) - (s.y - o.y) * (t.x - o.x);
+  return side(p, q, a) * side(p, q, b) <= 0 && side(a, b, p) * side(a, b, q) <= 0;
+}
+
+const noDoors: ReadonlySet<Geomorph.GmDoorKey> = new Set();

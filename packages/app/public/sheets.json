@@ -1052,142 +1052,457 @@
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
+    },
+    "chaos-0": {
+      "key": "chaos-0",
+      "filename": "chaos-0--73c9ab816d77b3b9.png",
+      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "chaos-1": {
+      "key": "chaos-1",
+      "filename": "chaos-1--cffd94eb8cc74d2a.png",
+      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "chaos-2": {
+      "key": "chaos-2",
+      "filename": "chaos-2--464a4c7bfdef2f46.png",
+      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "cultist-0": {
+      "key": "cultist-0",
+      "filename": "cultist-0--16a745cbd76f6f9e.png",
+      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "cultist-1": {
+      "key": "cultist-1",
+      "filename": "cultist-1--3f8e61c474f2e558.png",
+      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "cultist-2": {
+      "key": "cultist-2",
+      "filename": "cultist-2--12a2302c12003a61.png",
+      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "hazmat-0": {
+      "key": "hazmat-0",
+      "filename": "hazmat-0--4e67c4047b3fa115.png",
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "hazmat-1": {
+      "key": "hazmat-1",
+      "filename": "hazmat-1--568e754121b16914.png",
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "hazmat-2": {
+      "key": "hazmat-2",
+      "filename": "hazmat-2--5cd8a924f6737812.png",
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-017": {
+      "key": "scp-017",
+      "filename": "scp-017--26dd3229bfc26f08.png",
+      "rect": {"x": 776, "y": 2, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-035": {
+      "key": "scp-035",
+      "filename": "scp-035--28c17d137a221e1d.png",
+      "rect": {"x": 776, "y": 260, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-049": {
+      "key": "scp-049",
+      "filename": "scp-049--ce2157445043c1a8.png",
+      "rect": {"x": 776, "y": 518, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-049-2a": {
+      "key": "scp-049-2a",
+      "filename": "scp-049-2a--af3aa135b92788cc.png",
+      "rect": {"x": 2, "y": 776, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-049-2b": {
+      "key": "scp-049-2b",
+      "filename": "scp-049-2b--0fb7149eaf9be151.png",
+      "rect": {"x": 260, "y": 776, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-096": {
+      "key": "scp-096",
+      "filename": "scp-096--95fcf188bec2b0eb.png",
+      "rect": {"x": 518, "y": 776, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-1000": {
+      "key": "scp-1000",
+      "filename": "scp-1000--47ca8e6fd200c31d.png",
+      "rect": {"x": 776, "y": 776, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-106": {
+      "key": "scp-106",
+      "filename": "scp-106--b3ebcf965a672ba5.png",
+      "rect": {"x": 1034, "y": 2, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-1471": {
+      "key": "scp-1471",
+      "filename": "scp-1471--ceb79b98ddf14db9.png",
+      "rect": {"x": 1034, "y": 260, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-173": {
+      "key": "scp-173",
+      "filename": "scp-173--db0d7f7cf301e2d8.png",
+      "rect": {"x": 1034, "y": 518, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-457": {
+      "key": "scp-457",
+      "filename": "scp-457--cd7bfdf3ed9ffdae.png",
+      "rect": {"x": 1034, "y": 776, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-610": {
+      "key": "scp-610",
+      "filename": "scp-610--5447f65b76c19354.png",
+      "rect": {"x": 2, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-650": {
+      "key": "scp-650",
+      "filename": "scp-650--0a58b4436b8b8fa9.png",
+      "rect": {"x": 260, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-682": {
+      "key": "scp-682",
+      "filename": "scp-682--1004d5c60ec753ee.png",
+      "rect": {"x": 518, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "scp-939": {
+      "key": "scp-939",
+      "filename": "scp-939--eed3c82055903f74.png",
+      "rect": {"x": 776, "y": 1034, "width": 256, "height": 256},
+      "sheetId": 1,
+      "originalWidth": 64,
+      "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 1550, "height": 1292}],
+  "skinSheetDims": [
+    {"width": 1550, "height": 1292},
+    {"width": 1292, "height": 1292}
+  ],
   "maxSkinSheetDim": {"width": 1550, "height": 1292},
   "skinSlices": {
+    "chaos-0": {
+      "key": "chaos-0",
+      "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "chaos-1": {
+      "key": "chaos-1",
+      "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "chaos-2": {
+      "key": "chaos-2",
+      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "cultist-0": {
+      "key": "cultist-0",
+      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "cultist-1": {
+      "key": "cultist-1",
+      "rect": {"x": 262, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "cultist-2": {
+      "key": "cultist-2",
+      "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
     "d-0": {
       "key": "d-0",
-      "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "d-1": {
       "key": "d-1",
-      "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "d-2": {
       "key": "d-2",
-      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "d-3": {
       "key": "d-3",
-      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     },
     "d-4": {
       "key": "d-4",
-      "rect": {"x": 262, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "d-5": {
       "key": "d-5",
-      "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "hazmat-0": {
+      "key": "hazmat-0",
+      "rect": {"x": 2, "y": 392, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "hazmat-1": {
+      "key": "hazmat-1",
+      "rect": {"x": 132, "y": 392, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "hazmat-2": {
+      "key": "hazmat-2",
+      "rect": {"x": 262, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-0": {
       "key": "medic-0",
-      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-1": {
       "key": "medic-1",
-      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-2": {
       "key": "medic-2",
-      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-3": {
       "key": "medic-3",
-      "rect": {"x": 392, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-4": {
       "key": "medic-4",
-      "rect": {"x": 392, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-5": {
       "key": "medic-5",
-      "rect": {"x": 392, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-0": {
       "key": "mtf-0",
-      "rect": {"x": 2, "y": 392, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-1": {
       "key": "mtf-1",
-      "rect": {"x": 132, "y": 392, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "mtf-2": {
       "key": "mtf-2",
-      "rect": {"x": 262, "y": 392, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "postdoc-0": {
       "key": "postdoc-0",
-      "rect": {"x": 392, "y": 392, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "postdoc-1": {
       "key": "postdoc-1",
-      "rect": {"x": 522, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 652, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     },
     "postdoc-2": {
       "key": "postdoc-2",
-      "rect": {"x": 522, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 652, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "ra-0": {
       "key": "ra-0",
-      "rect": {"x": 522, "y": 262, "width": 128, "height": 128},
+      "rect": {"x": 652, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     },
     "ra-1": {
       "key": "ra-1",
-      "rect": {"x": 522, "y": 392, "width": 128, "height": 128},
+      "rect": {"x": 652, "y": 392, "width": 128, "height": 128},
       "sheetId": 0
     },
     "ra-2": {
       "key": "ra-2",
-      "rect": {"x": 2, "y": 522, "width": 128, "height": 128},
+      "rect": {"x": 652, "y": 522, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-0": {
       "key": "robot-0",
-      "rect": {"x": 132, "y": 522, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 652, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-1": {
       "key": "robot-1",
-      "rect": {"x": 262, "y": 522, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 652, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-2": {
       "key": "robot-2",
-      "rect": {"x": 392, "y": 522, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 652, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-3": {
       "key": "robot-3",
-      "rect": {"x": 522, "y": 522, "width": 128, "height": 128},
+      "rect": {"x": 392, "y": 652, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-4": {
       "key": "robot-4",
-      "rect": {"x": 652, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 522, "y": 652, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-017": {
+      "key": "scp-017",
+      "rect": {"x": 652, "y": 652, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-035": {
+      "key": "scp-035",
+      "rect": {"x": 782, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-049": {
+      "key": "scp-049",
+      "rect": {"x": 782, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-049-2a": {
+      "key": "scp-049-2a",
+      "rect": {"x": 782, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-049-2b": {
+      "key": "scp-049-2b",
+      "rect": {"x": 782, "y": 392, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-096": {
+      "key": "scp-096",
+      "rect": {"x": 782, "y": 522, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-1000": {
+      "key": "scp-1000",
+      "rect": {"x": 782, "y": 652, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-106": {
+      "key": "scp-106",
+      "rect": {"x": 2, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-1471": {
+      "key": "scp-1471",
+      "rect": {"x": 132, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-173": {
+      "key": "scp-173",
+      "rect": {"x": 262, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-457": {
+      "key": "scp-457",
+      "rect": {"x": 392, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-610": {
+      "key": "scp-610",
+      "rect": {"x": 522, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-650": {
+      "key": "scp-650",
+      "rect": {"x": 652, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-682": {
+      "key": "scp-682",
+      "rect": {"x": 782, "y": 782, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "scp-939": {
+      "key": "scp-939",
+      "rect": {"x": 912, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     }
   },
-  "skinSlicesSheetDims": [{"width": 782, "height": 652}],
+  "skinSlicesSheetDims": [{"width": 1042, "height": 912}],
   "hash": {}
 }
