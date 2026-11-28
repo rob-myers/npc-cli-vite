@@ -31,7 +31,7 @@ import {
   npcScale,
   otherNpcLabelColor,
 } from "../const.npc";
-import { setBodyShape } from "../service/geometry";
+import { bodyShapeOf, setBodyShape } from "../service/geometry";
 import { helper } from "../service/helper";
 import { setOverlayBackfaces } from "../service/npc-material";
 import { bodyPartPoint } from "../service/phaser-beam";
@@ -778,21 +778,7 @@ export class Npc {
     const meta = this.w.npc.getSkinMeta(this.skinKey ?? "");
     const num = (value: unknown, fallback = 1) => (typeof value === "number" ? value : fallback);
     setOverlayBackfaces(this, meta);
-    setBodyShape(
-      this.geometry,
-      this.skinnedMesh.skeleton,
-      {
-        limbs: num(meta.limbs),
-        legs: num(meta.legs ?? meta.limbs),
-        body: num(meta.body),
-        headDepth: num(meta.headDepth),
-        taper: num(meta.taper),
-        head: num(meta.head),
-        stoop: num(meta.stoop, 0),
-        height: num(meta.height),
-      },
-      this.w.npc.shapeCache,
-    );
+    setBodyShape(this.geometry, this.skinnedMesh.skeleton, bodyShapeOf(meta), this.w.npc.shapeCache);
     const prevHeight = this.heightScale;
     this.widthScale = Math.min(1, num(meta.scale));
     this.heightScale = this.widthScale * num(meta.height);
