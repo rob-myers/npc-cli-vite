@@ -34,7 +34,8 @@
         "noEyes": true,
         "body": 0.8,
         "height": 1.08,
-        "limbs": 0.8
+        "limbs": 0.8,
+        "headTop": 0.7
       },
       "url": "https://namemc.com/skin/16a745cbd76f6f9e",
       "svgPath": "skin/cultist-0.svg"
@@ -48,7 +49,8 @@
         "prefix": "cultist",
         "noEyes": true,
         "body": 0.8,
-        "limbs": 0.8
+        "limbs": 0.8,
+        "headTop": 0.7
       },
       "url": "https://namemc.com/skin/3f8e61c474f2e558",
       "svgPath": "skin/cultist-1.svg"
@@ -63,7 +65,8 @@
         "noEyes": true,
         "body": 0.8,
         "height": 0.9,
-        "limbs": 0.8
+        "limbs": 0.8,
+        "headTop": 0.7
       },
       "url": "https://namemc.com/skin/12a2302c12003a61",
       "svgPath": "skin/cultist-2.svg"

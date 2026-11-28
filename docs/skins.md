@@ -99,6 +99,7 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - `headDepth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
   - `taper=0.35` narrows each limb toward its end to that share, and the torso toward the hips half as much (`scp-650`).
   - `armTaper=0.75` narrows the arms alone, else they take `taper` (`d-2`).
+  - `headTop=0.7` narrows the head toward its top, e.g. a hood (`cultist-0`). Never round a head by masking its base: the texels cut away are holes.
   - `head=1.3` scales the head about its base, the neck (`scp-017`). It keeps its proportions under `height`, which would otherwise squash or stretch it.
   - `stoop=0.1` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
   - `agentRadius=1.5` makes their crowd agent that much wider (`npc.agentRadius`), so the crowd keeps others off a big body (`scp-1000`). Below `1` it is narrower, e.g. `scp-017`'s `0.65`, matching its `scale`. It is capped at half the crowd's neighbour range (`collisionQueryRange`): the crowd only parts two agents it finds as neighbours, so their radii must add up to no more than that.

@@ -364,6 +364,8 @@ export type BodyShape = {
   armTaper?: number;
   /** Size of the head about its base, kept in proportion however tall they are drawn */
   head?: number;
+  /** Scale of the head's top, narrowing it from its base, e.g. a hood */
+  headTop?: number;
   /** How tall they are drawn: the mesh's vertical scale, which a scaled head undoes */
   height?: number;
   /** Forward lean of the upper body, as a share of its height */
@@ -395,6 +397,7 @@ export function setBodyShape(
     taper,
     armTaper: shape.armTaper ?? taper,
     head,
+    headTop: shape.headTop ?? 1,
     stoop: shape.stoop ?? 0,
     /** Only a scaled head undoes the height, so the cache need not key on it otherwise */
     height: head === 1 ? 1 : (shape.height ?? 1),
@@ -429,7 +432,7 @@ function shapedPositions(
   from: Float32Array,
   geometry: THREE.BufferGeometry,
   skeleton: THREE.Skeleton,
-  { limbs, legs, body, headDepth, taper, armTaper, head: headScale, stoop, height }: Required<BodyShape>,
+  { limbs, legs, body, headDepth, taper, armTaper, head: headScale, headTop, stoop, height }: Required<BodyShape>,
 ) {
   const out = from.slice();
   const set = (i: number, x: number, y: number, z: number) => out.set([x, y, z], 3 * i);
@@ -502,14 +505,19 @@ function shapedPositions(
   const faceZ = Math.min(...heads.map((i) => from[3 * i + 2]));
   for (const i of heads) out[3 * i + 2] = faceZ + (from[3 * i + 2] - faceZ) * headDepth;
   /** The head grows from the middle of its base, the neck */
-  const [hx, hy, hz] = [centre(heads, 0, out), span(heads, 1, out)[0], centre(heads, 2, out)];
-  for (const i of heads)
+  const [hx, hz] = [centre(heads, 0, out), centre(heads, 2, out)];
+  const headY = span(heads, 1, out);
+  const hy = headY[0];
+  for (const i of heads) {
+    /** Narrower toward the top, as `headTop` asks */
+    const k = headScale * (1 + ((headTop - 1) * (out[3 * i + 1] - hy)) / (headY[1] - hy || 1));
     set(
       i,
-      hx + (out[3 * i] - hx) * headScale,
+      hx + (out[3 * i] - hx) * k,
       hy + ((out[3 * i + 1] - hy) * headScale) / height,
-      hz + (out[3 * i + 2] - hz) * headScale,
+      hz + (out[3 * i + 2] - hz) * k,
     );
+  }
   if (stoop !== 0) {
     /** Above the waist, all leans forward (to `-z`) and down: an arm by its shoulder, so it stays whole */
     const waist = torsoY[0] + (torsoY[1] - torsoY[0]) * 0.35;
@@ -694,6 +702,7 @@ const bodyShapeKeys = [
   "taper",
   "armTaper",
   "head",
+  "headTop",
   "height",
   "stoop",
 ] as const satisfies (keyof BodyShape)[];
