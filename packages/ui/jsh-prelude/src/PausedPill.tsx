@@ -13,12 +13,14 @@ const loadRun = () => import("./run");
 export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
   const state = useStateRef(
     (): State => ({
+      client: false,
       open: false,
       step: null,
 
       async boot(task) {
         try {
           await task();
+          if (w.client === true) (await loadRun()).stopPrelude(w.key, "mirroring a server"); // joined meanwhile
         } catch (e) {
           error(e);
         } finally {
@@ -29,6 +31,15 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
         if (state.step !== null) return state.step;
         if ((w.e?.bootedAt ?? 0) === 0) return preludeApi.get(w.key).autorun === true ? "booting" : "loading";
         return w.isMapChanging() ? "loading" : null;
+      },
+      onNetChanged() {
+        if (w.client === state.client) return;
+        state.client = w.client;
+        if (w.client === true) {
+          void loadRun().then(({ stopPrelude }) => stopPrelude(w.key, "mirroring a server"), error);
+        } else if (state.step === null) {
+          state.boot(async () => (await loadRun()).runPrelude(w.key));
+        }
       },
       reboot() {
         state.boot(async () => (await loadRun()).rebootWorld(w.key, (step) => state.set({ step })));
@@ -50,7 +61,10 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
 
   useEffect(() => {
     const sub = w.events.subscribe({
-      next: (e) => (e.key === "map-changing" || e.key === "map-settled") && state.update(),
+      next: (e) => {
+        if (e.key === "map-changing" || e.key === "map-settled") state.update();
+        else if (e.key === "net-changed") state.onNetChanged();
+      },
     });
     return () => sub.unsubscribe();
   }, [w]);
@@ -123,6 +137,8 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
 }
 
 type State = {
+  /** Was the World a client at the last `net-changed`? */
+  client: boolean;
   /** Is the autorun row shown? */
   open: boolean;
   /** What runs, e.g. "booting" or a reboot's step, shown with a spinner */
@@ -134,5 +150,7 @@ type State = {
    * "booting" with autorun or "loading" without, else "loading" whilst the map changes.
    */
   busyLabel(): null | string;
+  /** A client stops its autorun, as the server moves its npcs. Back on its own, it runs it again */
+  onNetChanged(): void;
   reboot(): void;
 };

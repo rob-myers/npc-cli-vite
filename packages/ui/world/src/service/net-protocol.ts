@@ -2,7 +2,7 @@ import type { AnimationClipKey } from "../components/NPCs";
 import type { PersistedNpc } from "./storage";
 
 /** Bumped whenever `WorldNetMessage` or the transform codec changes shape */
-export const worldNetProtocol = 1;
+export const worldNetProtocol = 2;
 
 /** Everything a client needs to mirror an npc, plus its `netId` in the transform stream */
 export type NetNpc = PersistedNpc & {
@@ -34,6 +34,8 @@ export type WorldNetMessage =
       playerKey: null | string;
       doors: { open: Geomorph.GmDoorKey[]; locked: Geomorph.GmDoorKey[] };
       decor: Geomorph.DecorDef[];
+      /** The server's `w.gameTime.scale` */
+      timeScale: number;
     }
   /** The server's player (re)spawned after the snapshot went out */
   | { key: "set-player"; npcKey: string }
@@ -46,6 +48,7 @@ export type WorldNetMessage =
   | { key: "decor"; op: "create"; defs: Geomorph.DecorDef[] }
   | { key: "decor"; op: "remove"; decorKeys: string[] }
   | { key: "map-changed"; mapKey: string }
+  | { key: "time-scale"; scale: number }
   | { key: "server-closed" };
 
 /** One npc's sample in the unreliable "transforms" channel */

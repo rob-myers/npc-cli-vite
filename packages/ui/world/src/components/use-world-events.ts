@@ -435,6 +435,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           void state.move({ npcKey: other.key, to, fast: true, near: true }).catch(() => {}); // else they stay put
       },
       async move(opts) {
+        if (w.client === true) throw Error("mirrored"); // the server moves them
         const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
         const { hurt } = npc.anim;

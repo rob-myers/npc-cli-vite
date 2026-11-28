@@ -565,6 +565,7 @@ export class Npc {
    * Can look at `npcKey`, point or angle.
    */
   async look({ at, minMs = 0, immediate = false, rate = 1 }: JshCli.LookOpts) {
+    if (this.w.client === true) throw Error("mirrored"); // the server turns them
     this.last.look =
       typeof at === "number" ? at : helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
 

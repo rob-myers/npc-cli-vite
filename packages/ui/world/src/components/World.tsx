@@ -340,6 +340,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       onTimeScale(timeScale) {
         getWorldStore(meta.worldKey).patch({ timeScale });
+        state.net?.onTimeScale(timeScale);
         // only the menu's slider and the bar's notice show it: not the whole World
         state.menu.update?.();
         state.hud?.update?.();
