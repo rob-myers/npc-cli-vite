@@ -6,7 +6,7 @@ One `World` can join another as a **client**: an extra camera into the **server*
 
 - **`w.net`** (`use-world-net.ts`) is the per-World networking sub-state, `mode: "idle" | "server" | "client"`. A World becomes a server lazily when its first client says hello; a client via `w.net.join(target)` from the WorldSpeech panel. An explicit join outranks serving: the clients are dismissed (`server-closed`) and restore themselves — which also unwedges a phantom client left by a refreshed/closed tab.
 - **Two DataChannels** per peer: `"events"` (reliable ordered, JSON `WorldNetMessage`) and `"transforms"` (unordered, no retransmits, binary).
-- **Client = mirror mode**: no navcat crowd, no physics npcs, no door policy, no persistence of its own. Mirrored npcs are agent-less (`npc.agentId === null` — `w.npc.onTick` already animates those without touching position); the transform stream drives `position`/`rotation.y`.
+- **Client = mirror mode**: no navcat crowd, no physics npcs, no door policy, no persistence of its own. Mirrored npcs are agent-less (`npc.agentId === null` — `w.npc.onTick` already animates those without touching position); the transform stream drives `position`/`rotation.y`. Its own jsh cannot move or turn them: `w.e.move` and `npc.look` throw `mirrored`. Its autorun stops whilst it is a client (`docs/autorun.md`). The server's scale of game time is theirs too (`time-scale`, and in the snapshot), so their gaits keep pace.
 - **Joining adopts the server**: mapKey (via ui meta), full snapshot (npcs + playerKey, door open/locked, runtime decor), and the client's persisted map store is overwritten with the server's state — so a refresh (or a failed reconnect) boots into it. The persist gates stop the client drifting from that save whilst connected.
 - **Not passive**: client picks are computed locally (same geometry) and forwarded; the server re-emits them on its own bus with `srcWorld: "world-N"`, so shell scripts can tell where a click came from.
 - **Pausing is per World**: a paused client stops only its own frame loop; a paused server stops the simulation, so clients see its npcs stand still.
@@ -27,7 +27,7 @@ Two Worlds on one page may skip WebRTC: their channels can be `MessagePort`s ins
 ## New files
 
 ### `packages/ui/world/src/service/net-protocol.ts`
-`WorldNetMessage` union (hello/ack, refused, snapshot, spawn, remove-npcs, npc-visibility, enter-room, door, speech, decor create/remove, set-player, map-changed, pick, leave, server-closed) plus the binary transform codec: `u8 count`, then 19 bytes per npc — `u16 netId, f32 x/z/rotY/speed, u8 flags` (moving, run). `netId` is a compact server-assigned id carried by `snapshot`/`spawn`.
+`WorldNetMessage` union (hello/ack, refused, snapshot, spawn, remove-npcs, npc-visibility, enter-room, door, speech, decor create/remove, set-player, map-changed, time-scale, pick, leave, server-closed) plus the binary transform codec: `u8 count`, then 19 bytes per npc — `u16 netId, f32 x/z/rotY/speed, u8 flags` (moving, run). `netId` is a compact server-assigned id carried by `snapshot`/`spawn`.
 
 ### `packages/ui/world/src/service/net-signaling.ts`
 `Signaling` interface (offer/answer/ICE + join-request/bye, presence + roster) with two impls:

@@ -1,29 +1,39 @@
 # TODO
 
-- can expand/collapse all SkipNet code-fences
-
 - 🚧 extend SkipNet articles
   - ✅ support multipart articles
+  - ✅ header and title styling
   - 🚧 npc-controls
+
+- add SCP articles
+  - in same style with link to wiki
+
+- avoid jerky max-look on turn
+  - also a bug on 103 where max-look should be blocked by tall obstacles
+- picked ring more visible whilst sit/lie
+- clarify mocked psi actions
+- initial "compiling shaders" busy message seems late on 1st boot
+- alternatively draw phaser into body rather than stop aiming
+- try make sidestep aside faster/more-continuous
+- model shoulders lower?
 
 After vid:
 
 - improve hmr on edit tty related files e.g. BaseTty theme and const
   - currently the component remounts, losing all state
-- tethered mode
-  - double-r to turn off too
-  - can tether to other npc
-- crouch strafes by default
-- saw phaser lowered through closed door when nearly entered
-- initial World load slowdown so allotment responsive
 - sidestep responsiveness?
-- decorator inspector toggles off/on on world pause via escape?
 - experiment with WebMCP + WebMCP Tools Chrome Extension
   - https://aistudio.google.com/api-keys
-- phaser also shown in sense-mode
+- phaser of npc in unlit room also shown in sense-mode
 - improve `phaser` command readability
 - might be nice idea for the command `jobs` to toggle open the jobs panel in Jsh
   - this could go in jsh/util.js
+- should we kill processes with ptag WORLD in tty with WORLD_KEY?
+  - alternatively could provide WORLD={worldKey} and kill based on that?
+- clarify that even though two npcs won't get in cupboard by default, we could add decor do=stand points to make it work
+- hand-to-hand attacks?
+  - grabbing
+  - slashing
 
 ## World
 
@@ -159,4 +169,3 @@ After vid:
 ## Testing
 
 - ask Claude for playwright test suite
-

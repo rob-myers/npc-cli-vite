@@ -202,6 +202,7 @@ export default function Walls() {
       renderOrder={4}
     >
       <meshBasicNodeMaterial
+        name="walls"
         key={mat.uuid}
         side={THREE.FrontSide} // 1 draw call
         transparent

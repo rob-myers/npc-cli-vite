@@ -62,6 +62,7 @@ function createStreakMaterial(objectPick: THREE.Node<"float">, now: THREE.Node<"
   const world = at.add(side.mul(uv().y.sub(0.5).mul(look.y)));
   const clip = cameraProjectionMatrix.mul(cameraViewMatrix).mul(vec4(world, 1));
   const material = new THREE.MeshBasicNodeMaterial({
+    name: "armour",
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,

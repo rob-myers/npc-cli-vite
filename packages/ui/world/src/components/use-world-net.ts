@@ -231,6 +231,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           },
           decor: Object.values(w.decor.runtime.defByKey),
           playerKey: w.player.exists() ? w.player.key : null,
+          timeScale: w.gameTime.scale,
         };
       },
       toNetNpc(npc) {
@@ -309,6 +310,9 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           default:
             break;
         }
+      },
+      onTimeScale(scale) {
+        if (state.mode === "server") state.sendToAll({ key: "time-scale", scale });
       },
       sampleTransforms() {
         if (state.clients.size === 0) return;
@@ -638,6 +642,9 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           case "set-player":
             w.player.assign(msg.npcKey);
             break;
+          case "time-scale":
+            w.gameTime.setScale(msg.scale);
+            break;
           case "server-closed":
             await state.leave({ remote: true });
             break;
@@ -698,6 +705,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
 
         // adopt the server's player — the mirrored npc, e.g. for camera follow and speech UI
         if (msg.playerKey !== null) w.player.assign(msg.playerKey);
+        w.gameTime.setScale(msg.timeScale);
 
         // the server's state becomes our save for this map (the persist gates stop us drifting
         // from it whilst connected), so a refresh — or a failed reconnect — boots into it
@@ -1094,6 +1102,8 @@ export type State = {
   buildSnapshot(): Extract<WorldNetMessage, { key: "snapshot" }>;
   toNetNpc(npc: Npc): NetNpc;
   onWorldEvent(e: JshCli.Event): void;
+  /** A server tells its clients, whose mirrors animate on their own game time */
+  onTimeScale(scale: number): void;
   sampleTransforms(): void;
   sendTo(peer: ServerPeer, msg: WorldNetMessage): void;
   sendToAll(msg: WorldNetMessage): void;

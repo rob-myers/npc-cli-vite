@@ -106,7 +106,7 @@ One loop (`walkPatrol`) ticks every 0.25 game seconds for all of them, so a kill
 
 A psi distract ends a guard's `stop`, `left` or `right` early.
 
-Each tick they look for whom they watch with `perceive`, as `sees` does. A sighting emits `guard-spotted` (`npcKey`, `seen`, `graph`), again only after 3 s unseen. Then they halt and say `say` (default `Halt!`) for 3 s. With `say:""` they walk on silent, leaving the sighting to a script: `events 'e => e.key === "guard-spotted"' | …`.
+Each tick they look for whom they watch with `perceive`, as `seen` does. A sighting emits `guard-spotted` (`npcKey`, `seen`, `graph`), again only after 3 s unseen. Then they halt and say `say` (default `Halt!`) for 3 s. With `say:""` they walk on silent, leaving the sighting to a script: `events 'e => e.key === "guard-spotted"' | …`.
 
 #### Future work
 

@@ -18,7 +18,8 @@ import { SkipNetContext, TitleSlotContext } from "../context";
 import { ItemPane } from "../ItemPane";
 import type { SkipNetUiMeta, SkipNetWindow } from "../schema";
 import { titlePickerPopupClass } from "./classes";
-import { FolderWindow } from "./FolderWindow";
+import { FolderFilter } from "./FolderFilter";
+import { FolderCount, FolderWindow } from "./FolderWindow";
 import { titleOf } from "./windows";
 
 /**
@@ -33,9 +34,8 @@ export const Window = memo(function Window(props: WindowProps) {
   const big = stacked && touchDevice;
   const state = useContext(SkipNetContext);
   const shaded = win.shadedH !== undefined;
-  /** Its contents show: open, or folded but being dragged open */
-  const bodied = !shaded || peek === true;
   const title = titleOf(win, items);
+  const hiddenFolders = win.hiddenFolders ?? [];
   /** Articles with a command its World autoruns */
   const { entries } = usePrelude(state.meta.worldKey);
   const autorunKeys = useMemo(() => new Set(entries.map((x) => x.articleKey)), [entries]);
@@ -44,7 +44,9 @@ export const Window = memo(function Window(props: WindowProps) {
   const frame = useStateRef(
     (): FrameState => ({
       downAt: { x: 0, y: 0 },
+      folding: false,
       mouse: false,
+      wasShaded: shaded,
       titleSlot: null,
 
       isBarClick(e) {
@@ -59,12 +61,29 @@ export const Window = memo(function Window(props: WindowProps) {
     }),
   );
 
+  /** Folding on the desktop: from the render it was folded in, so its body never drops out for a frame */
+  const folding = frame.folding || (shaded && !frame.wasShaded && !stacked);
+  /** Its contents show: open, folding on the desktop, or folded but being dragged open */
+  const bodied = !shaded || peek === true || folding;
+
+  // folded on the desktop, its body stays whilst the grid eases it to its bar
+  useEffect(() => {
+    const folded = shaded && !frame.wasShaded && !stacked;
+    frame.wasShaded = shaded;
+    if (!folded) return;
+    frame.set({ folding: true });
+    const timeoutId = window.setTimeout(() => frame.set({ folding: false }), foldMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [shaded, stacked]);
+
   return (
     <div
       data-front={front || undefined}
       className={cn(
         // folded on the desktop its bar overflows its one row, past the gap below
-        shaded && !stacked ? "w-full" : "size-full",
+        shaded && !stacked && !folding ? "w-full" : "size-full",
+        // never below its bar, which its one row is shorter than
+        folding && "overflow-hidden min-h-min",
         "flex flex-col bg-mac-window text-mac-text border border-mac-edge shadow-[1px_1px_0_var(--color-mac-shadow)]",
         // stacked, edge to edge: only a line between windows
         stack && cn("border-x-0 border-t-0 shadow-none", stack.last && "border-b-0"),
@@ -106,18 +125,33 @@ export const Window = memo(function Window(props: WindowProps) {
           className={cn(
             // the session picker beside it gives way first
             "relative min-w-0 px-2 bg-mac-title",
-            win.kind === "article" ? "flex items-center gap-1" : "truncate",
+            win.kind === "article" ? "flex items-center gap-1 min-w-min" : "truncate",
             front ? "font-bold" : "text-mac-muted",
             big ? "text-base" : "text-sm",
           )}
         >
           {win.kind === "article" ? (
             <>
-              <span className="truncate">{title}</span>
+              {/* at least its first 8 characters, e.g. scp-1000 */}
+              <span className="truncate" style={{ minWidth: `${Math.min(8, title.length)}ch` }}>
+                {title}
+              </span>
               <Picker
                 chevronOnly
                 value={title}
-                options={articleKeys}
+                options={articleKeys.filter((x) => !hiddenFolders.includes(articleFolderOf(x) ?? ""))}
+                header={
+                  <FolderFilter
+                    hidden={hiddenFolders}
+                    onToggle={(folder) =>
+                      state.setWindow(win.id, {
+                        hiddenFolders: hiddenFolders.includes(folder)
+                          ? hiddenFolders.filter((x) => x !== folder)
+                          : [...hiddenFolders, folder],
+                      })
+                    }
+                  />
+                }
                 onChange={(articleKey) => state.setWindow(win.id, { articleKey, fit: true })}
                 optionIcon={(articleKey) => {
                   const Icon = articleFolderOf(articleKey) === "video" ? PlayCircleIcon : FileTextIcon;
@@ -174,10 +208,10 @@ export const Window = memo(function Window(props: WindowProps) {
           </>
         )}
       </header>
-      {!bodied && win.kind === "article" && (
-        // folded, its session still shows in its bar
+      {!bodied && (win.kind === "article" || win.kind === "folder") && (
+        // folded, its session or item count still shows in its bar
         <TitleSlotContext.Provider value={frame.titleSlot}>
-          <ArticleSessionPicker win={win} />
+          {win.kind === "article" ? <ArticleSessionPicker win={win} /> : <FolderCount win={win} />}
         </TitleSlotContext.Provider>
       )}
       {bodied && (
@@ -292,6 +326,10 @@ function sameShown(a: SkipNetWindow, b: SkipNetWindow) {
 const placeKeys = new Set<keyof SkipNetWindow>(["x", "y", "z", "stackFlex", "stackOrder"]);
 
 type FrameState = {
+  /** Folding on the desktop, its body kept until the grid has eased it to its bar */
+  folding: boolean;
+  /** Whether it was folded when last rendered, so only a fold animates */
+  wasShaded: boolean;
   /** Where a press on the bar began, so a drag's release is not a click */
   downAt: { x: number; y: number };
   /** That press was a mouse's, so a double-click folds rather than a click */
@@ -328,6 +366,8 @@ const gripClass = tw("relative grid place-items-center h-full cursor-row-resize 
 const boxIconClass = (big: boolean) => (big ? "size-3" : "size-2.5");
 /** How far a press on a bar may move and still be a click */
 const clickSlopPx = 4;
+/** Milliseconds react-grid-layout's css eases a window's height */
+const foldMs = 200;
 /** How long a close box stays armed */
 const confirmMs = 2500;
 /** The front window's title bar is pinstriped */

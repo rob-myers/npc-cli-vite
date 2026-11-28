@@ -26,6 +26,15 @@ export function ActivationProcedures({ children }: { children?: ReactNode }) {
   );
 }
 
+/** How an SCP is contained, e.g. its code fences */
+export function ContainmentProcedures({ children }: { children?: ReactNode }) {
+  return (
+    <FileSection id="containmentprocedures" title="special containment procedures">
+      {children}
+    </FileSection>
+  );
+}
+
 /** What an item is */
 export function Description({ children }: { children?: ReactNode }) {
   return (

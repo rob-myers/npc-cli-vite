@@ -307,7 +307,7 @@ export function Debug() {
       selectAs<"float">(w.view.objectPick.notEqual(0), float(0), opacity);
     const create = (color: THREE.ColorRepresentation, opacity: THREE.Node<"float">, depthTest = true) => {
       // biome-ignore format: succint
-      const mat = new THREE.MeshBasicNodeMaterial({ color, side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthTest, alphaTest: 0.01 });
+      const mat = new THREE.MeshBasicNodeMaterial({ name: "debug", color, side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthTest, alphaTest: 0.01 });
       mat.opacityNode = hideWhenPicking(opacity);
       return mat;
     };
@@ -341,6 +341,7 @@ export function Debug() {
     const texNode = texture(w.texDecor.tex, transformedUv);
     texNode.depthNode = uvTexIds;
     const mat = new THREE.MeshBasicNodeMaterial({
+      name: "debug-decor",
       side: THREE.DoubleSide,
       forceSinglePass: true,
       transparent: true,
@@ -398,7 +399,7 @@ export function Debug() {
       {state.physicsColliders.length > 0 && (
         <group name="static-colliders" visible={state.physicsColliders.length > 0}>
           {/* <lineSegments geometry={state.physicsLines}>
-            <lineBasicMaterial color="green" />
+            <lineBasicMaterial name="debug-lines" color="green" />
           </lineSegments> */}
           <MemoizedDebugPhysicsColliders staticColliders={state.physicsColliders} w={w} />
         </group>

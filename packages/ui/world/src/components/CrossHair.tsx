@@ -21,6 +21,7 @@ export default function CrossHair() {
       position={[0, crosshairY, 0]}
     >
       <meshBasicMaterial
+        name="cross-hair"
         color={cross.color}
         transparent
         depthTest

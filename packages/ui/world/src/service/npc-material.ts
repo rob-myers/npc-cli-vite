@@ -122,6 +122,7 @@ export function createNpcMaterial(w: World, pickId: number, skinIndex: number, s
   const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, npcPickId, 1); // opaque, else blended
 
   const material = new THREE.MeshStandardNodeMaterial({
+    name: "npc",
     transparent: true,
     depthWrite: true,
     side: THREE.FrontSide, // DoubleSide only if `setOverlayBackfaces` asks

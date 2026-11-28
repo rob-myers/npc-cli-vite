@@ -360,13 +360,22 @@ export type BodyShape = {
   headDepth?: number;
   /** Scale of each limb's far end, and half as much of the hips */
   taper?: number;
+  /** Scale of each arm's far end, else `taper` */
+  armTaper?: number;
   /** Size of the head about its base, kept in proportion however tall they are drawn */
   head?: number;
+  /** Scale of the head's top, narrowing it from its base, e.g. a hood */
+  headTop?: number;
   /** How tall they are drawn: the mesh's vertical scale, which a scaled head undoes */
   height?: number;
   /** Forward lean of the upper body, as a share of its height */
   stoop?: number;
 };
+
+/** The body shape a skin's meta sets: its numbers alone, the rest left to `setBodyShape` */
+export function bodyShapeOf(meta: Record<string, unknown>): BodyShape {
+  return Object.fromEntries(bodyShapeKeys.flatMap((k) => (typeof meta[k] === "number" ? [[k, meta[k]]] : [])));
+}
 
 /**
  * Thins an npc's geometry in its bind pose: see `shapedPositions`.
@@ -379,10 +388,21 @@ export function setBodyShape(
   shape: BodyShape,
   cache: Map<string, Float32Array>,
 ) {
-  const { limbs = 1, legs = limbs, body = 1, headDepth = 1, taper = 1, head = 1, stoop = 0 } = shape;
-  /** Only a scaled head undoes the height, so the cache need not key on it otherwise */
-  const height = head === 1 ? 1 : (shape.height ?? 1);
-  const plain = limbs === 1 && legs === 1 && body === 1 && headDepth === 1 && taper === 1 && head === 1 && stoop === 0;
+  const { limbs = 1, taper = 1, head = 1 } = shape;
+  const full: Required<BodyShape> = {
+    limbs,
+    legs: shape.legs ?? limbs,
+    body: shape.body ?? 1,
+    headDepth: shape.headDepth ?? 1,
+    taper,
+    armTaper: shape.armTaper ?? taper,
+    head,
+    headTop: shape.headTop ?? 1,
+    stoop: shape.stoop ?? 0,
+    /** Only a scaled head undoes the height, so the cache need not key on it otherwise */
+    height: head === 1 ? 1 : (shape.height ?? 1),
+  };
+  const plain = Object.entries(full).every(([k, v]) => v === (k === "stoop" ? 0 : 1));
   if (plain && geometry.userData.shaped !== true) return;
   const pos = geometry.getAttribute("position") as THREE.BufferAttribute;
   const array = pos.array as Float32Array;
@@ -392,10 +412,10 @@ export function setBodyShape(
   const bind: Float32Array = geometry.userData.bind ?? cache.get("bind") ?? array.slice();
   geometry.userData.bind = bind;
   if (!cache.has("bind")) cache.set("bind", bind);
-  const key = `${limbs} ${legs} ${body} ${headDepth} ${taper} ${head} ${stoop} ${height}`;
+  const key = Object.values(full).join(" ");
   let shaped = plain ? bind : cache.get(key);
   if (shaped === undefined) {
-    shaped = shapedPositions(bind, geometry, skeleton, { limbs, legs, body, headDepth, taper, head, stoop, height });
+    shaped = shapedPositions(bind, geometry, skeleton, full);
     cache.set(key, shaped);
   }
   array.set(shaped);
@@ -412,7 +432,7 @@ function shapedPositions(
   from: Float32Array,
   geometry: THREE.BufferGeometry,
   skeleton: THREE.Skeleton,
-  { limbs, legs, body, headDepth, taper, head: headScale, stoop, height }: Required<BodyShape>,
+  { limbs, legs, body, headDepth, taper, armTaper, head: headScale, headTop, stoop, height }: Required<BodyShape>,
 ) {
   const out = from.slice();
   const set = (i: number, x: number, y: number, z: number) => out.set([x, y, z], 3 * i);
@@ -474,9 +494,10 @@ function shapedPositions(
     const toX = Math.abs(cx) < torsoHalf ? cx * body : cx;
     /** `limbJoints` lists the arms, then the legs */
     const width = limb < 2 ? limbs : legs;
+    const end = limb < 2 ? armTaper : taper;
     const limbY = span(verts, 1);
     for (const i of verts) {
-      const k = width * tapered(from[3 * i + 1], limbY, taper);
+      const k = width * tapered(from[3 * i + 1], limbY, end);
       set(i, toX + (from[3 * i] - cx) * k, from[3 * i + 1], cz + (from[3 * i + 2] - cz) * k);
     }
   }
@@ -484,14 +505,19 @@ function shapedPositions(
   const faceZ = Math.min(...heads.map((i) => from[3 * i + 2]));
   for (const i of heads) out[3 * i + 2] = faceZ + (from[3 * i + 2] - faceZ) * headDepth;
   /** The head grows from the middle of its base, the neck */
-  const [hx, hy, hz] = [centre(heads, 0, out), span(heads, 1, out)[0], centre(heads, 2, out)];
-  for (const i of heads)
+  const [hx, hz] = [centre(heads, 0, out), centre(heads, 2, out)];
+  const headY = span(heads, 1, out);
+  const hy = headY[0];
+  for (const i of heads) {
+    /** Narrower toward the top, as `headTop` asks */
+    const k = headScale * (1 + ((headTop - 1) * (out[3 * i + 1] - hy)) / (headY[1] - hy || 1));
     set(
       i,
-      hx + (out[3 * i] - hx) * headScale,
+      hx + (out[3 * i] - hx) * k,
       hy + ((out[3 * i + 1] - hy) * headScale) / height,
-      hz + (out[3 * i + 2] - hz) * headScale,
+      hz + (out[3 * i + 2] - hz) * k,
     );
+  }
   if (stoop !== 0) {
     /** Above the waist, all leans forward (to `-z`) and down: an arm by its shoulder, so it stays whole */
     const waist = torsoY[0] + (torsoY[1] - torsoY[0]) * 0.35;
@@ -666,3 +692,17 @@ const crosshairs = {
   dark: { geometry: createGroundCrosshairGeometry(), color: "white" },
   light: { geometry: createGroundCrosshairGeometry(0.04, 0.12, 0.03), color: "black" },
 };
+
+/** Every `BodyShape` field, read from a skin's meta by `bodyShapeOf` */
+const bodyShapeKeys = [
+  "limbs",
+  "legs",
+  "body",
+  "headDepth",
+  "taper",
+  "armTaper",
+  "head",
+  "headTop",
+  "height",
+  "stoop",
+] as const satisfies (keyof BodyShape)[];

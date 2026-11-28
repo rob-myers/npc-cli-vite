@@ -78,7 +78,7 @@ export async function renderSkirtPreviews(renderer: THREE.WebGPURenderer) {
   try {
     // one at a time: they share the target
     for (const kind of skirtKinds.keys()) {
-      const material = new THREE.MeshBasicNodeMaterial();
+      const material = new THREE.MeshBasicNodeMaterial({ name: "skirt-panels" });
       const panel = skirtPanel({
         kind: float(kind),
         along: positionWorld.x,

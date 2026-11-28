@@ -402,6 +402,7 @@ export default function Floor() {
       </bufferGeometry>
 
       <meshStandardNodeMaterial
+        name="floor"
         key={material.uid}
         side={THREE.FrontSide} // one draw call
         transparent

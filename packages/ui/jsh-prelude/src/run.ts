@@ -19,26 +19,45 @@ export function getMountStatus(worldKey: string, w: object): "load" | "remount" 
 
 /** Runs the World's prelude if autorun is on. Resolves once each command has started or been skipped */
 export async function runPrelude(worldKey: string): Promise<void> {
-  const entries = preludeApi.entries(worldKey);
-  if (preludeApi.get(worldKey).autorun === false || entries.length === 0) return;
-
-  const worldTty = worldTtyOf(worldKey);
-  const bySession = Map.groupBy(entries, (x) => x.sessionKey ?? worldTty);
+  if (preludeApi.get(worldKey).autorun === false) return;
   await Promise.all(
-    Array.from(bySession, async ([sessionKey, group]) => {
+    Array.from(entriesByTty(worldKey), async ([sessionKey, group]) => {
       if (sessionKey === undefined) return warn(`prelude: ${worldKey} has no tty: skipped ${group.length}`);
       const ran: string[] = [];
-      const { subs } = preludeApi.get(worldKey);
       for (const entry of group) {
-        const own = subs?.[entry.id];
-        const subbed = { ...entry, src: substitute(entry.src, own), comment: substitute(entry.comment, own) };
-        if (await runEntry(sessionKey, subbed.src).catch(error)) ran.push(labelOf(subbed));
+        if (await runEntry(sessionKey, entry.src).catch(error)) ran.push(labelOf(entry));
       }
       if (ran.length > 0) {
         sessionApi.writeMsg(sessionKey, `autorun ${ansi.White}${ran.join(", ")}`, "info");
       }
     }),
   );
+}
+
+/** Kills the World's prelude commands still running, e.g. whilst it mirrors a server */
+export function stopPrelude(worldKey: string, why: string): void {
+  for (const [sessionKey, group] of entriesByTty(worldKey)) {
+    const session = sessionKey === undefined ? undefined : getSession(sessionKey);
+    if (session === undefined) continue;
+    const srcs = new Set(group.map((entry) => entry.src));
+    const pgids = liveProcesses(session).flatMap((p) =>
+      p.key === p.pgid && p.key !== 0 && srcs.has(p.origSrc) ? p.pgid : [],
+    );
+    if (pgids.length === 0) continue;
+    sessionApi.kill(session.key, pgids, { GROUP: true, SIGINT: true });
+    sessionApi.writeMsg(session.key, `autorun ${ansi.White}stopped: ${why}`, "info");
+  }
+}
+
+/** The World's prelude entries, substituted, by the tty each runs in */
+function entriesByTty(worldKey: string) {
+  const { subs } = preludeApi.get(worldKey);
+  const worldTty = worldTtyOf(worldKey);
+  const entries = preludeApi.entries(worldKey).map((entry) => {
+    const own = subs?.[entry.id];
+    return { ...entry, src: substitute(entry.src, own), comment: substitute(entry.comment, own) };
+  });
+  return Map.groupBy(entries, (x) => x.sessionKey ?? worldTty);
 }
 
 /** Its comment's first line, else its command's */

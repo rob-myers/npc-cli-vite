@@ -42,6 +42,7 @@ export function createShieldResources() {
 
   // additive over a dark floor — `Shields.syncTheme` lays it over a pale one instead
   const mat = new THREE.MeshBasicNodeMaterial({
+    name: "shield",
     transparent: true,
     depthWrite: false,
     forceSinglePass: true,
@@ -51,6 +52,7 @@ export function createShieldResources() {
   const mesh = new THREE.Mesh(geo, mat);
   /** Its frame is laid OVER what is behind, being dark, and writes depth: its near bars hide its far ones */
   const frameMat = new THREE.MeshBasicNodeMaterial({
+    name: "shield-frame",
     transparent: true,
     forceSinglePass: true,
     side: THREE.DoubleSide,

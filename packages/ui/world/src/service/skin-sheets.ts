@@ -58,8 +58,7 @@ export function loadSkinSliceSheets(
       if (eyes === undefined || skin === undefined) return;
       // the face front, an eighth of the skin in from its corner
       const { x, y, width, height } = skin.rect;
-      const faceCt = Object.assign(document.createElement("canvas"), { width: slice, height: slice }).getContext("2d");
-      if (faceCt === null) return;
+      const faceCt = cpuContext(slice, slice);
       faceCt.imageSmoothingEnabled = false;
       faceCt.drawImage(
         await skinSheets[skin.sheetId],
@@ -178,8 +177,8 @@ async function loadSheets(
   if (!import.meta.env.DEV) {
     return Promise.all(dims.map((_, i) => loadImage(getSheetUrl(sheets, `${name}.${i}.png`, cacheBust))));
   }
-  const canvases = dims.map((dim) => Object.assign(document.createElement("canvas"), dim));
-  const cts = canvases.map((canvas) => canvas.getContext("2d") as CanvasRenderingContext2D);
+  const cts = dims.map(({ width, height }) => cpuContext(width, height));
+  const canvases = cts.map((ct) => ct.canvas);
   for (const ct of cts) ct.imageSmoothingEnabled = false;
   await Promise.all(draw(cts));
   // the dev server writes `public/sheet/{name}.{sheetId}.png`
@@ -204,11 +203,20 @@ async function rasterSkinSvg(svgPath: string, cacheBust: string, size: number) {
   }
   const svg = new XMLSerializer().serializeToString(doc.documentElement);
   const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-  const canvas = Object.assign(document.createElement("canvas"), { width: size, height: size });
-  canvas.getContext("2d")?.drawImage(await loadImage(url), 0, 0, size, size);
+  const ct = cpuContext(size, size);
+  ct.drawImage(await loadImage(url), 0, 0, size, size);
   URL.revokeObjectURL(url);
-  svgRasters.set(svgPath, { version, canvas });
-  return canvas;
+  svgRasters.set(svgPath, { version, canvas: ct.canvas });
+  return ct.canvas;
+}
+
+/**
+ * A canvas kept on the CPU. Its pixels are read on the CPU, e.g. drawn into `texSkin`, so a
+ * GPU one would be read back synchronously: ~200 ms on every DEV load.
+ */
+function cpuContext(width: number, height: number) {
+  const canvas = Object.assign(document.createElement("canvas"), { width, height });
+  return canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D;
 }
 
 /** A 32-bit FNV-1a hash of `text`, to tell one version of an svg from another */

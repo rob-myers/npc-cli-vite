@@ -62,9 +62,14 @@ export function createBeamResources() {
   // additive, glowing over a dark floor — `Phasers.syncTheme` lays them over a pale one instead
   const glowOpts = { depthWrite: false, forceSinglePass: true, blending: THREE.AdditiveBlending };
   const mats = [
-    new THREE.MeshBasicNodeMaterial({ transparent: true, ...glowOpts, side: THREE.DoubleSide }),
+    new THREE.MeshBasicNodeMaterial({
+      name: "phaser-beam-glow",
+      transparent: true,
+      ...glowOpts,
+      side: THREE.DoubleSide,
+    }),
     // seen through whomever it is in, e.g. a body part targeted from their far side
-    new THREE.MeshBasicNodeMaterial({ transparent: true, ...glowOpts, depthTest: false }),
+    new THREE.MeshBasicNodeMaterial({ name: "phaser-beam-core", transparent: true, ...glowOpts, depthTest: false }),
   ];
   const mesh = new THREE.Mesh(geo, mats);
   mesh.frustumCulled = false;

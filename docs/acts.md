@@ -23,7 +23,7 @@ A walk that stalls, e.g. blocked by the player, is given up.
 
 An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused by hand or by the Jsh pane, the npc stops, and walks or looks on once resumed. Its waits count only whilst it runs, through its `Task` (`docs/tasks.md`). A kill stops every npc it moves.
 
-`sees` asks who sees whom: see `docs/perception.md`.
+`seen` asks who sees whom, and `watch` follows it: see `docs/perception.md`.
 
 ## Parked, padded and other predicates
 

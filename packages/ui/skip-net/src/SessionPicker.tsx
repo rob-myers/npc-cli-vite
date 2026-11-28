@@ -42,7 +42,7 @@ export function SessionPicker(props: Props) {
             options={ttyMetas.map((x) => x.sessionKey)}
             onChange={(sessionKey) => state.setWindow(win.id, { sessionKey })}
             title={onScreen ? "the session commands run in" : `${ttyMeta.sessionKey} is not on screen`}
-            className={cn(titlePickerClass, !onScreen && offScreenClass)}
+            className={cn(titlePickerClass, "shrink-0", !onScreen && offScreenClass)}
             popupClassName={titlePickerPopupClass}
           />
           {!onScreen && (
@@ -61,7 +61,7 @@ export function SessionPicker(props: Props) {
 /** Amber, its tty being a hidden tab or in a hidden pane */
 const offScreenClass = tw("text-amber-700 dark:text-amber-400");
 const offScreenButtonClass = tw(
-  "skip-net-no-drag h-3.5 px-1 text-[11px] leading-none cursor-pointer text-mac-text hover:bg-mac-select/15",
+  "skip-net-no-drag shrink-0 h-3.5 px-1 text-[11px] leading-none cursor-pointer text-mac-text hover:bg-mac-select/15",
 );
 
 type Props = {

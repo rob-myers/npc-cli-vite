@@ -60,6 +60,8 @@ The World is paused while it loads, so autorun's world commands start paused by 
 
 If you switch autorun on after the page has loaded, nothing runs until the next page load, remount or reboot.
 
+**A World joined to another as a client** stops its autorun, as the server moves its npcs (`docs/web-rtc-worlds.md`). On `net-changed` the pill kills the jobs running an entry's command (`stopPrelude`), and its tty prints `autorun stopped: mirroring a server`. Other jobs are left be. Once it leaves, autorun runs again. A boot that finishes after the World joined is stopped too.
+
 The remembered World objects are kept in a `Map` outside React, because a World remount also remounts its pill. A hot reload of `run.ts` empties the `Map`. The next remount is then treated as a page load: autorun runs, and skips any command that is still running.
 
 ## Which tty

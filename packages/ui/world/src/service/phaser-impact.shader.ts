@@ -48,6 +48,7 @@ export function createImpactResources() {
 
   // as the beams: added over a dark deck, laid over a pale one. Seen through whom it met, as the ball is
   const mat = new THREE.MeshBasicNodeMaterial({
+    name: "phaser-impact",
     transparent: true,
     depthWrite: false,
     depthTest: false,

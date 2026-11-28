@@ -11,6 +11,12 @@ spawn npc:rob at:$( pick 1 ) as:ra-0
 # spawn npcs foo-0, foo-1 etc.
 pick | spawn npc:foo- as:postdoc-0
 
+# skins in turn: postdoc-0, postdoc-1 etc.
+pick | spawn npc:foo- as:postdoc
+
+# skins in turn from a list
+pick | spawn npc:foo- as:d-0,medic-1,ra-2
+
 # two picks per spawn (at, facing)
 pick | spawn npc:test as:postdoc-0 --facing
 ```

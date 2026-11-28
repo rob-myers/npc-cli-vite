@@ -13,16 +13,32 @@ const loadRun = () => import("./run");
 export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
   const state = useStateRef(
     (): State => ({
+      client: false,
       open: false,
       step: null,
 
       async boot(task) {
         try {
           await task();
+          if (w.client === true) (await loadRun()).stopPrelude(w.key, "mirroring a server"); // joined meanwhile
         } catch (e) {
           error(e);
         } finally {
           state.set({ step: null });
+        }
+      },
+      busyLabel() {
+        if (state.step !== null) return state.step;
+        if ((w.e?.bootedAt ?? 0) === 0) return preludeApi.get(w.key).autorun === true ? "booting" : "loading";
+        return w.isMapChanging() ? "loading" : null;
+      },
+      onNetChanged() {
+        if (w.client === state.client) return;
+        state.client = w.client;
+        if (w.client === true) {
+          void loadRun().then(({ stopPrelude }) => stopPrelude(w.key, "mirroring a server"), error);
+        } else if (state.step === null) {
+          state.boot(async () => (await loadRun()).runPrelude(w.key));
         }
       },
       reboot() {
@@ -45,13 +61,17 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
 
   useEffect(() => {
     const sub = w.events.subscribe({
-      next: (e) => (e.key === "map-changing" || e.key === "map-settled") && state.update(),
+      next: (e) => {
+        if (e.key === "map-changing" || e.key === "map-settled") state.update();
+        else if (e.key === "net-changed") state.onNetChanged();
+      },
     });
     return () => sub.unsubscribe();
   }, [w]);
 
-  const label = state.step ?? (w.isMapChanging() ? "loading" : "paused");
-  const ready = label === "paused";
+  const busy = state.busyLabel();
+  const ready = busy === null;
+  const label = busy ?? "paused";
 
   return (
     <div
@@ -78,7 +98,7 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
               ready ? "cursor-pointer hover:text-yellow-100" : "opacity-60",
             )}
           >
-            {state.step === null ? (
+            {ready ? (
               <PlayIcon className="size-4 shrink-0" weight="fill" />
             ) : (
               <div className="size-3.5 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
@@ -117,11 +137,20 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
 }
 
 type State = {
+  /** Was the World a client at the last `net-changed`? */
+  client: boolean;
   /** Is the autorun row shown? */
   open: boolean;
   /** What runs, e.g. "booting" or a reboot's step, shown with a spinner */
   step: null | string;
   /** Runs `task` with a spinner, cleared after */
   boot(task: () => Promise<void>): Promise<void>;
+  /**
+   * What the pill says whilst the World is not ready, else `null`: a reboot's step, else until booted
+   * "booting" with autorun or "loading" without, else "loading" whilst the map changes.
+   */
+  busyLabel(): null | string;
+  /** A client stops its autorun, as the server moves its npcs. Back on its own, it runs it again */
+  onNetChanged(): void;
   reboot(): void;
 };

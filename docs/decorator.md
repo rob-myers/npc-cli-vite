@@ -109,7 +109,8 @@ removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor
 
 A right-click on any decor, static or runtime, opens its menu whilst the debug **context menu** is on
 (a long press on touch). It is a `PickMenu`, pinned beside the decor until closed: its type, img,
-room and `meta`, and for runtime decor **shown** and a two-press **delete**. A plain click stays a
+room and `meta`, and for runtime decor **shown** and a two-press trash can, its border red between. An npc's menu has
+the same trash can, removing them. A plain click stays a
 pick for e.g. `pick | decor`. Its fields are edited here in the Decorator, not in the World.
 
 It is rendered by `<Debug>`, so needs neither the panel nor a terminal.

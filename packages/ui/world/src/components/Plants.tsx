@@ -164,6 +164,7 @@ export default function Plants() {
       frustumCulled={false}
     >
       <meshBasicNodeMaterial
+        name="plants"
         key={material.uid}
         side={THREE.DoubleSide}
         positionNode={material.positionNode}

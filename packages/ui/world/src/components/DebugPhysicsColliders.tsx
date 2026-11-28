@@ -30,6 +30,7 @@ export function DebugPhysicsColliders({
     <>
       <InstancedColliders items={cuboids} geometry={boxGeometry}>
         <meshStandardNodeMaterial
+          name="debug-colliders"
           key={uid}
           map={tex}
           transparent
@@ -39,7 +40,12 @@ export function DebugPhysicsColliders({
         />
       </InstancedColliders>
       <InstancedColliders items={circles} geometry={cylinderGeometry}>
-        <meshBasicMaterial transparent opacityNode={opacityWhenPicking(0.025)} depthWrite={false} />
+        <meshBasicMaterial
+          name="debug-colliders-pick"
+          transparent
+          opacityNode={opacityWhenPicking(0.025)}
+          depthWrite={false}
+        />
       </InstancedColliders>
     </>
   );

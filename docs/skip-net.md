@@ -13,13 +13,13 @@ A dithered desk with a floating toolbar, icons and windows (`desktop/Desktop.tsx
 - **Tab zoom.** The grid's position strategy is scaled by its tab's zoom (`zoomedStrategy`). Else a press shifts the window, and a drag outruns the pointer.
 - **Saving.** A window's place is saved when a drag or resize ends (`saveLayout`), never during one. The grid's layout is memoised on geometry alone, so fronting a window leaves it be.
 - **Desktop icons** sit at the top-right of what is in view, under every window (`DesktopIcons`): **files**, **chat**, and each World item mounted. A double-click opens one, as does a tap, but not a scroll (`tapSlopPx`).
-- **The files folder** (`FolderWindow`) is a tree of the article folders (`articleFolders`), **video** then **npc**: name, when modified, and size (once wide enough). A click on a folder opens or closes it in place, saved as the window's `openFolders` (unset, all open). A click on an article opens it, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build. The plugin is imported as a package, so editing it needs a dev server restart.
+- **The files folder** (`FolderWindow`) shows one article folder (`articleFolders`), **video**, **npc** or **scp**, chosen from a favourites bar under its title. It lists its articles: name, when modified, and size (once wide enough). It is saved as the window's `folder` (unset or stale, the first). A click on an article opens it, fronting the window already showing it, else opening a new one. Sizes and dates come from `virtual:skip-net-articles` (`vite-plugin-skip-net-articles`): file times in DEV, last commit times in a build. The plugin is imported as a package, so editing it needs a dev server restart.
 
 ## Windows
 
 `meta.windows` holds each window (`SkipNetWindow`). A new SkipNet opens the files folder and `npc-controls`, which a narrow panel stacks one above the other. Each window has its grid place `x`, `y`, `w`, `h`, its `z`, and what it shows (`SkipNetContent`). A `kind` is `folder`, `article`, `item` or `chat`. A saved `jobs` or `library` window is dropped: jobs are shown in their tty (`docs/jsh-jobs.md`), and the library's examples are articles.
 
-- **Title bar.** It is the drag handle (`skip-net-drag`), with its windowshade and close boxes on the right (`skip-net-no-drag`). Every bar is 28px, or stacked on touch 48px. An article's title is a picker of every article. The close box shows an x, and a first press arms it red: a second within `confirmMs` closes the window.
+- **Title bar.** It is the drag handle (`skip-net-drag`), with its windowshade and close boxes on the right (`skip-net-no-drag`). Every bar is 28px, or stacked on touch 48px. An article's title is a picker of every article. Its dropdown starts with a segment per folder, each on at first: one turned off hides its articles, saved per window (`hiddenFolders`). The close box shows an x, and a first press arms it red: a second within `confirmMs` closes the window.
 - **Windowshade** rolls a window up to its bar, keeping its height in `shadedH`. Its box rolls it up. Rolled up, its box is greyed: a tap on its bar, not a drag, rolls it down. With a mouse, a double-click on its bar rolls it up or down instead, a single click only fronting it. A rolled-up bar overflows its one row, past the gap below.
 - **Resizing.** A window resizes from any edge or corner. Only the bottom-right grow box is drawn, larger on touch. The rest are invisible strips (`desktop/desktop.css`).
 - **Session picker.** An article window picks its tty in its title bar (`SessionPicker`, through `InTitle`), with a spinner whilst a run starts and "awaits {world}" whilst its World is not open.
@@ -56,6 +56,8 @@ An article has a key, e.g. `npc-controls`, unique across the folders of `src/art
 
 - `{folder}/{key}.mdx`, its own file, shown first. It may be missing.
 - `{folder}/{key}/*.mdx`, its sections, shown after in name order, e.g. `npc-controls/001-device-input.mdx`. The name only orders a section: a heading is its own `# …`.
+
+A file may say where it comes from, e.g. `export const source = { "SCP Wiki": "https://…" }`: its window's title bar shows "source", a press listing its links, the first file's that has one (`PartSource`). Links leaving an article open in a new tab.
 
 Each file is shown in a frame of its own. Its sections share its key, so one window, chat thread, fence ids and folder entry (sizes summed, the newest date). They replaced the jobs library and the blog, and may replace items.
 

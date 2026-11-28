@@ -1,13 +1,16 @@
 import statsByKey from "virtual:skip-net-articles";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { type ComponentType, createElement, Fragment, type LazyExoticComponent, lazy } from "react";
-import { PartDates } from "./article/PartDates";
+import { PartDates, PartSource } from "./article/PartDates";
+import { InTitle } from "./desktop/InTitle";
 
 export type ArticleComponents = Record<string, ComponentType<any>>;
 type ArticleContent = ComponentType<{ components?: ArticleComponents }>;
+/** An mdx file: its content, and where it comes from if it says, e.g. `export const source = { "SCP Wiki": "https://…" }` */
+type ArticleModule = { default: ArticleContent; source?: Record<string, string> };
 
 /** An article's own `{folder}/{key}.mdx`, and its sections `{folder}/{key}/*.mdx`. Each is a chunk, fetched when first shown */
-const loaders = import.meta.glob<{ default: ArticleContent }>(["./articles/*/*.mdx", "./articles/*/*/*.mdx"]);
+const loaders = import.meta.glob<ArticleModule>(["./articles/*/*.mdx", "./articles/*/*/*.mdx"]);
 type Loader = (typeof loaders)[string];
 /** Each key's files: its own first, then its sections by name. Without `.mdx`, `{key}` sorts before `{key}/…` */
 const keyToLoaders = new Map<string, { part: string; load: Loader }[]>();
@@ -18,7 +21,7 @@ for (const path of Object.keys(loaders).sort((a, b) => (a.slice(0, -4) < b.slice
 const keyToFolder = new Map(Object.keys(loaders).map((path) => [toKey(path), toFolder(path)]));
 
 /** Folder order. Unlisted folders follow, alphabetically */
-const folderOrder = ["video", "npc"];
+const folderOrder = ["video", "npc", "scp"];
 
 // biome-ignore format: emphasis
 /** Article order within a folder. Unlisted articles follow, alphabetically */
@@ -87,17 +90,19 @@ export function getArticle(key: string): undefined | LazyExoticComponent<Article
   return Content;
 }
 
-/** Each file in a `section` of its own, which `ArticlePane` frames, headed by its own dates */
+/** Each file in a `section` of its own, which `ArticlePane` frames, headed by its own dates. The first source goes in the title bar */
 function Sections(
   key: string,
   loads: { part: string }[],
-  ms: { default: ArticleContent }[],
+  ms: ArticleModule[],
   props: { components?: ArticleComponents },
 ) {
   const parts = statsByKey[key]?.parts;
+  const source = ms.find((m) => m.source !== undefined)?.source;
   return createElement(
     Fragment,
     null,
+    source && createElement(InTitle, { key: "source", children: createElement(PartSource, { source }) }),
     ...ms.map((m, i) =>
       createElement(
         "section",

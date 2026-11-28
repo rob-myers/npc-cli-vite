@@ -372,6 +372,7 @@ export default function Obstacles(_props: Props) {
 
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardNodeMaterial({
+      name: "obstacle-skirts",
       side: THREE.FrontSide, // 1 draw call
       transparent: true,
     });
@@ -458,6 +459,7 @@ export default function Obstacles(_props: Props) {
         </bufferGeometry>
 
         <meshStandardNodeMaterial
+          name="obstacles"
           key={material.uid}
           side={THREE.FrontSide} // 1 draw call
           transparent

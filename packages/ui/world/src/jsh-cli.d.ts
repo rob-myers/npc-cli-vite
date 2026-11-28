@@ -313,8 +313,8 @@ declare namespace JshCli {
     //  */
     // as?: string | Record<string, SkinReMapValue>;
     /**
-     * A skin's key or prefix e.g. `robot-0` or `r`,
-     * we'll use the first match, else defaultSkinKey.
+     * A skin's key, else a prefix e.g. `r`, else defaultSkinKey.
+     * A piped `spawn` cycles through a prefix's matches.
      */
     as?: string;
     /** Spawned dead, lying in this clip, else `true` for one by their posture. Off the navmesh too */

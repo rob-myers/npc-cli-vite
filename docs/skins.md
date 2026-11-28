@@ -16,6 +16,7 @@ Its `meta.eyes` is where the skin's eyes are, found in the png: see `docs/skin-s
 
 `spawn` takes a skin by key or prefix, e.g. `spawn rob at:[2,0,3] as:r`: the first skin whose
 key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaultSkinKey`.
+A piped `spawn` takes each skin of a prefix in turn, e.g. `pick 3 | spawn npc:d- as:d`, or of a list, `as:d-0,medic-1`.
 
 ## Sheets
 
@@ -97,6 +98,8 @@ remaps each npc by key when the skins change (`NPCs.tsx`).
   - The chest narrows half as much as the hips and stomach, keeping the shoulders. The arms keep their axes, a little away from the chest. The legs follow the hips in.
   - `headDepth=0.7` makes the head shallower front to back, its face kept where it is (`scp-106`).
   - `taper=0.35` narrows each limb toward its end to that share, and the torso toward the hips half as much (`scp-650`).
+  - `armTaper=0.75` narrows the arms alone, else they take `taper` (`d-2`).
+  - `headTop=0.7` narrows the head toward its top, e.g. a hood (`cultist-0`). Never round a head by masking its base: the texels cut away are holes.
   - `head=1.3` scales the head about its base, the neck (`scp-017`). It keeps its proportions under `height`, which would otherwise squash or stretch it.
   - `stoop=0.1` leans all above the waist forward and down, by that share of its height, each arm moved whole by its shoulder (`scp-1000`).
   - `agentRadius=1.5` makes their crowd agent that much wider (`npc.agentRadius`), so the crowd keeps others off a big body (`scp-1000`). Below `1` it is narrower, e.g. `scp-017`'s `0.65`, matching its `scale`. It is capped at half the crowd's neighbour range (`collisionQueryRange`): the crowd only parts two agents it finds as neighbours, so their radii must add up to no more than that.
@@ -190,7 +193,9 @@ In skin pixels, as `[x, y]` of a face's top-left corner. Multiply by 4 in the sv
   - A gamma or scale filter darkening pale cloth turns it another colour, e.g. pale cyan into teal. Avoid it when the colour is the point.
   - Put `mix-blend-mode` on the clipped group itself. A clip isolates the group, so children blending inside it see an empty backdrop, and paint grey.
 - A skin needing only a little form takes one subtle multiply group over every face of its body and limbs, base and overlay, clipped to their opaque texels (`form-body`), and a lighter one over its head (`form-head`), as `ra-{1,2}` and `postdoc-{1,2}`.
-- Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form. Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
+- Bare skin takes d-0's per-face shading (its `suit` group), which gives limbs their form.
+  - Bare forearms under `#punch` read near white. Clip a warm multiply, a faint mottle and that shading to their texels, with a shadow under the sleeve hem (`d-2`'s `arm skin`).
+- A fringe on the head overlay reaching the brow row hides the eyes, as the camera looks down. End it a row higher (`d-2`). Leave a dark skin out of the contrast filter, which crushes it to black (`d-3`).
 - A D-class suit is grey, whatever the download's colour. It is greyed (`saturation`), darkened (`multiply`) and blotched (`#blotches`), as d-0's is, all clipped to its own suit texels (`suit-pale`, a rect per run).
   - A pale download reads faded beside d-0 and d-1. Raise its contrast and saturation by a filter on its `<image>` (`#punch`), and darken its suit's multiply, e.g. `#707070` (`d-4`).
 - A face is shaded as d-0's is, over its own features: darker toward its sides, under the fringe and at the chin. A pale face takes d-0's front spotlight faintly, else it is blown out (`d-4`).

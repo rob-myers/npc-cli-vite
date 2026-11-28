@@ -797,8 +797,9 @@ export default function Decor() {
         );
 
       // one draw, not two: it writes depth and discards by `alphaTest`, so back and front need no ordering
-      const createMaterial = () =>
+      const createMaterial = (name: string) =>
         new THREE.MeshStandardNodeMaterial({
+          name,
           side: THREE.DoubleSide,
           forceSinglePass: true,
           transparent: true,
@@ -808,7 +809,7 @@ export default function Decor() {
       /** A cuboid's sides, then its top — see `createUnitBox` */
       const createTexMaterials = (typeId: number) => {
         // black unless `meta.sides` says otherwise: the fade only takes them out of the pick. A point has none
-        const sides = createMaterial();
+        const sides = createMaterial("decor-sides");
         /** Flat shading by the camera: a face seen edge-on is darkest, so the faces tell apart */
         const facing = normalWorld
           .dot(cameraPosition.sub(positionWorld).normalize())
@@ -827,7 +828,7 @@ export default function Decor() {
             w.view.withPickOutput(typeId),
           ),
         );
-        const top = createMaterial();
+        const top = createMaterial("decor-tops");
         top.colorNode = lit(texNode.mul(vec4(0.4, 0.4, 0.4, 1)));
         // opaque, else blending scrambles the id — and a transparent icon is hard to pick
         top.outputNode = shadeWhenHidden(w.view.withPickOutput(typeId, 1));
@@ -835,7 +836,7 @@ export default function Decor() {
       };
 
       const createShapeMaterial = (typeId: number) => {
-        const material = createMaterial();
+        const material = createMaterial("decor-shapes");
         material.colorNode = lit(vec4(1, 1, 1, 1)); // white, so `output` carries the instance colour
         material.outputNode = shadeWhenHidden(
           buildShapeOutputNode(w.view.withPickOutput(typeId, 1), w.view.objectPick),

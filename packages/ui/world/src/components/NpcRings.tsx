@@ -423,7 +423,12 @@ function createRingResources(
   const baseAlpha = band.mul(opacity).mul(rgba.w);
   const alpha = objectPick.notEqual(0).select(float(0), baseAlpha);
 
-  const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
+  const ringMat = new THREE.MeshBasicNodeMaterial({
+    name: "npc-rings",
+    transparent: true,
+    depthWrite: false,
+    side: THREE.FrontSide,
+  });
   ringMat.vertexNode = clipPos;
 
   const colorNode = vec4(rgba.xyz, alpha.mul(fold));
