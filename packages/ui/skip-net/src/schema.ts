@@ -33,8 +33,8 @@ export type SkipNetWindow = SkipNetContent & {
   stackOrder?: number;
   /** Its height is fitted to its article once shown, then this is cleared */
   fit?: boolean;
-  /** The files window's open folders. Unset, every folder is open */
-  openFolders?: string[];
+  /** The files window's chosen tab, a folder. Unset, the first */
+  folder?: string;
 };
 
 export const SkipNetUiMetaSchema = z.object({
