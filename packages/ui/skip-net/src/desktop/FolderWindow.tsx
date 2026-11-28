@@ -15,13 +15,10 @@ export function FolderWindow({ win }: { win: SkipNetWindow }) {
   const state = useContext(SkipNetContext);
   /** A stale folder falls back to the first */
   const chosen = articleFolders.find((x) => x.key === win.folder) ?? articleFolders[0];
-  const count = chosen?.articleKeys.length ?? 0;
 
   return (
     <div className="size-full flex flex-col">
-      <InTitle>
-        <span className="text-mac-muted">{count === 1 ? "1 item" : `${count} items`}</span>
-      </InTitle>
+      <FolderCount win={win} />
       <nav aria-label="folders" className={favouritesClass}>
         {articleFolders.map((folder) => (
           <button
@@ -62,6 +59,16 @@ export function FolderWindow({ win }: { win: SkipNetWindow }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** How many articles its chosen folder holds, in its title bar, whether or not it is folded */
+export function FolderCount({ win }: { win: SkipNetWindow }) {
+  const count = (articleFolders.find((x) => x.key === win.folder) ?? articleFolders[0])?.articleKeys.length ?? 0;
+  return (
+    <InTitle>
+      <span className="text-mac-muted">{count === 1 ? "1 item" : `${count} items`}</span>
+    </InTitle>
   );
 }
 

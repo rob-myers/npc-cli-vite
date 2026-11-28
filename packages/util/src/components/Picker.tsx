@@ -17,6 +17,8 @@ export function Picker<T extends string>(props: {
   optionAction?: { title: string; icon(value: T): ReactNode; onAction(value: T): void };
   /** An icon before an option, not a button */
   optionIcon?(value: T): ReactNode;
+  /** Above the options, kept in view as they scroll, e.g. filters. Its presses choose nothing */
+  header?: ReactNode;
   title?: string;
   /** Where `title` shows, `top` by default */
   titleSide?: ComponentProps<typeof Tip>["side"];
@@ -79,6 +81,16 @@ export function Picker<T extends string>(props: {
               "bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300",
             )}
           >
+            {props.header !== undefined && (
+              <div
+                className="sticky -top-1 z-1 -mt-1 mb-1 bg-inherit"
+                onPointerDown={stopPropagation}
+                onPointerUp={stopPropagation}
+                onMouseUp={stopPropagation}
+              >
+                {props.header}
+              </div>
+            )}
             {options.map(({ value, label }) => (
               <Select.Item
                 key={value}

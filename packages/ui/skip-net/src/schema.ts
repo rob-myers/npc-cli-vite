@@ -35,6 +35,8 @@ export type SkipNetWindow = SkipNetContent & {
   fit?: boolean;
   /** The files window's chosen tab, a folder. Unset, the first */
   folder?: string;
+  /** An article window's picker leaves out these folders' articles. Unset, none */
+  hiddenFolders?: string[];
 };
 
 export const SkipNetUiMetaSchema = z.object({
