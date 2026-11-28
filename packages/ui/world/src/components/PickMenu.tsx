@@ -1,6 +1,6 @@
 import { cn, Tip, tw, useStateRef } from "@npc-cli/util";
 import { Picker } from "@npc-cli/util/picker";
-import { PushPinIcon, TargetIcon } from "@phosphor-icons/react";
+import { PushPinIcon, TargetIcon, TrashIcon } from "@phosphor-icons/react";
 import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect, useState } from "react";
 import * as THREE from "three/webgpu";
 import { doorHeight } from "../const.env";
@@ -529,6 +529,7 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
             {item.text}
           </Toggle>
         ))}
+        <DeleteButton label="remove" onDelete={() => (w.e.removeNpcs(npcKey), w.r3f?.invalidate())} />
       </div>
       {npcKey === w.player?.key && <BreathControls w={w} />}
     </>
@@ -629,8 +630,8 @@ function Toggle({
   );
 }
 
-/** Deletes on a second press, made within `confirmMs` */
-function DeleteButton({ onDelete }: { onDelete(): void }) {
+/** A trash can deleting on a second press, made within `confirmMs`. Its border is red between them */
+function DeleteButton({ label = "delete", onDelete }: { label?: string; onDelete(): void }) {
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
@@ -640,12 +641,15 @@ function DeleteButton({ onDelete }: { onDelete(): void }) {
   }, [confirming]);
 
   return (
-    <Button
-      className={cn(actionClass, "text-red-300", confirming && "ring-1 ring-red-400")}
-      onClick={() => (confirming ? onDelete() : setConfirming(true))}
-    >
-      {confirming ? "confirm" : "delete"}
-    </Button>
+    <Tip content={label}>
+      <Button
+        aria-label={label}
+        className={cn(actionClass, "flex items-center text-red-300", confirming && "ring-1 ring-red-500")}
+        onClick={() => (confirming ? onDelete() : setConfirming(true))}
+      >
+        <TrashIcon className="size-3" weight="bold" />
+      </Button>
+    </Tip>
   );
 }
 
