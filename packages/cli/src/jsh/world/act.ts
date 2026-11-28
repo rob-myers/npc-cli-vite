@@ -561,7 +561,7 @@ async function hidingSpot(ctx: Ctx, opts: Opts, skip: string[], strict: boolean)
 }
 
 /**
- * Why `from` may see them, or they are within `away` metres, else `null`. By lines from their eyes, as `sees --los`.
+ * Why `from` may see them, or they are within `away` metres, else `null`. By lines from their eyes, as `seen --los`.
  * `strict`, by the lists over every spot they are at, their rooms' doors open, also from where `from` are headed
  */
 async function seenWhy(ctx: Ctx, opts: Opts, strict: boolean) {

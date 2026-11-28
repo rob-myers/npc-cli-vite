@@ -20,7 +20,7 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 
 - **The npcs a batch names** are snapshotted as it is sent: their point, and their rooms (both sides in a doorway).
 - **The queries** (`WW.SpotQuery` in `jsh-worker.d.ts`): `of`, `get`, `list`, `sees`, `seenBy`, `at`, `hide`, `hidden`, `makeWay`, `view` and `explain`.
-- **Callers**: `act.ts`, `spot.ts` (jsh `spots`, `spot`, `sees`) and `sidestep.ts`.
+- **Callers**: `act.ts`, `spot.ts` (jsh `spots`, `spot`, `seen`, `watch`) and `sidestep.ts`.
 
 ## Setup and doors
 
@@ -46,9 +46,11 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 - **Sitting or lying,** an npc is at the doable they use (`w.npc.npcToDoable`, sent as `doAt`), if it has an arc.
 - **Rooms in view** (`seeRooms`) come from `w.e.roomsInView`, which walks the room graph through doors seen through. It is cached by room until a door changes.
 
-## `sees` with an npc
+## `seen` and `watch` with an npc
 
-`sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. `--los` asks for line of sight alone, ignoring eyes and facing, e.g. `sees --los --all abe ben`. Both exit 1 if none, for `if` and `while`.
+`seen abe cal by:rob` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `seen cal by:abe,ben` says which of `abe` and `ben` see `cal`. With several on both sides, e.g. `seen abe ben cal by:abe,ben,cal`, it gives each pair `a b` where `a` sees `b`, never one with themself. `--los` asks for line of sight alone, ignoring eyes and facing, e.g. `seen --los abe by:ben`. It exits 1 if none, for `if` and `while`.
+
+`watch abe cal with:rob` runs until killed: each pair as `{ a, b, sees }` at first, then again as that changes, looked at every quarter game second. `watch scp-173 with:d-0,d-1` watches who sees one. An npc removed sees and is seen by none.
 
 ![sees, step by step](perception/sees-steps.svg)
 
@@ -61,7 +63,7 @@ Each step only runs if the one before leaves it open:
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
 - **Its key:** each npc's name, position to the centimetre, posture and crouch (a spot's is its key), then the doors' revision. Any door opening or shutting, or a new setup, bumps that revision, so every earlier answer goes unused.
 - **What it serves:** only those standing still. Anyone walking moves more than a centimetre a tick, so is always worked out afresh. Coarser steps (a quarter metre, then 5 cm) gave wrong answers near a wall's edge, where sight changes within a step.
-- **Who uses it:** `sees` between npcs (`seesNow`) reads it first, and stores what it works out. `hide`, `hidden`, `view` and `sees --debug`'s `explain` never touch it.
+- **Who uses it:** `seen` and `watch` between npcs (`seesNow`) read it first, and store what they work out. `hide`, `hidden`, `view` and `watch --debug`'s `explain` never touch it.
 - **Its size:** 2000 answers. When full, the oldest goes.
 - Step 1, eyes and facing, is on main and never cached.
 
@@ -70,7 +72,7 @@ Each step only runs if the one before leaves it open:
 - **Unsafe** is every spot the watchers' spots may see by the lists, as the doors stand. So are those seen from where they are walking to.
 - **`hide`** picks the best spot not unsafe, with no lines. With `strict`, as jsh `act hide` asks, every spot it would count as at must be unsafe-free with its room's doors open, as the hider opens one going in or stands by one.
 - **`hidden`** asks whether none of the hider's spots are unsafe, their rooms' doors open: `act hide`'s judgement on arrival. It names those seen.
-- jsh `act avoid` picks with `hide` alone, and judges on arrival by lines from the watchers' eyes (`explain`, as `sees --los`).
+- jsh `act avoid` picks with `hide` alone, and judges on arrival by lines from the watchers' eyes (`explain`, as `seen --los`).
 
 ## Across hull doors
 
@@ -87,4 +89,4 @@ Each step only runs if the one before leaves it open:
 - The default profile runs `spots auto`, which runs `spots show` once the overlay is turned on (event `spots-overlay`), or at once if it was left on. Until then it costs nothing.
 - A right click on one, or a long press on touch, chooses it in an open Decorator alone (event `spot-chosen`), which says "decorator selected" on the player's bar. The overlay still colours from the player, and the Decorator's own choice never reaches it. A press walks there, as on the floor.
 
-**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every tick whilst it draws rays, as they follow the heads, else every quarter game second. An npc removed meanwhile is `gone`, and picked up again if they return. `--los` ignores eyes and facing, `--all` takes every ordered pair.
+**`watch --debug b with:a`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every tick whilst it draws rays, as they follow the heads, else every quarter game second. An npc removed meanwhile is `gone`, and picked up again if they return. `--los` ignores eyes and facing. It takes spots too.

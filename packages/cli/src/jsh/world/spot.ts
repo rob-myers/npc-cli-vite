@@ -36,41 +36,60 @@ export async function* spots(ct: JshCli.RunArg) {
 }
 
 /**
- * Npcs: those the first sees, or with `--all` each ordered pair `a b` where `a` sees `b`. Exits 1 if none.
- * `--los` asks for line of sight alone, whatever their eyes and facing.
- * `--debug` says why, then again as that changes, drawing the rays it needed, until killed.
- * Spots: whether one sees another, doors shut, else the door it would through. Alone, every spot it sees
+ * Npcs: those of the operands whom `by` sees, else of `by` who see a lone operand, else each pair `a b`. Exits 1 if none.
+ * `by` is comma-separated. `--los` asks for line of sight alone, whatever their eyes and facing.
+ * Spots: whether `by` sees one, doors shut, else the door it would through. Alone, every spot it sees
  *
  * ```sh
- * sees rob abe cal
- * sees --all abe ben cal
- * sees --los --all abe ben
- * sees --debug rob kate
- * sees g0r4-0 g0r4-7
- * sees g0r4-0
+ * seen abe cal by:rob
+ * seen cal by:abe,ben
+ * seen abe ben cal by:abe,ben,cal
+ * seen --los abe by:ben
+ * seen g0r4-7 by:g0r4-0
+ * seen by:g0r4-0
  * ```
  */
-export async function* sees(ct: JshCli.RunArg) {
-  const flags = { "--all": "all", "--los": "los", "--debug": "debug" };
-  const { all, los, debug } = ct.api.jsArg(ct.args, flags) as { all?: boolean; los?: boolean; debug?: boolean };
-  const keys = ct.args.filter((arg) => arg.startsWith("-") === false);
-  const [a, b] = keys;
-  if (a === undefined) throw Error("expected npcs or spots");
-  if (debug === true) {
-    if (b === undefined) throw Error("expected two npcs or spots");
-    yield* watchSight(ct, pairsOf(keys, all === true), los === true);
+export async function* seen(ct: JshCli.RunArg) {
+  const { by, los } = ct.api.jsArg(ct.args, { "--los": "los" }) as { by?: string | string[]; los?: boolean };
+  const [watchers, targets] = [keysOf(by), operandsOf(ct.args)];
+  if (watchers.length === 0) throw Error("usage: seen [--los] key… by:key,…");
+  if (targets.length > 0 && [...watchers, ...targets].every((key) => ct.w.n[key] !== undefined)) {
+    const found = await perceive(ct, pairsOf(watchers, targets), los === true);
+    if (found.length === 0) throw ct.api.getShError("", 1);
+    yield* found.map(([u, v]) => (watchers.length === 1 ? v : targets.length === 1 ? u : `${u} ${v}`));
     return;
   }
-  if (b !== undefined && keys.every((key) => ct.w.n[key] !== undefined)) {
-    const seen = await perceive(ct, pairsOf(keys, all === true), los === true);
-    if (seen.length === 0) throw ct.api.getShError("", 1);
-    yield* seen.map(([u, v]) => (all === true ? `${u} ${v}` : v));
-    return;
-  }
+  if (watchers.length > 1 || targets.length > 1) throw Error("spots: expected one by: and at most one other");
+  const [a, b] = [watchers[0], targets[0]];
   const [answer] = await spotQuery(ct, [b === undefined ? { q: "seenBy", a } : { q: "sees", a, b }]);
   const result = answered(answer);
   if (Array.isArray(result)) yield* result;
   else yield result;
+}
+
+/**
+ * Until killed, whether each of `with` sees each operand: each pair as `{ a, b, sees }`, then again as that changes.
+ * `with` is comma-separated. `--debug` says why instead, drawing the rays it needed, npcs or spots.
+ *
+ * ```sh
+ * watch abe cal with:rob
+ * watch scp-173 with:d-0,d-1,d-2
+ * watch --debug kate with:rob
+ * watch --los abe with:ben
+ * ```
+ */
+export async function* watch(ct: JshCli.RunArg) {
+  const flags = { "--los": "los", "--debug": "debug" };
+  const opts = ct.api.jsArg(ct.args, flags) as { with?: string | string[]; los?: boolean; debug?: boolean };
+  const [watchers, targets] = [keysOf(opts.with), operandsOf(ct.args)];
+  if (watchers.length === 0 || targets.length === 0) throw Error("usage: watch [--debug] [--los] key… with:key,…");
+  const pairs = pairsOf(watchers, targets);
+  if (opts.debug === true) {
+    yield* watchSight(ct, pairs, opts.los === true);
+    return;
+  }
+  if ([...watchers, ...targets].some((key) => ct.w.n[key] === undefined)) throw Error("expected npcs");
+  yield* watchSees(ct, pairs, opts.los === true);
 }
 
 /**
@@ -89,11 +108,19 @@ export async function spot(ct: JshCli.RunArg) {
   return answered(answer);
 }
 
-/** The first and each of the rest, else with `all` every ordered pair */
-function pairsOf(keys: string[], all: boolean): [string, string][] {
-  return all
-    ? keys.flatMap((u) => keys.flatMap((v): [string, string][] => (u === v ? [] : [[u, v]])))
-    : keys.slice(1).map((v): [string, string] => [keys[0], v]);
+/** Each watcher with each target, never with themself */
+function pairsOf(watchers: string[], targets: string[]): [string, string][] {
+  return watchers.flatMap((u) => targets.flatMap((v): [string, string][] => (u === v ? [] : [[u, v]])));
+}
+
+/** Keys from a comma-separated string, else an array, e.g. `by:a,b` or `by:$( [] a b )` */
+function keysOf(x: undefined | string | string[]): string[] {
+  return x === undefined ? [] : (Array.isArray(x) ? x : String(x).split(",")).filter(Boolean);
+}
+
+/** Its args neither flags nor `key:value` */
+function operandsOf(args: string[]) {
+  return args.filter((arg) => arg.startsWith("-") === false && arg.includes(":") === false);
 }
 
 /**
@@ -139,6 +166,33 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
   }
 }
 
+/** Until killed, whether each pair's first sees the second: at first, then each time that changes. One absent sees and is seen by none */
+async function* watchSees(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
+  const { api, w } = ct;
+  /** By pair, whether last seen */
+  const said = new Map<string, boolean>();
+  let killed = () => {};
+  const stopped = new Promise<void>((resolve) => void (killed = resolve));
+  const handlers = api.handleStatus({ cleanup: () => killed() });
+  try {
+    while (true) {
+      const present = pairs.filter((pair) => pair.every((key) => w.n[key] !== undefined));
+      const found = new Set((await perceive(ct, present, los)).map((pair) => pair.join(" ")));
+      for (const [a, b] of pairs) {
+        const sees = found.has(`${a} ${b}`);
+        if (said.get(`${a} ${b}`) === sees) continue;
+        said.set(`${a} ${b}`, sees);
+        yield { a, b, sees };
+      }
+      if ((await Promise.race([w.e.wait(watchSecs).then(() => true), stopped.then(() => false)])) === false) {
+        throw api.getKillError();
+      }
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
 /** Each pair's verdict and why: gone, or eyes and facing, on main, else the worker's `explain` */
 async function explainPairs(ct: JshCli.RunArg, pairs: [string, string][], los: boolean, npcKeys: Set<string>) {
   const isNpc = (key: string) => ct.w.n[key] !== undefined;
@@ -172,7 +226,7 @@ function raysOf({ pair: [a, b], x }: Look): [string, Polyline][] {
   if (x?.settled !== "lines") return [];
   const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
   return needed.map(({ from, to, hit }, k) => {
-    const key = `sees-debug/${a}>${b}/${k}`;
+    const key = `watch-debug/${a}>${b}/${k}`;
     const end = hit ?? to;
     // so a stopped ray ends on what stopped it
     const t =
@@ -222,7 +276,7 @@ function reasonOf(x: Explained, ansi: JshCli.RunArg["api"]["ansi"]) {
 
 /** Game seconds between looks whilst no rays are drawn: as quick as anyone would notice */
 const watchSecs = 0.25;
-/** Rays as `sees --debug` draws them: thin, faint, with small discs */
+/** Rays as `watch --debug` draws them: thin, faint, with small discs */
 const rayStyle = { width: 0.008, opacity: 0.5, discRadius: 0.03 };
 
 /**

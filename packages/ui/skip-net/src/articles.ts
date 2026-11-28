@@ -18,7 +18,7 @@ for (const path of Object.keys(loaders).sort((a, b) => (a.slice(0, -4) < b.slice
 const keyToFolder = new Map(Object.keys(loaders).map((path) => [toKey(path), toFolder(path)]));
 
 /** Folder order. Unlisted folders follow, alphabetically */
-const folderOrder = ["video", "npc"];
+const folderOrder = ["video", "npc", "scp"];
 
 // biome-ignore format: emphasis
 /** Article order within a folder. Unlisted articles follow, alphabetically */

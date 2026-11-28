@@ -1,0 +1,59 @@
+Source: [SCP-173](https://scp-wiki.wikidot.com/scp-173) on the SCP Wiki, licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+
+<ContainmentProcedures>
+
+```sh title="contain scp-173"
+# place it at pick
+spawn npc:scp-173 at:$( pick 1 ) as:scp-173
+
+# lock its container's door(s)
+lock $( pickGdKey )
+```
+
+```sh title="enter its container"
+# no fewer than three enter, at picks
+pick 3 | spawn npc:d- as:d
+
+# two keep it in view at all times
+pose d-0 look:scp-173 &
+pose d-1 look:scp-173 &
+```
+
+```sh title="keep it in view"
+# draw each line of sight, saying why one fails
+watch --debug scp-173 with:d-0,d-1,d-2
+
+# who sees it, as that changes
+watch scp-173 with:d-0,d-1,d-2
+
+# who sees it now
+seen scp-173 by:d-0,d-1,d-2
+```
+
+```sh title="blink one at a time"
+# d-0 shuts their eyes, whilst d-1 watches
+pose d-0 eyes:shut
+
+# d-0 opens them
+pose d-0 eyes:open
+```
+
+```sh title="leave its container"
+# relock the door behind them
+lock $( pickGdKey )
+
+# remove personnel
+remove d-{0..2}
+```
+
+</ContainmentProcedures>
+
+<Description>
+
+SCP-173 is a figure of concrete and rebar, crudely painted.
+It is animate, and hostile.
+
+It cannot move whilst it is seen.
+So personnel are to blink one at a time, never together.
+
+</Description>

@@ -137,7 +137,7 @@ jsh `comms` (in the default profile, idempotent) defines the needs (`commsNeeds`
 - `near`: within `commsConfig.nearDist`;
 - `facing`: within `facingArc` of straight ahead;
 - `psi`: the player's psi raised;
-- `sees`: the player sees the npc, as jsh `sees`. It asks the worker, its queries in one batch.
+- `sees`: the player sees the npc, as jsh `seen`. It asks the worker, its queries in one batch.
 
 An unknown need fails. `comms off` removes them. jsh `reply` says a reply without testing it.
 

@@ -1774,6 +1774,10 @@ function describeSkinMeta(skinKey: string, meta: Meta) {
  *
  * pick | spawn npc:rob-
  *
+ * # skins in turn: those starting d, else those listed
+ * pick 3 | spawn npc:d- as:d
+ * pick 3 | spawn npc:d- as:d-0,medic-1,ra-2
+ *
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
  *
@@ -1800,9 +1804,12 @@ export async function spawn(
 
   /** prevent spawns into rooms where max-walkers is reached i.e. confined spaces */
   const spawnUnderMax = async (o: JshCli.SpawnOpts) => (throwOnMaxWalkers(w, o), w.npc.spawn(o));
+  const skins = skinsOf(w, opts.as);
+  /** The nth spawn's skin, cycling through `skins` */
+  const nthSkin = (n: number) => skins?.[n % skins.length] ?? opts.as;
 
   if (api.isTtyAt(0)) {
-    return await spawnUnderMax(opts);
+    return await spawnUnderMax({ ...opts, as: nthSkin(0) });
   }
 
   function ignoreSpawnErrors(e: unknown) {
@@ -1817,7 +1824,9 @@ export async function spawn(
   let numSpawns = 0;
   if (!opts.facing) {
     while ((datum = await api.read()) !== api.eof) {
-      await spawnUnderMax({ ...opts, npcKey: `${opts.npcKey}${numSpawns++}`, at: datum }).catch(ignoreSpawnErrors);
+      await spawnUnderMax({ ...opts, npcKey: `${opts.npcKey}${numSpawns}`, as: nthSkin(numSpawns++), at: datum }).catch(
+        ignoreSpawnErrors,
+      );
     }
     return;
   }
@@ -1825,7 +1834,8 @@ export async function spawn(
   while (true) {
     await spawnUnderMax({
       ...opts,
-      npcKey: `${opts.npcKey}${numSpawns++}`,
+      npcKey: `${opts.npcKey}${numSpawns}`,
+      as: nthSkin(numSpawns++),
       at: await api.read(),
       facing: await api.read(),
     }).catch(ignoreSpawnErrors);
@@ -1939,6 +1949,16 @@ export async function* w(ct: JshCli.RunArg) {
       yield `${api.ansi.Cyan}${e}${api.ansi.Reset}`;
     }
   }
+}
+
+/** Skins to cycle through: those listed, else one by its exact key, else those starting with it, else `undefined` */
+function skinsOf(w: JshCli.WorldState, as: undefined | string | string[]): undefined | string[] {
+  if (as === undefined) return undefined;
+  if (Array.isArray(as) || as.includes(",")) return (Array.isArray(as) ? as : as.split(",")).filter(Boolean);
+  const keys = w.npc.skin.entries.map((e) => e.key);
+  if (keys.includes(as)) return [as];
+  const matched = keys.filter((key) => key.startsWith(as));
+  return matched.length > 0 ? matched : undefined; // none: `w.npc.spawn` falls back
 }
 
 /** Admits them onto the floor of a room with `maxWalkers`, else throws `room full`. A doable is off its floor */
