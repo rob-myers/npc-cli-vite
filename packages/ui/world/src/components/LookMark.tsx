@@ -35,6 +35,7 @@ export default function LookMark() {
       geometry={look.geometry}
     >
       <meshBasicMaterial
+        name="look-mark"
         color={look.color}
         opacity={0.5}
         transparent

@@ -137,7 +137,7 @@ export function SpotOverlay() {
     // faded with its rooms, so in `sense` mode an unlit room's are hidden
     const seen = w.view.fadeRoomsFx.fadeAtPair(slots);
     // biome-ignore format: succint
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false, alphaTest: 0.05 });
+    const mat = new THREE.MeshBasicNodeMaterial({ name: "spots", side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false, alphaTest: 0.05 });
     // a billboard `w` across, upright on screen: its arrow on the floor gives its facing
     const centre = attribute<"vec4">("spotCentre", "vec4");
     const picking = w.view.objectPick.notEqual(0);
@@ -182,7 +182,7 @@ export function SpotOverlay() {
     const ink = attribute<"vec4">("arrowInk", "vec4");
     const seen = w.view.fadeRoomsFx.getVisiblity(ink.w);
     // biome-ignore format: succint
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
+    const mat = new THREE.MeshBasicNodeMaterial({ name: "spot-sight", side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
     const alpha = seen.mul(opacity.arrow).mul(w.view.foldNode);
     // a point, drawing no fragments, whilst picking or showing nothing
     mat.positionNode = positionLocal.mul(w.view.objectPick.notEqual(0).or(alpha.equal(0)).select(0, 1));

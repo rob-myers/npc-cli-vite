@@ -58,7 +58,7 @@ export function createGunResources() {
   geo.instanceCount = 0;
 
   // opaque, else drawn after the walls and over them
-  const mat = new THREE.MeshBasicNodeMaterial();
+  const mat = new THREE.MeshBasicNodeMaterial({ name: "phaser-gun" });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;

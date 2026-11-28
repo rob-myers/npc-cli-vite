@@ -14,7 +14,12 @@ import type { State as WorldType } from "../components/World";
  */
 export function createRoomOutline(): RoomOutline {
   const scene = new THREE.Scene();
-  const material = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, depthTest: false, depthWrite: false });
+  const material = new THREE.MeshBasicNodeMaterial({
+    name: "room-outline",
+    side: THREE.DoubleSide,
+    depthTest: false,
+    depthWrite: false,
+  });
   material.colorNode = vec4(1, 1, 1, 1);
   const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material);
   mesh.frustumCulled = false;

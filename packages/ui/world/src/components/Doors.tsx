@@ -598,7 +598,11 @@ export default function Doors() {
   const materials = useMemo(() => {
     // `alphaToCoverage` for the same reason the panels have it, and so its own fade can be seen:
     // an opaque material ignores opacity outright
-    const edge = new THREE.MeshStandardNodeMaterial({ color: doorEdgeColor, alphaToCoverage: true });
+    const edge = new THREE.MeshStandardNodeMaterial({
+      name: "door-edges",
+      color: doorEdgeColor,
+      alphaToCoverage: true,
+    });
 
     // see-through by COVERAGE rather than by blending: doors are one instanced mesh, so three can
     // only sort them as a single object, and blended panels would draw in instance order and show
@@ -613,8 +617,8 @@ export default function Doors() {
       depthWrite: true,
       alphaToCoverage: true,
     };
-    const front = new THREE.MeshStandardNodeMaterial(panelOpts);
-    const back = new THREE.MeshStandardNodeMaterial(panelOpts);
+    const front = new THREE.MeshStandardNodeMaterial({ ...panelOpts, name: "door-fronts" });
+    const back = new THREE.MeshStandardNodeMaterial({ ...panelOpts, name: "door-backs" });
 
     const openRatio = attribute<"float">("openRatio", "float");
     const doorMeta = attribute<"vec4">("doorMeta", "vec4");

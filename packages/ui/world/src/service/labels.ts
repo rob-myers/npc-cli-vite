@@ -63,6 +63,7 @@ export function createLabelResources(maxInstances = MAX_ROOM_LABEL_INSTANCES, { 
   geo.instanceCount = 0;
 
   const mat = new THREE.MeshBasicNodeMaterial({
+    name: "labels",
     transparent: true,
     depthWrite: false,
     depthTest: occluded, // else over the world: an obstacle must not swallow the name of a room

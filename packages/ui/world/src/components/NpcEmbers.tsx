@@ -85,6 +85,7 @@ function createEmbers() {
   geo.instanceCount = 0;
 
   const mat = new THREE.MeshBasicNodeMaterial({
+    name: "npc-embers",
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,

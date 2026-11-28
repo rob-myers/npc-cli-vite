@@ -55,6 +55,7 @@ export function createBreathGhost(objectPick: THREE.Node<"float">) {
   const shown = selectAs<"float">(isLung, lungShown, diaphragmShown);
 
   const material = new THREE.MeshBasicNodeMaterial({
+    name: "breath",
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,

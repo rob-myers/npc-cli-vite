@@ -243,6 +243,7 @@ export default function Ceiling() {
       </bufferGeometry>
 
       <meshStandardNodeMaterial
+        name="ceiling"
         key={material.uid}
         side={THREE.FrontSide} // one draw-call
         transparent

@@ -79,6 +79,7 @@ function createShadowResources(
   const xzo = attribute<"vec4">("shadowXZO", "vec4");
 
   const mat = new THREE.MeshBasicNodeMaterial({
+    name: "npc-shadows",
     transparent: true,
     depthWrite: false,
     side: THREE.FrontSide,
