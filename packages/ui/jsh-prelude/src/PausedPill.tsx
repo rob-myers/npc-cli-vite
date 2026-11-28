@@ -25,6 +25,11 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
           state.set({ step: null });
         }
       },
+      busyLabel() {
+        if (state.step !== null) return state.step;
+        if ((w.e?.bootedAt ?? 0) === 0) return preludeApi.get(w.key).autorun === true ? "booting" : "loading";
+        return w.isMapChanging() ? "loading" : null;
+      },
       reboot() {
         state.boot(async () => (await loadRun()).rebootWorld(w.key, (step) => state.set({ step })));
       },
@@ -50,8 +55,9 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
     return () => sub.unsubscribe();
   }, [w]);
 
-  const label = state.step ?? (w.isMapChanging() ? "loading" : "paused");
-  const ready = label === "paused";
+  const busy = state.busyLabel();
+  const ready = busy === null;
+  const label = busy ?? "paused";
 
   return (
     <div
@@ -78,7 +84,7 @@ export function PausedPill({ w, paused, resumeProps }: PausedPillProps) {
               ready ? "cursor-pointer hover:text-yellow-100" : "opacity-60",
             )}
           >
-            {state.step === null ? (
+            {ready ? (
               <PlayIcon className="size-4 shrink-0" weight="fill" />
             ) : (
               <div className="size-3.5 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
@@ -123,5 +129,10 @@ type State = {
   step: null | string;
   /** Runs `task` with a spinner, cleared after */
   boot(task: () => Promise<void>): Promise<void>;
+  /**
+   * What the pill says whilst the World is not ready, else `null`: a reboot's step, else until booted
+   * "booting" with autorun or "loading" without, else "loading" whilst the map changes.
+   */
+  busyLabel(): null | string;
   reboot(): void;
 };
